@@ -36,7 +36,7 @@ import { IApprovalRecord } from '../../../common/modernisationTypes.js';
 export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// -- Events ----------------------------------------------------------------
 
 	private readonly _onCommitProgress = this._register(new Emitter<ICommitProgress>());
 	readonly onCommitProgress: Event<ICommitProgress> = this._onCommitProgress.event;
@@ -44,7 +44,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	private readonly _onCutoverApproved = this._register(new Emitter<IApprovalRecord>());
 	readonly onCutoverApproved: Event<IApprovalRecord> = this._onCutoverApproved.event;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// -- State -----------------------------------------------------------------
 
 	private _isCommitting                            = false;
 	private _commitController: AbortController | null = null;
@@ -65,7 +65,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Audit API ─────────────────────────────────────────────────────────────
+	// -- Audit API -------------------------------------------------------------
 
 	exportAuditBundle(options?: IAuditBundleOptions): IAuditBundle {
 		return exportAuditBundle(this._kb, options);
@@ -80,7 +80,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Commit API ────────────────────────────────────────────────────────────
+	// -- Commit API ------------------------------------------------------------
 
 	async commitBatch(options: ICommitBatchOptions = {}): Promise<ICommitBatchResult> {
 		if (this._isCommitting) {
@@ -124,7 +124,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Cutover gate ──────────────────────────────────────────────────────────
+	// -- Cutover gate ----------------------------------------------------------
 
 	checkReadiness(): ICutoverReadinessReport {
 		return checkCutoverReadiness(this._kb);
@@ -152,7 +152,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Metrics ───────────────────────────────────────────────────────────────
+	// -- Metrics ---------------------------------------------------------------
 
 	getMetrics(): ICutoverMetrics {
 		return buildCutoverMetrics(this._kb, this._isCutoverApproved);

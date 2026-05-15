@@ -7,15 +7,15 @@
  * # Call Graph Extractor
  *
  * Builds an intra-project call graph from raw call expressions collected during
- * unit decomposition. Works for every language the discovery engine supports —
+ * unit decomposition. Works for every language the discovery engine supports --
  * from COBOL PERFORM chains to Java method dispatch to Python function calls.
  *
  * ## Algorithm
  *
- * 1. Collect all (unitId → rawCallExpression[]) entries from decomposed units.
+ * 1. Collect all (unitId -> rawCallExpression[]) entries from decomposed units.
  * 2. Build two lookup indexes over all known units:
- *    - `byExactName`  → `unitId`  (e.g. `CALC-INTEREST` → `prog::CALC-INTEREST`)
- *    - `byNormName`   → `unitId`  (snake_case / lowerCamelCase normalised)
+ *    - `byExactName`  -> `unitId`  (e.g. `CALC-INTEREST` -> `prog::CALC-INTEREST`)
+ *    - `byNormName`   -> `unitId`  (snake_case / lowerCamelCase normalised)
  * 3. For each raw call expression, strip language noise and attempt resolution.
  * 4. Emit `ICallGraphEdge` with `resolved = true` if the callee was found in the
  *    same project; `resolved = false` for unresolved (external / dynamic) calls.
@@ -46,7 +46,7 @@
 
 import { ICallGraphEdge, IDecomposedUnit } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// --- Public API ---------------------------------------------------------------
 
 export interface IRawCallEntry {
 	fromUnitId: string;
@@ -60,7 +60,7 @@ export interface IRawCallEntry {
  *
  * @param rawCalls    Flat list of (unitId, callExpression, lang) tuples
  * @param allUnitIds  All unit IDs in the project (for resolution)
- * @param unitNames   Map from unitId → unitName (for resolution)
+ * @param unitNames   Map from unitId -> unitName (for resolution)
  */
 export function buildCallGraph(
 	rawCalls: IRawCallEntry[],
@@ -68,8 +68,8 @@ export function buildCallGraph(
 	unitNames: Map<string, string>,
 ): ICallGraphEdge[] {
 	// Build lookup maps
-	const byExact   = new Map<string, string>();  // normalised name → unitId
-	const byNorm    = new Map<string, string>();  // further normalised → unitId
+	const byExact   = new Map<string, string>();  // normalised name -> unitId
+	const byNorm    = new Map<string, string>();  // further normalised -> unitId
 
 	for (const id of allUnitIds) {
 		const name = unitNames.get(id) ?? '';
@@ -83,7 +83,7 @@ export function buildCallGraph(
 	for (const entry of rawCalls) {
 		const calls = extractCallTargets(entry.callExpression, entry.lang);
 		for (const call of calls) {
-			const edgeKey = `${entry.fromUnitId}→${call.target}`;
+			const edgeKey = `${entry.fromUnitId}->${call.target}`;
 			if (seen.has(edgeKey)) { continue; }
 			seen.add(edgeKey);
 
@@ -111,7 +111,7 @@ export function buildCallGraph(
  */
 export function extractRawCallEntries(
 	units: IDecomposedUnit[],
-	unitIdMap: Map<string, string>,  // name → id (as assigned during decomp)
+	unitIdMap: Map<string, string>,  // name -> id (as assigned during decomp)
 	lang: string,
 ): IRawCallEntry[] {
 	const entries: IRawCallEntry[] = [];
@@ -125,7 +125,7 @@ export function extractRawCallEntries(
 }
 
 
-// ─── Call Target Extraction ───────────────────────────────────────────────────
+// --- Call Target Extraction ---------------------------------------------------
 
 interface ICallTarget {
 	target: string;
@@ -140,7 +140,7 @@ interface ICallTarget {
 function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 	const results: ICallTarget[] = [];
 
-	// ── COBOL ──────────────────────────────────────────────────────────────────
+	// -- COBOL ------------------------------------------------------------------
 	if (lang === 'cobol') {
 		// PERFORM PARA-NAME
 		// PERFORM PARA-NAME THRU PARA-NAME-EXIT
@@ -170,7 +170,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── PL/I ───────────────────────────────────────────────────────────────────
+	// -- PL/I -------------------------------------------------------------------
 	if (lang === 'pl1') {
 		const m = /\bCALL\s+([\w.]+)/i.exec(expr);
 		if (m) {
@@ -179,7 +179,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── RPG ────────────────────────────────────────────────────────────────────
+	// -- RPG --------------------------------------------------------------------
 	if (lang === 'rpg') {
 		// CALLP proc(...)
 		let m = /\bCALLP?\s+([\w]+)/i.exec(expr);
@@ -195,7 +195,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── JCL ────────────────────────────────────────────────────────────────────
+	// -- JCL --------------------------------------------------------------------
 	if (lang === 'jcl') {
 		// // STEP01 EXEC PGM=MYPROG
 		let m = /EXEC\s+PGM\s*=\s*([\w]+)/i.exec(expr);
@@ -211,7 +211,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── PL/SQL ─────────────────────────────────────────────────────────────────
+	// -- PL/SQL -----------------------------------------------------------------
 	if (lang === 'plsql' || lang === 'sql') {
 		// CALL proc_name(...)
 		let m = /\bCALL\s+([\w.]+)\s*\(/i.exec(expr);
@@ -232,7 +232,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── VB.NET / VBScript ──────────────────────────────────────────────────────
+	// -- VB.NET / VBScript ------------------------------------------------------
 	if (lang === 'vb' || lang === 'vbnet') {
 		// Call MethodName(...) or just MethodName(...)
 		let m = /\bCall\s+([\w.]+)\s*\(/i.exec(expr);
@@ -248,7 +248,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── Haskell ────────────────────────────────────────────────────────────────
+	// -- Haskell ----------------------------------------------------------------
 	if (lang === 'haskell') {
 		// function application: funcName arg1 arg2 (no parens required)
 		const m = /^([\w']+)(?:\s|$)/.exec(expr.trim());
@@ -258,7 +258,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── Erlang / Elixir ────────────────────────────────────────────────────────
+	// -- Erlang / Elixir --------------------------------------------------------
 	if (lang === 'erlang') {
 		// Module:function(...)
 		const m = /([\w@]+):([\w@]+)\s*\(/i.exec(expr);
@@ -281,7 +281,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── PHP ────────────────────────────────────────────────────────────────────
+	// -- PHP --------------------------------------------------------------------
 	if (lang === 'php') {
 		// $obj->method(...)  or  ClassName::method(...)  or  func(...)
 		let m = /\$\w+->([\w]+)\s*\(/i.exec(expr);
@@ -297,7 +297,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Ruby ───────────────────────────────────────────────────────────────────
+	// -- Ruby -------------------------------------------------------------------
 	if (lang === 'ruby') {
 		// obj.method  or  Module::method  or  method
 		let m = /\.([\w?!]+)\s*[\(\s]/.exec(expr);
@@ -313,7 +313,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Swift ──────────────────────────────────────────────────────────────────
+	// -- Swift ------------------------------------------------------------------
 	if (lang === 'swift') {
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -326,7 +326,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Dart ───────────────────────────────────────────────────────────────────
+	// -- Dart -------------------------------------------------------------------
 	if (lang === 'dart') {
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -339,7 +339,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Groovy ─────────────────────────────────────────────────────────────────
+	// -- Groovy -----------------------------------------------------------------
 	if (lang === 'groovy') {
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -352,7 +352,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Lua ────────────────────────────────────────────────────────────────────
+	// -- Lua --------------------------------------------------------------------
 	if (lang === 'lua') {
 		let m = /:([\w]+)\s*\(/i.exec(expr);   // method syntax obj:method()
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -367,7 +367,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Perl ───────────────────────────────────────────────────────────────────
+	// -- Perl -------------------------------------------------------------------
 	if (lang === 'perl') {
 		let m = /->([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -382,7 +382,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── C / C++ ────────────────────────────────────────────────────────────────
+	// -- C / C++ ----------------------------------------------------------------
 	if (lang === 'c' || lang === 'cpp') {
 		// ptr->method(...)  or  obj.method(...)  or  func(...)
 		let m = /(?:->|\.)(\w+)\s*\(/i.exec(expr);
@@ -401,7 +401,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Go ─────────────────────────────────────────────────────────────────────
+	// -- Go ---------------------------------------------------------------------
 	if (lang === 'go') {
 		// pkg.Func(...)  or  obj.Method(...)
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
@@ -415,7 +415,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Rust ───────────────────────────────────────────────────────────────────
+	// -- Rust -------------------------------------------------------------------
 	if (lang === 'rust') {
 		// Type::method(...)  or  obj.method(...)
 		let m = /::([\w]+)\s*\(/i.exec(expr);
@@ -431,7 +431,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Python ─────────────────────────────────────────────────────────────────
+	// -- Python -----------------------------------------------------------------
 	if (lang === 'python') {
 		// obj.method(...)  or  func(...)
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
@@ -445,7 +445,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Java / Kotlin / Scala / C# / TypeScript / JavaScript (default OO) ─────
+	// -- Java / Kotlin / Scala / C# / TypeScript / JavaScript (default OO) -----
 	{
 		// Chained: obj.method(...)  or  Class.staticMethod(...)
 		let m = /\.([\w]+)\s*\(/ig;
@@ -463,7 +463,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 }
 
 
-// ─── Resolution ───────────────────────────────────────────────────────────────
+// --- Resolution ---------------------------------------------------------------
 
 function resolveCall(
 	target: string,
@@ -475,7 +475,7 @@ function resolveCall(
 }
 
 function normalise(name: string): string {
-	// CamelCase → lower, hyphens/underscores stripped
+	// CamelCase -> lower, hyphens/underscores stripped
 	return name
 		.replace(/([A-Z])/g, '_$1')
 		.toLowerCase()
@@ -483,7 +483,7 @@ function normalise(name: string): string {
 }
 
 
-// ─── Keyword Sets (exclude from direct-call extraction) ───────────────────────
+// --- Keyword Sets (exclude from direct-call extraction) -----------------------
 
 const SQL_KEYWORDS = new Set([
 	'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'GRANT',

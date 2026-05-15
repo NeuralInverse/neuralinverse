@@ -14,7 +14,7 @@ import { IAgentToolDefinition } from './agentToolTypes.js';
 
 export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
-	// ── Unit read tools ──────────────────────────────────────────────────────
+	// -- Unit read tools ------------------------------------------------------
 
 	{
 		name: 'get_unit',
@@ -76,7 +76,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_unit_dependencies',
-		description: 'Get a unit\'s dependency graph — what it calls (dependsOn) and what calls it (usedBy). Supports transitive traversal and cycle detection.',
+		description: 'Get a unit\'s dependency graph -- what it calls (dependsOn) and what calls it (usedBy). Supports transitive traversal and cycle detection.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -102,7 +102,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'search_units',
-		description: 'Full-text search across all units — matches against unit name, domain, source preview, and file path.',
+		description: 'Full-text search across all units -- matches against unit name, domain, source preview, and file path.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -115,7 +115,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_unit_history',
-		description: 'Get the audit trail for a specific unit — all status transitions, translations recorded, decisions answered, and annotations added.',
+		description: 'Get the audit trail for a specific unit -- all status transitions, translations recorded, decisions answered, and annotations added.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -127,7 +127,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision read tools ──────────────────────────────────────────────────
+	// -- Decision read tools --------------------------------------------------
 
 	{
 		name: 'get_pending_decisions',
@@ -156,7 +156,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_decision_log',
-		description: 'View the log of already-answered decisions — type mappings, naming decisions, rule interpretations, exclusions, and pattern overrides.',
+		description: 'View the log of already-answered decisions -- type mappings, naming decisions, rule interpretations, exclusions, and pattern overrides.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -168,7 +168,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'detect_conflicts',
-		description: 'Find conflicting decisions — cases where the same source type or identifier has been mapped to two different targets. Use before starting a translation batch.',
+		description: 'Find conflicting decisions -- cases where the same source type or identifier has been mapped to two different targets. Use before starting a translation batch.',
 		inputSchema: {
 			type: 'object',
 			properties: {},
@@ -189,7 +189,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision write tool ──────────────────────────────────────────────────
+	// -- Decision write tool --------------------------------------------------
 
 	{
 		name: 'answer_decision',
@@ -207,7 +207,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Translation write tools ──────────────────────────────────────────────
+	// -- Translation write tools ----------------------------------------------
 
 	{
 		name: 'record_translation',
@@ -247,7 +247,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'flag_ready',
-		description: 'Unblock a unit — move it back to "ready" so it can be re-translated. Use after a blocking decision has been answered.',
+		description: 'Unblock a unit -- move it back to "ready" so it can be re-translated. Use after a blocking decision has been answered.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -260,7 +260,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Annotation tools ─────────────────────────────────────────────────────
+	// -- Annotation tools -----------------------------------------------------
 
 	{
 		name: 'add_annotation',
@@ -291,11 +291,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision record tools ────────────────────────────────────────────────
+	// -- Decision record tools ------------------------------------------------
 
 	{
 		name: 'record_type_mapping',
-		description: 'Record a type mapping decision that applies to future translations. Use when you\'ve determined the correct target type for a source language type (e.g. "PIC S9(9)V99 COMP-3" → "BigDecimal").',
+		description: 'Record a type mapping decision that applies to future translations. Use when you\'ve determined the correct target type for a source language type (e.g. "PIC S9(9)V99 COMP-3" -> "BigDecimal").',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -311,7 +311,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'record_naming_decision',
-		description: 'Record a naming decision (source identifier → target identifier). Use when renaming legacy identifiers to idiomatic target-language names.',
+		description: 'Record a naming decision (source identifier -> target identifier). Use when renaming legacy identifiers to idiomatic target-language names.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -325,7 +325,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'record_rule_interpretation',
-		description: 'Record a rule interpretation — what a business rule or piece of legacy logic means in plain English. Use to document complex business logic so future translations handle it consistently.',
+		description: 'Record a rule interpretation -- what a business rule or piece of legacy logic means in plain English. Use to document complex business logic so future translations handle it consistently.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -338,7 +338,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Glossary tools ───────────────────────────────────────────────────────
+	// -- Glossary tools -------------------------------------------------------
 
 	{
 		name: 'get_glossary',
@@ -371,7 +371,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_business_rules',
-		description: 'Get business rules extracted from units. Rules carry preservation requirements — always check these before simplifying logic during translation.',
+		description: 'Get business rules extracted from units. Rules carry preservation requirements -- always check these before simplifying logic during translation.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -393,7 +393,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Workspace / progress tools ───────────────────────────────────────────
+	// -- Workspace / progress tools -------------------------------------------
 
 	{
 		name: 'get_progress',
@@ -440,7 +440,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 		},
 	},
 
-	// ── Advanced query tools ──────────────────────────────────────────────────
+	// -- Advanced query tools --------------------------------------------------
 
 	{
 		name: 'get_stale_units',
@@ -455,7 +455,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_topological_order',
-		description: 'Get all units ordered by dependency resolution (leaf-nodes first, dependents last). This is the correct translation order — translate in this sequence to minimise blocking.',
+		description: 'Get all units ordered by dependency resolution (leaf-nodes first, dependents last). This is the correct translation order -- translate in this sequence to minimise blocking.',
 		inputSchema: {
 			type: 'object',
 			properties: {},
@@ -464,7 +464,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'filter_units',
-		description: 'Advanced multi-criteria unit filter. More powerful than list_units — supports status arrays, risk arrays, locked state, drift state, and work-package membership.',
+		description: 'Advanced multi-criteria unit filter. More powerful than list_units -- supports status arrays, risk arrays, locked state, drift state, and work-package membership.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -497,7 +497,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Phase tools ──────────────────────────────────────────────────────────
+	// -- Phase tools ----------------------------------------------------------
 
 	{
 		name: 'get_phases',
@@ -523,11 +523,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision management tools ────────────────────────────────────────────
+	// -- Decision management tools --------------------------------------------
 
 	{
 		name: 'resolve_conflict',
-		description: 'Resolve a decision conflict — choose the canonical decision when two decisions map the same source identifier to different targets. The winning decision is kept; the conflict is marked resolved.',
+		description: 'Resolve a decision conflict -- choose the canonical decision when two decisions map the same source identifier to different targets. The winning decision is kept; the conflict is marked resolved.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -541,7 +541,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'remove_decision',
-		description: 'Remove a specific decision record (type mapping, naming, rule interpretation, exclusion, or pattern override). Use when a decision was recorded incorrectly. This affects future translations — check get_decision_impact first.',
+		description: 'Remove a specific decision record (type mapping, naming, rule interpretation, exclusion, or pattern override). Use when a decision was recorded incorrectly. This affects future translations -- check get_decision_impact first.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -553,11 +553,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Extended annotation tools ────────────────────────────────────────────
+	// -- Extended annotation tools --------------------------------------------
 
 	{
 		name: 'list_annotations',
-		description: 'List all annotations attached to a unit — context notes, reviewer comments, agent notes, and warnings.',
+		description: 'List all annotations attached to a unit -- context notes, reviewer comments, agent notes, and warnings.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -580,15 +580,15 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Work package tools ───────────────────────────────────────────────────
+	// -- Work package tools ---------------------------------------------------
 
 	{
 		name: 'create_work_package',
-		description: 'Create a work package — an ad-hoc grouping of units for sprint planning, team assignment, or incremental delivery. A unit can belong to at most one work package.',
+		description: 'Create a work package -- an ad-hoc grouping of units for sprint planning, team assignment, or incremental delivery. A unit can belong to at most one work package.',
 		inputSchema: {
 			type: 'object',
 			properties: {
-				label:       { type: 'string', description: 'Short display name (e.g. "Sprint 3 — Billing Module")' },
+				label:       { type: 'string', description: 'Short display name (e.g. "Sprint 3 -- Billing Module")' },
 				description: { type: 'string', description: 'What this work package covers' },
 				unitIds:     { type: 'array', items: { type: 'string' }, description: 'Unit IDs to include initially' },
 				assignedTo:  { type: 'string', description: 'Team member or agent ID responsible' },
@@ -648,7 +648,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'delete_work_package',
-		description: 'Delete a work package. Units in the package are NOT deleted — they just become unassigned.',
+		description: 'Delete a work package. Units in the package are NOT deleted -- they just become unassigned.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -659,7 +659,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Lock tools ───────────────────────────────────────────────────────────
+	// -- Lock tools -----------------------------------------------------------
 
 	{
 		name: 'lock_unit',
@@ -682,7 +682,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 			type: 'object',
 			properties: {
 				unitId:  { type: 'string', description: 'Unit to unlock' },
-				ownerId: { type: 'string', description: 'Your agent ID — must match the lock owner' },
+				ownerId: { type: 'string', description: 'Your agent ID -- must match the lock owner' },
 			},
 			required: ['unitId', 'ownerId'],
 		},
@@ -710,7 +710,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Tag tools ────────────────────────────────────────────────────────────
+	// -- Tag tools ------------------------------------------------------------
 
 	{
 		name: 'create_tag',
@@ -773,11 +773,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Compliance tools ─────────────────────────────────────────────────────
+	// -- Compliance tools -----------------------------------------------------
 
 	{
 		name: 'check_compliance_gate',
-		description: 'Run the compliance gate for a unit — checks all regulatory requirements (PII handling, audit trails, approval records, etc.). A unit cannot be approved until its gate passes.',
+		description: 'Run the compliance gate for a unit -- checks all regulatory requirements (PII handling, audit trails, approval records, etc.). A unit cannot be approved until its gate passes.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -827,7 +827,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Checkpoint tools ─────────────────────────────────────────────────────
+	// -- Checkpoint tools -----------------------------------------------------
 
 	{
 		name: 'create_checkpoint',
@@ -876,7 +876,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Unit management tools ────────────────────────────────────────────────
+	// -- Unit management tools ------------------------------------------------
 
 	{
 		name: 'split_unit',
@@ -927,7 +927,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Export / Import tools ────────────────────────────────────────────────
+	// -- Export / Import tools ------------------------------------------------
 
 	{
 		name: 'export_decisions',
@@ -960,7 +960,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Utility tools ────────────────────────────────────────────────────────
+	// -- Utility tools --------------------------------------------------------
 
 	{
 		name: 'check_excluded',
@@ -983,11 +983,11 @@ export function getToolDefinition(name: string): IAgentToolDefinition | undefine
 }
 
 
-// ─── Autonomy tools (Phase 12) ────────────────────────────────────────────────
+// --- Autonomy tools (Phase 12) ------------------------------------------------
 //
 // Split into two groups:
-//   AUTONOMY_DEFAULT_TOOL_DEFINITIONS  — always available (read/query/single-unit)
-//   AUTONOMY_SESSION_TOOL_DEFINITIONS  — only when modernisation session is active
+//   AUTONOMY_DEFAULT_TOOL_DEFINITIONS  -- always available (read/query/single-unit)
+//   AUTONOMY_SESSION_TOOL_DEFINITIONS  -- only when modernisation session is active
 
 /**
  * Autonomy tools that work for any project (no active modernisation session needed).
@@ -1008,7 +1008,7 @@ export const AUTONOMY_DEFAULT_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 			type: 'object',
 			properties: {
 				stages:         { type: 'string',  description: 'Comma-separated stages: resolve, translate, validate, commit. Default: all.' },
-				maxConcurrency: { type: 'number',  description: 'Concurrency limit for the preview (1–10). Default: 3.' },
+				maxConcurrency: { type: 'number',  description: 'Concurrency limit for the preview (1-10). Default: 3.' },
 				autoApprove:    { type: 'boolean', description: 'Whether auto-approve affects escalation counts in the preview.' },
 			},
 		},
@@ -1034,7 +1034,7 @@ export const AUTONOMY_DEFAULT_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 				unitId:     { type: 'string', description: 'KB unit ID to resolve.' },
 				decision:   { type: 'string', description: 'approve | skip | revert-to-pending | block' },
 				resolvedBy: { type: 'string', description: 'Identity of the reviewer (email or username).' },
-				reason:     { type: 'string', description: 'Documented rationale — required for approve and block.' },
+				reason:     { type: 'string', description: 'Documented rationale -- required for approve and block.' },
 			},
 			required: ['unitId', 'decision', 'resolvedBy'],
 		},
@@ -1070,18 +1070,18 @@ export const AUTONOMY_DEFAULT_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 /**
  * Autonomy tools that require an active modernisation session (source + target projects configured).
- * These control batch lifecycle — meaningless without a session providing source/target roots.
+ * These control batch lifecycle -- meaningless without a session providing source/target roots.
  */
 export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'autonomy_start_batch',
-		description: 'Start the autonomy pipeline batch. Drives all eligible units through the configured stages: resolve → translate → [auto-approve] → validate → commit. High-risk and regulated-domain units always escalate. Returns final metrics when complete.',
+		description: 'Start the autonomy pipeline batch. Drives all eligible units through the configured stages: resolve -> translate -> [auto-approve] -> validate -> commit. High-risk and regulated-domain units always escalate. Returns final metrics when complete.',
 		inputSchema: {
 			type: 'object',
 			properties: {
 				stages:            { type: 'string',  description: 'Comma-separated stages to run: resolve, translate, validate, commit. Default: all.' },
-				maxConcurrency:    { type: 'number',  description: 'Parallel unit limit (1–10). Default: 3.' },
+				maxConcurrency:    { type: 'number',  description: 'Parallel unit limit (1-10). Default: 3.' },
 				autoApprove:       { type: 'boolean', description: 'Auto-approve low/medium risk units that pass all compliance gates. Default: false.' },
 				stageTimeoutMs:    { type: 'number',  description: 'Per-stage timeout in ms. Default: 300000 (5 min).' },
 				maxRetriesPerUnit: { type: 'number',  description: 'Max retries per unit before escalating. Default: 3.' },
@@ -1104,8 +1104,108 @@ export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'autonomy_stop_batch',
-		description: 'Stop (abort) the running autonomy batch. In-flight jobs drain gracefully. Cannot be resumed — use autonomy_pause_batch if you want to resume later.',
+		description: 'Stop (abort) the running autonomy batch. In-flight jobs drain gracefully. Cannot be resumed -- use autonomy_pause_batch if you want to resume later.',
 		inputSchema: { type: 'object', properties: {} },
+	},
+
+
+	// -- Firmware Intelligence Tools ------------------------------------------
+
+	{
+		name: 'parse_svd_file',
+		description: 'Parse a CMSIS SVD (System View Description) file and extract all peripheral register definitions. Returns a structured register map with register addresses, bit-field definitions, access types (R/W/RW), and reset values. Use before translating memory-mapped I/O code to identify the correct HAL API equivalents.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				filePath:          { type: 'string', description: 'Absolute path to the .svd file' },
+				peripheralFilter:  { type: 'string', description: 'Optional: only return registers for this peripheral name (e.g. "USART1", "SPI2")' },
+				includeResetValues:{ type: 'boolean', description: 'Include reset values for each register field (default true)' },
+			},
+			required: ['filePath'],
+		},
+	},
+
+	{
+		name: 'check_misra_rules',
+		description: 'Run a MISRA-C:2012 static analysis pass on a source unit and return violations grouped by rule category (mandatory, required, advisory). Use before translating a C unit to understand which constructs must be changed. Returns rule IDs, line numbers, and severity.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				unitId:           { type: 'string', description: 'Unit to analyse (uses its resolved source)' },
+				ruleScope:        { type: 'string', enum: ['mandatory', 'required', 'advisory', 'all'], description: 'Which MISRA categories to check (default mandatory+required)' },
+				outputFormat:     { type: 'string', enum: ['summary', 'full'], description: 'Return a summary count or full per-violation list (default summary)' },
+			},
+			required: ['unitId'],
+		},
+	},
+
+	{
+		name: 'analyse_rtos_tasks',
+		description: 'Analyse RTOS task and ISR interactions in the firmware knowledge base. Detects: task starvation risks (priority inversion), shared-data races between ISR and task contexts, missing critical sections, and unbounded blocking. Returns a risk report per unit with recommended synchronisation fixes.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				scope:     { type: 'string', enum: ['all', 'unit'], description: 'Analyse all RTOS tasks or a specific unit' },
+				unitId:    { type: 'string', description: 'Unit ID (required when scope = unit)' },
+				includeISR:{ type: 'boolean', description: 'Include ISR-to-task boundary analysis (default true)' },
+			},
+		},
+	},
+
+	{
+		name: 'map_hal_functions',
+		description: 'Map bare-metal register-direct function calls or volatile pointer accesses in a unit to their equivalent STM32 HAL, NXP SDK, or CMSIS API calls. Returns a list of mappings with confidence levels and any cases where no HAL equivalent was found (blocking flag). Use before generating a translation prompt for embedded C code.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				unitId:        { type: 'string', description: 'Unit to map' },
+				targetHAL:     { type: 'string', enum: ['stm32-hal', 'nxp-sdk', 'cmsis', 'zephyr-api', 'freertos-api', 'auto'], description: 'Target HAL framework (default auto-detect from project)' },
+				includeNoMatch:{ type: 'boolean', description: 'Include registers / operations with no known HAL mapping (default true)' },
+			},
+			required: ['unitId'],
+		},
+	},
+
+	{
+		name: 'parse_plc_ladder',
+		description: 'Parse an IEC 61131-3 Ladder Diagram file and extract a structured AST of rungs, contacts, coils, and function block calls. Returns the rung list with input conditions, output coils, timers, counters, and safety function block instances. Use before generating a Structured Text translation prompt.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				filePath:              { type: 'string', description: 'Absolute path to the ladder logic file (.ldr, .fbd, .pou)' },
+				includeSafetyFBs:      { type: 'boolean', description: 'Flag rungs containing PLCopen Safety function blocks (default true)' },
+				extractNetworkComments:{ type: 'boolean', description: 'Extract rung/network comment text (default true)' },
+			},
+			required: ['filePath'],
+		},
+	},
+
+	{
+		name: 'analyse_can_dbc',
+		description: 'Parse a CAN database (.dbc) file to extract message and signal definitions. Returns all CAN message IDs, message names, signal bit positions, scaling factors, units, and value tables. Use when migrating CAN communication logic from one network topology or protocol to another.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				filePath:       { type: 'string', description: 'Absolute path to the .dbc file' },
+				nodeFilter:     { type: 'string', description: 'Optional: only return messages for this network node (e.g. "ECU1")' },
+				includeEnums:   { type: 'boolean', description: 'Include value table / enum definitions (default true)' },
+			},
+			required: ['filePath'],
+		},
+	},
+
+	{
+		name: 'check_watchdog_coverage',
+		description: 'Scan the firmware unit graph for functions that may violate watchdog refresh coverage. Detects: long-running functions that block the main loop without a WDT kick, ISR-masked critical sections that disable the watchdog, and task paths that could starve the watchdog refresh task. Returns a list of at-risk units with estimated worst-case execution times.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				scope:            { type: 'string', enum: ['all', 'unit'], description: 'Check all units or a specific unit' },
+				unitId:           { type: 'string', description: 'Unit ID (required when scope = unit)' },
+				wdtPeriodMs:      { type: 'number', description: 'Watchdog timeout in milliseconds (default 1000)' },
+				flagMissingRefresh:{ type: 'boolean', description: 'Flag functions missing an explicit watchdog refresh call (default true)' },
+			},
+		},
 	},
 
 ];

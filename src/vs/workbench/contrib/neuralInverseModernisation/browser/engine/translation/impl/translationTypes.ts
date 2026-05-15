@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Translation Engine — Core Types
+ * # Translation Engine -- Core Types
  *
  * All shared type definitions consumed by the Phase 4 Translation Engine.
  *
@@ -12,40 +12,40 @@
  *
  * ```
  * For each eligible unit (status='ready'):
- *   1. Resolve   — verify resolved source is available (Phase 1 already did this)
- *   2. Context   — assemble all KB knowledge into IBuiltTranslationContext
- *   3. Translate — call LLM with full context prompt; parse ITranslationParseResult
- *   4. Verify    — run ITranslationVerificationResult checks
- *   5. Record    — write translated code + decisions to KB; update status
+ *   1. Resolve   -- verify resolved source is available (Phase 1 already did this)
+ *   2. Context   -- assemble all KB knowledge into IBuiltTranslationContext
+ *   3. Translate -- call LLM with full context prompt; parse ITranslationParseResult
+ *   4. Verify    -- run ITranslationVerificationResult checks
+ *   5. Record    -- write translated code + decisions to KB; update status
  * ```
  *
  * ## Outcome Flow
  *
  * ```
- * ready ──► translating ──► review    (translation complete, has decisions or low confidence)
- *                       ──► blocked   (AI raised a blocking question; human must answer first)
- *                       ──► ready     (transient error; will be retried)
- * review ──► approved   (human approves)
+ * ready --> translating --> review    (translation complete, has decisions or low confidence)
+ *                       --> blocked   (AI raised a blocking question; human must answer first)
+ *                       --> ready     (transient error; will be retried)
+ * review --> approved   (human approves)
  * ```
  */
 
 import { UnitStatus, IPendingDecision, RiskLevel } from '../../../../common/knowledgeBaseTypes.js';
 
 
-// ─── Translation Outcome ──────────────────────────────────────────────────────
+// --- Translation Outcome ------------------------------------------------------
 
 /**
  * The result classification of a single unit's translation attempt.
  */
 export type TranslationOutcome =
-	| 'translated'   // Complete translation with high confidence — ready for human review
+	| 'translated'   // Complete translation with high confidence -- ready for human review
 	| 'partial'      // Translation complete but AI flagged sections needing human review
-	| 'blocked'      // AI raised a blocking question — unit cannot proceed without human input
+	| 'blocked'      // AI raised a blocking question -- unit cannot proceed without human input
 	| 'error'        // Unexpected failure (network, parse, LLM error)
 	| 'skipped';     // Unit not eligible (wrong status, not ready, explicitly excluded)
 
 
-// ─── Translation Confidence ───────────────────────────────────────────────────
+// --- Translation Confidence ---------------------------------------------------
 
 /**
  * The AI's self-reported confidence in its translation.
@@ -62,7 +62,7 @@ export const CONFIDENCE_SCORE: Record<TranslationConfidence, number> = {
 };
 
 
-// ─── Translation Options ──────────────────────────────────────────────────────
+// --- Translation Options ------------------------------------------------------
 
 /**
  * Options controlling the behaviour of a translation run.
@@ -100,7 +100,7 @@ export interface ITranslationOptions {
 
 	/**
 	 * Maximum units being translated simultaneously.
-	 * Keep low (2–4) — translation is compute-bound on the LLM side.
+	 * Keep low (2-4) -- translation is compute-bound on the LLM side.
 	 * Default: 3
 	 */
 	maxConcurrency: number;
@@ -133,7 +133,7 @@ export interface ITranslationOptions {
 
 	/**
 	 * Human-readable migration pattern label injected into the prompt for context.
-	 * e.g. 'COBOL batch programs → Java Spring Boot services'
+	 * e.g. 'COBOL batch programs -> Java Spring Boot services'
 	 */
 	migrationPatternLabel?: string;
 
@@ -148,7 +148,7 @@ export interface ITranslationOptions {
 	 * Whether to skip units whose dependencies have not all been translated yet.
 	 * When false, the AI is given a warning comment in the dependencies section
 	 * instead of translated code.
-	 * Default: false (translate anyway — AI will handle missing dep context)
+	 * Default: false (translate anyway -- AI will handle missing dep context)
 	 */
 	skipIfDependenciesUnresolved: boolean;
 }
@@ -167,7 +167,7 @@ export const DEFAULT_TRANSLATION_OPTIONS: Omit<ITranslationOptions, 'targetLangu
 };
 
 
-// ─── Verification ─────────────────────────────────────────────────────────────
+// --- Verification -------------------------------------------------------------
 
 export type VerificationSeverity = 'blocker' | 'warning' | 'info';
 
@@ -191,7 +191,7 @@ export interface ITranslationVerificationResult {
 }
 
 
-// ─── Parse Result ─────────────────────────────────────────────────────────────
+// --- Parse Result -------------------------------------------------------------
 
 /**
  * A decision raised by the AI during translation.
@@ -229,7 +229,7 @@ export interface ITranslationParseResult {
 }
 
 
-// ─── Translation Result ───────────────────────────────────────────────────────
+// --- Translation Result -------------------------------------------------------
 
 /**
  * The complete result of translating one knowledge unit.
@@ -258,14 +258,14 @@ export interface ITranslationResult {
 }
 
 
-// ─── Context ──────────────────────────────────────────────────────────────────
+// --- Context ------------------------------------------------------------------
 
 /**
  * The fully assembled context package passed to translationPromptBuilder.
  * Produced by translationContextBuilder.ts from IResolvedUnitContext + options.
  */
 export interface IBuiltTranslationContext {
-	// ── Unit identity ─────────────────────────────────────────────────────
+	// -- Unit identity -----------------------------------------------------
 	unitId: string;
 	unitName: string;
 	unitType: string;
@@ -274,11 +274,11 @@ export interface IBuiltTranslationContext {
 	riskLevel: RiskLevel;
 	domain?: string;
 
-	// ── Source ────────────────────────────────────────────────────────────
-	/** Resolved (dependency-expanded) source — may be trimmed to budget */
+	// -- Source ------------------------------------------------------------
+	/** Resolved (dependency-expanded) source -- may be trimmed to budget */
 	resolvedSource: string;
 
-	// ── Language pair profile ─────────────────────────────────────────────
+	// -- Language pair profile ---------------------------------------------
 	languagePairLabel: string;
 	targetFramework?: string;
 	targetTestFramework?: string;
@@ -287,7 +287,7 @@ export interface IBuiltTranslationContext {
 	conventionNotes: string;        // Formatted bullet list
 	warningPatternNotes: string;    // Formatted bullet list
 
-	// ── KB knowledge ──────────────────────────────────────────────────────
+	// -- KB knowledge ------------------------------------------------------
 	typeMappingContext: string;     // Formatted type-mapping decisions
 	namingContext: string;          // Formatted naming decisions
 	ruleInterpretationContext: string; // Formatted rule interpretations
@@ -299,7 +299,7 @@ export interface IBuiltTranslationContext {
 	migrationPatternLabel?: string; // Session-level migration pattern
 	targetConventions?: string;     // Project-specific conventions
 
-	// ── Budget ────────────────────────────────────────────────────────────
+	// -- Budget ------------------------------------------------------------
 	estimatedTokens: number;
 	wasBudgetTrimmed: boolean;
 	trimmedSections: string[];
@@ -310,7 +310,7 @@ export interface IBuiltTranslationContext {
 	 */
 	isSourceTruncated: boolean;
 
-	// ── Chunked translation ───────────────────────────────────────────────────
+	// -- Chunked translation ---------------------------------------------------
 	/**
 	 * Optional chunk-specific context header injected by the translation loop
 	 * when chunked translation is active. Placed before the source section in
@@ -318,7 +318,7 @@ export interface IBuiltTranslationContext {
 	 */
 	chunkHeader?: string;
 
-	// ── Tech debt & blocking context ──────────────────────────────────────────
+	// -- Tech debt & blocking context ------------------------------------------
 	/** Formatted tech debt items from static analysis (for AI awareness) */
 	techDebtSummary?: string;
 	/** Formatted locked/resolved decisions (prevents AI from re-raising them) */
@@ -330,7 +330,7 @@ export interface IBuiltTranslationContext {
 }
 
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+// --- Events -------------------------------------------------------------------
 
 /** Fired when a single unit's translation completes (any outcome). */
 export interface ITranslationUnitCompleteEvent {
@@ -365,7 +365,7 @@ export interface ITranslationBatchCompleteEvent {
 }
 
 
-// ─── Batch Summary ────────────────────────────────────────────────────────────
+// --- Batch Summary ------------------------------------------------------------
 
 export interface ITranslationBatchSummary {
 	totalUnits: number;
@@ -393,7 +393,7 @@ export interface ITranslationLanguagePairSummary {
 }
 
 
-// ─── Metrics ──────────────────────────────────────────────────────────────────
+// --- Metrics ------------------------------------------------------------------
 
 export interface ITranslationMetricsSnapshot {
 	totalAttempts: number;
@@ -404,7 +404,7 @@ export interface ITranslationMetricsSnapshot {
 	totalTokensUsed: number;
 	avgDurationMs: number;
 	avgTokensPerUnit: number;
-	/** Weighted average confidence score (0–3) across translated units */
+	/** Weighted average confidence score (0-3) across translated units */
 	avgConfidenceScore: number;
 	byLanguagePair: ITranslationLanguagePairMetrics[];
 	topBlockedUnits: Array<{ unitId: string; unitName: string; blockedReason: string }>;

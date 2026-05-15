@@ -38,7 +38,7 @@ import { IResolvedUnitContext } from '../types.js';
 import { getUnblockedDependencies } from './dependencies.js';
 
 
-// ─── Context resolution ───────────────────────────────────────────────────────
+// --- Context resolution -------------------------------------------------------
 
 /**
  * Assemble the full context for translating a unit.
@@ -69,7 +69,7 @@ export function getResolvedContext(
 }
 
 
-// ─── Decision scoping ─────────────────────────────────────────────────────────
+// --- Decision scoping ---------------------------------------------------------
 
 /**
  * Type-mapping decisions applicable to a unit:
@@ -124,7 +124,7 @@ function getPatternOverrides(
 }
 
 /**
- * The full scoped decision log for a unit — used by getDecisionsForUnit().
+ * The full scoped decision log for a unit -- used by getDecisionsForUnit().
  */
 export function getDecisionsForUnit(
 	unitId: string,
@@ -142,7 +142,7 @@ export function getDecisionsForUnit(
 }
 
 
-// ─── Interfaces of called units ───────────────────────────────────────────────
+// --- Interfaces of called units -----------------------------------------------
 
 /**
  * For each unit that this unit calls (dependsOn), return its translated interface if available.
@@ -161,7 +161,7 @@ function getCalledInterfaces(
 }
 
 
-// ─── Related business rules ───────────────────────────────────────────────────
+// --- Related business rules ---------------------------------------------------
 
 /**
  * Business rules extracted from units that:
@@ -196,7 +196,7 @@ function getRelatedRules(
 }
 
 
-// ─── Relevant glossary terms ──────────────────────────────────────────────────
+// --- Relevant glossary terms --------------------------------------------------
 
 /**
  * Glossary terms that appear in this unit's resolved source text.
@@ -213,7 +213,7 @@ function getRelevantGlossaryTerms(
 }
 
 
-// ─── Context text serialisers ─────────────────────────────────────────────────
+// --- Context text serialisers -------------------------------------------------
 
 /**
  * Serialise the decision log as a compact plain-text block for LLM injection.
@@ -232,13 +232,13 @@ export function exportDecisionsAsContext(
 	if (decisions.typeMapping.length > 0) {
 		lines.push('\nTYPE MAPPINGS:');
 		for (const d of decisions.typeMapping) {
-			lines.push(`  ${d.sourceType} → ${d.targetType}${d.rationale ? ` — ${d.rationale}` : ''}`);
+			lines.push(`  ${d.sourceType} -> ${d.targetType}${d.rationale ? ` -- ${d.rationale}` : ''}`);
 		}
 	}
 	if (decisions.naming.length > 0) {
 		lines.push('\nNAMING CONVENTIONS:');
 		for (const d of decisions.naming) {
-			lines.push(`  ${d.sourceName} → ${d.targetName} [${d.domain}]`);
+			lines.push(`  ${d.sourceName} -> ${d.targetName} [${d.domain}]`);
 		}
 	}
 	if (decisions.ruleInterpret.length > 0) {

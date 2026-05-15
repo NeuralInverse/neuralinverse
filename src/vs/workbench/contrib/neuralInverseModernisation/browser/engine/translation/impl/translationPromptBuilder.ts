@@ -17,7 +17,7 @@
  *
  * ```xml
  * <translation>
- * [full translated code here — no truncation, no ellipsis]
+ * [full translated code here -- no truncation, no ellipsis]
  * </translation>
  * <metadata>
  * {
@@ -54,7 +54,7 @@ import { LLMChatMessage } from '../../../../../void/common/sendLLMMessageTypes.j
 import { IBuiltTranslationContext, IVerificationCheck } from './translationTypes.js';
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// --- Main entry point ---------------------------------------------------------
 
 /**
  * Build the `LLMChatMessage[]` array for one translation attempt.
@@ -77,7 +77,7 @@ export function buildTranslationPrompt(
 }
 
 
-// ─── System message ───────────────────────────────────────────────────────────
+// --- System message -----------------------------------------------------------
 
 function buildSystemMessage(ctx: IBuiltTranslationContext): string {
 	const target = ctx.targetFramework
@@ -94,7 +94,7 @@ Your task is to translate source code from ${ctx.sourceLang.toUpperCase()} to ${
 
 ## Mandatory Output Format
 
-You MUST respond using EXACTLY this format — no prose before or after:
+You MUST respond using EXACTLY this format -- no prose before or after:
 
 <translation>
 [Complete translated code here. Do NOT truncate. Do NOT use ellipsis. Do NOT use placeholder comments like "// TODO: implement". The entire translated unit must appear here.]
@@ -102,13 +102,13 @@ You MUST respond using EXACTLY this format — no prose before or after:
 <metadata>
 {
   "confidence": "<high|medium|low|uncertain>",
-  "reasoning": "<1–3 sentence narrative: key decisions made, tricky patterns handled, why confidence is what it is>",
+  "reasoning": "<1-3 sentence narrative: key decisions made, tricky patterns handled, why confidence is what it is>",
   "decisionsRaised": [
     {
       "type": "<type-mapping|naming|rule-interpretation|approval|exclusion>",
       "priority": "<low|medium|high|blocking>",
       "question": "<the specific question you cannot answer without human input>",
-      "context": "<why you cannot decide this alone — reference the specific construct>",
+      "context": "<why you cannot decide this alone -- reference the specific construct>",
       "options": ["<option A>", "<option B>"]
     }
   ],
@@ -130,14 +130,14 @@ NEVER guess when raising a decision would be appropriate. It is better to raise 
 ## Confidence Levels
 
 - **high**: All constructs mapped cleanly, zero decisions raised, verified idiom coverage
-- **medium**: Minor ambiguities resolved reasonably, at most 1–2 low/medium decisions
+- **medium**: Minor ambiguities resolved reasonably, at most 1-2 low/medium decisions
 - **low**: Significant ambiguities, multiple decisions raised, or complex constructs
-- **uncertain**: Major constructs not translatable — blocking decisions raised
+- **uncertain**: Major constructs not translatable -- blocking decisions raised
 
 ## Translation Quality Requirements
 
-1. Produce COMPLETE code — every paragraph, method, procedure, function
-2. Preserve ALL business logic — every calculation, condition, loop, call
+1. Produce COMPLETE code -- every paragraph, method, procedure, function
+2. Preserve ALL business logic -- every calculation, condition, loop, call
 3. Use the EXACT type mappings and naming decisions from the context
 4. Use the EXACT method signatures from the calledInterfaces section
 5. Apply the idiom mappings from the construct mappings section
@@ -148,23 +148,23 @@ NEVER guess when raising a decision would be appropriate. It is better to raise 
 }
 
 
-// ─── User message ─────────────────────────────────────────────────────────────
+// --- User message -------------------------------------------------------------
 
 function buildUserMessage(ctx: IBuiltTranslationContext, attemptNum: number, failedChecks?: IVerificationCheck[]): string {
 	const sections: string[] = [];
 
-	// ── Unit identity ─────────────────────────────────────────────────────────
+	// -- Unit identity ---------------------------------------------------------
 	sections.push(buildIdentitySection(ctx));
 
-	// ── Chunk context (only present during chunked translation) ───────────────
+	// -- Chunk context (only present during chunked translation) ---------------
 	if (ctx.chunkHeader) {
 		sections.push(ctx.chunkHeader);
 	}
 
-	// ── Source code ───────────────────────────────────────────────────────────
+	// -- Source code -----------------------------------------------------------
 	sections.push(buildSourceSection(ctx));
 
-	// ── Established decisions ─────────────────────────────────────────────────
+	// -- Established decisions -------------------------------------------------
 	if (ctx.typeMappingContext) {
 		sections.push(ctx.typeMappingContext);
 	}
@@ -178,62 +178,62 @@ function buildUserMessage(ctx: IBuiltTranslationContext, attemptNum: number, fai
 		sections.push(ctx.patternOverrideContext);
 	}
 
-	// ── Tech debt summary ─────────────────────────────────────────────────────
+	// -- Tech debt summary -----------------------------------------------------
 	if (ctx.techDebtSummary) {
 		sections.push(ctx.techDebtSummary);
 	}
 
-	// ── Locked blocking decisions ─────────────────────────────────────────────
+	// -- Locked blocking decisions ---------------------------------------------
 	if (ctx.blockingDecisionsContext) {
 		sections.push(ctx.blockingDecisionsContext);
 	}
 
-	// ── Called interfaces ─────────────────────────────────────────────────────
+	// -- Called interfaces -----------------------------------------------------
 	if (ctx.calledInterfacesContext) {
 		sections.push(ctx.calledInterfacesContext);
 	}
 
-	// ── Dependency health ─────────────────────────────────────────────────────
+	// -- Dependency health -----------------------------------------------------
 	if (ctx.calledUnitHealthContext) {
 		sections.push(ctx.calledUnitHealthContext);
 	}
 
-	// ── Business rules ────────────────────────────────────────────────────────
+	// -- Business rules --------------------------------------------------------
 	if (ctx.businessRulesContext) {
 		sections.push(ctx.businessRulesContext);
 	}
 
-	// ── Glossary ──────────────────────────────────────────────────────────────
+	// -- Glossary --------------------------------------------------------------
 	if (ctx.glossaryContext) {
 		sections.push(ctx.glossaryContext);
 	}
 
-	// ── Construct mappings (idiom map) ────────────────────────────────────────
+	// -- Construct mappings (idiom map) ----------------------------------------
 	if (ctx.idiomMapSummary) {
 		sections.push(ctx.idiomMapSummary);
 	}
 
-	// ── Target conventions ────────────────────────────────────────────────────
+	// -- Target conventions ----------------------------------------------------
 	sections.push(buildConventionsSection(ctx));
 
-	// ── Context annotations (human notes) ────────────────────────────────────
+	// -- Context annotations (human notes) ------------------------------------
 	if (ctx.annotationContext) {
 		sections.push(ctx.annotationContext);
 	}
 
-	// ── Retry guidance ────────────────────────────────────────────────────────
+	// -- Retry guidance --------------------------------------------------------
 	if (attemptNum > 0) {
 		sections.push(buildRetrySection(attemptNum, failedChecks));
 	}
 
-	// ── Final instruction ─────────────────────────────────────────────────────
+	// -- Final instruction -----------------------------------------------------
 	sections.push(buildInstructionSection(ctx));
 
 	return sections.filter(s => s.trim().length > 0).join('\n\n');
 }
 
 
-// ─── Section builders ─────────────────────────────────────────────────────────
+// --- Section builders ---------------------------------------------------------
 
 function buildIdentitySection(ctx: IBuiltTranslationContext): string {
 	const lines = [
@@ -255,14 +255,14 @@ function buildIdentitySection(ctx: IBuiltTranslationContext): string {
 	lines.push(`- **Target Language**: ${ctx.targetLang.toUpperCase()}${ctx.targetFramework ? ` (${ctx.targetFramework})` : ''}`);
 
 	if (ctx.wasBudgetTrimmed && ctx.trimmedSections.length > 0) {
-		lines.push(`\n> ⚠ Token budget: the following sections were trimmed: ${ctx.trimmedSections.join(', ')}`);
+		lines.push(`\n>  Token budget: the following sections were trimmed: ${ctx.trimmedSections.join(', ')}`);
 	}
 
 	return lines.join('\n');
 }
 
 function buildSourceSection(ctx: IBuiltTranslationContext): string {
-	return `## Source Code (${ctx.sourceLang.toUpperCase()} — fully resolved with all dependencies inlined)
+	return `## Source Code (${ctx.sourceLang.toUpperCase()} -- fully resolved with all dependencies inlined)
 
 \`\`\`${ctx.sourceLang}
 ${ctx.resolvedSource}
@@ -281,7 +281,7 @@ function buildConventionsSection(ctx: IBuiltTranslationContext): string {
 	}
 
 	if (ctx.warningPatternNotes) {
-		parts.push(`## Warning Patterns — Raise Decisions For These\n${ctx.warningPatternNotes}`);
+		parts.push(`## Warning Patterns -- Raise Decisions For These\n${ctx.warningPatternNotes}`);
 	}
 
 	if (ctx.targetTestFramework) {
@@ -306,16 +306,16 @@ Fix ALL of the issues above, then:
 - If any construct cannot be translated, raise a decision rather than leaving a placeholder`;
 	}
 
-	return `## Retry Guidance (Attempt ${attemptNum + 1}) — FINAL ATTEMPT
+	return `## Retry Guidance (Attempt ${attemptNum + 1}) -- FINAL ATTEMPT
 
 Previous attempts have not produced a valid result.${failureDetail}
 
 This is the final attempt. Prioritise correctness over completeness:
-- Write the FULL translation — every method, class, and function
+- Write the FULL translation -- every method, class, and function
 - For any construct you are unsure about, write your best translation AND add a comment: \`// [UNCERTAIN: describe issue]\`
 - Raise a decision in the metadata for every uncertain construct
 - Set confidence to "low" or "uncertain" as appropriate
-- Do NOT truncate — it is better to produce low-confidence output than empty output`;
+- Do NOT truncate -- it is better to produce low-confidence output than empty output`;
 }
 
 /**
@@ -331,10 +331,10 @@ function buildFailureDetail(failedChecks?: IVerificationCheck[]): string {
 	const lines: string[] = ['\n\n**Specific failures to fix:**'];
 
 	for (const c of blockers) {
-		lines.push(`- ❌ [BLOCKER] ${c.name}: ${c.message ?? 'check failed'}`);
+		lines.push(`-  [BLOCKER] ${c.name}: ${c.message ?? 'check failed'}`);
 	}
 	for (const c of warnings) {
-		lines.push(`- ⚠ [WARNING] ${c.name}: ${c.message ?? 'check failed'}`);
+		lines.push(`-  [WARNING] ${c.name}: ${c.message ?? 'check failed'}`);
 	}
 
 	return lines.join('\n');

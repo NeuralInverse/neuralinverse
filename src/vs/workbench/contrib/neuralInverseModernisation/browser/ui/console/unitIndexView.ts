@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Unit Index View — Tab 1 of the Modernisation Console.
+ * Unit Index View -- Tab 1 of the Modernisation Console.
  *
  * Displays every unit in the knowledge base as a filterable, sortable,
  * paginated table. Each row expands inline to show source snippet,
@@ -32,7 +32,7 @@ import {
 	IPaginationState,
 } from './consoleHelpers.js';
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// --- State --------------------------------------------------------------------
 
 export interface IUnitIndexState {
 	search:       string;
@@ -68,7 +68,7 @@ function statusRank(s: UnitStatus): number { return STATUS_ORDER.indexOf(s) ?? 9
 function riskRank(r: RiskLevel):   number { return RISK_ORDER.indexOf(r) ?? 99; }
 
 
-// ─── Filter + sort + page ────────────────────────────────────────────────────
+// --- Filter + sort + page ----------------------------------------------------
 
 function applyFilters(units: IKnowledgeUnit[], state: IUnitIndexState): IKnowledgeUnit[] {
 	let result = units;
@@ -112,7 +112,7 @@ function applySort(units: IKnowledgeUnit[], state: IUnitIndexState): IKnowledgeU
 }
 
 
-// ─── Languages list ───────────────────────────────────────────────────────────
+// --- Languages list -----------------------------------------------------------
 
 function getLanguages(units: IKnowledgeUnit[]): string[] {
 	const langs = new Set<string>();
@@ -121,7 +121,7 @@ function getLanguages(units: IKnowledgeUnit[]): string[] {
 }
 
 
-// ─── Build ────────────────────────────────────────────────────────────────────
+// --- Build --------------------------------------------------------------------
 
 export function buildUnitIndexView(
 	kb: IKnowledgeBaseService,
@@ -143,22 +143,22 @@ export function buildUnitIndexView(
 
 	const allUnits = kb.getAllUnits();
 
-	// ── Filter bar ────────────────────────────────────────────────────────
+	// -- Filter bar --------------------------------------------------------
 	const filterBar = _buildFilterBar(allUnits, state, onRefresh);
 	root.appendChild(filterBar);
 
-	// ── Apply filters + sort ─────────────────────────────────────────────
+	// -- Apply filters + sort ---------------------------------------------
 	const filtered = applySort(applyFilters(allUnits, state), state);
 	const total     = filtered.length;
 	const page      = Math.min(state.page, Math.max(0, Math.ceil(total / PAGE_SIZE) - 1));
 	if (page !== state.page) { state.page = page; }
 	const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-	// ── Summary row ───────────────────────────────────────────────────────
+	// -- Summary row -------------------------------------------------------
 	const summaryRow = _buildSummaryRow(allUnits, filtered.length);
 	root.appendChild(summaryRow);
 
-	// ── Table ─────────────────────────────────────────────────────────────
+	// -- Table -------------------------------------------------------------
 	const tableWrap = $e('div', 'flex:1;overflow-y:auto;');
 	root.appendChild(tableWrap);
 
@@ -177,7 +177,7 @@ export function buildUnitIndexView(
 		tableWrap.appendChild(table);
 	}
 
-	// ── Pagination ────────────────────────────────────────────────────────
+	// -- Pagination --------------------------------------------------------
 	if (total > PAGE_SIZE) {
 		const paginState: IPaginationState = { page, pageSize: PAGE_SIZE, total };
 		root.appendChild($pagination(
@@ -191,7 +191,7 @@ export function buildUnitIndexView(
 }
 
 
-// ─── Filter bar ──────────────────────────────────────────────────────────────
+// --- Filter bar --------------------------------------------------------------
 
 function _buildFilterBar(
 	allUnits: IKnowledgeUnit[],
@@ -273,7 +273,7 @@ function _buildFilterBar(
 }
 
 
-// ─── Summary row ─────────────────────────────────────────────────────────────
+// --- Summary row -------------------------------------------------------------
 
 function _buildSummaryRow(all: IKnowledgeUnit[], filteredCount: number): HTMLElement {
 	const byStatus: Partial<Record<UnitStatus, number>> = {};
@@ -311,7 +311,7 @@ function _buildSummaryRow(all: IKnowledgeUnit[], filteredCount: number): HTMLEle
 }
 
 
-// ─── Table ───────────────────────────────────────────────────────────────────
+// --- Table -------------------------------------------------------------------
 
 function _buildTable(
 	units:        IKnowledgeUnit[],
@@ -374,7 +374,7 @@ function _buildTable(
 }
 
 
-// ─── Unit row ─────────────────────────────────────────────────────────────────
+// --- Unit row -----------------------------------------------------------------
 
 function _buildUnitRow(
 	unit:         IKnowledgeUnit,
@@ -428,7 +428,7 @@ function _buildUnitRow(
 	row.appendChild(nameCell);
 
 	// Language
-	row.appendChild($t('span', unit.sourceLang?.toUpperCase() ?? '—', [
+	row.appendChild($t('span', unit.sourceLang?.toUpperCase() ?? '--', [
 		'font-size:10px', 'color:var(--vscode-descriptionForeground)',
 	].join(';')));
 
@@ -437,13 +437,13 @@ function _buildUnitRow(
 
 	// Deps count
 	const depCount = (unit.dependsOn?.length ?? 0);
-	row.appendChild($t('span', depCount > 0 ? String(depCount) : '—', [
+	row.appendChild($t('span', depCount > 0 ? String(depCount) : '--', [
 		'font-size:11px',
 		depCount > 0 ? 'color:var(--vscode-editor-foreground);' : 'color:var(--vscode-descriptionForeground);',
 	].join(';')));
 
 	// Updated
-	row.appendChild($t('span', unit.updatedAt ? relativeTime(unit.updatedAt) : '—', [
+	row.appendChild($t('span', unit.updatedAt ? relativeTime(unit.updatedAt) : '--', [
 		'font-size:10px', 'color:var(--vscode-descriptionForeground)',
 	].join(';')));
 
@@ -478,7 +478,7 @@ function _buildUnitRow(
 }
 
 
-// ─── Expanded detail ──────────────────────────────────────────────────────────
+// --- Expanded detail ----------------------------------------------------------
 
 function _buildExpandedDetail(
 	unit:      IKnowledgeUnit,
@@ -502,9 +502,9 @@ function _buildExpandedDetail(
 		return item;
 	};
 	meta.appendChild(metaItem('ID', unit.id));
-	meta.appendChild(metaItem('Type', unit.unitType ?? '—'));
-	meta.appendChild(metaItem('Domain', unit.domain ?? '—'));
-	meta.appendChild(metaItem('Phase', unit.phaseId ?? '—'));
+	meta.appendChild(metaItem('Type', unit.unitType ?? '--'));
+	meta.appendChild(metaItem('Domain', unit.domain ?? '--'));
+	meta.appendChild(metaItem('Phase', unit.phaseId ?? '--'));
 	if (unit.targetFile) { meta.appendChild(metaItem('Target', unit.targetFile)); }
 	detail.appendChild(meta);
 

@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Modernisation Knowledge Base — Core Types (Phase 0)
+ * # Modernisation Knowledge Base -- Core Types (Phase 0)
  *
  * The knowledge base is the agent's persistent working memory for the entire migration.
  * Everything the AI needs to translate a unit is here. Everything it learns is stored here.
- * Humans make decisions here once — those decisions propagate everywhere automatically.
+ * Humans make decisions here once -- those decisions propagate everywhere automatically.
  *
  * This is NOT a stats dashboard. It is a data platform queried and written by agents.
  *
@@ -39,10 +39,10 @@ import {
 } from './modernisationTypes.js';
 
 
-// ─── Unit Type ────────────────────────────────────────────────────────────────
+// --- Unit Type ----------------------------------------------------------------
 
 /**
- * The structural type of a unit — covers all source languages.
+ * The structural type of a unit -- covers all source languages.
  */
 export type UnitType =
 	// COBOL
@@ -86,7 +86,7 @@ export type UnitType =
 	| 'unknown';
 
 
-// ─── Unit Status ──────────────────────────────────────────────────────────────
+// --- Unit Status --------------------------------------------------------------
 
 /**
  * The lifecycle state of a knowledge unit.
@@ -95,26 +95,26 @@ export type UnitType =
 export type UnitStatus =
 	| 'pending'       // Discovered, not yet processed
 	| 'resolving'     // Dependencies being expanded inline
-	| 'ready'         // Resolved — ready for AI translation
+	| 'ready'         // Resolved -- ready for AI translation
 	| 'translating'   // Agent is actively working on this unit
 	| 'review'        // Draft complete, awaiting human review
-	| 'flagged'       // Fingerprint divergence — requires approval
+	| 'flagged'       // Fingerprint divergence -- requires approval
 	| 'approved'      // Translation approved, ready to commit
 	| 'committing'    // Being written to disk (in-flight commit operation)
 	| 'committed'     // Written to disk + committed to VCS
 	| 'validating'    // Equivalence test running
 	| 'validated'     // Equivalence test passed
-	| 'complete'      // All stages done — unit migration finished
+	| 'complete'      // All stages done -- unit migration finished
 	| 'skipped'       // Deliberately excluded (out of scope)
-	| 'blocked';      // Cannot proceed — human action required
+	| 'blocked';      // Cannot proceed -- human action required
 
 
-// ─── Risk Level ───────────────────────────────────────────────────────────────
+// --- Risk Level ---------------------------------------------------------------
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 
-// ─── Business Rules ───────────────────────────────────────────────────────────
+// --- Business Rules -----------------------------------------------------------
 
 /**
  * A plain-English business rule extracted from a unit.
@@ -127,14 +127,14 @@ export interface IBusinessRule {
 	preservationRequired: boolean;  // Must this rule survive unchanged in the translation?
 	involvedFields: string[];       // Source field names this rule operates on
 	extractedBy: 'ai' | 'human';
-	confidence: number;             // 0–1 (1 = human-confirmed)
+	confidence: number;             // 0-1 (1 = human-confirmed)
 }
 
 
-// ─── Unit Interface ───────────────────────────────────────────────────────────
+// --- Unit Interface -----------------------------------------------------------
 
 /**
- * The public interface of a translated unit — what other units call.
+ * The public interface of a translated unit -- what other units call.
  * Stored after translation so subsequent units can call it correctly.
  */
 export interface IUnitInterface {
@@ -150,7 +150,7 @@ export interface IUnitInterface {
 }
 
 
-// ─── Knowledge Unit — The Atom of Migration ───────────────────────────────────
+// --- Knowledge Unit -- The Atom of Migration -----------------------------------
 
 /**
  * A single translatable unit of the migration.
@@ -161,58 +161,58 @@ export interface IUnitInterface {
 export interface IKnowledgeUnit {
 	id: string;
 
-	// ── Source ──────────────────────────────────────────────────────────────
+	// -- Source --------------------------------------------------------------
 	sourceFile: string;             // Absolute path to source file
 	sourceRange: ICodeRange;        // Where in the file this unit starts/ends
 	sourceLang: string;             // 'cobol' | 'plsql' | 'rpg' | 'java' | 'typescript' | ...
 	sourceText: string;             // Raw source text (exactly as in file)
 	/**
 	 * Source with all dependencies (copybooks, imports, includes) expanded inline.
-	 * This is what the AI reads — a complete, self-contained unit.
-	 * Populated during the 'resolving' → 'ready' transition.
+	 * This is what the AI reads -- a complete, self-contained unit.
+	 * Populated during the 'resolving' -> 'ready' transition.
 	 */
 	resolvedSource: string;
 
-	// ── Identity ─────────────────────────────────────────────────────────────
+	// -- Identity -------------------------------------------------------------
 	name: string;                   // e.g. 'CALC-LATE-FEE', 'UserService.getUser'
 	unitType: UnitType;
 	riskLevel: RiskLevel;
 	domain?: string;                // Business domain this unit belongs to
 
-	// ── Relationships ────────────────────────────────────────────────────────
+	// -- Relationships --------------------------------------------------------
 	dependsOn: string[];            // IDs of units this unit calls/imports/copies
 	usedBy: string[];               // IDs of units that call/import/copy this unit
 	phaseId?: string;               // IMigrationPhase.id this unit belongs to
 
-	// ── What the AI knows ────────────────────────────────────────────────────
+	// -- What the AI knows ----------------------------------------------------
 	businessRules: IBusinessRule[];
 	fingerprint?: IComplianceFingerprint;
 
-	// ── Translation state ────────────────────────────────────────────────────
+	// -- Translation state ----------------------------------------------------
 	status: UnitStatus;
 	targetFile?: string;            // Absolute path to translated output file
 	targetRange?: ICodeRange;
 	targetText?: string;            // Draft or committed translated code
 	targetInterface?: IUnitInterface; // Public interface after translation (for callers)
 
-	// ── Verification ─────────────────────────────────────────────────────────
+	// -- Verification ---------------------------------------------------------
 	fingerprintComparison?: IFingerprintComparison;
 	equivalenceResult?: IEquivalenceResult;
 
-	// ── Approvals ────────────────────────────────────────────────────────────
+	// -- Approvals ------------------------------------------------------------
 	approvals: IApprovalRecord[];
 
-	// ── Blocked state ────────────────────────────────────────────────────────
+	// -- Blocked state --------------------------------------------------------
 	blockedReason?: string;         // Why is this unit blocked? (shown to human)
 	pendingDecisionId?: string;     // IPendingDecision.id that must be resolved first
 
-	// ── Metadata ─────────────────────────────────────────────────────────────
+	// -- Metadata -------------------------------------------------------------
 	createdAt: number;              // Unix timestamp (when this unit record was created)
 	updatedAt: number;              // Unix timestamp (last mutation)
 }
 
 
-// ─── Knowledge File ───────────────────────────────────────────────────────────
+// --- Knowledge File -----------------------------------------------------------
 
 /**
  * Metadata for a source file in the knowledge base.
@@ -230,7 +230,7 @@ export interface IKnowledgeFile {
 }
 
 
-// ─── Decision Log ─────────────────────────────────────────────────────────────
+// --- Decision Log -------------------------------------------------------------
 
 /**
  * The accumulated decisions made during the migration.
@@ -255,10 +255,10 @@ export interface ITypeMappingDecision {
 	appliesTo: string[];
 	decidedBy: string;              // User identity or 'ai'
 	decidedAt: number;
-	confidence: number;             // 0–1
+	confidence: number;             // 0-1
 }
 
-/** "WS-ACCT-BAL → accountBalance (domain: billing)" */
+/** "WS-ACCT-BAL -> accountBalance (domain: billing)" */
 export interface INamingDecision {
 	id: string;
 	sourceName: string;             // Original name as in source
@@ -290,7 +290,7 @@ export interface IExclusionDecision {
 	decidedAt: number;
 }
 
-/** "DBRT0010 is a utility — translate as a static helper, not a service" */
+/** "DBRT0010 is a utility -- translate as a static helper, not a service" */
 export interface IPatternOverride {
 	id: string;
 	pattern: string;                // Regex or exact name
@@ -304,7 +304,7 @@ export interface IPatternOverride {
 }
 
 
-// ─── Business Glossary ────────────────────────────────────────────────────────
+// --- Business Glossary --------------------------------------------------------
 
 /**
  * What the AI has learned about this specific codebase.
@@ -323,7 +323,7 @@ export interface IBusinessTerm {
 	domain: string;                 // e.g. 'billing', 'customer', 'settlement'
 	sourceLocs: string[];           // Unit IDs where this term appears
 	extractedBy: 'ai' | 'human';
-	confidence: number;             // 0–1
+	confidence: number;             // 0-1
 }
 
 /** A business domain extracted from the codebase */
@@ -344,7 +344,7 @@ export interface IRecognisedPattern {
 }
 
 
-// ─── Progress State ───────────────────────────────────────────────────────────
+// --- Progress State -----------------------------------------------------------
 
 export interface IProgressState {
 	totalUnits: number;
@@ -380,7 +380,7 @@ export interface IPendingDecision {
 }
 
 
-// ─── Audit Log ────────────────────────────────────────────────────────────────
+// --- Audit Log ----------------------------------------------------------------
 
 export type KnowledgeAuditEventType =
 	| 'unit-discovered'
@@ -420,12 +420,12 @@ export interface IKnowledgeAuditEntry {
 	actorId: string;                // User or 'ai' or 'system'
 	summary: string;                // One-line human-readable description
 	payload: Record<string, unknown>;
-	/** FNV-1a hash of previous entry — tamper-evident chain */
+	/** FNV-1a hash of previous entry -- tamper-evident chain */
 	previousEntryHash: string;
 }
 
 
-// ─── Top-Level Knowledge Base ─────────────────────────────────────────────────
+// --- Top-Level Knowledge Base -------------------------------------------------
 
 /**
  * The complete persistent knowledge workspace for a modernisation session.
@@ -448,7 +448,7 @@ export interface IModernisationKnowledgeBase {
 	/** All source files registered. Key = absolute file path */
 	files: Map<string, IKnowledgeFile>;
 
-	/** Accumulated decisions — type mappings, naming, rule interpretations */
+	/** Accumulated decisions -- type mappings, naming, rule interpretations */
 	decisions: IDecisionLog;
 
 	/** What the AI has extracted about this codebase */
@@ -464,7 +464,7 @@ export interface IModernisationKnowledgeBase {
 	ext: IKnowledgeBaseExtensions;
 }
 
-/** The current schema version — increment when breaking changes are made */
+/** The current schema version -- increment when breaking changes are made */
 export const KNOWLEDGE_BASE_VERSION = 1;
 
 /**
@@ -478,7 +478,7 @@ export interface IModernisationKnowledgeBaseJSON
 }
 
 
-// ─── Unit Locking ─────────────────────────────────────────────────────────────
+// --- Unit Locking -------------------------------------------------------------
 
 /**
  * A lock held on a unit by an agent or user for exclusive modification.
@@ -494,7 +494,7 @@ export interface IUnitLock {
 }
 
 
-// ─── Source Drift ─────────────────────────────────────────────────────────────
+// --- Source Drift -------------------------------------------------------------
 
 /**
  * Tracks the content hash + mtime of a source file at scan time.
@@ -526,7 +526,7 @@ export interface ISourceDriftAlert {
 }
 
 
-// ─── Decision Conflicts ───────────────────────────────────────────────────────
+// --- Decision Conflicts -------------------------------------------------------
 
 /**
  * A conflict between two or more decisions that map the same source concept differently.
@@ -545,7 +545,7 @@ export interface IDecisionConflict {
 }
 
 
-// ─── Unit Annotations ─────────────────────────────────────────────────────────
+// --- Unit Annotations ---------------------------------------------------------
 
 export type AnnotationKind =
 	| 'review-note'          // Human reviewer note for the next person who looks at this unit
@@ -569,11 +569,11 @@ export interface IUnitAnnotation {
 }
 
 
-// ─── Unit Tags ────────────────────────────────────────────────────────────────
+// --- Unit Tags ----------------------------------------------------------------
 
 /**
  * A custom label applied to units for ad-hoc grouping and filtering.
- * Unit ↔ tag membership is managed by the annotation store (unitTags index).
+ * Unit <-> tag membership is managed by the annotation store (unitTags index).
  */
 export interface IUnitTag {
 	id:        string;    // Unique tag ID
@@ -583,7 +583,7 @@ export interface IUnitTag {
 }
 
 
-// ─── Compliance Gates ─────────────────────────────────────────────────────────
+// --- Compliance Gates ---------------------------------------------------------
 
 /**
  * Result of a compliance gate check for a unit.
@@ -615,7 +615,7 @@ export interface IComplianceRequirement {
 }
 
 
-// ─── Checkpoints ──────────────────────────────────────────────────────────────
+// --- Checkpoints --------------------------------------------------------------
 
 /**
  * Lightweight metadata for a KB checkpoint.
@@ -633,10 +633,10 @@ export interface IKnowledgeBaseCheckpoint {
 }
 
 
-// ─── Velocity ─────────────────────────────────────────────────────────────────
+// --- Velocity -----------------------------------------------------------------
 
 /**
- * A single velocity data point — how many units were completed in a time window.
+ * A single velocity data point -- how many units were completed in a time window.
  */
 export interface IVelocityDataPoint {
 	recordedAt:     number;   // Unix timestamp (end of measurement window)
@@ -668,7 +668,7 @@ export interface IVelocityMetrics {
 }
 
 
-// ─── KB Health ────────────────────────────────────────────────────────────────
+// --- KB Health ----------------------------------------------------------------
 
 export type HealthIssueType =
 	| 'orphaned-unit-ref'         // File references a unitId that doesn't exist in the units map
@@ -706,11 +706,11 @@ export interface IKBHealthReport {
 }
 
 
-// ─── Work Package ────────────────────────────────────────────────────────────
+// --- Work Package ------------------------------------------------------------
 
 /**
  * An ad-hoc collection of units assigned to a team member or sprint.
- * Independent of phases — pure organisational grouping.
+ * Independent of phases -- pure organisational grouping.
  * A unit can belong to at most one work package at a time.
  */
 export interface IWorkPackage {
@@ -726,7 +726,7 @@ export interface IWorkPackage {
 }
 
 
-// ─── Stale Unit Report ────────────────────────────────────────────────────────
+// --- Stale Unit Report --------------------------------------------------------
 
 export interface IStaleUnitReport {
 	unitId:         string;
@@ -737,46 +737,46 @@ export interface IStaleUnitReport {
 }
 
 
-// ─── Extended Knowledge Base ──────────────────────────────────────────────────
+// --- Extended Knowledge Base --------------------------------------------------
 
 /**
  * Production extension data stored alongside the core KB.
- * Uses only JSON-serializable types (no Maps/Sets — those exist in impl-layer stores).
+ * Uses only JSON-serializable types (no Maps/Sets -- those exist in impl-layer stores).
  *
- * Lifecycle: loaded from KB ext on init → each impl module builds its in-memory
- * store from these values → on save, stores are serialised back here.
+ * Lifecycle: loaded from KB ext on init -> each impl module builds its in-memory
+ * store from these values -> on save, stores are serialised back here.
  */
 export interface IKnowledgeBaseExtensions {
-	// ── Source drift ─────────────────────────────────────────────────────
-	/** Baseline file versions (filePath → ISourceFileVersion) */
+	// -- Source drift -----------------------------------------------------
+	/** Baseline file versions (filePath -> ISourceFileVersion) */
 	sourceVersions:   Record<string, ISourceFileVersion>;
-	/** Active drift alerts (alertId → ISourceDriftAlert) */
+	/** Active drift alerts (alertId -> ISourceDriftAlert) */
 	driftAlerts:      Record<string, ISourceDriftAlert>;
 
-	// ── Decision conflicts ────────────────────────────────────────────────
+	// -- Decision conflicts ------------------------------------------------
 	/** All detected decision conflicts */
 	decisionConflicts: IDecisionConflict[];
 
-	// ── Annotations & tags ────────────────────────────────────────────────
+	// -- Annotations & tags ------------------------------------------------
 	/** All unit annotations */
 	annotations:      IUnitAnnotation[];
 	/** All defined tags */
 	tags:             IUnitTag[];
-	/** Unit ↔ tag membership (unitId → tagId[]) */
+	/** Unit <-> tag membership (unitId -> tagId[]) */
 	unitTags:         Record<string, string[]>;
 
-	// ── Compliance gates ──────────────────────────────────────────────────
-	/** Most recent gate result per unit (unitId → result) */
+	// -- Compliance gates --------------------------------------------------
+	/** Most recent gate result per unit (unitId -> result) */
 	gateResults:      Record<string, IComplianceGateResult>;
 
-	// ── Work packages ─────────────────────────────────────────────────────
+	// -- Work packages -----------------------------------------------------
 	/** All work packages */
 	workPackages:     IWorkPackage[];
 
-	// ── Velocity ──────────────────────────────────────────────────────────
+	// -- Velocity ----------------------------------------------------------
 	velocityDataPoints: IVelocityDataPoint[];
 
-	// ── Health check ──────────────────────────────────────────────────────
+	// -- Health check ------------------------------------------------------
 	lastHealthCheck?: IKBHealthReport;
 }
 

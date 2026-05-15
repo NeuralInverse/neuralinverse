@@ -18,11 +18,11 @@
 import { IWorkPackage } from '../../../common/knowledgeBaseTypes.js';
 import { makeId } from './helpers.js';
 
-// ─── Work package store ───────────────────────────────────────────────────────
+// --- Work package store -------------------------------------------------------
 
 export interface IWorkPackageStore {
-	packages: Map<string, IWorkPackage>;  // pkgId → package
-	unitIndex: Map<string, string>;        // unitId → pkgId (1:1)
+	packages: Map<string, IWorkPackage>;  // pkgId -> package
+	unitIndex: Map<string, string>;        // unitId -> pkgId (1:1)
 }
 
 export function createWorkPackageStore(): IWorkPackageStore {
@@ -32,7 +32,7 @@ export function createWorkPackageStore(): IWorkPackageStore {
 	};
 }
 
-// ─── CRUD ─────────────────────────────────────────────────────────────────────
+// --- CRUD ---------------------------------------------------------------------
 
 export function createWorkPackage(
 	store: IWorkPackageStore,
@@ -102,7 +102,7 @@ export function deleteWorkPackage(
 	store.packages.delete(id);
 }
 
-// ─── Unit assignment ──────────────────────────────────────────────────────────
+// --- Unit assignment ----------------------------------------------------------
 
 export function addUnitToWorkPackage(
 	store: IWorkPackageStore,

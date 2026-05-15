@@ -15,10 +15,10 @@
  * ```
  * {
  *   meta:            export metadata (sessionId, exportedAt, exportedBy, ...)
- *   auditEntries:    IKnowledgeAuditEntry[] — the full chain
+ *   auditEntries:    IKnowledgeAuditEntry[] -- the full chain
  *   unitSummaries:   per-unit migration summary (status, approvals, equivalence)
  *   decisionSummary: aggregate counts of each decision type
- *   integrity:       hash of this bundle — verify with verifyAuditBundleIntegrity()
+ *   integrity:       hash of this bundle -- verify with verifyAuditBundleIntegrity()
  * }
  * ```
  *
@@ -38,7 +38,7 @@ import {
 import { IApprovalRecord, IEquivalenceResult } from '../../../../common/modernisationTypes.js';
 
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 export interface IAuditBundleOptions {
 	/** Identity label of the person / system triggering the export */
@@ -58,7 +58,7 @@ export interface IAuditBundleUnitSummary {
 	domain?:           string;
 	status:            string;
 	approvalCount:     number;
-	/** Summarised equivalence result — present when validation ran */
+	/** Summarised equivalence result -- present when validation ran */
 	equivalence?:      IAuditBundleEquivalenceSummary;
 	createdAt:         number;
 	updatedAt:         number;
@@ -106,11 +106,11 @@ export interface IAuditBundle {
 	integrity:        IAuditBundleIntegrity;
 }
 
-/** Current schema version — increment on breaking changes */
+/** Current schema version -- increment on breaking changes */
 const BUNDLE_SCHEMA_VERSION = 1;
 
 
-// ─── FNV-1a hash (32-bit) ────────────────────────────────────────────────────
+// --- FNV-1a hash (32-bit) ----------------------------------------------------
 
 function _fnv1a(str: string): string {
 	let h = 0x811c9dc5 >>> 0;
@@ -122,11 +122,11 @@ function _fnv1a(str: string): string {
 }
 
 
-// ─── Bundle builder ──────────────────────────────────────────────────────────
+// --- Bundle builder ----------------------------------------------------------
 
 /**
  * Build a complete `IAuditBundle` from the current KB state.
- * This is a pure in-memory operation — nothing is written to disk here.
+ * This is a pure in-memory operation -- nothing is written to disk here.
  */
 export function exportAuditBundle(
 	kb:      IKnowledgeBaseService,
@@ -136,13 +136,13 @@ export function exportAuditBundle(
 	const unitsFilter    = options.exportedUnitsFilter ?? 'terminal';
 	const TERMINAL_STATUSES = new Set(['validated', 'committed', 'complete', 'approved', 'skipped']);
 
-	// ── Audit entries ───────────────────────────────────────────────────────
+	// -- Audit entries -------------------------------------------------------
 	const auditEntries = kb.getAuditLog();
 
-	// ── Chain integrity ─────────────────────────────────────────────────────
+	// -- Chain integrity -----------------------------------------------------
 	const chainResult = kb.verifyAuditLogIntegrity();
 
-	// ── Unit summaries ───────────────────────────────────────────────────────
+	// -- Unit summaries -------------------------------------------------------
 	let allUnits = kb.getAllUnits();
 	if (unitsFilter === 'terminal') {
 		allUnits = allUnits.filter(u => TERMINAL_STATUSES.has(u.status));
@@ -151,7 +151,7 @@ export function exportAuditBundle(
 		_buildUnitSummary(u),
 	);
 
-	// ── Decision summary ─────────────────────────────────────────────────────
+	// -- Decision summary -----------------------------------------------------
 	const decisions = kb.getDecisions();
 	const decisionSummary: IAuditBundleDecisionSummary = {
 		typeMappings:        decisions.typeMapping.length,
@@ -161,14 +161,14 @@ export function exportAuditBundle(
 		patternOverrides:    decisions.patternOverrides.length,
 	};
 
-	// ── Bundle hash ──────────────────────────────────────────────────────────
+	// -- Bundle hash ----------------------------------------------------------
 	// Canonicalise: sort entries by id, JSON-stringify, hash
 	const canonicalEntriesJson = JSON.stringify(
 		[...auditEntries].sort((a, b) => a.id.localeCompare(b.id)),
 	);
 	const bundleHash = _fnv1a(canonicalEntriesJson);
 
-	// ── Assemble ─────────────────────────────────────────────────────────────
+	// -- Assemble -------------------------------------------------------------
 	const sessionId = kb.isActive ? kb.kb.sessionId : 'unknown';
 
 	return {
@@ -214,7 +214,7 @@ function _buildUnitSummary(u: IKnowledgeUnit): IAuditBundleUnitSummary {
 }
 
 
-// ─── Serialisation ────────────────────────────────────────────────────────────
+// --- Serialisation ------------------------------------------------------------
 
 /** Serialise a bundle to an indented JSON string (safe to write to disk). */
 export function formatAuditBundleAsJson(bundle: IAuditBundle): string {
@@ -222,14 +222,14 @@ export function formatAuditBundleAsJson(bundle: IAuditBundle): string {
 }
 
 
-// ─── Verification ─────────────────────────────────────────────────────────────
+// --- Verification -------------------------------------------------------------
 
 /**
  * Verify that a bundle has not been tampered with since export.
  *
  * Checks:
  * 1. `integrity.bundleHash` matches the recomputed hash of `auditEntries`.
- * 2. `integrity.chainValid` flag — informational (reflects state at export time).
+ * 2. `integrity.chainValid` flag -- informational (reflects state at export time).
  */
 export function verifyAuditBundleIntegrity(bundle: IAuditBundle): { valid: boolean; message: string } {
 	const canonical = JSON.stringify(
@@ -240,7 +240,7 @@ export function verifyAuditBundleIntegrity(bundle: IAuditBundle): { valid: boole
 	if (recomputed !== bundle.integrity.bundleHash) {
 		return {
 			valid: false,
-			message: `Bundle hash mismatch — expected ${bundle.integrity.bundleHash}, got ${recomputed}. Entries may have been modified.`,
+			message: `Bundle hash mismatch -- expected ${bundle.integrity.bundleHash}, got ${recomputed}. Entries may have been modified.`,
 		};
 	}
 

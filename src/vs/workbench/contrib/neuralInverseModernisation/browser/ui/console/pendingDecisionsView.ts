@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Pending Decisions View — Tab 2 of the Modernisation Console.
+ * Pending Decisions View -- Tab 2 of the Modernisation Console.
  *
  * Shows every unanswered IPendingDecision sorted by priority (blocking first).
  * Each card has:
@@ -15,7 +15,7 @@
  *  - Context (collapsible if > 200 chars)
  *  - Suggested options as clickable chips (if decision.options is set)
  *  - Inline answer form: textarea pre-populated from selected option
- *  - Submit button → calls tools.answerDecision()
+ *  - Submit button -> calls tools.answerDecision()
  *  - Per-decision hint explaining the expected answer format for the decision type
  */
 
@@ -28,7 +28,7 @@ import {
 	truncate, relativeTime,
 } from './consoleHelpers.js';
 
-// ─── Priority sort order ──────────────────────────────────────────────────────
+// --- Priority sort order ------------------------------------------------------
 
 const PRIORITY_ORDER = ['blocking', 'high', 'medium', 'low'];
 
@@ -36,7 +36,7 @@ function priorityRank(p: string): number {
 	return PRIORITY_ORDER.indexOf(p) >= 0 ? PRIORITY_ORDER.indexOf(p) : 99;
 }
 
-// ─── Answer hint by decision type ────────────────────────────────────────────
+// --- Answer hint by decision type --------------------------------------------
 
 const ANSWER_HINTS: Record<string, string> = {
 	'type-mapping':        'Enter the target type name (e.g. "LocalDate" for a COBOL date field, or "BigDecimal" for COMP-3 PIC 9).',
@@ -48,7 +48,7 @@ const ANSWER_HINTS: Record<string, string> = {
 };
 
 
-// ─── Build ────────────────────────────────────────────────────────────────────
+// --- Build --------------------------------------------------------------------
 
 export function buildPendingDecisionsView(
 	kb:        IKnowledgeBaseService,
@@ -79,7 +79,7 @@ export function buildPendingDecisionsView(
 	if (decisions.length === 0) {
 		root.appendChild($emptyState(
 			'\u2713',
-			'All clear — no pending decisions',
+			'All clear -- no pending decisions',
 			'Every blocked unit has been unblocked. The AI agent can proceed with translation.',
 		));
 		return root;
@@ -98,7 +98,7 @@ export function buildPendingDecisionsView(
 }
 
 
-// ─── Decision card ────────────────────────────────────────────────────────────
+// --- Decision card ------------------------------------------------------------
 
 function _buildDecisionCard(
 	decision:   IPendingDecision,
@@ -117,7 +117,7 @@ function _buildDecisionCard(
 				: '',
 	].join(';'));
 
-	// ── Card header ───────────────────────────────────────────────────────
+	// -- Card header -------------------------------------------------------
 	const hdr = $e('div', [
 		'display:flex', 'align-items:center', 'flex-wrap:wrap', 'gap:6px',
 		'padding:8px 12px',
@@ -152,7 +152,7 @@ function _buildDecisionCard(
 
 	card.appendChild(hdr);
 
-	// ── Card body ─────────────────────────────────────────────────────────
+	// -- Card body ---------------------------------------------------------
 	const body = $e('div', 'padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--vscode-input-background);');
 
 	// Decision ID (small, monospace)

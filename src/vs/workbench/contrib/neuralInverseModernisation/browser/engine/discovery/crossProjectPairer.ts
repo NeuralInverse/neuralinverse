@@ -12,28 +12,28 @@
  *
  * ## Matching Strategy
  *
- * Pairings are scored 0–1 using a cascade of match strategies, highest
+ * Pairings are scored 0-1 using a cascade of match strategies, highest
  * confidence first. The first strategy that exceeds its threshold wins:
  *
  * | Strategy              | Threshold | Description                                                  |
  * |-----------------------|-----------|--------------------------------------------------------------|
  * | exact-name            | 1.00      | Identical unit names (after normalisation)                    |
  * | normalized-name       | 0.85      | Names match after case fold + separator removal              |
- * | token-overlap         | 0.60–0.80 | Jaccard similarity on camelCase / snake_case tokens ≥ 0.60   |
- * | file-path-structure   | 0.40–0.65 | Matching path segments (e.g. /service/Account → AccountSvc)  |
- * | complexity-match      | 0.25–0.45 | Same CC ± 15%, same LOC ± 20%, same param count              |
- * | heuristic             | 0.15–0.35 | Language-specific naming convention mapping                   |
+ * | token-overlap         | 0.60-0.80 | Jaccard similarity on camelCase / snake_case tokens >= 0.60   |
+ * | file-path-structure   | 0.40-0.65 | Matching path segments (e.g. /service/Account -> AccountSvc)  |
+ * | complexity-match      | 0.25-0.45 | Same CC +- 15%, same LOC +- 20%, same param count              |
+ * | heuristic             | 0.15-0.35 | Language-specific naming convention mapping                   |
  *
  * Only the highest-confidence match per source unit is returned.
  * Confidence < 0.20 pairings are suppressed.
  *
- * ## COBOL → Java / TypeScript Name Mapping
+ * ## COBOL -> Java / TypeScript Name Mapping
  *
  * COBOL paragraphs like `CALC-INTEREST-RATE` are mapped to camelCase candidates
  * `calcInterestRate`, `calculateInterestRate`, `calcInterest` via:
  *  1. Remove `PROGRAM-ID$` prefix
  *  2. Strip common COBOL suffixes: -RTN, -PROC, -PARA, -SUB
- *  3. Convert `HYPHEN-CASE` → `camelCase`
+ *  3. Convert `HYPHEN-CASE` -> `camelCase`
  *
  * ## Duplicate Resolution
  *
@@ -43,7 +43,7 @@
 
 import { ICrossProjectPairing, IProjectScanResult, IMigrationUnit, PairingMatchReason } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// --- Public API ---------------------------------------------------------------
 
 /**
  * Compute cross-project pairings between all source and target scan results.
@@ -70,8 +70,8 @@ export function pairProjects(
  *
  * Cardinality model:
  *  - Each SOURCE unit maps to at most ONE target (best match wins).
- *  - Multiple source units MAY map to the same target — this is correct for
- *    micro→mono migrations where many JS functions belong to one Java class.
+ *  - Multiple source units MAY map to the same target -- this is correct for
+ *    micro->mono migrations where many JS functions belong to one Java class.
  *
  * The old `claimed` map deduped by targetUnitId (one source per target).
  * That silently dropped every JS function after the first that matched a
@@ -86,7 +86,7 @@ export function pairProjectPair(
 	// Build target lookup structures
 	const targetIndex = buildTargetIndex(target.units);
 
-	// Track which SOURCE units have already been matched — each source gets
+	// Track which SOURCE units have already been matched -- each source gets
 	// at most one target (the best one). Multiple sources CAN share a target.
 	const sourceClaimed = new Set<string>();
 
@@ -103,13 +103,13 @@ export function pairProjectPair(
 }
 
 
-// ─── Index Building ───────────────────────────────────────────────────────────
+// --- Index Building -----------------------------------------------------------
 
 interface ITargetIndex {
-	byExact:      Map<string, IMigrationUnit>;    // exact name → unit
-	byNorm:       Map<string, IMigrationUnit[]>;  // normalised name → ALL units sharing that key
-	byTokenSet:   Map<string, IMigrationUnit[]>;  // each token → units containing it
-	byPathSeg:    Map<string, IMigrationUnit[]>;  // path segment → units
+	byExact:      Map<string, IMigrationUnit>;    // exact name -> unit
+	byNorm:       Map<string, IMigrationUnit[]>;  // normalised name -> ALL units sharing that key
+	byTokenSet:   Map<string, IMigrationUnit[]>;  // each token -> units containing it
+	byPathSeg:    Map<string, IMigrationUnit[]>;  // path segment -> units
 	units:        IMigrationUnit[];
 }
 
@@ -123,7 +123,7 @@ function buildTargetIndex(units: IMigrationUnit[]): ITargetIndex {
 		const name = unit.unitName;
 		byExact.set(name, unit);
 
-		// Store ALL units that share a normalised key — last-writer-wins was silently
+		// Store ALL units that share a normalised key -- last-writer-wins was silently
 		// dropping every unit after the first with the same normalised name.
 		const norm     = normaliseName(name);
 		const normList = byNorm.get(norm) ?? [];
@@ -147,7 +147,7 @@ function buildTargetIndex(units: IMigrationUnit[]): ITargetIndex {
 }
 
 
-// ─── Matching ─────────────────────────────────────────────────────────────────
+// --- Matching -----------------------------------------------------------------
 
 function findBestMatch(
 	srcUnit: IMigrationUnit,
@@ -157,13 +157,13 @@ function findBestMatch(
 ): ICrossProjectPairing | null {
 	const srcName = srcUnit.unitName;
 
-	// ── 1. Exact name ──────────────────────────────────────────────────────
+	// -- 1. Exact name ------------------------------------------------------
 	const exact = index.byExact.get(srcName);
 	if (exact) {
 		return makePairing(source, target, srcUnit, exact, 1.0, 'exact-name');
 	}
 
-	// ── 2. COBOL → camelCase/PascalCase candidates ─────────────────────────
+	// -- 2. COBOL -> camelCase/PascalCase candidates -------------------------
 	if (source.dominantLanguage === 'cobol') {
 		for (const candidate of cobolToCandidates(srcName)) {
 			const e2 = index.byExact.get(candidate);
@@ -179,7 +179,7 @@ function findBestMatch(
 		}
 	}
 
-	// ── 2b. JS/TS function → Java class candidates ─────────────────────────
+	// -- 2b. JS/TS function -> Java class candidates -------------------------
 	// JS microservices decompose to function-level units (createOrder, getOrder)
 	// while Java monoliths decompose to class-level (OrderService). Strip CRUD
 	// verb prefixes to expose the domain noun, then try exact + norm lookup.
@@ -198,14 +198,14 @@ function findBestMatch(
 		}
 	}
 
-	// ── 3. Normalised name ─────────────────────────────────────────────────
+	// -- 3. Normalised name -------------------------------------------------
 	const normSrc    = normaliseName(srcName);
 	const normedList = (index.byNorm.get(normSrc) ?? []).filter(u => u.id !== srcUnit.id);
 	if (normedList.length === 1) {
 		return makePairing(source, target, srcUnit, normedList[0], 0.85, 'normalized-name');
 	}
 	if (normedList.length > 1) {
-		// Multiple targets share the same normalised key — break ties by token overlap
+		// Multiple targets share the same normalised key -- break ties by token overlap
 		const best = _pickBestByTokenOverlap(srcName, normedList, srcUnit.id);
 		if (best) {
 			const conf = Math.min(0.85, 0.65 + best.score * 0.20);
@@ -213,7 +213,7 @@ function findBestMatch(
 		}
 	}
 
-	// ── 4. Token overlap ───────────────────────────────────────────────────
+	// -- 4. Token overlap ---------------------------------------------------
 	const srcTokens = new Set(tokenise(srcName));
 	// Collect candidate units via token index
 	const candidates = new Map<string, { unit: IMigrationUnit; sharedTokens: number }>();
@@ -225,9 +225,9 @@ function findBestMatch(
 		}
 	}
 
-	// Threshold: 0.45 instead of 0.60 — after the $-prefix fix COBOL paragraph
+	// Threshold: 0.45 instead of 0.60 -- after the $-prefix fix COBOL paragraph
 	// tokens are meaningful (e.g. ['open','account']) and a 0.60 Jaccard floor
-	// was too strict for 2–3 token names with partial overlap.
+	// was too strict for 2-3 token names with partial overlap.
 	const TOKEN_JACCARD_THRESHOLD = 0.45;
 	let bestToken: { unit: IMigrationUnit; score: number } | null = null;
 	for (const { unit, sharedTokens } of candidates.values()) {
@@ -241,7 +241,7 @@ function findBestMatch(
 		return makePairing(source, target, srcUnit, bestToken.unit, 0.45 + bestToken.score * 0.20, 'token-overlap');
 	}
 
-	// ── 5. File path structure ─────────────────────────────────────────────
+	// -- 5. File path structure ---------------------------------------------
 	const srcSegs = new Set(pathSegments(srcUnit.legacyFilePath));
 	let bestPath: { unit: IMigrationUnit; score: number } | null = null;
 	for (const seg of srcSegs) {
@@ -259,7 +259,7 @@ function findBestMatch(
 		return makePairing(source, target, srcUnit, bestPath.unit, 0.40 + bestPath.score * 0.25, 'file-path-structure');
 	}
 
-	// ── 6. Complexity match ────────────────────────────────────────────────
+	// -- 6. Complexity match ------------------------------------------------
 	if (srcUnit.legacyFingerprint) {
 		const complexityMatch = findComplexityMatch(srcUnit, index.units);
 		if (complexityMatch) {
@@ -297,7 +297,7 @@ function findComplexityMatch(srcUnit: IMigrationUnit, targets: IMigrationUnit[])
 	// We don't have CC here directly, so use regulated fields count as a proxy
 	const srcFields = srcUnit.legacyFingerprint?.regulatedFields.length ?? 0;
 
-	// Zero regulated fields provides no meaningful complexity signal — every
+	// Zero regulated fields provides no meaningful complexity signal -- every
 	// unit with 0 fields would match every other, causing massive false positives.
 	if (srcFields === 0) { return null; }
 
@@ -317,7 +317,7 @@ function findComplexityMatch(srcUnit: IMigrationUnit, targets: IMigrationUnit[])
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 
 function makePairing(
 	source: IProjectScanResult,
@@ -341,12 +341,12 @@ function makePairing(
 /** Normalise a name: lowercase, strip separators, remove common suffixes. */
 function normaliseName(name: string): string {
 	return name
-		// COBOL units are named "PROGRAM$PARAGRAPH" — strip the program-name prefix
+		// COBOL units are named "PROGRAM$PARAGRAPH" -- strip the program-name prefix
 		// so the paragraph name (the useful semantic part) drives matching.
 		// Previous pattern was /\$[^$]*$/ which stripped from the LAST $ to the end,
-		// i.e. it kept the program prefix and discarded the paragraph name — wrong.
+		// i.e. it kept the program prefix and discarded the paragraph name -- wrong.
 		.replace(/^[^$]*\$/, '')
-		.replace(/[-_$.]|([A-Z])/g, (_, u) => u ? `_${u.toLowerCase()}` : '') // camelCase → snake
+		.replace(/[-_$.]|([A-Z])/g, (_, u) => u ? `_${u.toLowerCase()}` : '') // camelCase -> snake
 		.toLowerCase()
 		.replace(/[_\s]+/g, '')                         // strip separators
 		.replace(/(service|handler|controller|processor|manager|helper|util|utils|impl|bean|repository|repo|dao|svc|cmp|component|bo|entity|mapper|converter)$/i, '');
@@ -358,7 +358,7 @@ function tokenise(name: string): string[] {
 	// Strip the PROGRAM-NAME$ prefix for COBOL units so tokens come from the
 	// paragraph name, not from the (less useful) program name.
 	return name
-		.replace(/^[^$]*\$/, '')  // strip COBOL program-name prefix (was /\$[^$]*$/ — wrong direction)
+		.replace(/^[^$]*\$/, '')  // strip COBOL program-name prefix (was /\$[^$]*$/ -- wrong direction)
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
 		.split(/[-_$.\s]+/)
@@ -369,9 +369,9 @@ function tokenise(name: string): string[] {
 /** Extract meaningful path segments from a file URI.
  *
  * Handles:
- * - Standard path segments: /src/services/OrderService.java → ['orderservice']
- * - JS dot-notation filenames: order.service.js → ['order'] (service is a stop)
- * - camelCase/PascalCase splitting: OrderService → ['order', 'service'] → ['order']
+ * - Standard path segments: /src/services/OrderService.java -> ['orderservice']
+ * - JS dot-notation filenames: order.service.js -> ['order'] (service is a stop)
+ * - camelCase/PascalCase splitting: OrderService -> ['order', 'service'] -> ['order']
  *
  * This ensures `order.service.js` and `OrderService.java` share the segment
  * `'order'` for file-path-structure matching in cross-language migrations.
@@ -383,9 +383,9 @@ function pathSegments(filePath: string): string[] {
 		.filter(s => s.length > 0)
 		// Strip the last file extension (e.g. '.java', '.js', '.ts')
 		.map(s => s.replace(/\.[^.]+$/, ''))
-		// Split by remaining dots (e.g. 'order.service' → ['order', 'service'])
+		// Split by remaining dots (e.g. 'order.service' -> ['order', 'service'])
 		.flatMap(s => s.split('.'))
-		// Split camelCase/PascalCase (e.g. 'OrderService' → ['Order', 'Service'])
+		// Split camelCase/PascalCase (e.g. 'OrderService' -> ['Order', 'Service'])
 		.flatMap(s => s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').split(' '))
 		.map(s => s.toLowerCase())
 		.filter(s => s.length >= 2 && !PATH_STOP_SEGMENTS.has(s));
@@ -393,7 +393,7 @@ function pathSegments(filePath: string): string[] {
 
 /** Convert a COBOL name to likely target-language name candidates. */
 function cobolToCandidates(cobolName: string): string[] {
-	// Strip leading program-id prefix: PROG$PARA-NAME → PARA-NAME
+	// Strip leading program-id prefix: PROG$PARA-NAME -> PARA-NAME
 	const stripped = cobolName.includes('$') ? cobolName.split('$').slice(1).join('$') : cobolName;
 	// Remove common COBOL suffixes
 	const withoutSuffix = stripped.replace(/-(?:RTN|ROUTINE|PROC|PARA|SUB|SECT|SECTION|PROCESS|PROCESSING|CALC|CALCULATE)$/i, '');
@@ -431,12 +431,12 @@ function cobolToCandidates(cobolName: string): string[] {
  * camelCase and PascalCase variants so step 2b can match against the target index.
  *
  * Examples:
- *   createOrder     → ['Order', 'OrderService', 'OrderManager']  (exact candidates)
- *   getOrderById    → ['Order', 'OrderService']
- *   updateUserStatus → ['UserStatus', 'UserStatusService', 'User']
+ *   createOrder     -> ['Order', 'OrderService', 'OrderManager']  (exact candidates)
+ *   getOrderById    -> ['Order', 'OrderService']
+ *   updateUserStatus -> ['UserStatus', 'UserStatusService', 'User']
  */
 function jsToCandidates(funcName: string): string[] {
-	// Split camelCase into tokens: 'createOrderItem' → ['create', 'Order', 'Item']
+	// Split camelCase into tokens: 'createOrderItem' -> ['create', 'Order', 'Item']
 	const parts = funcName
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
@@ -446,7 +446,7 @@ function jsToCandidates(funcName: string): string[] {
 	const withoutVerb = JS_CRUD_VERBS.has(parts[0]?.toLowerCase()) ? parts.slice(1) : parts;
 	if (withoutVerb.length === 0) { return []; }
 
-	// Also strip trailing prepositions: 'getOrderById' → ['Order'] (strip 'By', 'Id')
+	// Also strip trailing prepositions: 'getOrderById' -> ['Order'] (strip 'By', 'Id')
 	const trimmedEnd = withoutVerb.filter(p => !JS_TRAILING_WORDS.has(p.toLowerCase()));
 	if (trimmedEnd.length === 0) { return []; }
 
@@ -488,7 +488,7 @@ const JS_TRAILING_WORDS = new Set([
 	'all', 'list', 'many', 'one', 'single',
 ]);
 
-// ─── Stop Word Sets ───────────────────────────────────────────────────────────
+// --- Stop Word Sets -----------------------------------------------------------
 
 const STOP_WORDS = new Set([
 	'the', 'and', 'or', 'in', 'of', 'to', 'is', 'it', 'for', 'at', 'by',

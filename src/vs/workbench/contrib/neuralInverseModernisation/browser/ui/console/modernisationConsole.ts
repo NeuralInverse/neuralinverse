@@ -4,16 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ModernisationConsole — 4-tab live console for the Migration and Validation stages.
+ * ModernisationConsole -- 4-tab live console for the Migration and Validation stages.
  *
  * Tabs:
- *   1. Unit Index       — filterable / sortable / paginated table of all KB units
- *   2. Pending Decisions — every unanswered IPendingDecision, inline answer form
- *   3. Decision Log     — 5 sub-tabs of recorded decisions (export/import JSON)
- *   4. Progress         — full progress dashboard: velocity, phases, risk, health
+ *   1. Unit Index       -- filterable / sortable / paginated table of all KB units
+ *   2. Pending Decisions -- every unanswered IPendingDecision, inline answer form
+ *   3. Decision Log     -- 5 sub-tabs of recorded decisions (export/import JSON)
+ *   4. Progress         -- full progress dashboard: velocity, phases, risk, health
  *
  * The class owns the top-level DOM node `domNode` which is appended once into the
- * Part container and never re-created — only its contents are replaced on `refresh()`.
+ * Part container and never re-created -- only its contents are replaced on `refresh()`.
  * Tab/filter state is stored as class fields so it survives re-renders.
  *
  * Usage:
@@ -49,7 +49,7 @@ import {
 } from '../twoWindowEditor/unitEditorView.js';
 import { $e, $t } from './consoleHelpers.js';
 
-// ─── Tab type ─────────────────────────────────────────────────────────────────
+// --- Tab type -----------------------------------------------------------------
 
 type ConsoleTab = 'unit-index' | 'pending' | 'decision-log' | 'progress';
 
@@ -61,28 +61,28 @@ const TAB_DEFS: Array<{ id: ConsoleTab; label: string }> = [
 ];
 
 
-// ─── Console class ────────────────────────────────────────────────────────────
+// --- Console class ------------------------------------------------------------
 
 export class ModernisationConsole {
 
-	/** The root DOM element — append this once into the parent container. */
+	/** The root DOM element -- append this once into the parent container. */
 	readonly domNode: HTMLElement;
 
-	// ── Persistent tab / filter state ─────────────────────────────────────
+	// -- Persistent tab / filter state -------------------------------------
 	private _activeTab:        ConsoleTab         = 'unit-index';
 	private _unitIndexState:   IUnitIndexState    = defaultUnitIndexState();
 	private _decisionLogState: IDecisionLogState  = defaultDecisionLogState();
 
-	// ── Editor state (Phase 8) ─────────────────────────────────────────────
+	// -- Editor state (Phase 8) ---------------------------------------------
 	/** When set, the content area shows the Unit Editor instead of the tab content. */
 	private _reviewingUnitId:  string | undefined;
 	private _editorState:      IUnitEditorState | undefined;
 
-	// ── Internal DOM refs ─────────────────────────────────────────────────
+	// -- Internal DOM refs -------------------------------------------------
 	private _tabBarEl:   HTMLElement;
 	private _contentEl:  HTMLElement;
 
-	// ── Event subscriptions ───────────────────────────────────────────────
+	// -- Event subscriptions -----------------------------------------------
 	private readonly _disposables = new DisposableStore();
 
 	constructor(
@@ -108,18 +108,18 @@ export class ModernisationConsole {
 		this.domNode.appendChild(this._tabBarEl);
 		this.domNode.appendChild(this._contentEl);
 
-		// Live updates — subscribe to KB change events
+		// Live updates -- subscribe to KB change events
 		this._disposables.add(this._kb.onDidChange(() => this.refresh()));
 		this._disposables.add(this._kb.onDidChangeUnitStatus(() => this.refresh()));
 		this._disposables.add(this._kb.onDidRaisePendingDecision(() => this.refresh()));
 		this._disposables.add(this._kb.onDidResolvePendingDecision(() => this.refresh()));
 
-		// Live updates — autonomy batch events (Progress tab autonomy section)
+		// Live updates -- autonomy batch events (Progress tab autonomy section)
 		if (this._autonomy) {
 			this._disposables.add(this._autonomy.onBatchStateChanged(() => this.refresh()));
 			this._disposables.add(this._autonomy.onUnitEscalated(() => this.refresh()));
 			this._disposables.add(this._autonomy.onEscalationResolved(() => this.refresh()));
-			// Throttle progress refreshes — unit-completed fires on every unit
+			// Throttle progress refreshes -- unit-completed fires on every unit
 			let _autonomyProgressTimer: ReturnType<typeof setTimeout> | null = null;
 			this._disposables.add(this._autonomy.onProgress(() => {
 				if (_autonomyProgressTimer !== null) { return; }
@@ -134,7 +134,7 @@ export class ModernisationConsole {
 		this.refresh();
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────
+	// --- Public API -------------------------------------------------------
 
 	/**
 	 * Re-renders the tab bar (badge counts) and the active tab's content.
@@ -166,7 +166,7 @@ export class ModernisationConsole {
 		this.refresh();
 	}
 
-	// ─── Tab bar ──────────────────────────────────────────────────────────
+	// --- Tab bar ----------------------------------------------------------
 
 	private _buildTabBar(): HTMLElement {
 		const bar = $e('div', [
@@ -242,9 +242,9 @@ export class ModernisationConsole {
 			'color:var(--vscode-descriptionForeground)',
 		].join(';'));
 		refreshBtn.textContent = '\u21bb Refresh';
-		refreshBtn.title = 'Refresh console — also re-detects committed units from the target folder';
+		refreshBtn.title = 'Refresh console -- also re-detects committed units from the target folder';
 		refreshBtn.addEventListener('click', () => {
-			// Re-sync KB with discovery result first (promotes pending→committed for
+			// Re-sync KB with discovery result first (promotes pending->committed for
 			// units that exist in the target folder), then re-render.
 			this._onResyncDiscovery?.();
 			this.refresh();
@@ -252,15 +252,15 @@ export class ModernisationConsole {
 		this._tabBarEl.appendChild(refreshBtn);
 	}
 
-	// ─── Content area ─────────────────────────────────────────────────────
+	// --- Content area -----------------------------------------------------
 
 	private _refreshContent(): void {
-		// Remove old content — but preserve the element itself
+		// Remove old content -- but preserve the element itself
 		while (this._contentEl.firstChild) { this._contentEl.removeChild(this._contentEl.firstChild); }
 
 		const onRefresh = () => this.refresh();
 
-		// ── Editor overlay (Phase 8) ─────────────────────────────────────
+		// -- Editor overlay (Phase 8) -------------------------------------
 		if (this._reviewingUnitId) {
 			const unitId = this._reviewingUnitId;
 
@@ -302,7 +302,7 @@ export class ModernisationConsole {
 			return;
 		}
 
-		// ── Normal tab bar visible ────────────────────────────────────────
+		// -- Normal tab bar visible ----------------------------------------
 		this._tabBarEl.style.display = '';
 
 		let view: HTMLElement;

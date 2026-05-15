@@ -19,7 +19,7 @@ const MS_PER_DAY = 86_400_000;
 const DEFAULT_WINDOW_DAYS = 7;
 const MAX_DATA_POINTS = 365; // Keep 1 year of daily data
 
-// ─── Velocity store ───────────────────────────────────────────────────────────
+// --- Velocity store -----------------------------------------------------------
 
 export interface IVelocityStore {
 	dataPoints: IVelocityDataPoint[];
@@ -29,7 +29,7 @@ export function createVelocityStore(): IVelocityStore {
 	return { dataPoints: [] };
 }
 
-// ─── Record ───────────────────────────────────────────────────────────────────
+// --- Record -------------------------------------------------------------------
 
 export function recordVelocityDataPoint(
 	store: IVelocityStore,
@@ -54,7 +54,7 @@ export function recordVelocityDataPoint(
 	}
 }
 
-// ─── Compute metrics ──────────────────────────────────────────────────────────
+// --- Compute metrics ----------------------------------------------------------
 
 export function getVelocityMetrics(
 	store: IVelocityStore,
@@ -81,7 +81,7 @@ export function getVelocityMetrics(
 	const n = windowPoints.length;
 
 	for (let i = 0; i < n; i++) {
-		const weight = i + 1; // 1..n, newest last → sort ascending by time
+		const weight = i + 1; // 1..n, newest last -> sort ascending by time
 		weightedSum += windowPoints[i].unitsPerDay * weight;
 		totalWeight += weight;
 	}

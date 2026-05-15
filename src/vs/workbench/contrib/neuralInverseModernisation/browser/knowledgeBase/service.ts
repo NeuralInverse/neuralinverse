@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * IKnowledgeBaseService — public interface consumed by agents, tools, and UI.
+ * IKnowledgeBaseService -- public interface consumed by agents, tools, and UI.
  *
  * Separated from the implementation so consumers only import the interface.
  * Implementation lives in KnowledgeBaseImpl.ts.
@@ -81,16 +81,16 @@ export {
 
 export { IPhaseProgress };
 
-// ─── Service decorator ────────────────────────────────────────────────────────
+// --- Service decorator --------------------------------------------------------
 
 export const IKnowledgeBaseService = createDecorator<IKnowledgeBaseService>('knowledgeBaseService');
 
-// ─── Interface ────────────────────────────────────────────────────────────────
+// --- Interface ----------------------------------------------------------------
 
 export interface IKnowledgeBaseService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ─────────────────────────────────────────────────────────────
+	// -- Events -------------------------------------------------------------
 
 	/** Fires on any mutation (debounced 400ms) */
 	readonly onDidChange: Event<void>;
@@ -101,7 +101,7 @@ export interface IKnowledgeBaseService {
 	/** Fires when a pending decision is resolved */
 	readonly onDidResolvePendingDecision: Event<string>;
 
-	// ── Lifecycle ──────────────────────────────────────────────────────────
+	// -- Lifecycle ----------------------------------------------------------
 
 	/**
 	 * Load (or create) the knowledge base for a session.
@@ -120,21 +120,21 @@ export interface IKnowledgeBaseService {
 	/** List all sessions that have persisted knowledge bases. */
 	listSessions(): IKnowledgeBaseSessionIndex;
 
-	// ── Batch mode ─────────────────────────────────────────────────────────
+	// -- Batch mode ---------------------------------------------------------
 
 	/**
-	 * Begin a batch operation — suspends per-mutation progress recalculation and
+	 * Begin a batch operation -- suspends per-mutation progress recalculation and
 	 * change event firing. Call batchEnd() when done.
 	 * Use when bulk-adding thousands of units (e.g. after Discovery scan).
 	 */
 	batchBegin(): void;
 	/**
-	 * End a batch operation — flushes deferred progress and fires onDidChange once.
+	 * End a batch operation -- flushes deferred progress and fires onDidChange once.
 	 * Must be paired with batchBegin().
 	 */
 	batchEnd(): void;
 
-	// ── Unit CRUD ──────────────────────────────────────────────────────────
+	// -- Unit CRUD ----------------------------------------------------------
 
 	addUnit(unit: IKnowledgeUnit): void;
 	addUnits(units: IKnowledgeUnit[]): void;
@@ -145,19 +145,19 @@ export interface IKnowledgeBaseService {
 	deleteUnit(unitId: string): void;
 	getAllUnits(): IKnowledgeUnit[];
 
-	// ── File registry ──────────────────────────────────────────────────────
+	// -- File registry ------------------------------------------------------
 
 	addFile(file: IKnowledgeFile): void;
-	/** Batch-add multiple files — more efficient than calling addFile() repeatedly */
+	/** Batch-add multiple files -- more efficient than calling addFile() repeatedly */
 	addFiles(files: IKnowledgeFile[]): void;
 	updateFile(path: string, patch: Partial<IKnowledgeFile>): void;
-	/** Remove a file record from the registry (units are NOT deleted — use deleteUnit() separately) */
+	/** Remove a file record from the registry (units are NOT deleted -- use deleteUnit() separately) */
 	deleteFile(path: string): void;
 	getFile(path: string): IKnowledgeFile | undefined;
 	getAllFiles(): IKnowledgeFile[];
 	getUnitsForFile(filePath: string): IKnowledgeUnit[];
 
-	// ── Unit source resolution ─────────────────────────────────────────────
+	// -- Unit source resolution ---------------------------------------------
 
 	/**
 	 * Set the resolved (dependency-expanded) source for a unit and transition it to 'ready'.
@@ -173,7 +173,7 @@ export interface IKnowledgeBaseService {
 	 */
 	revertUnit(unitId: string, reason: string, actor?: string): void;
 
-	// ── Translation recording ──────────────────────────────────────────────
+	// -- Translation recording ----------------------------------------------
 
 	recordTranslation(unitId: string, targetCode: string, targetFile: string, targetRange?: ICodeRange): void;
 	recordBusinessRule(unitId: string, rule: IBusinessRule): void;
@@ -188,14 +188,14 @@ export interface IKnowledgeBaseService {
 	recordInterface(unitId: string, iface: IUnitInterface): void;
 	addApproval(unitId: string, approval: IApprovalRecord): void;
 
-	// ── Status transitions ─────────────────────────────────────────────────
+	// -- Status transitions -------------------------------------------------
 
 	setUnitStatus(unitId: string, status: UnitStatus, reason?: string, actor?: string): void;
 	setUnitsStatus(unitIds: string[], status: UnitStatus, actor?: string): void;
 	flagBlocked(unitId: string, reason: string, pendingDecision: IPendingDecision): void;
 	markResolved(unitId: string, actor?: string): void;
 
-	// ── Decision recording ─────────────────────────────────────────────────
+	// -- Decision recording -------------------------------------------------
 
 	recordTypeMappingDecision(decision: ITypeMappingDecision): void;
 	recordNamingDecision(decision: INamingDecision): void;
@@ -217,11 +217,11 @@ export interface IKnowledgeBaseService {
 	getDecisionsForUnit(unitId: string): IDecisionLog;
 	/**
 	 * Check whether a file path or unit name matches any exclusion rule.
-	 * Quick lookup for agents — avoids creating units for excluded scope.
+	 * Quick lookup for agents -- avoids creating units for excluded scope.
 	 */
 	isExcluded(filePath: string, unitName?: string): boolean;
 
-	// ── Glossary & Domains ────────────────────────────────────────────────
+	// -- Glossary & Domains ------------------------------------------------
 
 	recordGlossaryTerm(term: IBusinessTerm): void;
 	recordGlossaryTerms(terms: IBusinessTerm[]): void;
@@ -236,7 +236,7 @@ export interface IKnowledgeBaseService {
 	/** Get all business rules extracted across all units for a given domain */
 	getBusinessRulesForDomain(domain: string): IBusinessRule[];
 
-	// ── Pending decisions ──────────────────────────────────────────────────
+	// -- Pending decisions --------------------------------------------------
 
 	addPendingDecision(decision: IPendingDecision): void;
 	resolvePendingDecision(decisionId: string, actor?: string): void;
@@ -244,7 +244,7 @@ export interface IKnowledgeBaseService {
 	getPendingDecisions(priority?: IPendingDecision['priority']): IPendingDecision[];
 	getPendingDecisionForUnit(unitId: string): IPendingDecision | undefined;
 
-	// ── Phase management ───────────────────────────────────────────────────
+	// -- Phase management ---------------------------------------------------
 
 	setPhases(phases: IMigrationPhase[]): void;
 	updatePhaseProgress(phaseId: string): void;
@@ -254,7 +254,7 @@ export interface IKnowledgeBaseService {
 	/** Get all phase progress snapshots */
 	getAllPhases(): IPhaseProgress[];
 
-	// ── Dependency graph ───────────────────────────────────────────────────
+	// -- Dependency graph ---------------------------------------------------
 
 	/**
 	 * Add a directed dependency edge: fromUnitId depends on toUnitId.
@@ -276,7 +276,7 @@ export interface IKnowledgeBaseService {
 	getTranslatableUnits(): IKnowledgeUnit[];
 	getNextUnit(options?: { riskLevel?: RiskLevel; domain?: string; language?: string }): IKnowledgeUnit | undefined;
 
-	// ── Query ──────────────────────────────────────────────────────────────
+	// -- Query --------------------------------------------------------------
 
 	getUnitsByStatus(status: UnitStatus): IKnowledgeUnit[];
 	getUnitsByRisk(risk: RiskLevel): IKnowledgeUnit[];
@@ -292,7 +292,7 @@ export interface IKnowledgeBaseService {
 	searchUnits(query: string): IKnowledgeUnit[];
 	filterUnits(criteria: IUnitFilterCriteria): IKnowledgeUnit[];
 
-	// ── Context assembly (for agents) ─────────────────────────────────────
+	// -- Context assembly (for agents) -------------------------------------
 
 	/**
 	 * Assemble everything an agent needs to translate unitId.
@@ -302,20 +302,20 @@ export interface IKnowledgeBaseService {
 	exportDecisionsAsContext(unitId?: string): string;
 	exportGlossaryAsContext(domain?: string): string;
 
-	// ── Progress & stats ──────────────────────────────────────────────────
+	// -- Progress & stats --------------------------------------------------
 
 	getProgress(): IProgressState;
 	getStats(): IKnowledgeBaseStats;
 	recomputeProgress(): void;
 
-	// ── Audit log ─────────────────────────────────────────────────────────
+	// -- Audit log ---------------------------------------------------------
 
 	getAuditLog(options?: { unitId?: string; limit?: number; offset?: number }): IKnowledgeAuditEntry[];
 	getAuditLogForUnit(unitId: string, limit?: number): IKnowledgeAuditEntry[];
-	/** Verify tamper-evident audit chain integrity — for compliance auditing */
+	/** Verify tamper-evident audit chain integrity -- for compliance auditing */
 	verifyAuditLogIntegrity(): { valid: boolean; firstBrokenIndex: number | null };
 
-	// ── Unit locking (multi-agent concurrency) ────────────────────────────
+	// -- Unit locking (multi-agent concurrency) ----------------------------
 
 	/**
 	 * Acquire an exclusive lock on a unit.
@@ -334,7 +334,7 @@ export interface IKnowledgeBaseService {
 	pruneExpiredLocks(): number;
 	getAllLocks(): IUnitLock[];
 
-	// ── Source drift detection ─────────────────────────────────────────────
+	// -- Source drift detection ---------------------------------------------
 
 	/**
 	 * Record the current content hash + mtime of a source file.
@@ -355,7 +355,7 @@ export interface IKnowledgeBaseService {
 	/** Returns all units whose source file has drifted */
 	getUnitsAffectedByDrift(): IKnowledgeUnit[];
 
-	// ── Decision conflict detection ────────────────────────────────────────
+	// -- Decision conflict detection ----------------------------------------
 
 	/**
 	 * Scan all type-mapping and naming decisions for conflicts
@@ -370,15 +370,15 @@ export interface IKnowledgeBaseService {
 	/** Compute which units are affected by a decision change / removal */
 	getDecisionImpact(decisionId: string, decisionType: IDecisionConflict['decisionType']): IDecisionImpactResult;
 
-	// ── Token-budget-aware context assembly ───────────────────────────────
+	// -- Token-budget-aware context assembly -------------------------------
 
 	/**
 	 * Assemble context for a unit, trimming content to fit maxTokens.
-	 * Priority order for truncation: relatedRules → glossaryTerms → resolvedSource (truncated last).
+	 * Priority order for truncation: relatedRules -> glossaryTerms -> resolvedSource (truncated last).
 	 */
 	getContextForBudget(unitId: string, maxTokens: number): IBudgetedUnitContext;
 
-	// ── Annotations ───────────────────────────────────────────────────────
+	// -- Annotations -------------------------------------------------------
 
 	/** Attach a free-text annotation to a unit (comments, reviewer notes, etc.) */
 	addAnnotation(unitId: string, content: string, author: string, kind?: IUnitAnnotation['kind']): IUnitAnnotation;
@@ -388,7 +388,7 @@ export interface IKnowledgeBaseService {
 	/** Get all annotations of a specific kind across all units */
 	getContextAnnotations(kind: IUnitAnnotation['kind']): IUnitAnnotation[];
 
-	// ── Tags ──────────────────────────────────────────────────────────────
+	// -- Tags --------------------------------------------------------------
 
 	createTag(tag: Omit<IUnitTag, 'id' | 'createdAt'>): IUnitTag;
 	addTagToUnit(unitId: string, tagId: string): void;
@@ -399,7 +399,7 @@ export interface IKnowledgeBaseService {
 	getUnitsByTag(tagId: string): IKnowledgeUnit[];
 	getTagsForUnit(unitId: string): IUnitTag[];
 
-	// ── Compliance gates ──────────────────────────────────────────────────
+	// -- Compliance gates --------------------------------------------------
 
 	/**
 	 * Run all compliance requirements against a unit before approval.
@@ -410,14 +410,14 @@ export interface IKnowledgeBaseService {
 	recordComplianceApproval(unitId: string, requirementId: string, approver: string, evidence?: string): void;
 	/**
 	 * Waive a specific compliance requirement for a unit.
-	 * A waived requirement is formally exempted — does not block the gate.
+	 * A waived requirement is formally exempted -- does not block the gate.
 	 * Must provide a documented reason for the audit trail.
 	 */
 	waiveComplianceRequirement(unitId: string, requirementId: string, waivedBy: string, reason: string): void;
 	/** All units that have a compliance gate in FAIL or PARTIAL state */
 	getComplianceGateFailures(): Array<{ unitId: string; result: IComplianceGateResult }>;
 
-	// ── Checkpoints / snapshots ───────────────────────────────────────────
+	// -- Checkpoints / snapshots -------------------------------------------
 
 	/**
 	 * Snapshot the current KB state under a named label.
@@ -430,7 +430,7 @@ export interface IKnowledgeBaseService {
 	restoreCheckpoint(checkpointId: string): Promise<void>;
 	deleteCheckpoint(checkpointId: string): void;
 
-	// ── Velocity tracking ─────────────────────────────────────────────────
+	// -- Velocity tracking -------------------------------------------------
 
 	/**
 	 * Record a data point for velocity calculation (called automatically by status transitions).
@@ -443,7 +443,7 @@ export interface IKnowledgeBaseService {
 	 */
 	getVelocityMetrics(windowDays?: number): IVelocityMetrics;
 
-	// ── Stale unit detection ──────────────────────────────────────────────
+	// -- Stale unit detection ----------------------------------------------
 
 	/**
 	 * Find units that have been stuck in a non-terminal status longer than thresholdMs.
@@ -451,7 +451,7 @@ export interface IKnowledgeBaseService {
 	 */
 	getStaleUnits(thresholdMs?: number): IStaleUnitReport[];
 
-	// ── Work packages ─────────────────────────────────────────────────────
+	// -- Work packages -----------------------------------------------------
 
 	/** Create an ad-hoc grouping of units (e.g. sprint / team member assignment) */
 	createWorkPackage(pkg: Omit<IWorkPackage, 'id' | 'createdAt'>): IWorkPackage;
@@ -466,7 +466,7 @@ export interface IKnowledgeBaseService {
 	/** All units belonging to a work package */
 	getUnitsByWorkPackage(pkgId: string): IKnowledgeUnit[];
 
-	// ── Unit splitting and merging ────────────────────────────────────────
+	// -- Unit splitting and merging ----------------------------------------
 
 	/**
 	 * Split a "god unit" into N sub-units.
@@ -481,20 +481,20 @@ export interface IKnowledgeBaseService {
 	 */
 	mergeUnits(unitIds: string[], merged: Omit<IKnowledgeUnit, 'id' | 'createdAt' | 'updatedAt'>): string;
 
-	// ── Export / Import ───────────────────────────────────────────────────
+	// -- Export / Import ---------------------------------------------------
 
 	/** Full KB export as a JSON string (for backup / handoff) */
 	exportKB(): string;
-	/** Import a full KB export — replaces the current KB. Creates a checkpoint first. */
+	/** Import a full KB export -- replaces the current KB. Creates a checkpoint first. */
 	importKB(json: string): Promise<void>;
 	/** Merge decisions from another KB export into this one (no unit overwrite) */
 	mergeDecisionsFrom(json: string): void;
 	/** Export only the decision log as a portable JSON string */
 	exportDecisions(): string;
-	/** Import decisions from an exportDecisions() payload — merges, skipping duplicates */
+	/** Import decisions from an exportDecisions() payload -- merges, skipping duplicates */
 	importDecisions(json: string): void;
 
-	// ── Health check ──────────────────────────────────────────────────────
+	// -- Health check ------------------------------------------------------
 
 	/**
 	 * Run a full KB integrity check:
@@ -510,12 +510,12 @@ export interface IKnowledgeBaseService {
 	getLastHealthCheck(): IKBHealthReport | undefined;
 	/**
 	 * Force a full in-memory index rebuild from the current KB state.
-	 * Admin / recovery method — use after manual data repairs or import operations.
+	 * Admin / recovery method -- use after manual data repairs or import operations.
 	 * Expensive on very large KBs (>50k units). Normal mutations stay indexed automatically.
 	 */
 	rebuildIndexes(): void;
 
-	// ── Cycle detection ───────────────────────────────────────────────────
+	// -- Cycle detection ---------------------------------------------------
 
 	/**
 	 * Detect circular dependency chains in the unit graph.
@@ -524,7 +524,7 @@ export interface IKnowledgeBaseService {
 	 */
 	findDependencyCycles(): string[][];
 
-	// ── Token estimation ──────────────────────────────────────────────────
+	// -- Token estimation --------------------------------------------------
 
 	/**
 	 * Rough token estimate for a string using the ~4 chars/token heuristic.

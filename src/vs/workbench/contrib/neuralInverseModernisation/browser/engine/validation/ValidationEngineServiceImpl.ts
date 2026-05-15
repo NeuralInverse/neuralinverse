@@ -32,12 +32,12 @@ import {
 export class ValidationEngineServiceImpl extends Disposable implements IValidationEngineService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// -- Events ----------------------------------------------------------------
 
 	private readonly _onProgress = this._register(new Emitter<IValidationBatchProgress>());
 	readonly onProgress: Event<IValidationBatchProgress> = this._onProgress.event;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// -- State -----------------------------------------------------------------
 
 	private _isRunning                              = false;
 	private _currentController: AbortController | null = null;
@@ -54,7 +54,7 @@ export class ValidationEngineServiceImpl extends Disposable implements IValidati
 		super();
 	}
 
-	// ── Batch API ─────────────────────────────────────────────────────────────
+	// -- Batch API -------------------------------------------------------------
 
 	async validateBatch(options: IBatchValidationOptions = {}): Promise<IValidationBatchMetrics> {
 		if (this._isRunning) {
@@ -110,14 +110,14 @@ export class ValidationEngineServiceImpl extends Disposable implements IValidati
 		}
 	}
 
-	// ── Schedule preview ──────────────────────────────────────────────────────
+	// -- Schedule preview ------------------------------------------------------
 
 	previewSchedule(options: IValidationOptions = {}): IValidationScheduleEntry[] {
 		const eligibleStatuses = options.eligibleStatuses ?? DEFAULT_VALIDATION_OPTIONS.eligibleStatuses;
 		return previewValidationSchedule(this._kb, eligibleStatuses);
 	}
 
-	// ── Override API ──────────────────────────────────────────────────────────
+	// -- Override API ----------------------------------------------------------
 
 	recordOverride(
 		unitId:          string,

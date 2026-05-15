@@ -71,7 +71,7 @@ import { IAISupplement } from './planning/planningTypes.js';
 import { getSectorProfile } from './sectorRegistry.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// --- Service Interface --------------------------------------------------------
 
 export const IMigrationPlannerService = createDecorator<IMigrationPlannerService>('modernisationMigrationPlanner');
 
@@ -98,7 +98,7 @@ export interface IMigrationPlannerService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// --- Implementation -----------------------------------------------------------
 
 class MigrationPlannerService extends Disposable implements IMigrationPlannerService {
 	readonly _serviceBrand: undefined;
@@ -115,7 +115,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 		pattern: MigrationPattern,
 		sessionId: string,
 	): Promise<IMigrationRoadmap> {
-		// ── Step 1: Deterministic base roadmap ────────────────────────────────
+		// -- Step 1: Deterministic base roadmap --------------------------------
 		const sectorProfile = getSectorProfile(pattern);
 		const sectorLabel = sectorProfile ? sectorProfile.label : 'General';
 		this._fire(`Analysing discovery results [sector: ${sectorLabel}] and building dependency graph...`);
@@ -134,11 +134,11 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 			`Sending to AI for semantic refinement...`
 		);
 
-		// ── Step 2: Build prompt (sector-aware) ──────────────────────────────
+		// -- Step 2: Build prompt (sector-aware) ------------------------------
 		const _prompt = this._buildPrompt(discovery, pattern, baseRoadmap);
 		void _prompt; // prompt prepared for future LLM integration
 
-		// ── Step 3: LLM call (not available in community edition) ─────────────
+		// -- Step 3: LLM call (not available in community edition) -------------
 		this._fire('Generating AI-refined migration roadmap...');
 		const aiResponse: string | undefined = undefined;
 
@@ -147,7 +147,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 			return baseRoadmap;
 		}
 
-		// ── Step 4: Parse AI response ─────────────────────────────────────────
+		// -- Step 4: Parse AI response -----------------------------------------
 		this._fire('Parsing AI supplement and applying overrides...');
 		const aiSupplement = this._parseAISupplement(aiResponse);
 
@@ -156,7 +156,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 			return baseRoadmap;
 		}
 
-		// ── Step 5: Rebuild with AI supplement ───────────────────────────────
+		// -- Step 5: Rebuild with AI supplement -------------------------------
 		this._fire('Rebuilding roadmap with AI refinements...');
 		const finalRoadmap = buildRoadmap({ discovery, pattern, sessionId, aiSupplement });
 
@@ -260,6 +260,20 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 			.map(([b, c]) => `  ${b}: ${c} units`)
 			.join('\n');
 
+		// Sample of high-risk units (max 30)
+		const highRiskUnits = discovery.sources
+			.flatMap(s => s.units)
+			.filter(u => u.riskLevel === 'critical' || u.riskLevel === 'high')
+			.slice(0, 30)
+			.map(u => {
+				const effort = discovery.sources
+					.flatMap(s => s.effortEstimates)
+					.find(e => e.unitId === u.id);
+				return `  { "id": "${u.id}", "name": "${u.unitName}", "risk": "${u.riskLevel}", ` +
+				       `"type": "${u.unitType}", "effortBand": "${effort?.effortBand ?? 'unknown'}" }`;
+			})
+			.join('\n');
+
 		// Sector-specific guidance injection
 		const sectorSection = sectorProfile
 			? `## Sector: ${sectorProfile.label}\n\nPrimary standards: ${sectorProfile.primaryStandards.join(', ')}\n\n${sectorProfile.aiGuidance}`
@@ -309,6 +323,9 @@ ${grcBaggage || '  None detected'}
 
 ## Migration Debt (GRC violations already in target code)
 ${grcDebt || '  None detected'}
+
+## High and Critical Risk Units (max 30)
+${highRiskUnits || '  (none)'}
 
 ## Your Task
 
@@ -380,11 +397,11 @@ Return a JSON object with the following structure. Do NOT include any text outsi
 	}
 
 
-	// ─── AI Response Parser ───────────────────────────────────────────────────
+	// --- AI Response Parser ---------------------------------------------------
 
 	private _parseAISupplement(response: string): IAISupplement | undefined {
 		try {
-			// Extract JSON block — handle markdown code fences
+			// Extract JSON block -- handle markdown code fences
 			const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/) ??
 			                  response.match(/(\{[\s\S]*\})/);
 			if (!jsonMatch) { return undefined; }
@@ -455,7 +472,7 @@ Return a JSON object with the following structure. Do NOT include any text outsi
 	}
 
 
-	// ─── Utility ──────────────────────────────────────────────────────────────
+	// --- Utility --------------------------------------------------------------
 
 	private _fire(msg: string): void {
 		this._onDidProgress.fire(msg);

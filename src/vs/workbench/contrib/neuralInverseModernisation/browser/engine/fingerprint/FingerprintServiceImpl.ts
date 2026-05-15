@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # FingerprintServiceImpl — Full Production Implementation
+ * # FingerprintServiceImpl -- Full Production Implementation
  *
  * Orchestrates the two-layer compliance fingerprint extraction pipeline.
  *
@@ -60,24 +60,24 @@ import { RiskLevel } from '../../../common/knowledgeBaseTypes.js';
 import { IPendingDecision } from '../../../common/knowledgeBaseTypes.js';
 
 
-// ─── Comparison Thresholds ────────────────────────────────────────────────────
+// --- Comparison Thresholds ----------------------------------------------------
 
-/** Below this match percentage → 'warning' result */
+/** Below this match percentage -> 'warning' result */
 const MATCH_WARNING_THRESHOLD = 90;
 
-/** Below this match percentage → 'blocked' result (requires compliance officer) */
+/** Below this match percentage -> 'blocked' result (requires compliance officer) */
 const MATCH_BLOCKED_THRESHOLD = 70;
 
 /** Unique prefix for pending decisions raised by the fingerprint comparison */
 const COMPARISON_DECISION_PREFIX = 'fp-cmp';
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// --- Implementation -----------------------------------------------------------
 
 export class FingerprintServiceImpl extends Disposable implements IFingerprintService {
 	readonly _serviceBrand: undefined;
 
-	// ── Progress Events (aggregated from current batch emitter) ───────────────
+	// -- Progress Events (aggregated from current batch emitter) ---------------
 	private readonly _onDidFingerprintUnit = this._register(new Emitter<IFingerprintUnitEvent>());
 	readonly onDidFingerprintUnit: Event<IFingerprintUnitEvent> = this._onDidFingerprintUnit.event;
 
@@ -87,12 +87,12 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 	private readonly _onDidCompleteBatch = this._register(new Emitter<IFingerprintBatchCompleteEvent>());
 	readonly onDidCompleteBatch: Event<IFingerprintBatchCompleteEvent> = this._onDidCompleteBatch.event;
 
-	// ── Internal State ────────────────────────────────────────────────────────
+	// -- Internal State --------------------------------------------------------
 	private readonly _cache = new FingerprintCache(10_000);
 	private readonly _scheduler = new FingerprintScheduler({ maxConcurrency: 3, maxRetries: 3, baseBackoffMs: 2000 });
 	private _batchRunning = false;
 
-	// ── Unit → cache key mapping (for invalidation) ───────────────────────────
+	// -- Unit -> cache key mapping (for invalidation) ---------------------------
 	private readonly _unitCacheKeys = new Map<string, Set<string>>();
 
 	constructor(
@@ -107,11 +107,11 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		}));
 
 		// Run schema migration in background at construction time
-		// (non-blocking — does not wait for result)
+		// (non-blocking -- does not wait for result)
 		void this.migrateSchema();
 	}
 
-	// ── Single-Unit: fingerprintKBUnit ────────────────────────────────────────
+	// -- Single-Unit: fingerprintKBUnit ----------------------------------------
 
 	async fingerprintKBUnit(unitId: string): Promise<IComplianceFingerprint> {
 		if (!this._kb.isActive) {
@@ -198,7 +198,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		return fingerprint;
 	}
 
-	// ── Single-Unit: compareKBUnit ────────────────────────────────────────────
+	// -- Single-Unit: compareKBUnit --------------------------------------------
 
 	async compareKBUnit(unitId: string): Promise<void> {
 		if (!this._kb.isActive) {
@@ -251,7 +251,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		}
 	}
 
-	// ── Raw Extraction: fingerprintSource ─────────────────────────────────────
+	// -- Raw Extraction: fingerprintSource -------------------------------------
 
 	async fingerprintSource(
 		unitId: string,
@@ -298,7 +298,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		return { fingerprint, llmExtractionComplete, fromCache: false };
 	}
 
-	// ── Cache Access ──────────────────────────────────────────────────────────
+	// -- Cache Access ----------------------------------------------------------
 
 	getCached(contentHash: string): IComplianceFingerprint | undefined {
 		return this._cache.get(contentHash);
@@ -316,7 +316,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		this._cache.invalidateUnit(unitId);
 	}
 
-	// ── Batch Fingerprinting ──────────────────────────────────────────────────
+	// -- Batch Fingerprinting --------------------------------------------------
 
 	async batchFingerprintKB(options: IBatchFingerprintOptions = {}): Promise<IBatchFingerprintResult> {
 		if (!this._kb.isActive) {
@@ -369,7 +369,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		this._scheduler.cancel();
 	}
 
-	// ── Schema Migration ──────────────────────────────────────────────────────
+	// -- Schema Migration ------------------------------------------------------
 
 	async migrateSchema(): Promise<number> {
 		if (!this._kb.isActive) {
@@ -404,7 +404,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		return scanResult.staleUnitIds.length;
 	}
 
-	// ── Fingerprint Comparison ────────────────────────────────────────────────
+	// -- Fingerprint Comparison ------------------------------------------------
 
 	private _compareFingerprints(
 		source: IComplianceFingerprint,
@@ -536,7 +536,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 	}
 
 	/**
-	 * Calculate a match percentage (0–100) based on how much of the source fingerprint
+	 * Calculate a match percentage (0-100) based on how much of the source fingerprint
 	 * is reproduced in the target.
 	 *
 	 * Weighting:
@@ -616,7 +616,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		return (intersection / union) > 0.60;
 	}
 
-	// ── Source Drift Handler ──────────────────────────────────────────────────
+	// -- Source Drift Handler --------------------------------------------------
 
 	private _handlePotentialSourceDrift(): void {
 		if (!this._kb.isActive) {
@@ -627,7 +627,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 		// specific drift events with file paths.
 	}
 
-	// ── Cache Key Tracking ────────────────────────────────────────────────────
+	// -- Cache Key Tracking ----------------------------------------------------
 
 	private _trackCacheKeyForUnit(unitId: string, cacheKey: string): void {
 		let keys = this._unitCacheKeys.get(unitId);

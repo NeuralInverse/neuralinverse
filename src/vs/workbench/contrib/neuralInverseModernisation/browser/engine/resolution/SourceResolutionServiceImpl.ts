@@ -28,13 +28,13 @@
  *
  * Two caches are shared across ALL units in a batch:
  *
- * - `ResolutionFileCache`: Maps file URI → file content string.
+ * - `ResolutionFileCache`: Maps file URI -> file content string.
  *   When CUSTMAST.cpy is referenced by 60 programs, we read it once and serve
  *   from cache for all 59 subsequent lookups.
  *
- * - `DependencyNameResolutionCache`: Maps dependency name → resolved file URI.
+ * - `DependencyNameResolutionCache`: Maps dependency name -> resolved file URI.
  *   Avoids rescanning directories to find the same copybook multiple times.
- *   Also stores negative results (null) — "CUSTMAST was looked for and not found".
+ *   Also stores negative results (null) -- "CUSTMAST was looked for and not found".
  *
  * Both caches are scoped to the batch. They are reset between batch runs to prevent
  * stale data from a previous project configuration.
@@ -48,7 +48,7 @@
  * ## Search Path Construction
  *
  * For each unit, search paths are built from:
- * 1. The unit's source file directory (always first — most local)
+ * 1. The unit's source file directory (always first -- most local)
  * 2. All unique directories found in the KB for the same project
  *    (units from the same project share search paths via the project root)
  * 3. Common "copy library" subdirectory conventions (handled inside each inliner)
@@ -87,7 +87,7 @@ import { ResolutionMetricsCollector, IResolutionMetricsSnapshot } from './impl/r
 import { routeResolution } from './resolutionRouter.js';
 
 
-// ─── Default Resolution Options ───────────────────────────────────────────────
+// --- Default Resolution Options -----------------------------------------------
 
 const DEFAULT_OPTIONS: Required<IResolutionOptions> = {
 	maxExpansionDepth:       20,
@@ -101,7 +101,7 @@ const DEFAULT_OPTIONS: Required<IResolutionOptions> = {
 };
 
 
-// ─── Progress Emit Thresholds ─────────────────────────────────────────────────
+// --- Progress Emit Thresholds -------------------------------------------------
 
 /** Emit batch progress after every N completed units */
 const PROGRESS_EMIT_UNIT_INTERVAL = 5;
@@ -111,12 +111,12 @@ const PROGRESS_EMIT_TIME_INTERVAL_MS = 2_000;
 const BATCH_POLL_INTERVAL_MS = 100;
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// --- Implementation -----------------------------------------------------------
 
 export class SourceResolutionServiceImpl extends Disposable implements ISourceResolutionService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ─────────────────────────────────────────────────────────────────
+	// -- Events -----------------------------------------------------------------
 	private readonly _onDidResolveUnit       = this._register(new Emitter<IResolutionUnitCompleteEvent>());
 	readonly onDidResolveUnit: Event<IResolutionUnitCompleteEvent> = this._onDidResolveUnit.event;
 
@@ -126,14 +126,14 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	private readonly _onDidCompleteBatch     = this._register(new Emitter<IResolutionBatchCompleteEvent>());
 	readonly onDidCompleteBatch: Event<IResolutionBatchCompleteEvent> = this._onDidCompleteBatch.event;
 
-	// ── Internal State ─────────────────────────────────────────────────────────
+	// -- Internal State ---------------------------------------------------------
 	private readonly _metrics      = new ResolutionMetricsCollector();
 	private _isBatchRunning        = false;
 	private _activeBatchPromise?   : Promise<IBatchResolutionSummary>;
 	/** The scheduler for the currently running batch (null when idle) */
 	private _activeScheduler?      : ResolutionScheduler;
 
-	// Shared across all units in a batch run — cleared between runs
+	// Shared across all units in a batch run -- cleared between runs
 	private _fileCache  = new ResolutionFileCache();
 	private _nameCache  = new DependencyNameResolutionCache();
 
@@ -151,7 +151,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Status ─────────────────────────────────────────────────────────────────
+	// -- Status -----------------------------------------------------------------
 
 	get isBatchRunning(): boolean {
 		return this._isBatchRunning;
@@ -166,7 +166,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Single Unit ────────────────────────────────────────────────────────────
+	// -- Single Unit ------------------------------------------------------------
 
 	async resolveUnit(unitId: string, options?: Partial<IResolutionOptions>): Promise<IUnitResolutionResult> {
 		const unit = this._kb.getUnit(unitId);
@@ -177,7 +177,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 		const opts = { ...DEFAULT_OPTIONS, ...options };
 
 		if (opts.skipAlreadyResolved && unit.resolvedSource && unit.resolvedSource.length > 0) {
-			// Already resolved — return a mock result without doing any work
+			// Already resolved -- return a mock result without doing any work
 			return {
 				unitId,
 				unitName: unit.name,
@@ -228,7 +228,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Batch Resolve ─────────────────────────────────────────────────────────
+	// -- Batch Resolve ---------------------------------------------------------
 
 	async batchResolve(options?: Partial<IResolutionOptions>): Promise<IBatchResolutionSummary> {
 		// Prevent concurrent batch runs
@@ -247,7 +247,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Metrics ───────────────────────────────────────────────────────────────
+	// -- Metrics ---------------------------------------------------------------
 
 	getMetrics(): IResolutionMetricsSnapshot {
 		return this._metrics.snapshot();
@@ -258,7 +258,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Core Batch Runner ─────────────────────────────────────────────────────
+	// -- Core Batch Runner -----------------------------------------------------
 
 	private async _runBatch(opts: Required<IResolutionOptions>): Promise<IBatchResolutionSummary> {
 		const batchStart = Date.now();
@@ -277,7 +277,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 		this._activeScheduler = scheduler;
 
 		try {
-			// ── Build Job Queue ──────────────────────────────────────────────────
+			// -- Build Job Queue --------------------------------------------------
 			const pendingUnits = this._collectPendingUnits(opts);
 
 			if (pendingUnits.length === 0) {
@@ -291,7 +291,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 				scheduler.enqueue(entry.request, entry.unresolvedDepCount);
 			}
 
-			// ── Batch Polling Loop ───────────────────────────────────────────────
+			// -- Batch Polling Loop -----------------------------------------------
 			const results: IUnitResolutionResult[] = [];
 
 			await this._runBatchLoop(scheduler, opts, results);
@@ -337,7 +337,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 			}
 
 			if (inFlight.size === 0) {
-				// Queue drained and nothing in flight — we're done
+				// Queue drained and nothing in flight -- we're done
 				break;
 			}
 
@@ -394,7 +394,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 			});
 
 		} catch (err) {
-			// Isolated failure — record error result without crashing the batch
+			// Isolated failure -- record error result without crashing the batch
 			const errorResult: IUnitResolutionResult = {
 				unitId:        request.unitId,
 				unitName:      request.unitName,
@@ -441,7 +441,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Job Queue Builder ─────────────────────────────────────────────────────
+	// -- Job Queue Builder -----------------------------------------------------
 
 	/**
 	 * Collect all units that need resolution and build their request objects.
@@ -465,7 +465,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 				return false;
 			}
 
-			// Filter by status — only 'pending' units need resolution
+			// Filter by status -- only 'pending' units need resolution
 			if (unit.status !== 'pending') {
 				return false;
 			}
@@ -562,7 +562,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Progress Helpers ──────────────────────────────────────────────────────
+	// -- Progress Helpers ------------------------------------------------------
 
 	private _emitBatchProgress(scheduler: ResolutionScheduler): void {
 		const total     = this._batchTotal;
@@ -582,7 +582,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Summary Builder ───────────────────────────────────────────────────────
+	// -- Summary Builder -------------------------------------------------------
 
 	private _buildSummaryFromResults(
 		results: IUnitResolutionResult[],
@@ -646,7 +646,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// --- Utilities ----------------------------------------------------------------
 
 function getParentDir(uri: string): string {
 	const normalised = uri.replace(/\\/g, '/');
@@ -664,7 +664,7 @@ function getParentDir(uri: string): string {
  *   - COBOL: COPYLIB/, CBL/, SRC/ directories imply their parent is the project root
  *
  * Falls back to the immediate source file directory if nothing is found within
- * 5 levels of the tree (sync/heuristic — no async I/O performed here).
+ * 5 levels of the tree (sync/heuristic -- no async I/O performed here).
  */
 function inferProjectRoot(sourceFileUri: string): string {
 	// Walk up at most 5 levels looking for tell-tale project root markers
@@ -673,7 +673,7 @@ function inferProjectRoot(sourceFileUri: string): string {
 
 	// Common patterns in the path that indicate we're inside a well-known structure
 	// e.g., '.../projects/MyApp/src/cobol/programs/CUST001.cbl'
-	//        → project root is likely '.../projects/MyApp'
+	//        -> project root is likely '.../projects/MyApp'
 	const ROOT_SEGMENTS = ['src', 'source', 'cobol', 'cbl', 'rpg', 'java', 'kotlin', 'python'];
 
 	const parts = normalised.split('/');

@@ -4,20 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Discovery Service — Stage 1
+ * # Discovery Service -- Stage 1
  *
  * Orchestrates the full Stage 1 discovery pipeline across all source and target
  * projects in a modernisation session. Delegates each concern to its own module:
  *
  * ```
  *  DiscoveryService
- *    ├─ fileWalker          → walk directory tree, binary detection
- *    ├─ projectMetadataReader → build system, frameworks, CI, Docker
- *    ├─ languageDetector    → ext + shebang + content heuristics
- *    ├─ unitDecomposer      → per-language sub-file unit extraction
- *    ├─ dependencyExtractor → import/COPY parsing + graph resolution
- *    ├─ grcSnapshotBuilder  → GRC violation aggregation + risk scoring
- *    └─ fingerprintExtractor (Layer 1) — from deterministicExtractor.ts
+ *    |- fileWalker          -> walk directory tree, binary detection
+ *    |- projectMetadataReader -> build system, frameworks, CI, Docker
+ *    |- languageDetector    -> ext + shebang + content heuristics
+ *    |- unitDecomposer      -> per-language sub-file unit extraction
+ *    |- dependencyExtractor -> import/COPY parsing + graph resolution
+ *    |- grcSnapshotBuilder  -> GRC violation aggregation + risk scoring
+ *    \- fingerprintExtractor (Layer 1) -- from deterministicExtractor.ts
  * ```
  *
  * ## Concurrency Model
@@ -69,13 +69,13 @@ import { IncrementalScanCache, fnv1aHash } from './incrementalScanCache.js';
 import { analyzeComplexity } from './complexityAnalyzer.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ----------------------------------------------------------------
 
 /** Number of files to process concurrently within a single project. */
 const SCAN_CONCURRENCY = 8;
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// --- Service Interface --------------------------------------------------------
 
 export const IDiscoveryService = createDecorator<IDiscoveryService>('modernisationDiscoveryService');
 
@@ -114,7 +114,7 @@ export type {
 } from './discoveryTypes.js';
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// --- Implementation -----------------------------------------------------------
 
 class DiscoveryService extends Disposable implements IDiscoveryService {
 	readonly _serviceBrand: undefined;
@@ -132,13 +132,13 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 	cancel(): void { this._cancelled = true; }
 
-	// ─── scan() ─────────────────────────────────────────────────────────────
+	// --- scan() -------------------------------------------------------------
 
 	async scan(sources: IProjectTarget[], targets: IProjectTarget[]): Promise<IDiscoveryResult> {
 		this._cancelled = false;
 		const wallStart = Date.now();
 
-		// Build the pattern→framework map once per scan from the currently loaded
+		// Build the pattern->framework map once per scan from the currently loaded
 		// enterprise frameworks. Passed down to every file's regulated data scanner.
 		const patternFrameworkMap = this._buildPatternFrameworkMap();
 
@@ -157,7 +157,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			scanAll(targets),
 		]);
 
-		this._progress('pairing', 0, 0, 0, 'Cross-matching source ↔ target units…', '');
+		this._progress('pairing', 0, 0, 0, 'Cross-matching source <-> target units...', '');
 		const crossProjectPairings = pairProjects(scannedSources, scannedTargets);
 
 		this._progress('complete', 0, 0, 0, '', '');
@@ -171,27 +171,27 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		};
 	}
 
-	// ─── _scanProject() ──────────────────────────────────────────────────────
+	// --- _scanProject() ------------------------------------------------------
 
 	private async _scanProject(project: IProjectTarget, patternFrameworkMap: IPatternFrameworkMap): Promise<IProjectScanResult> {
 		const projectStart = Date.now();
 		const folderUri    = URI.parse(project.folderUri);
 
-		// ── Phase 1: walk ──────────────────────────────────────────────────
+		// -- Phase 1: walk --------------------------------------------------
 		this._progress('walking', 0, 0, 0, '', project.label);
 		const fileUris = await walkFiles(folderUri, this.fileService, dir => {
 			this._progress('walking', 0, 0, 0, this._basename(dir), project.label);
 		});
 
-		// ── Phase 2: project metadata ──────────────────────────────────────
-		this._progress('metadata', 0, fileUris.length, 0, 'Reading project metadata…', project.label);
+		// -- Phase 2: project metadata --------------------------------------
+		this._progress('metadata', 0, fileUris.length, 0, 'Reading project metadata...', project.label);
 		const metadata = await readProjectMetadata(folderUri, fileUris, this.fileService);
 
-		// ── Incremental cache ──────────────────────────────────────────────
+		// -- Incremental cache ----------------------------------------------
 		const cache = new IncrementalScanCache(folderUri, this.fileService);
 		await cache.load();
 
-		// ── Phase 3: concurrent file processing ────────────────────────────
+		// -- Phase 3: concurrent file processing ----------------------------
 		const allUnits:           IMigrationUnit[]  = [];
 		const allGRCViolations:   ICheckResult[]    = [];
 		const allAPIEndpoints:    IFileProcessResult['apiEndpoints'] = [];
@@ -243,8 +243,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			}
 		}
 
-		// ── Phase 4: dependency graph ──────────────────────────────────────
-		this._progress('graph', filesProcessed, fileUris.length, allUnits.length, 'Resolving dependency graph…', project.label);
+		// -- Phase 4: dependency graph --------------------------------------
+		this._progress('graph', filesProcessed, fileUris.length, allUnits.length, 'Resolving dependency graph...', project.label);
 		const dependencyEdges = buildDependencyGraph(allUnits, rawDepEdges);
 		for (const edge of dependencyEdges) {
 			if (!edge.resolved) { continue; }
@@ -254,8 +254,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			if (to   && !to.dependents.includes(edge.fromId))   { to.dependents.push(edge.fromId);   }
 		}
 
-		// ── Phase 5: call graph ────────────────────────────────────────────
-		this._progress('call-graph', filesProcessed, fileUris.length, allUnits.length, 'Building call graph…', project.label);
+		// -- Phase 5: call graph --------------------------------------------
+		this._progress('call-graph', filesProcessed, fileUris.length, allUnits.length, 'Building call graph...', project.label);
 		const unitNames = new Map(allUnits.map(u => [u.id, u.unitName]));
 		const callGraphEdges = buildCallGraph(
 			rawCallEntries,
@@ -263,25 +263,25 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			unitNames,
 		);
 
-		// ── Phase 6: tech debt (cross-unit: clones + COBOL copy-paste) ─────
-		this._progress('tech-debt', filesProcessed, fileUris.length, allUnits.length, 'Analysing tech debt…', project.label);
+		// -- Phase 6: tech debt (cross-unit: clones + COBOL copy-paste) -----
+		this._progress('tech-debt', filesProcessed, fileUris.length, allUnits.length, 'Analysing tech debt...', project.label);
 		const dominated = this._topLangs(langCounts);
 		const dominantLang = dominated[0] ?? 'unknown';
 		// Note: cross-unit clone detection needs per-unit content which is not retained
 		// in memory after file processing (bounded memory model). COBOL copy-paste
-		// detection is deferred — empty content produces no results.
+		// detection is deferred -- empty content produces no results.
 		const cloneDebt = dominantLang === 'cobol'
 			? detectCopyPasteCobol(allUnits.map(u => ({ unitId: u.id, content: '' })))
 			: [];
 		allTechDebtItems.push(...cloneDebt);
 
-		// ── Aggregate ──────────────────────────────────────────────────────
+		// -- Aggregate ------------------------------------------------------
 		const grcSnapshot  = buildGRCSnapshot(allGRCViolations);
 		const riskDist     = this._riskDist(allUnits);
 		const scannedCount = filesProcessed - scanErrors.length;
 		const effortDist   = summariseEffort(allEffortEstimates);
 
-		// Compute most complex unit — use critical units as proxy (CC not retained in memory)
+		// Compute most complex unit -- use critical units as proxy (CC not retained in memory)
 		let mostComplexUnitId = '';
 		const mostComplexUnitCC = 0;
 		const criticalUnits = allUnits.filter(u => u.riskLevel === 'critical');
@@ -335,12 +335,12 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		};
 	}
 
-	// ─── _processFile() ──────────────────────────────────────────────────────
+	// --- _processFile() ------------------------------------------------------
 
 	/**
 	 * Full processing pipeline for a single file:
-	 * read → binary check → language detect → decompose → fingerprint → GRC scan
-	 * → API surface → schema → regulated data → effort estimation
+	 * read -> binary check -> language detect -> decompose -> fingerprint -> GRC scan
+	 * -> API surface -> schema -> regulated data -> effort estimation
 	 */
 	private async _processFile(
 		fileUri: URI,
@@ -352,7 +352,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		const fileName = this._basename(fileUri.path);
 		const ext      = fileName.split('.').pop()?.toLowerCase() ?? '';
 
-		// ── Read ──────────────────────────────────────────────────────────
+		// -- Read ----------------------------------------------------------
 		let content: string;
 		let rawBytes: Uint8Array;
 		try {
@@ -371,7 +371,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			};
 		}
 
-		// ── Binary guard ─────────────────────────────────────────────────
+		// -- Binary guard -------------------------------------------------
 		if (isBinary(rawBytes)) {
 			return {
 				units: [], grcViolations: [], lang: 'unknown', lineCount: 0,
@@ -380,7 +380,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			};
 		}
 
-		// ── Incremental cache check ───────────────────────────────────────
+		// -- Incremental cache check ---------------------------------------
 		const contentHash = fnv1aHash(content);
 		if (cache) {
 			const cached = cache.get(fileUri, contentHash);
@@ -389,11 +389,11 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 		content = stripBOM(content);
 
-		// ── Language detection ───────────────────────────────────────────
+		// -- Language detection -------------------------------------------
 		const lang  = detectLanguage(ext, content);
 		const lines = content.split('\n');
 
-		// ── Unit decomposition ───────────────────────────────────────────
+		// -- Unit decomposition -------------------------------------------
 		let decomposed: IDecomposedUnit[];
 		try {
 			decomposed = content.length <= MAX_DECOMPOSE_BYTES
@@ -403,13 +403,13 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			decomposed = [fileUnit(fileName, lines.length)];
 		}
 
-		// ── File-level dependency extraction ─────────────────────────────
+		// -- File-level dependency extraction -----------------------------
 		const fileImports = extractRawImports(content, lang);
 
-		// ── GRC scan (not available in community edition) ───────────────
+		// -- GRC scan (not available in community edition) ---------------
 		const grcViolations: ICheckResult[] = [];
 
-		// ── Build IMigrationUnit per decomposed unit ──────────────────────
+		// -- Build IMigrationUnit per decomposed unit ----------------------
 		const relPath = this._relativePath(fileUri.path, projectRoot.path);
 		const units:     IMigrationUnit[] = [];
 		const depEdges:  Array<{ fromUnitId: string; rawImport: string }> = [];
@@ -437,7 +437,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 					complianceDomains:    [],
 					llmExtractionComplete: false,
 				};
-			} catch { /* fingerprint failure — unit still emitted with raw risk */ }
+			} catch { /* fingerprint failure -- unit still emitted with raw risk */ }
 
 			const unitId = `${projectId}::${relPath}::${du.name}`;
 			units.push({
@@ -461,7 +461,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			}
 		}
 
-		// ── Per-unit: API surface, schemas, regulated data, effort ───────────
+		// -- Per-unit: API surface, schemas, regulated data, effort -----------
 		const allCallEdges:      IFileProcessResult['callEdges']          = [];
 		const allAPIEndpoints:   IFileProcessResult['apiEndpoints']       = [];
 		const allDataSchemas:    IFileProcessResult['dataSchemas']        = [];
@@ -484,7 +484,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			// Data schemas
 			allDataSchemas.push(...extractDataSchemas(unitContent, unit.id, lang, fileName));
 
-			// Regulated data scan — framework names come from loaded enterprise frameworks
+			// Regulated data scan -- framework names come from loaded enterprise frameworks
 			allRegulated.push(...scanForRegulatedData(unitContent, unit.id, fileUri.toString(), lang, patternFrameworkMap));
 
 			// Complexity metrics
@@ -536,7 +536,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		return result;
 	}
 
-	// ─── Helpers ─────────────────────────────────────────────────────────────
+	// --- Helpers -------------------------------------------------------------
 
 	private _topLangs(counts: Record<string, number>): [string, string] {
 		const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -560,7 +560,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 	}
 
 	/**
-	 * Build the pattern → framework names map from whatever enterprise frameworks
+	 * Build the pattern -> framework names map from whatever enterprise frameworks
 	 * the user has loaded into the Checks engine at this point in time.
 	 *
 	 * For each RegulatedDataPattern, scans every loaded framework's rules for
@@ -568,7 +568,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 	 * whose tags overlap the pattern's tag set, that framework's name is included
 	 * in the applicable-frameworks list for that pattern.
 	 *
-	 * This means 'HIPAA', 'GDPR', 'PCI-DSS', etc. are NEVER hardcoded — they come
+	 * This means 'HIPAA', 'GDPR', 'PCI-DSS', etc. are NEVER hardcoded -- they come
 	 * from the actual framework.framework.name values the enterprise has imported.
 	 */
 	private _buildPatternFrameworkMap(): IPatternFrameworkMap {

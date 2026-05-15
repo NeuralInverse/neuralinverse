@@ -21,24 +21,24 @@ import {
 import { addToIndex, removeFromIndex } from './helpers.js';
 
 
-// ─── Index container ──────────────────────────────────────────────────────────
+// --- Index container ----------------------------------------------------------
 
 export interface IKnowledgeBaseIndexes {
-	/** status → Set<unitId> */
+	/** status -> Set<unitId> */
 	byStatus: Map<UnitStatus, Set<string>>;
-	/** riskLevel → Set<unitId> */
+	/** riskLevel -> Set<unitId> */
 	byRisk: Map<RiskLevel, Set<string>>;
-	/** sourceFile → Set<unitId> */
+	/** sourceFile -> Set<unitId> */
 	byFile: Map<string, Set<string>>;
-	/** sourceLang → Set<unitId> */
+	/** sourceLang -> Set<unitId> */
 	byLang: Map<string, Set<string>>;
-	/** domainName → Set<unitId> */
+	/** domainName -> Set<unitId> */
 	byDomain: Map<string, Set<string>>;
-	/** phaseId → Set<unitId> */
+	/** phaseId -> Set<unitId> */
 	byPhase: Map<string, Set<string>>;
-	/** sourceType.toLowerCase() → ITypeMappingDecision */
+	/** sourceType.toLowerCase() -> ITypeMappingDecision */
 	typeMappingBySource: Map<string, ITypeMappingDecision>;
-	/** sourceName.toLowerCase() → INamingDecision */
+	/** sourceName.toLowerCase() -> INamingDecision */
 	namingBySource: Map<string, INamingDecision>;
 }
 
@@ -67,7 +67,7 @@ export function clearIndexes(idx: IKnowledgeBaseIndexes): void {
 }
 
 
-// ─── Unit indexing ────────────────────────────────────────────────────────────
+// --- Unit indexing ------------------------------------------------------------
 
 export function indexUnit(unit: IKnowledgeUnit, idx: IKnowledgeBaseIndexes): void {
 	addToIndex(idx.byStatus, unit.status,     unit.id);
@@ -82,11 +82,11 @@ export function deindexUnit(unit: IKnowledgeUnit, idx: IKnowledgeBaseIndexes): v
 	removeFromIndex(idx.byFile,   unit.sourceFile, unit.id);
 	removeFromIndex(idx.byLang,   unit.sourceLang, unit.id);
 	// NOTE: domain and phase indexes are not removed here because units can belong to
-	// multiple domains and phases — those indexes are managed explicitly.
+	// multiple domains and phases -- those indexes are managed explicitly.
 }
 
 
-// ─── Decision indexing ────────────────────────────────────────────────────────
+// --- Decision indexing --------------------------------------------------------
 
 export function indexTypeMappingDecision(d: ITypeMappingDecision, idx: IKnowledgeBaseIndexes): void {
 	idx.typeMappingBySource.set(d.sourceType.toLowerCase(), d);
@@ -105,7 +105,7 @@ export function removeNamingFromIndex(sourceName: string, idx: IKnowledgeBaseInd
 }
 
 
-// ─── Domain indexing ──────────────────────────────────────────────────────────
+// --- Domain indexing ----------------------------------------------------------
 
 export function indexUnitForDomain(unitId: string, domain: string, idx: IKnowledgeBaseIndexes): void {
 	addToIndex(idx.byDomain, domain, unitId);
@@ -116,7 +116,7 @@ export function indexUnitsForDomain(unitIds: string[], domain: string, idx: IKno
 }
 
 
-// ─── Phase indexing ───────────────────────────────────────────────────────────
+// --- Phase indexing -----------------------------------------------------------
 
 export function setPhaseIndex(phaseId: string, unitIds: string[], idx: IKnowledgeBaseIndexes): void {
 	idx.byPhase.set(phaseId, new Set(unitIds));
@@ -127,7 +127,7 @@ export function clearPhaseIndexes(idx: IKnowledgeBaseIndexes): void {
 }
 
 
-// ─── Rebuild from KB ──────────────────────────────────────────────────────────
+// --- Rebuild from KB ----------------------------------------------------------
 
 export function rebuildIndexes(
 	kb: import('../../../common/knowledgeBaseTypes.js').IModernisationKnowledgeBase,
@@ -148,5 +148,5 @@ export function rebuildIndexes(
 	}
 
 	// Phase indexes (from progress.byPhase)
-	// Phase → unit mapping is rebuilt separately when setPhases() is called.
+	// Phase -> unit mapping is rebuilt separately when setPhases() is called.
 }

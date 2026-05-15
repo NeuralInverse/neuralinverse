@@ -6,38 +6,38 @@
 /**
  * # Autonomy Types
  *
- * All shared types for Phase 12 — Agent Autonomy.
+ * All shared types for Phase 12 -- Agent Autonomy.
  *
  * The autonomy service drives the full pipeline without human input per unit:
  *
- *   Resolve → Translate → [Auto-approve?] → Validate → Commit
+ *   Resolve -> Translate -> [Auto-approve?] -> Validate -> Commit
  *
  * Humans retain hard control at every critical gate:
- *   - Plan approval (Stage 2 gate — enforced by the session service)
+ *   - Plan approval (Stage 2 gate -- enforced by the session service)
  *   - High-risk + regulated unit review (hard gates in autoApprovalPolicy)
  *   - Equivalence divergence overrides (flagged units need human override)
  *   - Final cutover approval (Phase 11 gate)
  *
  * ## Batch lifecycle
  *
- *   idle → running → (pausing) → paused → running → stopping → completed
+ *   idle -> running -> (pausing) -> paused -> running -> stopping -> completed
  *                                                   |
- *                                                   → error
+ *                                                   -> error
  *
  * ## Unit lifecycle within a run
  *
- *   pending   → [resolve]    → advanced (unit now 'ready')
- *   ready     → [translate]  → advanced (unit now 'review')
- *   review    → [policy]     → advanced (auto-approved → 'approved') | escalated
- *   approved  → [validate]   → advanced (unit now 'validated' or 'flagged')
- *   validated → [commit]     → advanced (unit now 'committed')
- *   flagged   → escalated immediately (divergence needs human override)
- *   any in-flight status → skipped (another process is mid-flight)
- *   terminal status → skipped (nothing to do)
+ *   pending   -> [resolve]    -> advanced (unit now 'ready')
+ *   ready     -> [translate]  -> advanced (unit now 'review')
+ *   review    -> [policy]     -> advanced (auto-approved -> 'approved') | escalated
+ *   approved  -> [validate]   -> advanced (unit now 'validated' or 'flagged')
+ *   validated -> [commit]     -> advanced (unit now 'committed')
+ *   flagged   -> escalated immediately (divergence needs human override)
+ *   any in-flight status -> skipped (another process is mid-flight)
+ *   terminal status -> skipped (nothing to do)
  */
 
 
-// ─── Pipeline stages ──────────────────────────────────────────────────────────
+// --- Pipeline stages ----------------------------------------------------------
 
 /**
  * The four pipeline stages the autonomy loop can drive.
@@ -56,30 +56,30 @@ export const STATUS_TO_STAGE: Partial<Record<string, AutonomyStage>> = {
 	ready:     'translate',
 	approved:  'validate',
 	validated: 'commit',
-	// 'review' and 'flagged' have no direct stage key — handled inline
+	// 'review' and 'flagged' have no direct stage key -- handled inline
 };
 
 
-// ─── Batch lifecycle ──────────────────────────────────────────────────────────
+// --- Batch lifecycle ----------------------------------------------------------
 
 /**
  * The lifecycle state of the autonomy service's current (or most recent) batch.
  *
- *  - `idle`      — no batch is active; service is ready to start
- *  - `running`   — a batch is actively processing units
- *  - `pausing`   — stop signal sent; draining in-flight jobs before pausing
- *  - `paused`    — batch halted mid-run; can be resumed (units stay at current status)
- *  - `stopping`  — abort signal sent; draining in-flight jobs before stopping
- *  - `completed` — all units processed (or none eligible); clean finish
- *  - `error`     — the batch engine itself threw an unhandled error
+ *  - `idle`      -- no batch is active; service is ready to start
+ *  - `running`   -- a batch is actively processing units
+ *  - `pausing`   -- stop signal sent; draining in-flight jobs before pausing
+ *  - `paused`    -- batch halted mid-run; can be resumed (units stay at current status)
+ *  - `stopping`  -- abort signal sent; draining in-flight jobs before stopping
+ *  - `completed` -- all units processed (or none eligible); clean finish
+ *  - `error`     -- the batch engine itself threw an unhandled error
  */
 export type BatchState = 'idle' | 'running' | 'pausing' | 'paused' | 'stopping' | 'completed' | 'error';
 
 
-// ─── Error classification ─────────────────────────────────────────────────────
+// --- Error classification -----------------------------------------------------
 
 /**
- * Categorical error type — allows the service to apply different retry
+ * Categorical error type -- allows the service to apply different retry
  * and escalation strategies per error class.
  */
 export type AutonomyErrorCategory =
@@ -125,7 +125,7 @@ export function isRetryableError(category: AutonomyErrorCategory): boolean {
 }
 
 
-// ─── Per-attempt record ───────────────────────────────────────────────────────
+// --- Per-attempt record -------------------------------------------------------
 
 /** A single execution attempt on one stage for one unit within a batch run. */
 export interface IAutonomyAttempt {
@@ -140,7 +140,7 @@ export interface IAutonomyAttempt {
 }
 
 
-// ─── Per-unit history within a run ───────────────────────────────────────────
+// --- Per-unit history within a run -------------------------------------------
 
 /** Complete run record for a single unit across all attempts in one batch run. */
 export interface IAutonomyUnitHistory {
@@ -155,7 +155,7 @@ export interface IAutonomyUnitHistory {
 }
 
 
-// ─── Per-unit result (returned from loop) ─────────────────────────────────────
+// --- Per-unit result (returned from loop) -------------------------------------
 
 export type AutonomyUnitOutcome = 'advanced' | 'escalated' | 'error' | 'skipped';
 
@@ -173,7 +173,7 @@ export interface IAutonomyUnitResult {
 }
 
 
-// ─── Escalation record ────────────────────────────────────────────────────────
+// --- Escalation record --------------------------------------------------------
 
 /** A unit that needs a human decision before the pipeline can proceed. */
 export interface IEscalatedUnit {
@@ -192,13 +192,13 @@ export interface IEscalatedUnit {
 }
 
 
-// ─── Escalation resolution ────────────────────────────────────────────────────
+// --- Escalation resolution ----------------------------------------------------
 
 export type EscalationDecision =
-	| 'approve'           // Manually approve → sets KB status to 'approved'
-	| 'skip'              // Mark as 'skipped' — excluded from future runs
+	| 'approve'           // Manually approve -> sets KB status to 'approved'
+	| 'skip'              // Mark as 'skipped' -- excluded from future runs
 	| 'revert-to-pending' // Reset to 'pending' for a complete fresh attempt from the start
-	| 'block';            // Mark as 'blocked' with reason — requires a documented rationale
+	| 'block';            // Mark as 'blocked' with reason -- requires a documented rationale
 
 export interface IEscalationResolution {
 	readonly unitId:      string;
@@ -210,14 +210,14 @@ export interface IEscalationResolution {
 }
 
 
-// ─── Auto-approval configuration ─────────────────────────────────────────────
+// --- Auto-approval configuration ---------------------------------------------
 
 /**
  * Configuration for the auto-approval policy.
  * Passed to `evaluateAutoApproval()` to customise thresholds.
  *
  * Hard gates (risk=critical/high, regulated domain, blocked fingerprint,
- * pending decision) are NOT configurable — they always escalate.
+ * pending decision) are NOT configurable -- they always escalate.
  */
 export interface IAutoApprovalConfig {
 	/**
@@ -261,18 +261,18 @@ export const DEFAULT_AUTO_APPROVAL_CONFIG: Required<IAutoApprovalConfig> = {
 };
 
 
-// ─── Batch options ────────────────────────────────────────────────────────────
+// --- Batch options ------------------------------------------------------------
 
 export interface IAutonomyOptions {
 	/**
 	 * Which pipeline stages to run.
-	 * Default: all four — ['resolve', 'translate', 'validate', 'commit'].
+	 * Default: all four -- ['resolve', 'translate', 'validate', 'commit'].
 	 */
 	stages?:            AutonomyStage[];
 
 	/**
 	 * Maximum number of units processed concurrently.
-	 * Adaptive concurrency is applied on top — if error rate spikes,
+	 * Adaptive concurrency is applied on top -- if error rate spikes,
 	 * effective concurrency is temporarily halved.
 	 * Default: 3.
 	 */
@@ -333,7 +333,7 @@ export interface IAutonomyOptions {
 	/**
 	 * Target language key passed to the translation engine (e.g. 'java', 'typescript', 'python').
 	 * Required by the translation loop for result labelling and idiom selection.
-	 * Defaults to '' (empty string) if not provided — the AI will infer from context.
+	 * Defaults to '' (empty string) if not provided -- the AI will infer from context.
 	 */
 	targetLanguage?:    string;
 }
@@ -350,7 +350,7 @@ export const DEFAULT_AUTONOMY_OPTIONS: Required<Omit<IAutonomyOptions, 'unitIdFi
 };
 
 
-// ─── Schedule preview ─────────────────────────────────────────────────────────
+// --- Schedule preview ---------------------------------------------------------
 
 export interface IAutonomyScheduleEntry {
 	unitId:        string;
@@ -374,7 +374,7 @@ export interface IAutonomySchedulePreview {
 }
 
 
-// ─── Batch metrics ────────────────────────────────────────────────────────────
+// --- Batch metrics ------------------------------------------------------------
 
 /** Per-stage timing statistics (collected across all units in a run). */
 export interface IStageTiming {
@@ -464,7 +464,7 @@ export function emptyBatchMetrics(runId: string, startedAt: number): IAutonomyBa
 }
 
 
-// ─── Progress events ──────────────────────────────────────────────────────────
+// --- Progress events ----------------------------------------------------------
 
 export interface IAutonomyUnitStartedEvent {
 	readonly unitId:   string;
@@ -492,7 +492,7 @@ export type IAutonomyProgress =
 	| { type: 'batch-completed'; data: IAutonomyBatchCompletedEvent };
 
 
-// ─── Batch state change event ─────────────────────────────────────────────────
+// --- Batch state change event -------------------------------------------------
 
 export interface IBatchStateChange {
 	readonly prev:  BatchState;
@@ -501,7 +501,7 @@ export interface IBatchStateChange {
 }
 
 
-// ─── Persisted batch run record ───────────────────────────────────────────────
+// --- Persisted batch run record -----------------------------------------------
 
 /**
  * A summary of a completed (or interrupted) batch run.
@@ -523,7 +523,7 @@ export interface IAutonomyBatchRun {
 export const MAX_RUN_HISTORY = 20;
 
 
-// ─── KB annotation constants ──────────────────────────────────────────────────
+// --- KB annotation constants --------------------------------------------------
 
 /** Annotation kind used for all autonomy-managed annotations. */
 export const AUTONOMY_ANNOTATION_KIND = 'agent-note' as const;

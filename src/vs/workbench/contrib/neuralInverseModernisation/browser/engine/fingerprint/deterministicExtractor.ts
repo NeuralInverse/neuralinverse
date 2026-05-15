@@ -4,16 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Deterministic Fingerprint Extractor — Layer 1
+ * # Deterministic Fingerprint Extractor -- Layer 1
  *
  * Extracts regulated fields and logical invariants from legacy source code
- * using structural pattern matching. No LLM involved — fast and deterministic.
+ * using structural pattern matching. No LLM involved -- fast and deterministic.
  *
  * ## What It Detects
  *
  * ### Regulated Fields
  * - Field names matching known regulated attribute patterns (account, balance, fee, tax, etc.)
- * - COMP-3 / COMPUTATIONAL-3 fields (packed decimal — always financial in mainframe systems)
+ * - COMP-3 / COMPUTATIONAL-3 fields (packed decimal -- always financial in mainframe systems)
  * - Signed decimal numeric fields (PIC S9...V9...) used for monetary precision
  *
  * ### Logical Invariants
@@ -23,7 +23,7 @@
  *
  * ## Output
  *
- * Returns `IRegulatedField[]` and `ILogicalInvariant[]` — the Layer 1 portion of
+ * Returns `IRegulatedField[]` and `ILogicalInvariant[]` -- the Layer 1 portion of
  * an `IComplianceFingerprint`. The LLM semantic extractor (Layer 2) builds on top of this.
  */
 
@@ -46,7 +46,7 @@ export interface IDeterministicExtractionResult {
  *
  * @param source    The raw source text of the migration unit
  * @param language  Source language key (e.g. 'cobol'). Must exist in LEGACY_PATTERN_REGISTRY.
- * @param unitName  Name of the unit (paragraph/program name) — used for paragraph pattern matching
+ * @param unitName  Name of the unit (paragraph/program name) -- used for paragraph pattern matching
  */
 export function extractDeterministicFingerprint(
 	source: string,
@@ -82,7 +82,7 @@ export function extractDeterministicFingerprint(
 				const location: ICodeRange = { startLine: lineNum, startColumn: 1, endLine: lineNum, endColumn: line.length };
 
 				if (structural.indicates === 'packed_decimal_currency_field') {
-					// COMP-3 field — always financial regardless of name
+					// COMP-3 field -- always financial regardless of name
 					const key = `${fieldName ?? 'COMP3_FIELD'}:packed_decimal`;
 					if (!seenFields.has(key)) {
 						seenFields.add(key);
@@ -190,7 +190,7 @@ export function extractDeterministicFingerprint(
 }
 
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers -----------------------------------------------------------------
 
 /**
  * Infer whether a source line is reading, writing, or calculating a field.
@@ -227,7 +227,7 @@ function inferOperationFromContext(line: string, language: string): IRegulatedFi
 
 /**
  * Extract the field name from a COBOL DATA DIVISION declaration line.
- * e.g. "       05  WS-ACCT-BAL     PIC S9(11)V99 COMP-3." → "WS-ACCT-BAL"
+ * e.g. "       05  WS-ACCT-BAL     PIC S9(11)V99 COMP-3." -> "WS-ACCT-BAL"
  */
 function extractFieldNameFromLine(line: string, language: string): string | undefined {
 	if (language !== 'cobol') {
@@ -256,7 +256,7 @@ function extractCobolFieldNameNearby(lines: string[], currentIdx: number): strin
 
 /**
  * Extract the number of decimal places from a PIC clause.
- * e.g. "PIC S9(11)V99" → "2 decimal places"
+ * e.g. "PIC S9(11)V99" -> "2 decimal places"
  */
 function extractDecimalPrecision(line: string): string {
 	// PIC S9(n)V9(m) or PIC S9(n)V99...
