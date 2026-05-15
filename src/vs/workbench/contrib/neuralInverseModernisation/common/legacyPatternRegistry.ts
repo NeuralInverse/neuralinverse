@@ -585,3 +585,10 @@ export const UNSAFE_CAST_DEFAULT_FRAMEWORK  = 'misra-c';
  */
 export const ISR_DEFAULT_ATTRIBUTE = 'interrupt_service_routine_generic';
 export const ISR_DEFAULT_FRAMEWORK = 'iec-61508';
+
+/**
+ * Default attribute for COBOL COMP-3 packed-decimal fields when no specific
+ * field name pattern matches.
+ */
+export const COMP3_DEFAULT_ATTRIBUTE = 'cobol_packed_decimal_generic';
+export const COMP3_DEFAULT_FRAMEWORK = 'financial-core';

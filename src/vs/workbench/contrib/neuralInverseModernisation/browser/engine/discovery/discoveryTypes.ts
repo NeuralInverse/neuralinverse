@@ -526,4 +526,4 @@ export interface IFileProcessResult {
 
 // --- Re-exports ---------------------------------------------------------------
 
-export { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange, ICheckResult };
+export { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange };

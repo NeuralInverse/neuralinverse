@@ -81,8 +81,10 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
 	let   blockingCount = 0;
 
 	for (const v of violations) {
-		byDomain[v.domain]     = (byDomain[v.domain]     ?? 0) + 1;
-		bySeverity[v.severity] = (bySeverity[v.severity] ?? 0) + 1;
+		const dom = v.domain   ?? 'unknown';
+		const sev = v.severity ?? 'info';
+		byDomain[dom]  = (byDomain[dom]  ?? 0) + 1;
+		bySeverity[sev] = (bySeverity[sev] ?? 0) + 1;
 		ruleCount[v.ruleId]    = (ruleCount[v.ruleId]    ?? 0) + 1;
 		if (v.blockingBehavior?.blocksCommit) { blockingCount++; }
 	}
@@ -94,13 +96,14 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
 
 	const compactViolations: IGRCMiniViolation[] = violations
 		.slice(0, MAX_STORED_VIOLATIONS)
+		.filter(v => v.fileUri !== undefined)
 		.map(v => ({
 			ruleId:   v.ruleId,
-			domain:   v.domain,
-			severity: v.severity,
+			domain:   v.domain   ?? 'unknown',
+			severity: v.severity ?? 'info',
 			message:  v.message,
-			fileUri:  v.fileUri.toString(),
-			line:     v.line,
+			fileUri:  v.fileUri!.toString(),
+			line:     v.line ?? 0,
 		}));
 
 	return {
