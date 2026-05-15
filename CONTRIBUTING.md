@@ -39,26 +39,32 @@ Enterprise features (Checks, GRC, compliance engine, auth) are not part of this 
 
 ## AI-assisted contributions (BYOLLM)
 
-NeuralInverse is a BYOLLM (Bring Your Own LLM) platform. If you used AI assistance to write or review code in your contribution, attribute the model in your commit message footer using Git's standard co-author trailer:
+NeuralInverse is a BYOLLM (Bring Your Own LLM) platform. If you used AI assistance, include TWO `Co-authored-by` trailers in your commit message footer:
 
+1. **Always include the NeuralInverse platform trailer:**
 ```
-Co-authored-by: Claude <noreply@anthropic.com>
-Co-authored-by: ChatGPT <noreply@openai.com>
-Co-authored-by: NeuralInverse AI <noreply@neuralinverse.com>
-Co-authored-by: [Your Model Name] <email>
+Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
 ```
 
-Common models:
+2. **Plus the specific LLM you used:**
 
 | Model | Trailer |
 |---|---|
 | Claude (Anthropic) | `Co-authored-by: Claude <noreply@anthropic.com>` |
 | ChatGPT / GPT-4 (OpenAI) | `Co-authored-by: ChatGPT <noreply@openai.com>` |
 | Gemini (Google) | `Co-authored-by: Gemini <noreply@google.com>` |
-| NeuralInverse (internal) | `Co-authored-by: NeuralInverse AI <noreply@neuralinverse.com>` |
 | Custom / self-hosted | `Co-authored-by: [Model Name] <your-contact-email>` |
 
-This is optional but encouraged — it gives proper attribution and helps the community understand how AI tooling is being used in the project.
+Example commit message footer:
+
+```
+fix: resolve null pointer in session service
+
+Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
+Co-authored-by: Claude <noreply@anthropic.com>
+```
+
+This gives proper attribution and helps the community understand how AI tooling is being used in the project.
 
 ## Questions?
 

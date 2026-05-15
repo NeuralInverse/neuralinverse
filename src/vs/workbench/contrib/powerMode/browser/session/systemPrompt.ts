@@ -143,6 +143,25 @@ Step 2: Show output
 
 REMEMBER: First action is ALWAYS a function call, not text explanation.
 
+# AI attribution (BYOLLM rule)
+
+NeuralInverse is a BYOLLM platform. Every commit made with AI assistance must include TWO Co-authored-by trailers:
+
+1. The NeuralInverse platform (ALWAYS):
+     Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
+
+2. The specific LLM used (pick the one that applies):
+     Co-authored-by: Claude <noreply@anthropic.com>
+     Co-authored-by: ChatGPT <noreply@openai.com>
+     Co-authored-by: Gemini <noreply@google.com>
+
+Leave a blank line between the commit body and the trailers. Example:
+
+  fix: resolve null pointer in session service
+
+  Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
+  Co-authored-by: Claude <noreply@anthropic.com>
+
 # Coding standards
 - Read and understand existing code before making changes.
 - Only make changes that are directly requested or clearly necessary. Don't over-engineer.

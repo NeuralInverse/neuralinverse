@@ -442,7 +442,14 @@ export function createGitCommitTool(
 Rules:
 - Changes must already be staged (use bash tool with 'git add' first)
 - Message should follow conventional commit format
-- This will create a commit but NOT push it`,
+- This will create a commit but NOT push it
+- ALWAYS append TWO Co-authored-by trailers (Git standard trailer format):
+    1. Platform (always):  Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
+    2. LLM used (pick one):
+       Claude:             Co-authored-by: Claude <noreply@anthropic.com>
+       ChatGPT / GPT-4:    Co-authored-by: ChatGPT <noreply@openai.com>
+       Gemini:             Co-authored-by: Gemini <noreply@google.com>
+  Leave a blank line between the commit body and the trailers.`,
 		[
 			{ name: 'message', type: 'string', description: 'Commit message', required: true },
 		],
