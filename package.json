@@ -143,7 +143,7 @@
     "@stylistic/eslint-plugin-ts": "^2.8.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/cookie": "^0.3.3",
-    "@types/debug": "^4.1.5",
+    "@types/debug": "^4.1.13",
     "@types/diff": "^7.0.2",
     "@types/eslint": "^9.6.1",
     "@types/gulp-svgmin": "^1.2.5",
