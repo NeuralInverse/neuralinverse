@@ -37,6 +37,29 @@ CE contributions should be limited to:
 
 Enterprise features (Checks, GRC, compliance engine, auth) are not part of this repo.
 
+## AI-assisted contributions (BYOLLM)
+
+NeuralInverse is a BYOLLM (Bring Your Own LLM) platform. If you used AI assistance to write or review code in your contribution, attribute the model in your commit message footer using Git's standard co-author trailer:
+
+```
+Co-authored-by: Claude <noreply@anthropic.com>
+Co-authored-by: ChatGPT <noreply@openai.com>
+Co-authored-by: NeuralInverse AI <noreply@neuralinverse.com>
+Co-authored-by: [Your Model Name] <email>
+```
+
+Common models:
+
+| Model | Trailer |
+|---|---|
+| Claude (Anthropic) | `Co-authored-by: Claude <noreply@anthropic.com>` |
+| ChatGPT / GPT-4 (OpenAI) | `Co-authored-by: ChatGPT <noreply@openai.com>` |
+| Gemini (Google) | `Co-authored-by: Gemini <noreply@google.com>` |
+| NeuralInverse (internal) | `Co-authored-by: NeuralInverse AI <noreply@neuralinverse.com>` |
+| Custom / self-hosted | `Co-authored-by: [Model Name] <your-contact-email>` |
+
+This is optional but encouraged — it gives proper attribution and helps the community understand how AI tooling is being used in the project.
+
 ## Questions?
 
 Open an issue or email github@neuralinverse.com.
