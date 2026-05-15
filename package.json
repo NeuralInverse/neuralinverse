@@ -77,7 +77,7 @@
     "@floating-ui/react": "^0.27.8",
     "@google/genai": "^0.13.0",
     "@microsoft/1ds-core-js": "^3.2.13",
-    "@microsoft/1ds-post-js": "^3.2.13",
+    "@microsoft/1ds-post-js": "^3.2.18",
     "@mistralai/mistralai": "^1.6.0",
     "@modelcontextprotocol/sdk": "^1.11.2",
     "@parcel/watcher": "2.5.1",
