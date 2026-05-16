@@ -1,19 +1,34 @@
 # Security Policy
 
-## Reporting a vulnerability
+## Supported Versions
 
-If you discover a security vulnerability in NeuralInverse CE, please do **not** open a public GitHub issue.
+Only the latest release of NeuralInverse CE is actively supported with security fixes.
 
-Instead, email us directly at: **github@neuralinverse.com**
+| Version | Supported |
+|---------|-----------|
+| Latest  | Yes       |
+| Older   | No        |
 
-Please include:
-- A description of the vulnerability
+## Reporting a Vulnerability
+
+**Please do not report security vulnerabilities via GitHub Issues.**
+
+If you discover a security vulnerability, email us directly at:
+
+**security@neuralinverse.com**
+
+Include as much detail as possible:
+- Description of the vulnerability
 - Steps to reproduce
 - Potential impact
-- Any suggested fixes (optional)
+- Any suggested fix (optional)
 
-We will acknowledge your report within 48 hours and aim to release a fix within 14 days for critical issues.
+We will acknowledge your report within 48 hours and aim to release a fix within 14 days depending on severity.
+
+We appreciate responsible disclosure and will credit you in the release notes unless you prefer to remain anonymous.
 
 ## Scope
 
-This policy applies to the NeuralInverse CE codebase in this repository. For vulnerabilities in upstream dependencies (VS Code, Void), please report to those projects directly.
+This policy covers the NeuralInverse CE codebase. For vulnerabilities in upstream VS Code, please report to the [Microsoft Security Response Center](https://msrc.microsoft.com/report).
+
+Note: NeuralInverse CE is a BYOLLM (Bring Your Own LLM) tool -- your API keys and code never leave your machine. No data is sent to NeuralInverse servers in the community edition.
