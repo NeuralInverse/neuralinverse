@@ -10,7 +10,13 @@ power-mode:
   - changed-files:
     - any-glob-to-any-file: 'src/vs/workbench/contrib/powerMode/**'
 
-ce-only:
+agent:
+  - changed-files:
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/void/browser/neuralInverseAgent*'
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/void/browser/toolsService*'
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/void/common/neuralInverseAgent*'
+
+ai-chat:
   - changed-files:
     - any-glob-to-any-file: 'src/vs/workbench/contrib/void/**'
 
@@ -18,6 +24,7 @@ documentation:
   - changed-files:
     - any-glob-to-any-file: '*.md'
     - any-glob-to-any-file: 'docs/**'
+    - any-glob-to-any-file: 'src/**/docs/**'
 
 ci:
   - changed-files:
@@ -27,5 +34,10 @@ build:
   - changed-files:
     - any-glob-to-any-file: 'gulpfile.js'
     - any-glob-to-any-file: 'build/**'
+    - any-glob-to-any-file: 'package.json'
+    - any-glob-to-any-file: 'package-lock.json'
+
+dependencies:
+  - changed-files:
     - any-glob-to-any-file: 'package.json'
     - any-glob-to-any-file: 'package-lock.json'

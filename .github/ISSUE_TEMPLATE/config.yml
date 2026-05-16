@@ -1,1 +1,11 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Ask a question / Start a discussion
+    url: https://github.com/NeuralInverse/neuralinverse/discussions
+    about: Use GitHub Discussions for questions, ideas, and general feedback.
+  - name: Enterprise Edition
+    url: https://neuralinverse.com
+    about: Compliance, GRC, and advanced features are available in NeuralInverse Enterprise.
+  - name: Email us
+    url: mailto:github@neuralinverse.com
+    about: For anything that doesn't fit a GitHub issue.

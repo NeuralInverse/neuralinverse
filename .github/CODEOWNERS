@@ -1,0 +1,20 @@
+# NeuralInverse CE - Code Owners
+# These owners are automatically requested for review on PRs.
+
+# Default owner for everything
+* @NeuralInverse/ce-maintainers
+
+# Modernisation engine
+src/vs/workbench/contrib/neuralInverseModernisation/ @NeuralInverse/ce-maintainers
+
+# Firmware tooling
+src/vs/workbench/contrib/neuralInverseFirmware/ @NeuralInverse/ce-maintainers
+
+# AI chat and agent infrastructure
+src/vs/workbench/contrib/void/ @NeuralInverse/ce-maintainers
+
+# Power Mode
+src/vs/workbench/contrib/powerMode/ @NeuralInverse/ce-maintainers
+
+# CI and GitHub config
+.github/ @NeuralInverse/ce-maintainers

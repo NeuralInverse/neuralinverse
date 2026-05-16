@@ -6,6 +6,14 @@ labels: enhancement, needs-triage
 assignees: ''
 ---
 
+**Which area does this relate to?**
+- [ ] AI chat / agentic coding
+- [ ] Power Mode
+- [ ] Legacy Modernisation
+- [ ] Firmware / Embedded
+- [ ] General IDE / UX
+- [ ] Other
+
 **What problem does this solve?**
 A clear description of the problem or gap this feature addresses.
 
