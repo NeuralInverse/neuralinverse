@@ -249,7 +249,7 @@
 		"ts-node": "^10.9.1",
 		"tsec": "0.2.7",
 		"tslib": "^2.6.3",
-		"tsup": "^8.4.0",
+		"tsup": "^8.5.1",
 		"typescript": "^5.8.0-dev.20250207",
 		"typescript-eslint": "^8.8.0",
 		"util": "^0.12.4",
