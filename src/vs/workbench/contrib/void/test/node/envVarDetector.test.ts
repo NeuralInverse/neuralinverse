@@ -174,6 +174,48 @@ suite('envVarDetector — detectGitCredentialManagerCredentials', () => {
 		assert.ok(result);
 		assert.ok(!result.maskedDisplay.includes(longToken), 'full token must not appear in maskedDisplay');
 	});
+
+	test('reads token from macOS Keychain via security CLI (macOS only)', async () => {
+		if (process.platform !== 'darwin') { return; }
+
+		const keychainToken = 'ghp_keychainMacToken99';
+		// git-cred-github returns nothing (simulate no git credential helper configured),
+		// win-credman-github is skipped on macOS, so keychain-github is reached.
+		const runner = makeRunner({
+			'git-cred-github': '',
+			'keychain-github': keychainToken,
+		});
+		const result = await detectGitCredentialManagerCredentials(emptyFs, runner, false);
+		assert.ok(result, 'expected a credential from macOS Keychain');
+		assert.strictEqual(result.providerName, 'githubModels');
+		assert.strictEqual(result.source, 'git-credential');
+		assert.strictEqual(result.settings.apiKey, keychainToken);
+		assert.ok(!result.maskedDisplay.includes(keychainToken), 'full token must not appear in maskedDisplay');
+		assert.ok(result.maskedDisplay.includes('github.com'), 'maskedDisplay should mention the host');
+	});
+
+	test('macOS Keychain: short token (< 4 chars) is rejected (macOS only)', async () => {
+		if (process.platform !== 'darwin') { return; }
+
+		const runner = makeRunner({
+			'git-cred-github': '',
+			'keychain-github': 'abc',
+		});
+		const result = await detectGitCredentialManagerCredentials(emptyFs, runner, false);
+		assert.strictEqual(result, null);
+	});
+
+	test('macOS Keychain: error from security CLI is handled gracefully (macOS only)', async () => {
+		if (process.platform !== 'darwin') { return; }
+
+		// Runner throws for keychain-github (simulates `security` command not found or denied)
+		const runner: ShellRunner = async (jobId: string) => {
+			if (jobId === 'git-cred-github') return '';
+			throw new Error('security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain.');
+		};
+		const result = await detectGitCredentialManagerCredentials(emptyFs, runner, false);
+		assert.strictEqual(result, null, 'should return null when security CLI throws');
+	});
 });
 
 // ---------------------------------------------------------------------------

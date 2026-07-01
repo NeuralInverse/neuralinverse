@@ -321,8 +321,11 @@ async function readMacOsKeychainForGitHub(run: ShellRunner): Promise<string | nu
 	try {
 		const out = await run('keychain-github', `security find-internet-password -s ${GITHUB_HOST} -w`, 4000, 512);
 		const token = out.trim();
-		return token.length >= 4 ? token : null;
-	} catch {
+		const found = token.length >= 4;
+		console.log('[autoConnect] readMacOsKeychainForGitHub: token found:', found, 'length:', found ? token.length : 0);
+		return found ? token : null;
+	} catch (err) {
+		console.log('[autoConnect] readMacOsKeychainForGitHub: failed:', String(err));
 		return null;
 	}
 }
@@ -349,17 +352,20 @@ export async function detectGitCredentialManagerCredentials(
 		if (token) source = 'config-file';
 	}
 
-	// Strategy 3: macOS Keychain via `security` CLI
-	if (!token && run) {
-		token = await readMacOsKeychainForGitHub(run);
-	}
-
-	// Strategy 4: Windows Credential Manager via cmd.exe + git credential fill.
+	// Strategy 3: Windows Credential Manager via cmd.exe + git credential fill.
 	// Covers GitHub CLI (and Git Credential Manager) tokens stored in the Windows
 	// Credential vault (git:https://github.com entries), which are invisible to the
 	// POSIX pipe trick in Strategy 1 because Git Bash runs in a different PATH context.
 	if (!token && run) {
 		token = await runWindowsCredentialManagerFill(run);
+	}
+
+	// Strategy 4: macOS Keychain via `security find-internet-password`.
+	// Runs last because git-credential-fill (Strategy 1) already covers the Keychain
+	// on macOS when git is configured to use the osxkeychain helper — this catches
+	// credentials stored directly by GitHub CLI or other tools that bypass git.
+	if (!token && run) {
+		token = await readMacOsKeychainForGitHub(run);
 	}
 
 	if (!token || token.length < 4) return null;
