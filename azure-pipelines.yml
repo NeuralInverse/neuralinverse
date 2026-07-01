@@ -111,6 +111,7 @@ stages:
           - script: node node_modules/.bin/gulp vscode-darwin-arm64-min-ci
             displayName: "Gulp — package macOS arm64"
             env:
+              NODE_OPTIONS: "--max-old-space-size=12288"
               VSCODE_QUALITY: $(NI_QUALITY)
               npm_config_arch: arm64
 
@@ -277,6 +278,7 @@ stages:
           - script: node node_modules/.bin/gulp vscode-win32-x64-min-ci
             displayName: "Gulp — package Windows x64"
             env:
+              NODE_OPTIONS: "--max-old-space-size=12288"
               VSCODE_QUALITY: $(NI_QUALITY)
               VSCODE_BUILD_WIN32_MSI: "1"
 
@@ -438,6 +440,7 @@ stages:
           - script: node node_modules/.bin/gulp vscode-linux-x64-min-ci
             displayName: "Gulp — package Linux x64"
             env:
+              NODE_OPTIONS: "--max-old-space-size=12288"
               VSCODE_QUALITY: $(NI_QUALITY)
 
           # ── Collect .deb / .rpm / .tar.gz ────────────────────────────────

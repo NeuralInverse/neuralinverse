@@ -5,7 +5,7 @@
 
 import { ProviderName } from '../../common/voidSettingsTypes.js';
 
-export type CredentialSource = 'env' | 'config-file' | 'cli-auth';
+export type CredentialSource = 'env' | 'config-file' | 'cli-auth' | 'git-credential';
 
 export interface IDetectedCredential {
 	providerName: ProviderName;
