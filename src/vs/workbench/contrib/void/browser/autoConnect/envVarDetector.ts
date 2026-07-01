@@ -7,6 +7,7 @@ import { IDetectedCredential, ENV_VAR_MAP, AWS_ENV_VARS, AZURE_ENV_VARS, GCP_ENV
 import { IFileService } from '../../../../../platform/files/common/files.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { env } from '../../../../../base/common/process.js';
+import { isWindows, isMacintosh } from '../../../../../base/common/platform.js';
 
 function getEnv(name: string): string | undefined {
 	return env[name] || undefined;
@@ -254,7 +255,135 @@ export async function detectGcpCredentials(fileService: IFileService): Promise<I
 	return null;
 }
 
+// --- Git Credential Manager: github.com only ---
+// GitLab and Bitbucket are intentionally excluded until their providers are added to
+// defaultProviderSettings in modelCapabilities.ts and a valid ProviderName exists for each.
+
+type ShellRunner = (jobId: string, command: string, timeoutMs: number, maxBytes: number) => Promise<string>;
+
+const GITHUB_HOST = 'github.com';
+
+function parseGitCredentialOutput(output: string): string | null {
+	// git credential fill emits `key=value` lines; we only need `password`
+	const match = output.match(/^password=(.+)$/m);
+	return match ? match[1].trim() : null;
+}
+
+async function runGitCredentialFill(run: ShellRunner): Promise<string | null> {
+	// `printf ... | git credential fill` is a POSIX pipe trick.
+	// cmd.exe and PowerShell do not have `printf`, so we skip the shell-out on Windows.
+	// The ~/.git-credentials fallback below covers Windows users who store credentials in plaintext.
+	// A proper cross-platform stdin implementation would require direct child-process access,
+	// which is not available through IExternalCommandExecutor today.
+	if (isWindows) return null;
+	try {
+		const cmd = `printf 'protocol=https\\nhost=${GITHUB_HOST}\\n\\n' | git credential fill`;
+		const out = await run('git-cred-github', cmd, 5000, 2048);
+		return parseGitCredentialOutput(out || '');
+	} catch {
+		return null;
+	}
+}
+
+async function runWindowsCredentialManagerFill(run: ShellRunner): Promise<string | null> {
+	// Windows equivalent of runGitCredentialFill using cmd.exe built-ins.
+	// `echo.` (echo-dot) writes an empty line, which signals end-of-input to git credential fill.
+	// `&` separates commands inline without a subshell; no spaces around `&` so echo
+	// output is clean (a space before `&` would be included in the echoed text).
+	// Git Credential Manager reads the Windows Credential Manager store and returns
+	// `password=<token>` when the credential is present — no UI prompt for stored creds.
+	if (!isWindows) return null;
+	try {
+		const cmd = `cmd.exe /c "(echo protocol=https&echo host=${GITHUB_HOST}&echo.) | git credential fill"`;
+		const out = await run('win-credman-github', cmd, 6000, 2048);
+		const token = parseGitCredentialOutput(out || '');
+		console.log('[autoConnect] runWindowsCredentialManagerFill: token found:', !!token, 'length:', token?.length ?? 0);
+		return token;
+	} catch (err) {
+		console.log('[autoConnect] runWindowsCredentialManagerFill: failed:', String(err));
+		return null;
+	}
+}
+
+async function readGitCredentialsFileForGitHub(fileService: IFileService): Promise<string | null> {
+	const home = getHomedir();
+	if (!home) return null;
+	const content = await readFileSafe(fileService, `${home}/.git-credentials`);
+	if (!content) return null;
+	// Format per git-credential-store(1): https://user:token@github.com
+	const re = /https?:\/\/[^:]+:([^@]+)@github\.com/m;
+	const match = content.match(re);
+	return match ? match[1].trim() : null;
+}
+
+async function readMacOsKeychainForGitHub(run: ShellRunner): Promise<string | null> {
+	if (!isMacintosh) return null;
+	try {
+		const out = await run('keychain-github', `security find-internet-password -s ${GITHUB_HOST} -w`, 4000, 512);
+		const token = out.trim();
+		return token.length >= 4 ? token : null;
+	} catch {
+		return null;
+	}
+}
+
+export async function detectGitCredentialManagerCredentials(
+	fileService: IFileService,
+	run?: ShellRunner,
+	githubAlreadyDetected?: boolean,
+): Promise<IDetectedCredential | null> {
+	// Honour higher-priority detectors: GITHUB_TOKEN / GH_TOKEN env vars and gh CLI
+	if (githubAlreadyDetected) return null;
+
+	let token: string | null = null;
+	let source: 'git-credential' | 'config-file' = 'git-credential';
+
+	// Strategy 1: git credential fill (POSIX/macOS/Linux only; skipped on Windows)
+	if (run) {
+		token = await runGitCredentialFill(run);
+	}
+
+	// Strategy 2: ~/.git-credentials plaintext file (works on all platforms)
+	if (!token) {
+		token = await readGitCredentialsFileForGitHub(fileService);
+		if (token) source = 'config-file';
+	}
+
+	// Strategy 3: macOS Keychain via `security` CLI
+	if (!token && run) {
+		token = await readMacOsKeychainForGitHub(run);
+	}
+
+	// Strategy 4: Windows Credential Manager via cmd.exe + git credential fill.
+	// Covers GitHub CLI (and Git Credential Manager) tokens stored in the Windows
+	// Credential vault (git:https://github.com entries), which are invisible to the
+	// POSIX pipe trick in Strategy 1 because Git Bash runs in a different PATH context.
+	if (!token && run) {
+		token = await runWindowsCredentialManagerFill(run);
+	}
+
+	if (!token || token.length < 4) return null;
+
+	return {
+		providerName: 'githubModels',
+		source,
+		settings: { apiKey: token },
+		maskedDisplay: `Git (${GITHUB_HOST}) ${maskKey(token)}`,
+	};
+}
+
 // --- GitHub CLI: ~/.config/gh/hosts.yml or external token ---
+
+function getGhHostsYmlPaths(): string[] {
+	const paths: string[] = [];
+	const home = getHomedir();
+	// POSIX / macOS / Linux
+	if (home) paths.push(`${home}/.config/gh/hosts.yml`);
+	// Windows: gh stores config under %APPDATA%\GitHub CLI\hosts.yml
+	const appData = getEnv('APPDATA');
+	if (appData) paths.push(`${appData}\\GitHub CLI\\hosts.yml`);
+	return paths;
+}
 
 export async function detectGitHubCliCredentials(fileService: IFileService, externalToken?: string): Promise<IDetectedCredential | null> {
 	const home = getHomedir();
@@ -262,13 +391,15 @@ export async function detectGitHubCliCredentials(fileService: IFileService, exte
 	// Strategy 1: token provided externally (from `gh auth token` shell-out)
 	if (externalToken && externalToken.trim().length >= 4) {
 		let user = '';
-		if (home) {
-			const hostsContent = await readFileSafe(fileService, `${home}/.config/gh/hosts.yml`);
+		// Try all known hosts.yml locations to find the logged-in user display name
+		for (const hostsPath of getGhHostsYmlPaths()) {
+			const hostsContent = await readFileSafe(fileService, hostsPath);
 			if (hostsContent) {
 				const userMatch = hostsContent.match(/user:\s*(.+)/);
-				if (userMatch) user = userMatch[1].trim();
+				if (userMatch) { user = userMatch[1].trim(); break; }
 			}
 		}
+		console.log('[autoConnect] detectGitHubCliCredentials: external token hit, user:', user || '(unknown)', 'token length:', externalToken.trim().length);
 		return {
 			providerName: 'githubModels',
 			source: 'cli-auth',
@@ -278,14 +409,25 @@ export async function detectGitHubCliCredentials(fileService: IFileService, exte
 	}
 
 	// Strategy 2: token stored in hosts.yml directly (older gh versions / non-keychain)
-	if (!home) return null;
+	// Check all known paths (POSIX and Windows APPDATA).
+	const hostsPaths = getGhHostsYmlPaths();
+	if (!home && hostsPaths.length === 0) return null;
 
-	const hostsPath = `${home}/.config/gh/hosts.yml`;
-	const content = await readFileSafe(fileService, hostsPath);
-	if (!content) return null;
+	let content: string | null = null;
+	for (const hostsPath of hostsPaths) {
+		content = await readFileSafe(fileService, hostsPath);
+		if (content) break;
+	}
+	if (!content) {
+		console.log('[autoConnect] detectGitHubCliCredentials: no hosts.yml found at', hostsPaths.join(', '));
+		return null;
+	}
 
 	const tokenMatch = content.match(/oauth_token:\s*(.+)/);
-	if (!tokenMatch) return null;
+	if (!tokenMatch) {
+		console.log('[autoConnect] detectGitHubCliCredentials: hosts.yml found but no oauth_token key (likely keychain storage)');
+		return null;
+	}
 
 	const token = tokenMatch[1].trim();
 	if (!token || token.length < 4) return null;
@@ -294,6 +436,7 @@ export async function detectGitHubCliCredentials(fileService: IFileService, exte
 	const userMatch = content.match(/user:\s*(.+)/);
 	if (userMatch) user = userMatch[1].trim();
 
+	console.log('[autoConnect] detectGitHubCliCredentials: oauth_token from hosts.yml, user:', user || '(unknown)', 'token length:', token.length);
 	return {
 		providerName: 'githubModels',
 		source: 'cli-auth',
@@ -304,17 +447,26 @@ export async function detectGitHubCliCredentials(fileService: IFileService, exte
 
 // --- Aggregate ---
 
-export async function detectAllCredentials(fileService: IFileService, ghCliToken?: string): Promise<IDetectedCredential[]> {
+export async function detectAllCredentials(fileService: IFileService, ghCliToken?: string, run?: ShellRunner): Promise<IDetectedCredential[]> {
+	console.log('[autoConnect] detectAllCredentials: ghCliToken present:', !!ghCliToken, 'length:', ghCliToken?.length ?? 0);
 	const results: IDetectedCredential[] = [];
 
-	results.push(...await detectEnvVarCredentials(fileService));
+	const envVarResults = await detectEnvVarCredentials(fileService);
+	console.log('[autoConnect] detectAllCredentials: envVar results:', envVarResults.map(r => `${r.providerName}/${r.source}`).join(', ') || '(none)');
+	results.push(...envVarResults);
 
-	const [aws, azure, gcp, ghCli] = await Promise.all([
+	const githubFromEnv = envVarResults.some(r => r.providerName === 'githubModels');
+
+	const [aws, azure, gcp, ghCli, gcm] = await Promise.all([
 		detectAwsCredentials(fileService),
 		detectAzureCredentials(fileService),
 		detectGcpCredentials(fileService),
 		detectGitHubCliCredentials(fileService, ghCliToken),
+		// Pass githubFromEnv so GCM doesn't run when GITHUB_TOKEN / GH_TOKEN already found
+		detectGitCredentialManagerCredentials(fileService, run, githubFromEnv),
 	]);
+
+	console.log('[autoConnect] detectAllCredentials: aws:', !!aws, 'azure:', !!azure, 'gcp:', !!gcp, 'ghCli:', !!ghCli, 'gcm:', !!gcm);
 
 	if (aws) results.push(aws);
 	if (azure) results.push(azure);
@@ -325,5 +477,11 @@ export async function detectAllCredentials(fileService: IFileService, ghCliToken
 		results.push(ghCli);
 	}
 
+	// Only add GCM credential if neither env-var nor gh-cli already covered githubModels
+	if (gcm && !results.some(r => r.providerName === 'githubModels')) {
+		results.push(gcm);
+	}
+
+	console.log('[autoConnect] detectAllCredentials: final results:', results.map(r => `${r.providerName}/${r.source}`).join(', ') || '(none)');
 	return results;
 }
