@@ -852,10 +852,13 @@ const AutoDetectCredentials = () => {
 						const { title } = displayInfoOfProviderName(cred.providerName)
 						const isApplied = appliedSet.has(cred.providerName)
 						const isExperimental = cred.providerName === 'microsoftAzure' || cred.providerName === 'googleVertex'
+						const displayTitle = cred.providerName === 'microsoftAzure' && cred.source === 'cli-auth'
+							? 'Azure OpenAI (az cli)'
+							: title
 
 						return <div key={cred.providerName} className='flex items-center gap-3 py-1.5 px-2 rounded-sm bg-void-bg-2'>
 							<span className='text-void-fg-2 min-w-[130px] text-sm font-medium'>
-								{title}
+								{displayTitle}
 								{isExperimental && <span className='ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-normal'>experimental</span>}
 							</span>
 							<span className='text-void-fg-3 font-mono text-xs'>{cred.maskedDisplay}</span>

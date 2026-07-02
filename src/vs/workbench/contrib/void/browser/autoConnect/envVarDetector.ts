@@ -160,9 +160,11 @@ export async function detectAwsCredentials(fileService: IFileService): Promise<I
 	};
 }
 
-// --- Azure: env vars → ~/.azure/azureProfile.json ---
+// --- Azure: env vars → Azure CLI bearer token ---
+// azureProfile.json is used only for subscription display metadata, never as a standalone credential.
 
-export async function detectAzureCredentials(fileService: IFileService): Promise<IDetectedCredential | null> {
+export async function detectAzureCredentials(fileService: IFileService, azToken?: string, azEndpoint?: string): Promise<IDetectedCredential | null> {
+	// Strategy 1: AZURE_OPENAI_API_KEY env var — highest priority, skip CLI
 	const apiKey = findFirstEnvVar(AZURE_ENV_VARS.apiKey);
 	if (apiKey) {
 		const endpoint = findFirstEnvVar(AZURE_ENV_VARS.endpoint);
@@ -179,25 +181,39 @@ export async function detectAzureCredentials(fileService: IFileService): Promise
 		};
 	}
 
-	const home = getHomedir();
-	if (!home) return null;
-
-	const azureProfile = await readFileSafe(fileService, `${home}/.azure/azureProfile.json`);
-	if (!azureProfile) return null;
-
-	try {
-		const profile = JSON.parse(azureProfile);
-		const subscriptions = profile?.subscriptions;
-		if (subscriptions && subscriptions.length > 0) {
-			const defaultSub = subscriptions.find((s: any) => s.isDefault) || subscriptions[0];
-			return {
-				providerName: 'microsoftAzure',
-				source: 'config-file',
-				settings: {},
-				maskedDisplay: `Azure CLI (${defaultSub.name || defaultSub.id || 'logged in'})`,
-			};
+	// Strategy 2: Azure CLI bearer token (from `az account get-access-token`)
+	// azureProfile.json is read only for subscription label display, not as a credential.
+	if (azToken) {
+		let subscriptionLabel = '';
+		const home = getHomedir();
+		if (home) {
+			const azureProfile = await readFileSafe(fileService, `${home}/.azure/azureProfile.json`);
+			if (azureProfile) {
+				try {
+					const profile = JSON.parse(azureProfile);
+					const subscriptions = profile?.subscriptions;
+					if (subscriptions && subscriptions.length > 0) {
+						const defaultSub = subscriptions.find((s: any) => s.isDefault) || subscriptions[0];
+						subscriptionLabel = defaultSub.name || defaultSub.id || '';
+					}
+				} catch { /* malformed */ }
+			}
 		}
-	} catch { /* malformed */ }
+
+		const settings: Record<string, string> = { apiKey: azToken };
+		if (azEndpoint) settings['endpoint'] = azEndpoint;
+
+		const maskedDisplay = subscriptionLabel
+			? `az cli (${subscriptionLabel}) ${maskKey(azToken)}`
+			: `az cli ${maskKey(azToken)}`;
+
+		return {
+			providerName: 'microsoftAzure',
+			source: 'cli-auth',
+			settings,
+			maskedDisplay,
+		};
+	}
 
 	return null;
 }
@@ -453,8 +469,8 @@ export async function detectGitHubCliCredentials(fileService: IFileService, exte
 
 // --- Aggregate ---
 
-export async function detectAllCredentials(fileService: IFileService, ghCliToken?: string, run?: ShellRunner): Promise<IDetectedCredential[]> {
-	console.log('[autoConnect] detectAllCredentials: ghCliToken present:', !!ghCliToken, 'length:', ghCliToken?.length ?? 0);
+export async function detectAllCredentials(fileService: IFileService, ghCliToken?: string, azCliToken?: string, azCliEndpoint?: string, run?: ShellRunner): Promise<IDetectedCredential[]> {
+	console.log('[autoConnect] detectAllCredentials: ghCliToken present:', !!ghCliToken, 'length:', ghCliToken?.length ?? 0, 'azCliToken present:', !!azCliToken, 'azCliEndpoint:', azCliEndpoint || '(none)');
 	const results: IDetectedCredential[] = [];
 
 	const envVarResults = await detectEnvVarCredentials(fileService);
@@ -465,7 +481,7 @@ export async function detectAllCredentials(fileService: IFileService, ghCliToken
 
 	const [aws, azure, gcp, ghCli, gcm] = await Promise.all([
 		detectAwsCredentials(fileService),
-		detectAzureCredentials(fileService),
+		detectAzureCredentials(fileService, azCliToken, azCliEndpoint),
 		detectGcpCredentials(fileService),
 		detectGitHubCliCredentials(fileService, ghCliToken),
 		// Pass githubFromEnv so GCM doesn't run when GITHUB_TOKEN / GH_TOKEN already found

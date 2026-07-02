@@ -7,6 +7,7 @@ import assert from 'assert';
 import {
 	detectEnvVarCredentials,
 	detectGitCredentialManagerCredentials,
+	detectAzureCredentials,
 } from '../../browser/autoConnect/envVarDetector.js';
 import { IFileService, IFileContent } from '../../../../../platform/files/common/files.js';
 import { URI } from '../../../../../base/common/uri.js';
@@ -215,6 +216,120 @@ suite('envVarDetector — detectGitCredentialManagerCredentials', () => {
 		};
 		const result = await detectGitCredentialManagerCredentials(emptyFs, runner, false);
 		assert.strictEqual(result, null, 'should return null when security CLI throws');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Tests: detectAzureCredentials — Azure CLI bearer token
+// ---------------------------------------------------------------------------
+
+suite('envVarDetector — detectAzureCredentials (az cli)', () => {
+	let savedApiKey: string | undefined;
+	let savedEndpoint: string | undefined;
+
+	setup(() => {
+		savedApiKey = process.env['AZURE_OPENAI_API_KEY'];
+		savedEndpoint = process.env['AZURE_OPENAI_ENDPOINT'];
+		delete process.env['AZURE_OPENAI_API_KEY'];
+		delete process.env['AZURE_API_KEY'];
+		delete process.env['AZURE_OPENAI_ENDPOINT'];
+		delete process.env['AZURE_OPENAI_BASE_URL'];
+	});
+
+	teardown(() => {
+		if (savedApiKey !== undefined) { process.env['AZURE_OPENAI_API_KEY'] = savedApiKey; }
+		else { delete process.env['AZURE_OPENAI_API_KEY']; }
+		if (savedEndpoint !== undefined) { process.env['AZURE_OPENAI_ENDPOINT'] = savedEndpoint; }
+		else { delete process.env['AZURE_OPENAI_ENDPOINT']; }
+	});
+
+	const emptyFs = makeFileService(new Map());
+
+	test('returns null when no env key and no az token', async () => {
+		const result = await detectAzureCredentials(emptyFs, undefined, undefined);
+		assert.strictEqual(result, null);
+	});
+
+	test('env key overrides CLI token — returns env credential', async () => {
+		process.env['AZURE_OPENAI_API_KEY'] = 'env-key-1234abcd';
+		const result = await detectAzureCredentials(emptyFs, 'cli-bearer-token-xyz', 'https://my.openai.azure.com/');
+		assert.ok(result, 'expected a credential');
+		assert.strictEqual(result.source, 'env');
+		assert.strictEqual(result.settings.apiKey, 'env-key-1234abcd');
+		assert.ok(!result.maskedDisplay.includes('env-key-1234abcd'), 'full key must not appear in maskedDisplay');
+	});
+
+	test('CLI token returns cli-auth credential', async () => {
+		const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3QifQ.dGVzdA.dGVzdA';
+		const result = await detectAzureCredentials(emptyFs, token, undefined);
+		assert.ok(result, 'expected a credential');
+		assert.strictEqual(result.providerName, 'microsoftAzure');
+		assert.strictEqual(result.source, 'cli-auth');
+		assert.strictEqual(result.settings.apiKey, token);
+		assert.strictEqual(result.settings['endpoint'], undefined, 'no endpoint should be set when azEndpoint is undefined');
+	});
+
+	test('CLI token + endpoint includes endpoint in settings', async () => {
+		const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3QifQ.dGVzdA.dGVzdA';
+		const endpoint = 'https://my-resource.openai.azure.com/';
+		const result = await detectAzureCredentials(emptyFs, token, endpoint);
+		assert.ok(result);
+		assert.strictEqual(result.settings['endpoint'], endpoint);
+		assert.strictEqual(result.settings.apiKey, token);
+	});
+
+	test('no endpoint does not crash — credential still returned', async () => {
+		const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3QifQ.dGVzdA.dGVzdA';
+		let result: Awaited<ReturnType<typeof detectAzureCredentials>> | undefined;
+		let threw = false;
+		try {
+			result = await detectAzureCredentials(emptyFs, token, undefined);
+		} catch {
+			threw = true;
+		}
+		assert.strictEqual(threw, false, 'must not throw when endpoint is undefined');
+		assert.ok(result, 'credential still returned without endpoint');
+	});
+
+	test('maskedDisplay does not contain full bearer token', async () => {
+		const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3QifQ.dGVzdA.dGVzdA';
+		const result = await detectAzureCredentials(emptyFs, token, undefined);
+		assert.ok(result);
+		assert.ok(!result.maskedDisplay.includes(token), 'full bearer token must not appear in maskedDisplay');
+	});
+
+	test('subscription label from azureProfile.json appears in maskedDisplay', async () => {
+		const home = process.env['HOME'] || process.env['USERPROFILE'] || '';
+		if (!home) { return; }
+
+		const azureProfilePath = `${home}/.azure/azureProfile.json`.replace(/\\/g, '/');
+		const profile = JSON.stringify({
+			subscriptions: [{ name: 'My Subscription', id: 'sub-001', isDefault: true }],
+		});
+		const fs = makeFileService(new Map([[azureProfilePath, profile]]));
+
+		const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3QifQ.dGVzdA.dGVzdA';
+		const result = await detectAzureCredentials(fs, token, undefined);
+		assert.ok(result);
+		assert.ok(result.maskedDisplay.includes('My Subscription'), 'subscription name should appear in maskedDisplay');
+		assert.ok(!result.maskedDisplay.includes(token), 'full token must not appear in maskedDisplay');
+	});
+
+	test('malformed azureProfile.json does not crash', async () => {
+		const home = process.env['HOME'] || process.env['USERPROFILE'] || '';
+		if (!home) { return; }
+
+		const azureProfilePath = `${home}/.azure/azureProfile.json`.replace(/\\/g, '/');
+		const fs = makeFileService(new Map([[azureProfilePath, '{ this is not valid json }']]));
+
+		const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3QifQ.dGVzdA.dGVzdA';
+		let threw = false;
+		try {
+			await detectAzureCredentials(fs, token, undefined);
+		} catch {
+			threw = true;
+		}
+		assert.strictEqual(threw, false, 'must not throw on malformed azureProfile.json');
 	});
 });
 
