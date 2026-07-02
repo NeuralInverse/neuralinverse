@@ -89,8 +89,12 @@ export class AutoConnectService extends Disposable implements IAutoConnectServic
 	private _runDetection(): void {
 		if (this._neverAskAgain) return;
 
-		this._resolveGhToken().then(ghToken => {
-			return detectAllCredentials(this._fileService, ghToken, this._commandExecutor.execute.bind(this._commandExecutor));
+		Promise.all([
+			this._resolveGhToken(),
+			this._resolveAzToken(),
+			this._resolveAzEndpoint(),
+		]).then(([ghToken, azToken, azEndpoint]) => {
+			return detectAllCredentials(this._fileService, ghToken, azToken, azEndpoint, this._commandExecutor.execute.bind(this._commandExecutor));
 		}).then(all => {
 			console.log('[autoConnect] _runDetection: raw credential count:', all.length, all.map(c => `${c.providerName}/${c.source}`).join(', ') || '(none)');
 			const newCredentials = all.filter(c =>
@@ -139,8 +143,12 @@ export class AutoConnectService extends Disposable implements IAutoConnectServic
 	}
 
 	async detectCredentials(): Promise<IDetectedCredential[]> {
-		const ghToken = await this._resolveGhToken();
-		const all = await detectAllCredentials(this._fileService, ghToken, this._commandExecutor.execute.bind(this._commandExecutor));
+		const [ghToken, azToken, azEndpoint] = await Promise.all([
+			this._resolveGhToken(),
+			this._resolveAzToken(),
+			this._resolveAzEndpoint(),
+		]);
+		const all = await detectAllCredentials(this._fileService, ghToken, azToken, azEndpoint, this._commandExecutor.execute.bind(this._commandExecutor));
 		console.log('[autoConnect] detectCredentials: total:', all.length, all.map(c => `${c.providerName}/${c.source}`).join(', ') || '(none)');
 		this._detectedCredentials = all;
 		this._onDidDetectCredentials.fire(all);
@@ -169,6 +177,48 @@ export class AutoConnectService extends Disposable implements IAutoConnectServic
 			console.log('[autoConnect] _resolveGhToken: failed:', String(err));
 		}
 		return undefined;
+	}
+
+	private async _resolveAzToken(): Promise<string | undefined> {
+		// Shell out to `az account get-access-token` to obtain a Cognitive Services bearer token.
+		// Gracefully returns undefined if az is not installed, not logged in, or the command fails.
+		const command = isWindows
+			? `powershell.exe -NoProfile -Command "az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken --output tsv"`
+			: 'az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken --output tsv';
+		try {
+			const output = await this._commandExecutor.execute('az-token', command, 10000, 4096);
+			const token = output.trim().split(/\r?\n/).map(l => l.trim()).find(l => l.length > 10 && !l.toLowerCase().startsWith('error') && !l.toLowerCase().startsWith('warning'));
+			console.log('[autoConnect] _resolveAzToken: success:', !!token, 'length:', token?.length ?? 0);
+			return token || undefined;
+		} catch (err) {
+			console.log('[autoConnect] _resolveAzToken: failed (az not installed or not logged in):', String(err));
+			return undefined;
+		}
+	}
+
+	private async _resolveAzEndpoint(): Promise<string | undefined> {
+		// Shell out to `az cognitiveservices account list` (JSON) and extract the first
+		// Azure OpenAI (kind == "OpenAI") endpoint. Returns undefined if none found or
+		// if the command fails for any reason — this is detection-only, no resources are created.
+		const command = isWindows
+			? `powershell.exe -NoProfile -Command "az cognitiveservices account list --output json"`
+			: 'az cognitiveservices account list --output json';
+		try {
+			const output = await this._commandExecutor.execute('az-endpoint', command, 15000, 65536);
+			const trimmed = output.trim();
+			if (!trimmed || trimmed.startsWith('ERROR') || trimmed.startsWith('WARNING')) return undefined;
+			const accounts: any[] = JSON.parse(trimmed);
+			if (!Array.isArray(accounts)) return undefined;
+			// Prefer kind == "OpenAI"; fall back to first account with an endpoint
+			const openAiAccount = accounts.find(a => a.kind === 'OpenAI' && a.properties?.endpoint)
+				?? accounts.find(a => a.properties?.endpoint);
+			const endpoint: string | undefined = openAiAccount?.properties?.endpoint;
+			console.log('[autoConnect] _resolveAzEndpoint: found:', endpoint || '(none)');
+			return endpoint && endpoint.startsWith('https://') ? endpoint : undefined;
+		} catch (err) {
+			console.log('[autoConnect] _resolveAzEndpoint: failed (no subscription, no resources, or parse error):', String(err));
+			return undefined;
+		}
 	}
 
 	async applyCredentials(credentials: IDetectedCredential[]): Promise<void> {
