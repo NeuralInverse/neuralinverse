@@ -5,7 +5,7 @@
 
 import assert from 'assert';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../base/test/common/utils.js';
-import { AgentExecutor, IPriorStepOutput, ICancellationToken } from '../../../browser/executor/agentExecutor.js';
+import { AgentExecutor, ICancellationToken } from '../../../browser/executor/agentExecutor.js';
 import { ToolRegistry } from '../../../browser/tools/toolRegistry.js';
 import { IAgentDefinition, IWorkflowStep, IStepRun } from '../../../common/workflowTypes.js';
 import { IContextPackerService } from '../../../browser/context/packer/contextPacker.js';

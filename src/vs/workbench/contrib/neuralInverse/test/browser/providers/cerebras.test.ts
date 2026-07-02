@@ -145,8 +145,8 @@ suite('Cerebras provider — unit tests', () => {
 
 		test('qwen-3-235b-a22b-instruct-2507 has think-tag reasoning with canTurnOffReasoning: true', () => {
 			const caps = getModelCapabilities('cerebras', 'qwen-3-235b-a22b-instruct-2507', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);

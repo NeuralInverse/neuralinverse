@@ -190,8 +190,8 @@ suite('Fireworks AI provider — unit tests', () => {
 
 		test('accounts/fireworks/models/deepseek-r1 has think-tag reasoning with supportsSystemMessage: false', () => {
 			const caps = getModelCapabilities('fireworksAI', 'accounts/fireworks/models/deepseek-r1', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, false);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);
@@ -201,8 +201,8 @@ suite('Fireworks AI provider — unit tests', () => {
 
 		test('accounts/fireworks/models/qwen3-235b-a22b has toggleable reasoning (canTurnOffReasoning: true)', () => {
 			const caps = getModelCapabilities('fireworksAI', 'accounts/fireworks/models/qwen3-235b-a22b', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);
@@ -211,8 +211,8 @@ suite('Fireworks AI provider — unit tests', () => {
 
 		test('accounts/fireworks/models/qwen3-32b has toggleable reasoning (canTurnOffReasoning: true)', () => {
 			const caps = getModelCapabilities('fireworksAI', 'accounts/fireworks/models/qwen3-32b', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, true);
 		});

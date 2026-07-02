@@ -202,8 +202,8 @@ suite('GitHub Models provider — unit tests', () => {
 
 		test('openai/o4-mini has effort_slider reasoning (values: low/medium/high, default: low)', () => {
 			const caps = getModelCapabilities('githubModels', 'openai/o4-mini', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set');
-			if (caps.reasoningCapabilities === false) return; // type narrowing
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set');
+			 // type narrowing
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.ok(caps.reasoningCapabilities.reasoningSlider, 'Expected reasoningSlider to be set');
 			if (!caps.reasoningCapabilities.reasoningSlider) return;
@@ -220,16 +220,16 @@ suite('GitHub Models provider — unit tests', () => {
 
 		test('openai/o3-mini has effort_slider reasoning', () => {
 			const caps = getModelCapabilities('githubModels', 'openai/o3-mini', undefined);
-			assert.ok(caps.reasoningCapabilities !== false);
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities);
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.reasoningSlider?.type, 'effort_slider');
 		});
 
 		test('deepseek/deepseek-r1 has think-tag reasoning (openSourceThinkTags)', () => {
 			const caps = getModelCapabilities('githubModels', 'deepseek/deepseek-r1', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);
 			assert.deepStrictEqual(
@@ -240,8 +240,8 @@ suite('GitHub Models provider — unit tests', () => {
 
 		test('xai/grok-3-mini has effort_slider reasoning (values: low/high, default: low)', () => {
 			const caps = getModelCapabilities('githubModels', 'xai/grok-3-mini', undefined);
-			assert.ok(caps.reasoningCapabilities !== false);
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities);
+			
 			const slider = caps.reasoningCapabilities.reasoningSlider;
 			assert.ok(slider, 'Expected reasoningSlider');
 			if (!slider) return;
