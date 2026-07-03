@@ -78,6 +78,13 @@ export const defaultProviderSettings = {
 	cerebras: {
 		apiKey: '',
 	},
+	qwen: {
+		apiKey: '',
+	},
+	moonshot: {
+		apiKey: '',
+	},
+
 } as const
 
 
@@ -182,6 +189,20 @@ export const defaultModelsOfProvider = {
 		'llama3.1-8b',
 		'gpt-oss-120b',
 		'qwen-3-235b-a22b-instruct-2507',
+	],
+	qwen: [ // https://dashscope.aliyuncs.com/compatible-mode/v1
+		'qwen-plus',
+		'qwen-turbo',
+		'qwen-max',
+		'qwen3-235b-a22b',
+		'qwen3-32b',
+		'qwq-32b',
+	],
+	moonshot: [ // https://api.moonshot.cn/v1
+		'moonshot-v1-8k',
+		'moonshot-v1-32k',
+		'moonshot-v1-128k',
+		'kimi-k2',
 	],
 	openAICompatible: [], // fallback
 	googleVertex: [],
@@ -1939,6 +1960,146 @@ const cerebrasSettings: VoidStaticProviderInfo = {
 }
 
 
+// ---------------- QWEN ----------------
+const qwenModelOptions = {
+	'qwen-plus': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.40, output: 1.20 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'qwen-turbo': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.05, output: 0.20 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'qwen-max': {
+		contextWindow: 32_768,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 1.60, output: 6.40 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'qwen3-235b-a22b': {
+		contextWindow: 32_768,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.60, output: 2.40 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: { supportsReasoning: true, canTurnOffReasoning: true, canIOReasoning: true, openSourceThinkTags: ['<think>', '</think>'] },
+	},
+	'qwen3-32b': {
+		contextWindow: 32_768,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.30, output: 1.20 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: { supportsReasoning: true, canTurnOffReasoning: true, canIOReasoning: true, openSourceThinkTags: ['<think>', '</think>'] },
+	},
+	'qwq-32b': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.30, output: 1.20 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: { supportsReasoning: true, canTurnOffReasoning: false, canIOReasoning: true, openSourceThinkTags: ['<think>', '</think>'] },
+	},
+} as const satisfies { [s: string]: VoidStaticModelInfo }
+
+const qwenSettings: VoidStaticProviderInfo = {
+	modelOptions: qwenModelOptions,
+	modelOptionsFallback: (modelName) => {
+		const res = extensiveModelOptionsFallback(modelName)
+		if (res?.specialToolFormat === 'anthropic-style' || res?.specialToolFormat === 'gemini-style') {
+			res.specialToolFormat = 'openai-style'
+		}
+		return res
+	},
+	providerReasoningIOSettings: {
+		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
+		output: { needsManualParse: true },
+	},
+}
+
+
+// ---------------- MOONSHOT (KIMI) ----------------
+const moonshotModelOptions = {
+	'moonshot-v1-8k': {
+		contextWindow: 8_192,
+		reservedOutputTokenSpace: 4_096,
+		cost: { input: 0.012, output: 0.012 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'moonshot-v1-32k': {
+		contextWindow: 32_768,
+		reservedOutputTokenSpace: 4_096,
+		cost: { input: 0.024, output: 0.024 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'moonshot-v1-128k': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 4_096,
+		cost: { input: 0.060, output: 0.060 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'kimi-k2': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 16_000,
+		cost: { input: 0.60, output: 2.50 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: { supportsReasoning: true, canTurnOffReasoning: false, canIOReasoning: true, openSourceThinkTags: ['<think>', '</think>'] },
+	},
+} as const satisfies { [s: string]: VoidStaticModelInfo }
+
+const moonshotSettings: VoidStaticProviderInfo = {
+	modelOptions: moonshotModelOptions,
+	modelOptionsFallback: (modelName) => {
+		const res = extensiveModelOptionsFallback(modelName)
+		if (res?.specialToolFormat === 'anthropic-style' || res?.specialToolFormat === 'gemini-style') {
+			res.specialToolFormat = 'openai-style'
+		}
+		return res
+	},
+	providerReasoningIOSettings: {
+		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
+		output: { needsManualParse: true },
+	},
+}
+
+
 // ---------------- model settings of everything above ----------------
 
 const modelSettingsOfProvider: { [providerName in ProviderName]: VoidStaticProviderInfo } = {
@@ -1968,6 +2129,8 @@ const modelSettingsOfProvider: { [providerName in ProviderName]: VoidStaticProvi
 	githubModels: githubModelsSettings,
 	fireworksAI: fireworksAISettings,
 	cerebras: cerebrasSettings,
+	qwen: qwenSettings,
+	moonshot: moonshotSettings,
 } as const
 
 
