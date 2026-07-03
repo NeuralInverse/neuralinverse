@@ -114,8 +114,8 @@ suite('Qwen provider — unit tests', () => {
 
 		test('qwq-32b is a reasoning model with canTurnOffReasoning: false', () => {
 			const caps = getModelCapabilities('qwen', 'qwq-32b', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set for qwq-32b');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set for qwq-32b');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, false);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);
@@ -124,8 +124,8 @@ suite('Qwen provider — unit tests', () => {
 
 		test('qwen3-235b-a22b has reasoning with canTurnOffReasoning: true', () => {
 			const caps = getModelCapabilities('qwen', 'qwen3-235b-a22b', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set for qwen3-235b-a22b');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set for qwen3-235b-a22b');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);
@@ -133,8 +133,8 @@ suite('Qwen provider — unit tests', () => {
 
 		test('qwen3-32b has reasoning with canTurnOffReasoning: true', () => {
 			const caps = getModelCapabilities('qwen', 'qwen3-32b', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set for qwen3-32b');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set for qwen3-32b');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, true);
 		});

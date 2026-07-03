@@ -112,8 +112,8 @@ suite('Moonshot (Kimi) provider — unit tests', () => {
 
 		test('kimi-k2 is a reasoning model with canTurnOffReasoning: false', () => {
 			const caps = getModelCapabilities('moonshot', 'kimi-k2', undefined);
-			assert.ok(caps.reasoningCapabilities !== false, 'Expected reasoningCapabilities to be set for kimi-k2');
-			if (caps.reasoningCapabilities === false) return;
+			assert.ok(caps.reasoningCapabilities, 'Expected reasoningCapabilities to be set for kimi-k2');
+			
 			assert.strictEqual(caps.reasoningCapabilities.supportsReasoning, true);
 			assert.strictEqual(caps.reasoningCapabilities.canTurnOffReasoning, false);
 			assert.strictEqual(caps.reasoningCapabilities.canIOReasoning, true);

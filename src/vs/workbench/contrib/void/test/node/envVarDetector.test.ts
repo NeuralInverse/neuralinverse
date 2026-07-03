@@ -383,69 +383,6 @@ suite('envVarDetector — detectEnvVarCredentials (GITHUB_TOKEN)', () => {
 	});
 });
 
-
-// ---------------------------------------------------------------------------
-// Minimal IFileService stub — only readFile is exercised by envVarDetector
-// ---------------------------------------------------------------------------
-
-type FileMap = Map<string, string>;
-
-// Normalize a path for use as a map key: forward slashes, lowercase drive letter on Windows.
-function normPath(p: string): string {
-	return p.replace(/\\/g, '/').replace(/^[A-Z]:/, c => c.toLowerCase());
-}
-
-function makeFileService(files: FileMap): IFileService {
-	// Re-key the map with normalized paths so URI.file().fsPath comparisons always match.
-	const normalized = new Map<string, string>();
-	for (const [k, v] of files) { normalized.set(normPath(k), v); }
-
-	return {
-		readFile: async (resource: URI): Promise<IFileContent> => {
-			const content = normalized.get(normPath(resource.fsPath));
-			if (content === undefined) {
-				throw new Error(`ENOENT: ${resource.fsPath}`);
-			}
-			return {
-				resource,
-				value: VSBuffer.fromString(content),
-				etag: '',
-				mtime: 0,
-				ctime: 0,
-				size: content.length,
-				readonly: false,
-				locked: false,
-				name: '',
-			} as unknown as IFileContent;
-		},
-	} as unknown as IFileService;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Build a ShellRunner that returns a canned response for a given jobId prefix. */
-type ShellRunner = (jobId: string, cmd: string, timeout: number, maxBytes: number) => Promise<string>;
-
-function makeRunner(responses: Record<string, string>): ShellRunner {
-	return async (jobId: string) => {
-		for (const [prefix, value] of Object.entries(responses)) {
-			if (jobId.startsWith(prefix)) return value;
-		}
-		throw new Error(`no mock for jobId: ${jobId}`);
-	};
-}
-
-function emptyRunner(): ShellRunner {
-	return async () => { throw new Error('shell runner should not be called'); };
-}
-
-// ---------------------------------------------------------------------------
-// Tests: parseGitCredentialOutput (via detectGitCredentialManagerCredentials)
-// We test it indirectly because the function is not exported.
-// ---------------------------------------------------------------------------
-
 suite('envVarDetector — detectGitCredentialManagerCredentials', () => {
 	const emptyFs = makeFileService(new Map());
 
