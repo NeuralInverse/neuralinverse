@@ -6,7 +6,7 @@
 import assert from 'assert';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
 import { buildSerialTools } from '../../../../browser/engine/agentTools/serialTools.js';
-import { ISerialLine } from '../../../../browser/common/firmwareTypes.js';
+import { ISerialLine } from '../../../../common/firmwareTypes.js';
 
 function makeMockSerialService(overrides: {
 	ports?: Array<{ path: string; manufacturer?: string; vendorId?: string; productId?: string; isDebugProbe?: boolean }>;
@@ -18,9 +18,9 @@ function makeMockSerialService(overrides: {
 } = {}) {
 	const now = Date.now();
 	const defaultLines: ISerialLine[] = overrides.rxLines ?? [
-		{ text: 'Boot OK', timestamp: now - 2000 },
-		{ text: 'System init complete', timestamp: now - 1500 },
-		{ text: 'Waiting for input...', timestamp: now - 1000 },
+		{ text: 'Boot OK', timestamp: now - 2000, direction: 'rx' as const },
+		{ text: 'System init complete', timestamp: now - 1500, direction: 'rx' as const },
+		{ text: 'Waiting for input...', timestamp: now - 1000, direction: 'rx' as const },
 	];
 
 	const rxBuffer = [...defaultLines];
@@ -155,8 +155,8 @@ suite('Serial Agent Tools', () => {
 		const tools = buildSerialTools(makeMockSerialService({
 			isConnected: true,
 			rxLines: [
-				{ text: 'Old line', timestamp: base },
-				{ text: 'New line', timestamp: base + 2500 },
+				{ text: 'Old line', timestamp: base, direction: 'rx' as const },
+				{ text: 'New line', timestamp: base + 2500, direction: 'rx' as const },
 			],
 		}) as any);
 		const tool = tools.find(t => t.name === 'fw_serial_read')!;

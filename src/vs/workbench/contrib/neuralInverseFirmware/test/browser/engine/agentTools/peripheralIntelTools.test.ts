@@ -37,12 +37,12 @@ suite('Peripheral Intel Agent Tools', () => {
 	ensureNoDisposablesAreLeakedInTestSuite();
 
 	test('buildPeripheralIntelTools returns 6 tools', () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		assert.strictEqual(tools.length, 6);
 	});
 
 	test('tool names include all expected peripheral intel tools', () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const names = new Set(tools.map(t => t.name));
 		assert.ok(names.has('fw_calculate_prescaler'));
 		assert.ok(names.has('fw_gpio_alternate_functions'));
@@ -55,14 +55,14 @@ suite('Peripheral Intel Agent Tools', () => {
 	// ─── fw_calculate_prescaler ───────────────────────────────────────────────
 
 	test('fw_calculate_prescaler requires active session', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_calculate_prescaler')!;
 		const result = await tool.execute({ peripheral: 'USART1', targetHz: 115200 });
 		assert.ok(result.toLowerCase().includes('no active') || result.toLowerCase().includes('session'));
 	});
 
 	test('fw_calculate_prescaler for UART at 115200 returns prescaler', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_calculate_prescaler')!;
 		const result = await tool.execute({ peripheral: 'USART1', targetHz: 115200 });
 		assert.ok(typeof result === 'string');
@@ -70,7 +70,7 @@ suite('Peripheral Intel Agent Tools', () => {
 	});
 
 	test('fw_calculate_prescaler for TIM returns period and prescaler', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_calculate_prescaler')!;
 		const result = await tool.execute({ peripheral: 'TIM3', targetHz: 1000 });
 		assert.ok(typeof result === 'string');
@@ -80,21 +80,21 @@ suite('Peripheral Intel Agent Tools', () => {
 	// ─── fw_gpio_alternate_functions ─────────────────────────────────────────
 
 	test('fw_gpio_alternate_functions requires active session', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_gpio_alternate_functions')!;
 		const result = await tool.execute({ pin: 'PA9' });
 		assert.ok(result.toLowerCase().includes('no active') || result.toLowerCase().includes('session'));
 	});
 
 	test('fw_gpio_alternate_functions for PA9 shows USART1_TX AF7', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ family: 'STM32F4', variant: 'STM32F407VGT6' }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ family: 'STM32F4', variant: 'STM32F407VGT6' }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_gpio_alternate_functions')!;
 		const result = await tool.execute({ pin: 'PA9' });
 		assert.ok(result.includes('USART1') || result.includes('AF7') || result.includes('PA9'), `Result: ${result.slice(0, 200)}`);
 	});
 
 	test('fw_gpio_alternate_functions for invalid pin format returns error', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_gpio_alternate_functions')!;
 		const result = await tool.execute({ pin: 'XX99' });
 		assert.ok(result.toLowerCase().includes('invalid') || result.toLowerCase().includes('format') || result.toLowerCase().includes('pin'));
@@ -103,14 +103,14 @@ suite('Peripheral Intel Agent Tools', () => {
 	// ─── fw_dma_channel_map ───────────────────────────────────────────────────
 
 	test('fw_dma_channel_map requires active session', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_dma_channel_map')!;
 		const result = await tool.execute({ peripheral: 'USART1' });
 		assert.ok(result.toLowerCase().includes('no active') || result.toLowerCase().includes('session'));
 	});
 
 	test('fw_dma_channel_map for USART1 shows DMA stream/channel', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ family: 'STM32F4' }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ family: 'STM32F4' }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_dma_channel_map')!;
 		const result = await tool.execute({ peripheral: 'USART1' });
 		assert.ok(typeof result === 'string');
@@ -120,14 +120,14 @@ suite('Peripheral Intel Agent Tools', () => {
 	// ─── fw_nvic_priority_guide ───────────────────────────────────────────────
 
 	test('fw_nvic_priority_guide requires active session', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_nvic_priority_guide')!;
 		const result = await tool.execute({});
 		assert.ok(result.toLowerCase().includes('no active') || result.toLowerCase().includes('session'));
 	});
 
 	test('fw_nvic_priority_guide returns priority guidance', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_nvic_priority_guide')!;
 		const result = await tool.execute({});
 		assert.ok(result.includes('NVIC') || result.includes('priority') || result.includes('interrupt'), `Result: ${result.slice(0, 200)}`);
@@ -136,14 +136,14 @@ suite('Peripheral Intel Agent Tools', () => {
 	// ─── fw_get_pin_assignments ───────────────────────────────────────────────
 
 	test('fw_get_pin_assignments requires active session', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any);
+		const tools = buildPeripheralIntelTools(makeMockSession({ isActive: false }) as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_get_pin_assignments')!;
 		const result = await tool.execute({});
 		assert.ok(result.toLowerCase().includes('no active') || result.toLowerCase().includes('session'));
 	});
 
 	test('fw_get_pin_assignments lists assigned pins', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_get_pin_assignments')!;
 		const result = await tool.execute({});
 		assert.ok(result.includes('PA9') || result.includes('USART1') || result.includes('assignment'), `Result: ${result.slice(0, 200)}`);
@@ -152,7 +152,7 @@ suite('Peripheral Intel Agent Tools', () => {
 	// ─── fw_read_config_file ──────────────────────────────────────────────────
 
 	test('fw_read_config_file reads .nimd config', async () => {
-		const tools = buildPeripheralIntelTools(makeMockSession() as any);
+		const tools = buildPeripheralIntelTools(makeMockSession() as any, {} as any);
 		const tool = tools.find(t => t.name === 'fw_read_config_file')!;
 		const result = await tool.execute({ filename: '.nimd' });
 		assert.ok(typeof result === 'string');

@@ -6,7 +6,7 @@
 import assert from 'assert';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
 import { buildCodegenTools } from '../../../../browser/engine/agentTools/codegenTools.js';
-import { IPeripheralRegisterMap } from '../../../../browser/common/firmwareTypes.js';
+import { IPeripheralRegisterMap } from '../../../../common/firmwareTypes.js';
 
 const USART1_MAP: IPeripheralRegisterMap = {
 	name: 'USART1',

@@ -13,18 +13,11 @@ const MOCK_MPU6050: IPeripheralCatalogEntry = {
 	manufacturer: 'TDK InvenSense',
 	description: '6-axis IMU: 3-axis gyroscope + 3-axis accelerometer via I2C',
 	category: 'imu',
-	interface: 'i2c',
-	voltage: '2.375-3.46V',
-	i2cAddress: '0x68 / 0x69',
-	datasheet: 'https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf',
-	pinout: [
-		{ pin: 'VDD', description: 'Power supply 2.375-3.46V', direction: 'power' },
-		{ pin: 'GND', description: 'Ground', direction: 'power' },
-		{ pin: 'SDA', description: 'I2C data', direction: 'inout' },
-		{ pin: 'SCL', description: 'I2C clock', direction: 'input' },
-		{ pin: 'INT', description: 'Interrupt output', direction: 'output' },
-	],
-	driverNotes: 'Write 0x00 to PWR_MGMT_1 (0x6B) to wake device from sleep mode.',
+	interfaces: ['i2c'],
+	i2cAddress: [0x68, 0x69],
+	datasheetUrl: 'https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf',
+	agentHints: ['Write 0x00 to PWR_MGMT_1 (0x6B) to wake device from sleep mode.'],
+	driverExamples: ['// SDA/SCL wiring: VDD=2.375-3.46V, INT=interrupt output'],
 };
 
 const MOCK_W25Q128: IPeripheralCatalogEntry = {
@@ -32,10 +25,8 @@ const MOCK_W25Q128: IPeripheralCatalogEntry = {
 	manufacturer: 'Winbond',
 	description: '128Mbit SPI NOR Flash',
 	category: 'flash',
-	interface: 'spi',
-	voltage: '2.7-3.6V',
-	pinout: [],
-	driverNotes: 'Send 0x06 (WREN) before any write or erase.',
+	interfaces: ['spi'],
+	agentHints: ['Send 0x06 (WREN) before any write or erase.'],
 };
 
 function makeMockCatalogService(overrides: {
@@ -76,12 +67,12 @@ suite('Peripheral Catalog Agent Tools', () => {
 	ensureNoDisposablesAreLeakedInTestSuite();
 
 	test('buildPeripheralCatalogTools returns 6 tools', () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		assert.strictEqual(tools.length, 6);
 	});
 
 	test('tool names include all expected catalog tools', () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const names = new Set(tools.map(t => t.name));
 		assert.ok(names.has('fw_peripheral_search'));
 		assert.ok(names.has('fw_peripheral_add'));
@@ -94,21 +85,21 @@ suite('Peripheral Catalog Agent Tools', () => {
 	// ─── fw_peripheral_search ─────────────────────────────────────────────────
 
 	test('fw_peripheral_search finds by part number', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_search')!;
 		const result = await tool.execute({ query: 'MPU' });
 		assert.ok(result.includes('MPU-6050') || result.includes('IMU') || result.includes('InvenSense'), `Result: ${result.slice(0, 200)}`);
 	});
 
 	test('fw_peripheral_search finds by category', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_search')!;
 		const result = await tool.execute({ query: 'flash' });
 		assert.ok(result.includes('W25Q128') || result.includes('Flash') || result.includes('Winbond'), `Result: ${result.slice(0, 200)}`);
 	});
 
 	test('fw_peripheral_search with no results shows no-results message', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_search')!;
 		const result = await tool.execute({ query: 'xyznomatch99999' });
 		assert.ok(result.toLowerCase().includes('no') && (result.toLowerCase().includes('found') || result.toLowerCase().includes('match')));
@@ -118,7 +109,7 @@ suite('Peripheral Catalog Agent Tools', () => {
 
 	test('fw_peripheral_add attaches peripheral to session', async () => {
 		const svc = makeMockCatalogService();
-		const tools = buildPeripheralCatalogTools(svc as any);
+		const tools = buildPeripheralCatalogTools({} as any, svc as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_add')!;
 		const result = await tool.execute({ partNumber: 'MPU-6050' });
 		assert.ok(result.includes('MPU-6050') || result.includes('added') || result.includes('attached'), `Result: ${result.slice(0, 200)}`);
@@ -126,7 +117,7 @@ suite('Peripheral Catalog Agent Tools', () => {
 	});
 
 	test('fw_peripheral_add unknown part number returns not found message', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_add')!;
 		const result = await tool.execute({ partNumber: 'NOTAPART9999' });
 		assert.ok(result.toLowerCase().includes('not found') || result.toLowerCase().includes('fw_peripheral_search'));
@@ -136,7 +127,7 @@ suite('Peripheral Catalog Agent Tools', () => {
 
 	test('fw_peripheral_remove detaches peripheral from session', async () => {
 		const svc = makeMockCatalogService({ sessionEntries: [MOCK_MPU6050] });
-		const tools = buildPeripheralCatalogTools(svc as any);
+		const tools = buildPeripheralCatalogTools({} as any, svc as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_remove')!;
 		await tool.execute({ partNumber: 'MPU-6050' });
 		assert.strictEqual(svc.getSessionPeripherals().length, 0);
@@ -145,14 +136,14 @@ suite('Peripheral Catalog Agent Tools', () => {
 	// ─── fw_peripheral_list ───────────────────────────────────────────────────
 
 	test('fw_peripheral_list with empty session shows no peripherals message', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_list')!;
 		const result = await tool.execute({});
 		assert.ok(result.toLowerCase().includes('no peripheral') || result.toLowerCase().includes('empty') || result.toLowerCase().includes('none'));
 	});
 
 	test('fw_peripheral_list shows attached peripherals', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService({ sessionEntries: [MOCK_MPU6050, MOCK_W25Q128] }) as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService({ sessionEntries: [MOCK_MPU6050, MOCK_W25Q128] }) as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_list')!;
 		const result = await tool.execute({});
 		assert.ok(result.includes('MPU-6050'));
@@ -162,7 +153,7 @@ suite('Peripheral Catalog Agent Tools', () => {
 	// ─── fw_peripheral_wiring ─────────────────────────────────────────────────
 
 	test('fw_peripheral_wiring for I2C device shows SDA/SCL pinout', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_wiring')!;
 		const result = await tool.execute({ partNumber: 'MPU-6050' });
 		assert.ok(result.includes('SDA') || result.includes('SCL') || result.includes('I2C'), `Result: ${result.slice(0, 200)}`);
@@ -171,7 +162,7 @@ suite('Peripheral Catalog Agent Tools', () => {
 	// ─── fw_peripheral_driver ─────────────────────────────────────────────────
 
 	test('fw_peripheral_driver shows driver notes', async () => {
-		const tools = buildPeripheralCatalogTools(makeMockCatalogService() as any);
+		const tools = buildPeripheralCatalogTools({} as any, makeMockCatalogService() as any);
 		const tool = tools.find(t => t.name === 'fw_peripheral_driver')!;
 		const result = await tool.execute({ partNumber: 'MPU-6050' });
 		assert.ok(result.includes('PWR_MGMT_1') || result.includes('wake') || result.includes('driver'), `Result: ${result.slice(0, 200)}`);

@@ -116,16 +116,7 @@ const RUSTC_ERROR_OUTPUT = `error[E0308]: mismatched types
 const ARM_SIZE_OUTPUT = `   text\t   data\t    bss\t    dec\t    hex\tfilename
   12345\t    256\t   4096\t  16697\t   4139\tfirmware.elf`;
 
-// ─── arm-none-eabi-size -A -d fixture ────────────────────────────────────────
-const ARM_SIZE_A_OUTPUT = `firmware.elf  :
-section             size        addr
-.text              12345   134217728
-.rodata             1024   134230073
-.data                256   536870912
-.bss                4096   536871168
-.noinit              512   536875264
-Total              18233
-`;
+// ─── arm-none-eabi-size -A -d fixture (unused) ───────────────────────────────
 
 suite('BuildSystemService - Build Output Parsing', () => {
 	ensureNoDisposablesAreLeakedInTestSuite();

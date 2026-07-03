@@ -21,6 +21,7 @@ function makeMockClosedLoopService(overrides: {
 		],
 		totalDurationMs: 3400,
 		failureReason: success ? undefined : 'max iterations reached',
+		summary: success ? 'Goal achieved.' : 'Goal not achieved.',
 		...overrides.result,
 	});
 
@@ -114,6 +115,7 @@ suite('Closed-Loop Agent Tools', () => {
 			iterations: [{ index: 1, phase: 'build', diagnosis: 'undefined reference', passCriteriaMet: [false] }],
 			totalDurationMs: 2000,
 			failureReason: 'max iterations reached',
+			summary: 'Goal not achieved.',
 		});
 		const tools = buildClosedLoopTools(svc as any);
 		const tool = tools.find(t => t.name === 'fw_closed_loop')!;

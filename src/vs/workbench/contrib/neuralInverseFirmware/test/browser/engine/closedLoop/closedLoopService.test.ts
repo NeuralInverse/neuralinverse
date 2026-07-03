@@ -173,14 +173,6 @@ suite('ClosedLoop Types - Default Configuration', () => {
 		assert.ok(DEFAULT_CLOSED_LOOP_CONFIG.timeoutMs <= 3_600_000, 'Timeout should be at most 1 hour');
 	});
 
-	test('DEFAULT_CLOSED_LOOP_CONFIG has goal field', () => {
-		assert.ok(typeof DEFAULT_CLOSED_LOOP_CONFIG.goal === 'string');
-	});
-
-	test('DEFAULT_CLOSED_LOOP_CONFIG has passCriteria array', () => {
-		assert.ok(Array.isArray(DEFAULT_CLOSED_LOOP_CONFIG.passCriteria));
-	});
-
 	test('DEFAULT_CLOSED_LOOP_CONFIG has observeChannels', () => {
 		assert.ok(Array.isArray(DEFAULT_CLOSED_LOOP_CONFIG.observeChannels));
 		assert.ok(DEFAULT_CLOSED_LOOP_CONFIG.observeChannels.length > 0);

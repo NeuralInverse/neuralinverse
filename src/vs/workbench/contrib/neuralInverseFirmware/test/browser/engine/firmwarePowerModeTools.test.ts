@@ -5,7 +5,7 @@
 
 import assert from 'assert';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../base/test/common/utils.js';
-import { IFirmwarePowerModeToolService, IFirmwarePMTool } from '../../../browser/engine/firmwarePowerModeTools.js';
+import { IFirmwarePMTool } from '../../../browser/engine/firmwarePowerModeTools.js';
 
 // ─── Mock power mode tool service ────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ suite('Firmware Power Mode Tools - IFirmwarePMTool Interface', () => {
 
 	test('tool with parameters passes them to execute', async () => {
 		const tool = makeMockPMTool('fw_serial_read', async (args: any) => `lines: ${args.lines ?? 50}`);
-		const result = await tool.execute({ lines: 25 });
+		const result = await tool.execute({ lines: '25' });
 		assert.ok(result.includes('25'));
 	});
 });

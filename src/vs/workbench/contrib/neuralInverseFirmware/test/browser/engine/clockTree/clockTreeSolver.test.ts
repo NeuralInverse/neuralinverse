@@ -26,8 +26,8 @@ suite('ClockTreeSolver', () => {
 			s => s.pll.m === 8 && s.pll.n === 336 && s.pll.p === 2 && s.pll.q === 7
 		);
 		assert.ok(expected, 'Should include M=8, N=336, P=2, Q=7 solution');
-		assert.strictEqual(expected.sysclkMHz, 168);
-		assert.strictEqual(expected.pll48MHz, 48);
+		assert.strictEqual(expected!.sysclkMHz, 168);
+		assert.strictEqual(expected!.pll48MHz, 48);
 	});
 
 	test('solve() for STM32F4 at 84MHz returns valid solutions', () => {

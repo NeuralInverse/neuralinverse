@@ -19,8 +19,8 @@ function makeMockLAService(overrides: {
 } = {}) {
 	const captureId = 'la_1234567890';
 	const defaultFrames: IDecodedFrame[] = overrides.captureFrames ?? [
-		{ timestamp: 0.000123, protocol: 'i2c', address: 0x48, dataHex: '02', dataAscii: '.', direction: 'write' },
-		{ timestamp: 0.000456, protocol: 'i2c', address: 0x48, dataHex: 'FF 00', dataAscii: '..', direction: 'read' },
+		{ timestamp: 0.000123, protocol: 'i2c', address: 0x48, data: [0x02], dataHex: '02', dataAscii: '.', direction: 'write' as const },
+		{ timestamp: 0.000456, protocol: 'i2c', address: 0x48, data: [0xFF, 0x00], dataHex: 'FF 00', dataAscii: '..', direction: 'read' as const },
 	];
 
 	const captureStore = new Map<string, ILogicCapture>();
@@ -29,7 +29,7 @@ function makeMockLAService(overrides: {
 		_serviceBrand: undefined as any,
 		detect: async () => ({
 			connected: overrides.connected ?? false,
-			backend: overrides.backend ?? 'saleae',
+			backend: (overrides.backend ?? 'saleae') as any,
 			availableChannels: overrides.channels ?? 16,
 			maxSampleRateMHz: overrides.maxMHz ?? 500,
 			supportedProtocols: overrides.protocols ?? ['uart', 'i2c', 'spi', 'can'],
@@ -39,11 +39,12 @@ function makeMockLAService(overrides: {
 			if (overrides.captureShouldThrow) { throw new Error('device not connected'); }
 			const cap: ILogicCapture = {
 				captureId,
-				backend: overrides.backend ?? 'saleae',
+				backend: (overrides.backend ?? 'saleae') as any,
 				channels,
 				durationSec,
 				sampleRate,
 				frames: [],
+				capturedAt: Date.now(),
 			};
 			captureStore.set(captureId, cap);
 			return cap;
@@ -56,11 +57,12 @@ function makeMockLAService(overrides: {
 		armTrigger: async (_trigger: any, _config: any) => {
 			const cap: ILogicCapture = {
 				captureId,
-				backend: 'saleae',
+				backend: 'saleae' as const,
 				channels: [],
 				durationSec: 1,
 				sampleRate: 12000000,
 				frames: [],
+				capturedAt: Date.now(),
 			};
 			captureStore.set(captureId, cap);
 			return cap;
