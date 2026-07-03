@@ -119,6 +119,12 @@ export const displayInfoOfProviderName = (providerName: ProviderName): DisplayIn
 	else if (providerName === 'cerebras') {
 		return { title: 'Cerebras', }
 	}
+	else if (providerName === 'qwen') {
+		return { title: 'Qwen (Alibaba)', }
+	}
+	else if (providerName === 'moonshot') {
+		return { title: 'Moonshot (Kimi)', }
+	}
 
 	throw new Error(`descOfProviderName: Unknown provider name: "${providerName}"`)
 }
@@ -145,6 +151,8 @@ export const subTextMdOfProviderName = (providerName: ProviderName): string => {
 	if (providerName === 'githubModels') return 'Use a [GitHub PAT](https://github.com/settings/tokens) with the `models:read` scope. Free tier available with rate limits.'
 	if (providerName === 'fireworksAI') return 'Get your [API Key here](https://fireworks.ai/account/api-keys). Fastest open-model inference with native function calling.'
 	if (providerName === 'cerebras') return 'Get your [API Key here](https://cloud.cerebras.ai). Extremely fast inference (2000+ tokens/sec) on wafer-scale hardware.'
+	if (providerName === 'qwen') return 'Get your [API Key here](https://help.aliyun.com/zh/model-studio/getting-started/first-api-call) with Alibaba Cloud Model Studio.'
+	if (providerName === 'moonshot') return 'Get your [API Key here](https://platform.moonshot.cn/console/api-keys) from the Moonshot (Kimi) platform.'
 
 	throw new Error(`subTextMdOfProviderName: Unknown provider name: "${providerName}"`)
 }
@@ -176,6 +184,8 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 											providerName === 'githubModels' ? 'ghp_...' :
 											providerName === 'fireworksAI' ? 'fw_...' :
 												providerName === 'cerebras' ? 'csk-...' :
+													providerName === 'qwen' ? 'sk-...' :
+														providerName === 'moonshot' ? 'sk-...' :
 																'',
 
 			isPasswordField: true,
@@ -396,6 +406,18 @@ export const defaultSettingsOfProvider: SettingsOfProvider = {
 		...defaultCustomSettings,
 		...defaultProviderSettings.cerebras,
 		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.cerebras),
+		_didFillInProviderSettings: undefined,
+	},
+	qwen: {
+		...defaultCustomSettings,
+		...defaultProviderSettings.qwen,
+		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.qwen),
+		_didFillInProviderSettings: undefined,
+	},
+	moonshot: {
+		...defaultCustomSettings,
+		...defaultProviderSettings.moonshot,
+		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.moonshot),
 		_didFillInProviderSettings: undefined,
 	},
 }
