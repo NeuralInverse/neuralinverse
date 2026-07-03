@@ -1,0 +1,19 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": [
+      "mocha",
+      "node"
+    ],
+    "outDir": "/tmp/firmware-out",
+    "baseUrl": "../../../../"
+  },
+  "include": [
+    "browser/**/*.ts",
+    "test/**/*.ts",
+    "../../../../typings/**/*.d.ts"
+  ]
+}
