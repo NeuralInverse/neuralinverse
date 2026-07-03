@@ -22,6 +22,7 @@ export type ThreadType = {
 	id: string; // store the id here too
 	createdAt: string; // ISO string
 	lastModified: string; // ISO string
+	workspaceUri?: string; // URI of the workspace root when the thread was created
 
 	messages: ChatMessage[];
 	filesWithUserChanges: Set<string>;

@@ -46,6 +46,7 @@ import { INeuralInverseAgentService } from './neuralInverseAgentService.js';
 import { needsOSSEnhancement } from '../common/ossModelEnhancement/ossDetection.js';
 import { shouldAutoRetry, getCorrectionMessage } from '../common/ossModelEnhancement/autoRetryCorrection.js';
 import { wrapToolResultForOSS } from '../common/ossModelEnhancement/progressFeedbackLoop.js';
+import { workspaceFilteredThreads } from '../common/chatThreadUtils.js';
 
 
 // Tool name aliases: OSS models use alternative names for built-in tools
@@ -142,12 +143,13 @@ const defaultMessageState: UserMessageState = {
 	isBeingEdited: false,
 }
 
-const newThreadObject = () => {
+const newThreadObject = (workspaceUri?: string) => {
 	const now = new Date().toISOString()
 	return {
 		id: generateUuid(),
 		createdAt: now,
 		lastModified: now,
+		workspaceUri,
 		messages: [],
 		state: {
 			currCheckpointIdx: null,
@@ -170,7 +172,8 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	readonly onDidChangeStreamState: Event<{ threadId: string }> = this._onDidChangeStreamState.event;
 
 	readonly streamState: ThreadStreamState = {}
-	state: ThreadsState // allThreads is persisted, currentThread is not
+	state: ThreadsState // allThreads is the workspace-filtered view; _allThreads is the full store
+	private _allThreads: ChatThreads = {} // unfiltered store across all workspaces
 
 	// used in checkpointing
 	// private readonly _userModifiedFilesToCheckInCheckpoints = new LRUCache<string, null>(50)
@@ -212,9 +215,9 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 		const readThreads = this._readAllThreads() || {}
 
-		const allThreads = readThreads
+		this._allThreads = readThreads
 		this.state = {
-			allThreads: allThreads,
+			allThreads: this._workspaceFilteredThreads(readThreads),
 			currentThreadId: null as unknown as string, // gets set in startNewThread()
 		}
 
@@ -224,7 +227,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		// When a background terminal finishes, inject result as system-level context and trigger agent response
 		this._register(this._toolsService.onBackgroundTerminalComplete(({ threadId, command, output, exitCode }) => {
 			const targetThreadId = threadId || this.state.currentThreadId
-			if (!targetThreadId || !this.state.allThreads[targetThreadId]) return
+			if (!targetThreadId || !this._allThreads[targetThreadId]) return
 			const trimmed = output.trim().slice(-2000)
 			const statusLine = exitCode === 0 ? 'completed successfully (exit 0)' : `failed (exit code ${exitCode})`
 			// Content for LLM: explicit instruction not to re-run
@@ -300,10 +303,12 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 
 	dangerousSetState = (newState: ThreadsState) => {
-		this.state = newState
+		this._allThreads = newState.allThreads
+		this.state = { ...newState, allThreads: this._workspaceFilteredThreads(newState.allThreads) }
 		this._onDidChangeCurrentThread.fire()
 	}
 	resetState = () => {
+		this._allThreads = {}
 		this.state = { allThreads: {}, currentThreadId: null as unknown as string } // see constructor
 		this.openNewThread()
 		this._onDidChangeCurrentThread.fire()
@@ -341,8 +346,19 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	}
 
 
+	private _workspaceFilteredThreads(allThreads: ChatThreads): ChatThreads {
+		return workspaceFilteredThreads(allThreads, this._currentWorkspaceUri())
+	}
+
 	// this should be the only place this.state = ... appears besides constructor
 	private _setState(state: Partial<ThreadsState>, doNotRefreshMountInfo?: boolean) {
+		// When allThreads is being updated, keep _allThreads (full store) in sync
+		// and expose only the workspace-filtered view through this.state
+		if (state.allThreads !== undefined) {
+			this._allThreads = state.allThreads
+			state = { ...state, allThreads: this._workspaceFilteredThreads(state.allThreads) }
+		}
+
 		const newState = {
 			...this.state,
 			...state
@@ -1039,12 +1055,11 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 
 	private _editMessageInThread(threadId: string, messageIdx: number, newMessage: ChatMessage,) {
-		const { allThreads } = this.state
-		const oldThread = allThreads[threadId]
+		const oldThread = this._allThreads[threadId]
 		if (!oldThread) return // should never happen
 		// update state and store it
 		const newThreads = {
-			...allThreads,
+			...this._allThreads,
 			[oldThread.id]: {
 				...oldThread,
 				lastModified: new Date().toISOString(),
@@ -1391,7 +1406,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 
 
 	async addUserMessageAndStreamResponse({ userMessage, _chatSelections, images, threadId }: { userMessage: string, _chatSelections?: StagingSelectionItem[], images?: ImageAttachment[], threadId: string }) {
-		const thread = this.state.allThreads[threadId];
+		const thread = this._allThreads[threadId];
 		if (!thread) return
 
 		// if there's a current checkpoint, delete all messages after it
@@ -1401,7 +1416,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 
 			// Update the thread with truncated messages
 			const newThreads = {
-				...this.state.allThreads,
+				...this._allThreads,
 				[threadId]: {
 					...thread,
 					lastModified: new Date().toISOString(),
@@ -1419,7 +1434,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 
 	editUserMessageAndStreamResponse: IChatThreadService['editUserMessageAndStreamResponse'] = async ({ userMessage, messageIdx, threadId }) => {
 
-		const thread = this.state.allThreads[threadId]
+		const thread = this._allThreads[threadId]
 		if (!thread) return // should never happen
 
 		if (thread.messages?.[messageIdx]?.role !== 'user') {
@@ -1433,7 +1448,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 		const slicedMessages = thread.messages.slice(0, messageIdx)
 		this._setState({
 			allThreads: {
-				...this.state.allThreads,
+				...this._allThreads,
 				[thread.id]: {
 					...thread,
 					messages: slicedMessages
@@ -1690,13 +1705,13 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 	async addCodespanLink({ newLinkText, newLinkLocation, messageIdx, threadId }: { newLinkText: string, newLinkLocation: CodespanLocationLink, messageIdx: number, threadId: string }) {
-		const thread = this.state.allThreads[threadId]
+		const thread = this._allThreads[threadId]
 		if (!thread) return
 
 		this._setState({
 
 			allThreads: {
-				...this.state.allThreads,
+				...this._allThreads,
 				[threadId]: {
 					...thread,
 					state: {
@@ -1747,22 +1762,28 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 
+	private _currentWorkspaceUri(): string | undefined {
+		return this._workspaceContextService.getWorkspace().folders[0]?.uri.toString()
+	}
+
 	openNewThread() {
-		// if a thread with 0 messages already exists, switch to it
-		const { allThreads: currentThreads } = this.state
-		for (const threadId in currentThreads) {
-			if (currentThreads[threadId]!.messages.length === 0) {
-				// switch to the existing empty thread and exit
+		// if a thread with 0 messages already exists in the current workspace, switch to it
+		for (const threadId in this._allThreads) {
+			const t = this._allThreads[threadId]
+			if (!t || t.messages.length !== 0) continue
+			// only reuse an empty thread that belongs to the current workspace
+			const currentUri = this._currentWorkspaceUri()
+			if (t.workspaceUri === currentUri) {
 				this.switchToThread(threadId)
 				return
 			}
 		}
 		// otherwise, start a new thread
-		const newThread = newThreadObject()
+		const newThread = newThreadObject(this._currentWorkspaceUri())
 
 		// update state
 		const newThreads: ChatThreads = {
-			...currentThreads,
+			...this._allThreads,
 			[newThread.id]: newThread
 		}
 		this._storeAllThreads(newThreads)
@@ -1770,9 +1791,9 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 	createBackgroundThread(): string {
-		const newThread = newThreadObject()
+		const newThread = newThreadObject(this._currentWorkspaceUri())
 		const newThreads: ChatThreads = {
-			...this.state.allThreads,
+			...this._allThreads,
 			[newThread.id]: newThread
 		}
 		this._storeAllThreads(newThreads)
@@ -1781,20 +1802,18 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 	addBackgroundMessage(threadId: string, message: ChatMessage): void {
-		const thread = this.state.allThreads[threadId]
+		const thread = this._allThreads[threadId]
 		if (!thread) return
 		const updatedThread = { ...thread, messages: [...thread.messages, message] }
-		const newThreads = { ...this.state.allThreads, [threadId]: updatedThread }
+		const newThreads = { ...this._allThreads, [threadId]: updatedThread }
 		this._storeAllThreads(newThreads)
 		this._setState({ allThreads: newThreads })
 	}
 
 
 	deleteThread(threadId: string): void {
-		const { allThreads: currentThreads } = this.state
-
-		// delete the thread
-		const newThreads = { ...currentThreads };
+		// delete from the full store
+		const newThreads = { ...this._allThreads };
 		delete newThreads[threadId];
 
 		// store the updated threads
@@ -1803,15 +1822,14 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 	duplicateThread(threadId: string) {
-		const { allThreads: currentThreads } = this.state
-		const threadToDuplicate = currentThreads[threadId]
+		const threadToDuplicate = this._allThreads[threadId]
 		if (!threadToDuplicate) return
 		const newThread = {
 			...deepClone(threadToDuplicate),
 			id: generateUuid(),
 		}
 		const newThreads = {
-			...currentThreads,
+			...this._allThreads,
 			[newThread.id]: newThread,
 		}
 		this._storeAllThreads(newThreads)
@@ -1820,12 +1838,11 @@ We only need to do it for files that were edited since `from`, ie files between 
 
 
 	private _addMessageToThread(threadId: string, message: ChatMessage) {
-		const { allThreads } = this.state
-		const oldThread = allThreads[threadId]
+		const oldThread = this._allThreads[threadId]
 		if (!oldThread) return // should never happen
 		// update state and store it
 		const newThreads = {
-			...allThreads,
+			...this._allThreads,
 			[oldThread.id]: {
 				...oldThread,
 				lastModified: new Date().toISOString(),
@@ -1843,12 +1860,12 @@ We only need to do it for files that were edited since `from`, ie files between 
 	setCurrentlyFocusedMessageIdx(messageIdx: number | undefined) {
 
 		const threadId = this.state.currentThreadId
-		const thread = this.state.allThreads[threadId]
+		const thread = this._allThreads[threadId]
 		if (!thread) return
 
 		this._setState({
 			allThreads: {
-				...this.state.allThreads,
+				...this._allThreads,
 				[threadId]: {
 					...thread,
 					state: {
@@ -1926,12 +1943,12 @@ We only need to do it for files that were edited since `from`, ie files between 
 	private _setCurrentMessageState(state: Partial<UserMessageState>, messageIdx: number): void {
 
 		const threadId = this.state.currentThreadId
-		const thread = this.state.allThreads[threadId]
+		const thread = this._allThreads[threadId]
 		if (!thread) return
 
 		this._setState({
 			allThreads: {
-				...this.state.allThreads,
+				...this._allThreads,
 				[threadId]: {
 					...thread,
 					messages: thread.messages.map((m, i) =>
@@ -1951,12 +1968,12 @@ We only need to do it for files that were edited since `from`, ie files between 
 
 	// set thread.state
 	private _setThreadState(threadId: string, state: Partial<ThreadType['state']>, doNotRefreshMountInfo?: boolean): void {
-		const thread = this.state.allThreads[threadId]
+		const thread = this._allThreads[threadId]
 		if (!thread) return
 
 		this._setState({
 			allThreads: {
-				...this.state.allThreads,
+				...this._allThreads,
 				[thread.id]: {
 					...thread,
 					state: {
