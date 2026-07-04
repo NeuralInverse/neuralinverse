@@ -155,7 +155,7 @@
 		"@types/minimist": "^1.2.5",
 		"@types/mocha": "^9.1.1",
 		"@types/node": "20.x",
-		"@types/react": "^19.2.14",
+		"@types/react": "^19.2.17",
 		"@types/react-dom": "19.2.3",
 		"@types/sinon": "^10.0.2",
 		"@types/sinon-test": "^2.4.7",
