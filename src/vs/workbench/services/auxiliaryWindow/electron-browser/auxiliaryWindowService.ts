@@ -15,9 +15,8 @@ import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { CodeWindow } from '../../../../base/browser/window.js';
 import { mark } from '../../../../base/common/performance.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
-import { ShutdownReason, ILifecycleService } from '../../lifecycle/common/lifecycle.js'; // Neural Inverse
+import { ShutdownReason } from '../../lifecycle/common/lifecycle.js';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
-import { IStorageService } from '../../../../platform/storage/common/storage.js'; // Neural Inverse
 import { Barrier } from '../../../../base/common/async.js';
 import { IHostService } from '../../host/browser/host.js';
 import { applyZoom } from '../../../../platform/window/electron-browser/window.js';
@@ -25,6 +24,8 @@ import { getZoomLevel, isFullscreen, setFullscreen } from '../../../../base/brow
 import { getActiveWindow } from '../../../../base/browser/dom.js';
 import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
 import { isMacintosh } from '../../../../base/common/platform.js';
+import { assert } from '../../../../base/common/assert.js';
+import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
 
 type NativeCodeWindow = CodeWindow & {
 	readonly vscode: ISandboxGlobals;
@@ -47,9 +48,10 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 		@IHostService hostService: IHostService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
 		@IDialogService private readonly dialogService: IDialogService,
-		override readonly type?: string // Neural Inverse
+		@IContextMenuService contextMenuService: IContextMenuService,
+		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService
 	) {
-		super(window, container, stylesHaveLoaded, configurationService, hostService, environmentService, type);
+		super(window, container, stylesHaveLoaded, configurationService, hostService, environmentService, contextMenuService, layoutService);
 
 		if (!isMacintosh) {
 			// For now, limit this to platforms that have clear maximised
@@ -146,16 +148,16 @@ export class NativeAuxiliaryWindowService extends BrowserAuxiliaryWindowService 
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IHostService hostService: IHostService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@IStorageService storageService: IStorageService, // Neural Inverse
-		@ILifecycleService lifecycleService: ILifecycleService // Neural Inverse
+		@IContextMenuService contextMenuService: IContextMenuService,
 	) {
-		super(layoutService, dialogService, configurationService, telemetryService, hostService, environmentService, storageService, lifecycleService);
+		super(layoutService, dialogService, configurationService, telemetryService, hostService, environmentService, contextMenuService);
 	}
 
 	protected override async resolveWindowId(auxiliaryWindow: NativeCodeWindow): Promise<number> {
 		mark('code/auxiliaryWindow/willResolveWindowId');
 		const windowId = await auxiliaryWindow.vscode.ipcRenderer.invoke('vscode:registerAuxiliaryWindow', this.nativeHostService.windowId);
 		mark('code/auxiliaryWindow/didResolveWindowId');
+		assert(typeof windowId === 'number');
 
 		return windowId;
 	}
@@ -175,8 +177,8 @@ export class NativeAuxiliaryWindowService extends BrowserAuxiliaryWindowService 
 		return super.createContainer(auxiliaryWindow, disposables);
 	}
 
-	protected override createAuxiliaryWindow(targetWindow: CodeWindow, container: HTMLElement, stylesHaveLoaded: Barrier, options?: IAuxiliaryWindowOpenOptions): AuxiliaryWindow {
-		return new NativeAuxiliaryWindow(targetWindow, container, stylesHaveLoaded, this.configurationService, this.nativeHostService, this.instantiationService, this.hostService, this.environmentService, this.dialogService, options?.type);
+	protected override createAuxiliaryWindow(targetWindow: CodeWindow, container: HTMLElement, stylesHaveLoaded: Barrier): AuxiliaryWindow {
+		return new NativeAuxiliaryWindow(targetWindow, container, stylesHaveLoaded, this.configurationService, this.nativeHostService, this.instantiationService, this.hostService, this.environmentService, this.dialogService, this.contextMenuService, this.layoutService);
 	}
 }
 
