@@ -10,12 +10,16 @@ import path from 'path';
 import fs from 'fs';
 import pump from 'pump';
 import VinylFile from 'vinyl';
-import * as bundle from './bundle';
+import * as bundle from './bundle.ts';
 import esbuild from 'esbuild';
 import sourcemaps from 'gulp-sourcemaps';
 import fancyLog from 'fancy-log';
 import ansiColors from 'ansi-colors';
-import { getTargetStringFromTsConfig } from './tsconfigUtils';
+import { getTargetStringFromTsConfig } from './tsconfigUtils.ts';
+import svgmin from 'gulp-svgmin';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 declare module 'gulp-sourcemaps' {
 	interface WriteOptions {
@@ -28,7 +32,7 @@ declare module 'gulp-sourcemaps' {
 	}
 }
 
-const REPO_ROOT_PATH = path.join(__dirname, '../..');
+const REPO_ROOT_PATH = path.join(import.meta.dirname, '../..');
 
 export interface IBundleESMTaskOpts {
 	/**
@@ -206,7 +210,7 @@ function bundleESMTask(opts: IBundleESMTaskOpts): NodeJS.ReadWriteStream {
 		}));
 }
 
-export interface IBundleESMTaskOpts {
+export interface IBundleTaskOpts {
 	/**
 	 * Destination folder for the bundled files.
 	 */
@@ -217,7 +221,7 @@ export interface IBundleESMTaskOpts {
 	esm: IBundleESMTaskOpts;
 }
 
-export function bundleTask(opts: IBundleESMTaskOpts): () => NodeJS.ReadWriteStream {
+export function bundleTask(opts: IBundleTaskOpts): () => NodeJS.ReadWriteStream {
 	return function () {
 		return bundleESMTask(opts.esm).pipe(gulp.dest(opts.out));
 	};
@@ -228,7 +232,6 @@ export function minifyTask(src: string, sourceMapBaseUrl?: string): (cb: any) =>
 	const target = getBuildTarget();
 
 	return cb => {
-		const svgmin = require('gulp-svgmin') as typeof import('gulp-svgmin');
 
 		const esbuildFilter = filter('**/*.{js,css}', { restore: true });
 		const svgFilter = filter('**/*.svg', { restore: true });
