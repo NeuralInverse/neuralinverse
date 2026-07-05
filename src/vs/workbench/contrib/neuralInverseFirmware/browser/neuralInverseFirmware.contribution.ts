@@ -40,7 +40,7 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../platfo
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
-import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import { IAuxiliaryWindow, IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { FirmwarePart } from './ui/firmwarePart.js';
 import { IFirmwareSessionService } from './firmwareSessionService.js';
@@ -122,8 +122,9 @@ import './engine/rtos/rtosDebugService.js';
 import './voidFirmwareToolsContrib.js';
 import './statusbar/firmwareStatus.contribution.js';
 
-const FIRMWARE_WINDOW_TYPE = 'neuralInverseFirmware';
 const FIRMWARE_STATE_KEY   = 'neuralInverseFirmware.windowState';
+
+let _firmwareWindow: IAuxiliaryWindow | undefined;
 
 // ─── Window helper ────────────────────────────────────────────────────────────
 
@@ -133,13 +134,13 @@ async function openFirmwareWindow(
 	storageService: IStorageService,
 	instantiationService: IInstantiationService,
 ): Promise<void> {
-	const existing = auxWindowService.getWindowByType(FIRMWARE_WINDOW_TYPE);
-	if (existing && !existing.window.closed) {
-		hostService.focus(existing.window);
+	if (_firmwareWindow && !_firmwareWindow.window.closed) {
+		hostService.focus(_firmwareWindow.window);
 		return;
 	}
 
-	const win = await auxWindowService.open({ type: FIRMWARE_WINDOW_TYPE, nativeTitlebar: false });
+	const win = await auxWindowService.open({ nativeTitlebar: false });
+	_firmwareWindow = win;
 	const part = instantiationService.createInstance(FirmwarePart);
 	part.create(win.container);
 
@@ -150,6 +151,7 @@ async function openFirmwareWindow(
 	store.add(part);
 	store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 	store.add(win.onUnload(() => {
+		_firmwareWindow = undefined;
 		storageService.store(FIRMWARE_STATE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 		store.dispose();
 	}));
@@ -210,13 +212,15 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 			if (!JSON.parse(raw).isOpen) { return; }
 		} catch { return; }
 
-		this.auxiliaryWindowService.open({ type: FIRMWARE_WINDOW_TYPE, nativeTitlebar: false }).then(win => {
+		this.auxiliaryWindowService.open({ nativeTitlebar: false }).then(win => {
+			_firmwareWindow = win;
 			const part = this.instantiationService.createInstance(FirmwarePart);
 			part.create(win.container);
 			const store = new DisposableStore();
 			store.add(part);
 			store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 			store.add(win.onUnload(() => {
+				_firmwareWindow = undefined;
 				this.storageService.store(FIRMWARE_STATE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 				store.dispose();
 			}));

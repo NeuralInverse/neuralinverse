@@ -19,7 +19,7 @@ import { Action2, registerAction2 } from '../../../../platform/actions/common/ac
 import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
-import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import { IAuxiliaryWindow, IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
@@ -34,8 +34,9 @@ import './powerModeService.js';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const POWER_MODE_WINDOW_TYPE = 'powerMode';
 const POWER_MODE_STORAGE_KEY = 'neuralInverse.powerMode.state';
+
+let _powerModeWindow: IAuxiliaryWindow | undefined;
 
 // ─── Contribution (restore window on reload) ─────────────────────────────────
 
@@ -53,9 +54,8 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		// React to live policy changes — close the window immediately if admin disables Power Mode
 		this._register(this.enterprisePolicyService.onDidChangePolicy(() => {
 			if (this._isPolicyBlocked()) {
-				const existing = this.auxiliaryWindowService.getWindowByType(POWER_MODE_WINDOW_TYPE);
-				if (existing && !existing.window.closed) {
-					existing.window.close();
+				if (_powerModeWindow && !_powerModeWindow.window.closed) {
+					_powerModeWindow.window.close();
 				}
 				// Clear persisted open state so it doesn't reopen on next reload
 				this.storageService.store(
@@ -90,18 +90,17 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 	async openWindow(bounds?: any): Promise<void> {
 		if (this._isPolicyBlocked()) return;
 
-		const existing = this.auxiliaryWindowService.getWindowByType(POWER_MODE_WINDOW_TYPE);
-		if (existing) {
-			existing.window.focus();
+		if (_powerModeWindow && !_powerModeWindow.window.closed) {
+			_powerModeWindow.window.focus();
 			return;
 		}
 
 		const win = await this.auxiliaryWindowService.open({
-			type: POWER_MODE_WINDOW_TYPE,
 			bounds,
 			nativeTitlebar: false,
 			disableFullscreen: false,
 		});
+		_powerModeWindow = win;
 
 		const part = this.instantiationService.createInstance(PowerModePart);
 		part.create(win.container);
@@ -113,6 +112,7 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		store.add(part);
 		store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 		store.add(win.onUnload(() => {
+			_powerModeWindow = undefined;
 			this.storageService.store(
 				POWER_MODE_STORAGE_KEY,
 				JSON.stringify({ isOpen: false }),
@@ -163,16 +163,15 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 		const hostService = accessor.get(IHostService);
 		const instantiationService = accessor.get(IInstantiationService);
 
-		const existing = auxWindowService.getWindowByType(POWER_MODE_WINDOW_TYPE);
-		if (existing && !existing.window.closed) {
-			hostService.focus(existing.window);
+		if (_powerModeWindow && !_powerModeWindow.window.closed) {
+			hostService.focus(_powerModeWindow.window);
 			return;
 		}
 
 		const win = await auxWindowService.open({
-			type: POWER_MODE_WINDOW_TYPE,
 			nativeTitlebar: false,
 		});
+		_powerModeWindow = win;
 
 		const part = instantiationService.createInstance(PowerModePart);
 		part.create(win.container);
@@ -182,7 +181,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 		const store = new DisposableStore();
 		store.add(part);
 		store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
-		store.add(win.onUnload(() => store.dispose()));
+		store.add(win.onUnload(() => { _powerModeWindow = undefined; store.dispose(); }));
 	}
 });
 

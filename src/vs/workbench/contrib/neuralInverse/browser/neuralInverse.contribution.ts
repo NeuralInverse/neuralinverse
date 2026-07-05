@@ -12,7 +12,7 @@ import { IInstantiationService, ServicesAccessor } from '../../../../platform/in
 
 import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
-import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import { IAuxiliaryWindow, IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { NeuralInverseWalkthroughService } from './neuralInverseWalkthroughService.js';
 import { AgentManagerPart } from './agentManagerPart.js';
@@ -57,8 +57,9 @@ registerWorkbenchContribution2(
 
 
 
-const AGENT_MANAGER_WINDOW_TYPE = 'agentManager';
 const AGENT_MANAGER_STORAGE_KEY = 'neuralInverse.agentManager.state';
+
+let _agentManagerWindow: IAuxiliaryWindow | undefined;
 
 export class AgentManagerContribution extends Disposable implements IWorkbenchContribution {
 
@@ -86,20 +87,17 @@ export class AgentManagerContribution extends Disposable implements IWorkbenchCo
 	}
 
 	async openAgentManagerWindow(bounds?: any): Promise<void> {
-		let window = this.auxiliaryWindowService.getWindowByType(AGENT_MANAGER_WINDOW_TYPE);
-
-		if (window) {
-			window.window.focus();
+		if (_agentManagerWindow && !_agentManagerWindow.window.closed) {
+			_agentManagerWindow.window.focus();
 			return;
 		}
 
-		window = await this.auxiliaryWindowService.open({
-			type: AGENT_MANAGER_WINDOW_TYPE,
+		const window = await this.auxiliaryWindowService.open({
 			bounds: bounds,
-			mode: undefined, // Normal
 			nativeTitlebar: false,
 			disableFullscreen: false,
 		});
+		_agentManagerWindow = window;
 
 		const part = this.instantiationService.createInstance(AgentManagerPart);
 		part.create(window.container);
@@ -116,6 +114,7 @@ export class AgentManagerContribution extends Disposable implements IWorkbenchCo
 		}));
 
 		disposables.add(window.onUnload(() => {
+			_agentManagerWindow = undefined;
 			disposables.dispose();
 		}));
 	}
@@ -145,21 +144,15 @@ registerAction2(class OpenAgentManagerAction extends Action2 {
 		const auxWindowService = accessor.get(IAuxiliaryWindowService);
 		const hostService = accessor.get(IHostService);
 
-		let window = auxWindowService.getWindowByType(AGENT_MANAGER_WINDOW_TYPE);
-		if (window && !window.window.closed) {
-			hostService.focus(window.window);
+		if (_agentManagerWindow && !_agentManagerWindow.window.closed) {
+			hostService.focus(_agentManagerWindow.window);
 			return;
 		}
 
-		// Use the same logic as restore, but valid bounds might be missing, so undefined is fine
-		// To avoid code duplication, we could put this in a service, but for now let's keep it inline.
-		// Copy-paste logic from restoreWindow for now.
-
 		const win = await auxWindowService.open({
-			type: AGENT_MANAGER_WINDOW_TYPE,
-			// bounds: undefined, // let it center
 			nativeTitlebar: false,
 		});
+		_agentManagerWindow = win;
 
 		const part = instantiationService.createInstance(AgentManagerPart);
 		part.create(win.container);
@@ -169,7 +162,7 @@ registerAction2(class OpenAgentManagerAction extends Action2 {
 		const store = new DisposableStore();
 		store.add(part);
 		store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
-		store.add(win.onUnload(() => store.dispose()));
+		store.add(win.onUnload(() => { _agentManagerWindow = undefined; store.dispose(); }));
 	}
 });
 

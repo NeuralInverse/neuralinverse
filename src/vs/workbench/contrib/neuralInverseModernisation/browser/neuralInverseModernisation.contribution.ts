@@ -27,7 +27,7 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../platfo
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
-import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import { IAuxiliaryWindow, IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { URI } from '../../../../base/common/uri.js';
@@ -54,8 +54,9 @@ import './engine/agentTools/index.js';
 // Register discovery + modernisation tools with the Void internal tool service
 import './voidDiscoveryToolsContrib.js';
 
-const MODERNISATION_WINDOW_TYPE = 'neuralInverseModernisation';
 const MODERNISATION_STATE_KEY   = 'neuralInverseModernisation.windowState';
+
+let _modernisationWindow: IAuxiliaryWindow | undefined;
 
 // --- Window helper ------------------------------------------------------------
 
@@ -65,13 +66,13 @@ async function openModernisationWindow(
 	storageService: IStorageService,
 	instantiationService: IInstantiationService,
 ): Promise<void> {
-	const existing = auxWindowService.getWindowByType(MODERNISATION_WINDOW_TYPE);
-	if (existing && !existing.window.closed) {
-		hostService.focus(existing.window);
+	if (_modernisationWindow && !_modernisationWindow.window.closed) {
+		hostService.focus(_modernisationWindow.window);
 		return;
 	}
 
-	const win = await auxWindowService.open({ type: MODERNISATION_WINDOW_TYPE, nativeTitlebar: false });
+	const win = await auxWindowService.open({ nativeTitlebar: false });
+	_modernisationWindow = win;
 	const part = instantiationService.createInstance(ModernisationPart);
 	part.create(win.container);
 
@@ -82,6 +83,7 @@ async function openModernisationWindow(
 	store.add(part);
 	store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 	store.add(win.onUnload(() => {
+		_modernisationWindow = undefined;
 		storageService.store(MODERNISATION_STATE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 		store.dispose();
 	}));
@@ -136,13 +138,15 @@ class ModernisationContribution extends Disposable implements IWorkbenchContribu
 			if (!JSON.parse(raw).isOpen) { return; }
 		} catch { return; }
 
-		this.auxiliaryWindowService.open({ type: MODERNISATION_WINDOW_TYPE, nativeTitlebar: false }).then(win => {
+		this.auxiliaryWindowService.open({ nativeTitlebar: false }).then(win => {
+			_modernisationWindow = win;
 			const part = this.instantiationService.createInstance(ModernisationPart);
 			part.create(win.container);
 			const store = new DisposableStore();
 			store.add(part);
 			store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 			store.add(win.onUnload(() => {
+				_modernisationWindow = undefined;
 				this.storageService.store(MODERNISATION_STATE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 				store.dispose();
 			}));
