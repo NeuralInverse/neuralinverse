@@ -142,7 +142,7 @@ MenuRegistry.appendMenuItems([
 	{
 		id: MenuId.LayoutControlMenu,
 		item: {
-			group: '2_pane_toggles',
+			group: 'navigation',
 			command: {
 				id: ToggleAuxiliaryBarAction.ID,
 				title: localize('toggleSecondarySideBar', "Toggle Neural Inverse side bar"),
@@ -161,7 +161,7 @@ MenuRegistry.appendMenuItems([
 	}, {
 		id: MenuId.LayoutControlMenu,
 		item: {
-			group: '2_pane_toggles',
+			group: 'navigation',
 			command: {
 				id: ToggleAuxiliaryBarAction.ID,
 				title: localize('toggleSecondarySideBar', "Toggle Neural Inverse side bar"),
