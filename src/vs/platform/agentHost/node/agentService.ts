@@ -14,7 +14,7 @@ import { ILogService } from '../../log/common/log.js';
 import { AgentProvider, AgentSession, IAgent, IAgentCreateSessionConfig, IAgentDescriptor, IAgentMessageEvent, IAgentService, IAgentSessionMetadata, IAgentToolCompleteEvent, IAgentToolStartEvent, IAuthenticateParams, IAuthenticateResult, IResourceMetadata } from '../common/agentService.js';
 import { ISessionDataService } from '../common/sessionDataService.js';
 import { ActionType, IActionEnvelope, INotification, ISessionAction } from '../common/state/sessionActions.js';
-import { AhpErrorCodes, AHP_SESSION_NOT_FOUND, ContentEncoding, JSON_RPC_INTERNAL_ERROR, ProtocolError, type IBrowseDirectoryResult, type IDirectoryEntry, type IFetchContentResult, type IStateSnapshot, type IWriteFileParams, type IWriteFileResult } from '../common/state/sessionProtocol.js';
+import { AhpErrorCodes, AHP_SESSION_NOT_FOUND, ContentEncoding, JSON_RPC_INTERNAL_ERROR, ProtocolError, type IDirectoryEntry, type IResourceCopyParams, type IResourceCopyResult, type IResourceDeleteParams, type IResourceDeleteResult, type IResourceListResult, type IResourceMoveParams, type IResourceMoveResult, type IResourceReadResult, type IResourceWriteParams, type IResourceWriteResult, type IStateSnapshot } from '../common/state/sessionProtocol.js';
 import { ResponsePartKind, SessionStatus, ToolCallConfirmationReason, ToolCallStatus, TurnState, type IResponsePart, type ISessionSummary, type IToolCallCompletedState, type ITurn } from '../common/state/sessionState.js';
 import { AgentSideEffects } from './agentSideEffects.js';
 import { ISessionDbUriFields, parseSessionDbUri } from './copilot/fileEditTracker.js';
@@ -127,8 +127,30 @@ export class AgentService extends Disposable implements IAgentService {
 			[...this._providers.values()].map(p => p.listSessions())
 		);
 		const flat = results.flat();
-		this._logService.trace(`[AgentService] listSessions returned ${flat.length} sessions`);
-		return flat;
+
+		// Overlay persisted custom titles from per-session databases.
+		const result = await Promise.all(flat.map(async s => {
+			try {
+				const ref = await this._sessionDataService.tryOpenDatabase(s.session);
+				if (!ref) {
+					return s;
+				}
+				try {
+					const customTitle = await ref.object.getMetadata('customTitle');
+					if (customTitle) {
+						return { ...s, summary: customTitle };
+					}
+				} finally {
+					ref.dispose();
+				}
+			} catch {
+				// ignore — title overlay is best-effort
+			}
+			return s;
+		}));
+
+		this._logService.trace(`[AgentService] listSessions returned ${result.length} sessions`);
+		return result;
 	}
 
 	/**
@@ -146,22 +168,56 @@ export class AgentService extends Disposable implements IAgentService {
 		if (!provider) {
 			throw new Error(`No agent provider registered for: ${providerId ?? '(none)'}`);
 		}
+
+		// Ensure the command auto-approver is ready before any session events
+		// can arrive. This makes shell command auto-approval fully synchronous.
+		// Safe to run in parallel with createSession since no events flow until
+		// sendMessage() is called.
+		this._logService.trace(`[AgentService] createSession: initializing auto-approver and creating session...`);
+		const [, session] = await Promise.all([
+			this._sideEffects.initialize(),
+			provider.createSession(config),
+		]);
+		this._logService.trace(`[AgentService] createSession: initialization complete`);
+
 		this._logService.trace(`[AgentService] createSession: provider=${provider.id} model=${config?.model ?? '(default)'}`);
-		const session = await provider.createSession(config);
 		this._sessionToProvider.set(session.toString(), provider.id);
 		this._logService.trace(`[AgentService] createSession returned: ${session.toString()}`);
 
-		// Create state in the state manager
-		const summary: ISessionSummary = {
-			resource: session.toString(),
-			provider: provider.id,
-			title: 'New Session',
-			status: SessionStatus.Idle,
-			createdAt: Date.now(),
-			modifiedAt: Date.now(),
-			workingDirectory: config?.workingDirectory?.toString(),
-		};
-		this._stateManager.createSession(summary);
+		// When forking, populate the new session's protocol state with
+		// the source session's turns so the client sees the forked history.
+		if (config?.fork) {
+			const sourceState = this._stateManager.getSessionState(config.fork.session.toString());
+			let sourceTurns: ITurn[] = [];
+			if (sourceState) {
+				sourceTurns = sourceState.turns.slice(0, config.fork.turnIndex + 1)
+					.map(t => ({ ...t, id: generateUuid() }));
+			}
+
+			const summary: ISessionSummary = {
+				resource: session.toString(),
+				provider: provider.id,
+				title: sourceState?.summary.title ?? 'Forked Session',
+				status: SessionStatus.Idle,
+				createdAt: Date.now(),
+				modifiedAt: Date.now(),
+				workingDirectory: config.workingDirectory?.toString(),
+			};
+			const state = this._stateManager.createSession(summary);
+			state.turns = sourceTurns;
+		} else {
+			// Create empty state for new sessions
+			const summary: ISessionSummary = {
+				resource: session.toString(),
+				provider: provider.id,
+				title: 'New Session',
+				status: SessionStatus.Idle,
+				createdAt: Date.now(),
+				modifiedAt: Date.now(),
+				workingDirectory: config?.workingDirectory?.toString(),
+			};
+			this._stateManager.createSession(summary);
+		}
 		this._stateManager.dispatchServerAction({ type: ActionType.SessionReady, session: session.toString() });
 
 		return session;
@@ -208,7 +264,7 @@ export class AgentService extends Disposable implements IAgentService {
 		this._sideEffects.handleAction(action);
 	}
 
-	async browseDirectory(uri: URI): Promise<IBrowseDirectoryResult> {
+	async resourceList(uri: URI): Promise<IResourceListResult> {
 		let stat;
 		try {
 			stat = await this._fileService.resolve(uri);
@@ -269,10 +325,31 @@ export class AgentService extends Disposable implements IAgentService {
 		}
 		const turns = this._buildTurnsFromMessages(messages);
 
+		// Check for a persisted custom title in the session database
+		let title = meta.summary ?? 'Session';
+		const ref = this._sessionDataService.tryOpenDatabase?.(session);
+		if (ref) {
+			try {
+				const db = await ref;
+				if (db) {
+					try {
+						const customTitle = await db.object.getMetadata('customTitle');
+						if (customTitle) {
+							title = customTitle;
+						}
+					} finally {
+						db.dispose();
+					}
+				}
+			} catch {
+				// Best-effort: fall back to agent-provided title
+			}
+		}
+
 		const summary: ISessionSummary = {
 			resource: sessionStr,
 			provider: agent.id,
-			title: meta.summary ?? 'Session',
+			title,
 			status: SessionStatus.Idle,
 			createdAt: meta.startTime,
 			modifiedAt: meta.modifiedTime,
@@ -283,7 +360,7 @@ export class AgentService extends Disposable implements IAgentService {
 		this._logService.info(`[AgentService] Restored session ${sessionStr} with ${turns.length} turns`);
 	}
 
-	async fetchContent(uri: URI): Promise<IFetchContentResult> {
+	async resourceRead(uri: URI): Promise<IResourceReadResult> {
 		// Handle session-db: URIs that reference file-edit content stored
 		// in a per-session SQLite database.
 		const dbFields = parseSessionDbUri(uri.toString());
@@ -303,7 +380,7 @@ export class AgentService extends Disposable implements IAgentService {
 		}
 	}
 
-	async writeFile(params: IWriteFileParams): Promise<IWriteFileResult> {
+	async resourceWrite(params: IResourceWriteParams): Promise<IResourceWriteResult> {
 		const fileUri = typeof params.uri === 'string' ? URI.parse(params.uri) : URI.revive(params.uri);
 		let content: VSBuffer;
 		if (params.encoding === ContentEncoding.Base64) {
@@ -327,6 +404,56 @@ export class AgentService extends Disposable implements IAgentService {
 				throw new ProtocolError(AhpErrorCodes.PermissionDenied, `Permission denied: ${fileUri.toString()}`);
 			}
 			throw new ProtocolError(AhpErrorCodes.NotFound, `Failed to write file: ${fileUri.toString()}`);
+		}
+	}
+
+	async resourceCopy(params: IResourceCopyParams): Promise<IResourceCopyResult> {
+		const source = URI.parse(params.source);
+		const destination = URI.parse(params.destination);
+		try {
+			await this._fileService.copy(source, destination, !params.failIfExists);
+			return {};
+		} catch (e) {
+			const code = toFileSystemProviderErrorCode(e as Error);
+			if (code === FileSystemProviderErrorCode.FileExists) {
+				throw new ProtocolError(AhpErrorCodes.AlreadyExists, `Destination already exists: ${destination.toString()}`);
+			}
+			if (code === FileSystemProviderErrorCode.NoPermissions) {
+				throw new ProtocolError(AhpErrorCodes.PermissionDenied, `Permission denied: ${source.toString()}`);
+			}
+			throw new ProtocolError(AhpErrorCodes.NotFound, `Source not found: ${source.toString()}`);
+		}
+	}
+
+	async resourceDelete(params: IResourceDeleteParams): Promise<IResourceDeleteResult> {
+		const fileUri = URI.parse(params.uri);
+		try {
+			await this._fileService.del(fileUri, { recursive: params.recursive });
+			return {};
+		} catch (e) {
+			const code = toFileSystemProviderErrorCode(e as Error);
+			if (code === FileSystemProviderErrorCode.NoPermissions) {
+				throw new ProtocolError(AhpErrorCodes.PermissionDenied, `Permission denied: ${fileUri.toString()}`);
+			}
+			throw new ProtocolError(AhpErrorCodes.NotFound, `Resource not found: ${fileUri.toString()}`);
+		}
+	}
+
+	async resourceMove(params: IResourceMoveParams): Promise<IResourceMoveResult> {
+		const source = URI.parse(params.source);
+		const destination = URI.parse(params.destination);
+		try {
+			await this._fileService.move(source, destination, !params.failIfExists);
+			return {};
+		} catch (e) {
+			const code = toFileSystemProviderErrorCode(e as Error);
+			if (code === FileSystemProviderErrorCode.FileExists) {
+				throw new ProtocolError(AhpErrorCodes.AlreadyExists, `Destination already exists: ${destination.toString()}`);
+			}
+			if (code === FileSystemProviderErrorCode.NoPermissions) {
+				throw new ProtocolError(AhpErrorCodes.PermissionDenied, `Permission denied: ${source.toString()}`);
+			}
+			throw new ProtocolError(AhpErrorCodes.NotFound, `Source not found: ${source.toString()}`);
 		}
 	}
 
@@ -437,7 +564,7 @@ export class AgentService extends Disposable implements IAgentService {
 		return turns;
 	}
 
-	private async _fetchSessionDbContent(fields: ISessionDbUriFields): Promise<IFetchContentResult> {
+	private async _fetchSessionDbContent(fields: ISessionDbUriFields): Promise<IResourceReadResult> {
 		const sessionUri = URI.parse(fields.sessionUri);
 		const ref = this._sessionDataService.openDatabase(sessionUri);
 		try {
@@ -446,6 +573,9 @@ export class AgentService extends Disposable implements IAgentService {
 				throw new ProtocolError(AhpErrorCodes.NotFound, `File edit not found: toolCallId=${fields.toolCallId}, filePath=${fields.filePath}`);
 			}
 			const bytes = fields.part === 'before' ? content.beforeContent : content.afterContent;
+			if (!bytes) {
+				throw new ProtocolError(AhpErrorCodes.NotFound, `No ${fields.part} content for: toolCallId=${fields.toolCallId}, filePath=${fields.filePath}`);
+			}
 			return {
 				data: new TextDecoder().decode(bytes),
 				encoding: ContentEncoding.Utf8,

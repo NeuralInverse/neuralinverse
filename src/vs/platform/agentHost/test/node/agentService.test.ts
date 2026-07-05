@@ -5,7 +5,7 @@
 
 import assert from 'assert';
 import { VSBuffer } from '../../../../base/common/buffer.js';
-import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
+import { DisposableStore, IReference, toDisposable } from '../../../../base/common/lifecycle.js';
 import { Schemas } from '../../../../base/common/network.js';
 import { URI } from '../../../../base/common/uri.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
@@ -13,7 +13,8 @@ import { NullLogService } from '../../../log/common/log.js';
 import { FileService } from '../../../files/common/fileService.js';
 import { InMemoryFileSystemProvider } from '../../../files/common/inMemoryFilesystemProvider.js';
 import { AgentSession } from '../../common/agentService.js';
-import { ISessionDataService } from '../../common/sessionDataService.js';
+import { ISessionDatabase, ISessionDataService } from '../../common/sessionDataService.js';
+import { SessionDatabase } from '../../node/sessionDatabase.js';
 import { ActionType, IActionEnvelope } from '../../common/state/sessionActions.js';
 import { ResponsePartKind, SessionLifecycle, ToolCallConfirmationReason, ToolCallStatus, ToolResultContentType, TurnState, type IMarkdownResponsePart, type IToolCallCompletedState, type IToolCallResponsePart } from '../../common/state/sessionState.js';
 import { AgentService } from '../../node/agentService.js';
@@ -32,6 +33,7 @@ suite('AgentService (node dispatcher)', () => {
 			getSessionDataDir: () => URI.parse('inmemory:/session-data'),
 			getSessionDataDirById: () => URI.parse('inmemory:/session-data'),
 			openDatabase: () => { throw new Error('not implemented'); },
+			tryOpenDatabase: async () => undefined,
 			deleteSessionData: async () => { },
 			cleanupOrphanedData: async () => { },
 		};
@@ -158,6 +160,56 @@ suite('AgentService (node dispatcher)', () => {
 
 			const sessions = await service.listSessions();
 			assert.strictEqual(sessions.length, 1);
+		});
+
+		test('listSessions overlays custom title from session database', async () => {
+			// Pre-seed a custom title in an in-memory database
+			const db = disposables.add(await SessionDatabase.open(':memory:'));
+			await db.setMetadata('customTitle', 'My Custom Title');
+
+			const sessionId = 'test-session-abc';
+			const sessionUri = AgentSession.uri('copilot', sessionId);
+
+			const sessionDataService: ISessionDataService = {
+				_serviceBrand: undefined,
+				getSessionDataDir: () => URI.parse('inmemory:/session-data'),
+				getSessionDataDirById: () => URI.parse('inmemory:/session-data'),
+				openDatabase: (): IReference<ISessionDatabase> => ({
+					object: db,
+					dispose: () => { },
+				}),
+				tryOpenDatabase: async (): Promise<IReference<ISessionDatabase> | undefined> => ({
+					object: db,
+					dispose: () => { },
+				}),
+				deleteSessionData: async () => { },
+				cleanupOrphanedData: async () => { },
+			};
+
+			// Create a mock that returns a session with that ID
+			const agent = new MockAgent('copilot');
+			disposables.add(toDisposable(() => agent.dispose()));
+			agent.sessionMetadataOverrides = { summary: 'SDK Title' };
+			// Manually add the session to the mock
+			(agent as unknown as { _sessions: Map<string, URI> })._sessions.set(sessionId, sessionUri);
+
+			const svc = disposables.add(new AgentService(new NullLogService(), fileService, sessionDataService));
+			svc.registerProvider(agent);
+
+			const sessions = await svc.listSessions();
+			assert.strictEqual(sessions.length, 1);
+			assert.strictEqual(sessions[0].summary, 'My Custom Title');
+		});
+
+		test('listSessions uses SDK title when no custom title exists', async () => {
+			service.registerProvider(copilotAgent);
+			copilotAgent.sessionMetadataOverrides = { summary: 'Auto-generated Title' };
+
+			await service.createSession({ provider: 'copilot' });
+
+			const sessions = await service.listSessions();
+			assert.strictEqual(sessions.length, 1);
+			assert.strictEqual(sessions[0].summary, 'Auto-generated Title');
 		});
 
 		test('refreshModels publishes models in root state via agentsChanged', async () => {
@@ -324,20 +376,20 @@ suite('AgentService (node dispatcher)', () => {
 		});
 	});
 
-	// ---- browseDirectory ------------------------------------------------
+	// ---- resourceList ------------------------------------------------
 
-	suite('browseDirectory', () => {
+	suite('resourceList', () => {
 
 		test('throws when the directory does not exist', async () => {
 			await assert.rejects(
-				() => service.browseDirectory(URI.from({ scheme: Schemas.inMemory, path: '/nonexistent' })),
+				() => service.resourceList(URI.from({ scheme: Schemas.inMemory, path: '/nonexistent' })),
 				/Directory not found/,
 			);
 		});
 
 		test('throws when the target is not a directory', async () => {
 			await assert.rejects(
-				() => service.browseDirectory(URI.from({ scheme: Schemas.inMemory, path: '/testDir/file.txt' })),
+				() => service.resourceList(URI.from({ scheme: Schemas.inMemory, path: '/testDir/file.txt' })),
 				/Not a directory/,
 			);
 		});

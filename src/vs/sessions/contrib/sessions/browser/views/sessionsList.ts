@@ -23,6 +23,7 @@ import { localize } from '../../../../../nls.js';
 import { MenuId, IMenuService } from '../../../../../platform/actions/common/actions.js';
 import { MenuWorkbenchToolBar } from '../../../../../platform/actions/browser/toolbar.js';
 import { IContextKeyService, RawContextKey } from '../../../../../platform/contextkey/common/contextkey.js';
+import { ChatSessionProviderIdContext } from '../../../../common/contextkeys.js';
 import { IContextMenuService } from '../../../../../platform/contextview/browser/contextView.js';
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
 import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding.js';
@@ -250,6 +251,7 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 
 		// Details row — reactive: badge · diff stats · time
 		const timeDisposable = template.elementDisposables.add(new MutableDisposable());
+		const descriptionDisposable = template.elementDisposables.add(new MutableDisposable());
 		template.elementDisposables.add(autorun(reader => {
 			const sessionStatus = element.status.read(reader);
 			const changes = element.changes.read(reader);
@@ -267,11 +269,23 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 			DOM.clearNode(template.detailsRow);
 			const parts: HTMLElement[] = [];
 
+			const isWorkspaceSession = workspace &&
+				workspace.repositories.length > 0 &&
+				workspace?.repositories[0].workingDirectory === undefined;
+
 			// Session type icon in details row
 			// Disabling background icon - hacky but couldn't figure out how to do it from the new provider
 			if (element.sessionType !== CopilotCLISessionType.id) {
 				const typeIconEl = DOM.append(template.detailsRow, $('span.session-details-icon'));
 				DOM.append(typeIconEl, $(`span${ThemeIcon.asCSSSelector(element.icon)}`));
+				parts.push(typeIconEl);
+			} else if (
+				element.sessionType === CopilotCLISessionType.id &&
+				sessionStatus !== SessionStatus.InProgress &&
+				isWorkspaceSession
+			) {
+				const typeIconEl = DOM.append(template.detailsRow, $('span.session-details-icon'));
+				DOM.append(typeIconEl, $(`span${ThemeIcon.asCSSSelector(Codicon.folder)}`));
 				parts.push(typeIconEl);
 			}
 
@@ -316,22 +330,39 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 					DOM.append(template.detailsRow, $('span.session-separator.has-separator'));
 				}
 				const statusEl = DOM.append(template.detailsRow, $('span.session-description'));
-				statusEl.textContent = description ?? localize('working', "Working...");
+				if (description) {
+					descriptionDisposable.value = this.markdownRendererService.render(description, { sanitizerConfig: { replaceWithPlaintext: true } }, statusEl);
+				} else {
+					descriptionDisposable.clear();
+					statusEl.textContent = localize('working', "Working...");
+				}
 				parts.push(statusEl);
 			} else if (sessionStatus === SessionStatus.NeedsInput) {
 				if (parts.length > 0) {
 					DOM.append(template.detailsRow, $('span.session-separator.has-separator'));
 				}
 				const statusEl = DOM.append(template.detailsRow, $('span.session-description'));
-				statusEl.textContent = description ?? localize('needsInput', "Input needed");
+				if (description) {
+					descriptionDisposable.value = this.markdownRendererService.render(description, { sanitizerConfig: { replaceWithPlaintext: true } }, statusEl);
+				} else {
+					descriptionDisposable.clear();
+					statusEl.textContent = localize('needsInput', "Input needed");
+				}
 				parts.push(statusEl);
 			} else if (sessionStatus === SessionStatus.Error) {
 				if (parts.length > 0) {
 					DOM.append(template.detailsRow, $('span.session-separator.has-separator'));
 				}
 				const statusEl = DOM.append(template.detailsRow, $('span.session-description'));
-				statusEl.textContent = localize('failed', "Failed");
+				if (description) {
+					descriptionDisposable.value = this.markdownRendererService.render(description, { sanitizerConfig: { replaceWithPlaintext: true } }, statusEl);
+				} else {
+					descriptionDisposable.clear();
+					statusEl.textContent = localize('failed', "Failed");
+				}
 				parts.push(statusEl);
+			} else {
+				descriptionDisposable.clear();
 			}
 
 			// Timestamp — visible when not hiding details
@@ -848,7 +879,7 @@ export class SessionsList extends Disposable implements ISessionsList {
 
 		// Add archived section at the bottom
 		if (archived.length > 0) {
-			sections.push({ id: 'archived', label: localize('archived', "Archived"), sessions: archived });
+			sections.push({ id: 'archived', label: localize('archived', "Done"), sessions: archived });
 		}
 
 		const hasTodaySessions = sections.some(s => s.id === 'today' && s.sessions.length > 0);
@@ -958,18 +989,21 @@ export class SessionsList extends Disposable implements ISessionsList {
 			return;
 		}
 
+		const selection = this.tree.getSelection().filter((s): s is ISession => !!s && !isSessionSection(s) && !isSessionShowMore(s));
+		const selectedSessions = selection.includes(element) ? [element, ...selection.filter(s => s !== element)] : [element];
+
 		const contextOverlay: [string, boolean | string][] = [
 			[IsSessionPinnedContext.key, this.isSessionPinned(element)],
 			[IsSessionArchivedContext.key, element.isArchived.get()],
 			[IsSessionReadContext.key, element.isRead.get()],
 			['chatSessionType', element.sessionType],
-			['chatSessionProviderId', element.providerId],
+			[ChatSessionProviderIdContext.key, element.providerId],
 		];
 
 		const menu = this.menuService.createMenu(SessionItemContextMenuId, this.contextKeyService.createOverlay(contextOverlay));
 
 		this.contextMenuService.showContextMenu({
-			getActions: () => Separator.join(...menu.getActions({ arg: element, shouldForwardArgs: true }).map(([, actions]) => actions)),
+			getActions: () => Separator.join(...menu.getActions({ arg: selectedSessions, shouldForwardArgs: true }).map(([, actions]) => actions)),
 			getAnchor: () => e.anchor,
 			getKeyBinding: (action) => this.keybindingService.lookupKeybinding(action.id) ?? undefined,
 		});
@@ -1235,7 +1269,7 @@ export function groupByWorkspace(sessions: ISession[]): ISessionSection[] {
 	const groups = new Map<string, ISession[]>();
 	for (const session of sessions) {
 		const workspace = session.workspace.get();
-		const label = workspace?.label ?? localize('unknown', "Unknown");
+		const label = workspace?.label || localize('unknown', "Unknown");
 		let group = groups.get(label);
 		if (!group) {
 			group = [];

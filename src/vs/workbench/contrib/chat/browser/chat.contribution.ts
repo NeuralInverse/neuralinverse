@@ -23,6 +23,7 @@ import product from '../../../../platform/product/common/product.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { EditorPaneDescriptor, IEditorPaneRegistry } from '../../../browser/editor.js';
 import { Extensions, IConfigurationMigrationRegistry } from '../../../common/configuration.js';
+import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
 import { EditorExtensions, IEditorFactoryRegistry } from '../../../common/editor.js';
 import { IWorkbenchAssignmentService } from '../../../services/assignment/common/assignmentService.js';
@@ -159,6 +160,8 @@ import { AgentPluginRecommendations } from './claudePluginRecommendations.js';
 import { AgentPluginEditor } from './agentPluginEditor/agentPluginEditor.js';
 import { AgentPluginEditorInput } from './agentPluginEditor/agentPluginEditorInput.js';
 import { AgentPluginRepositoryService } from './agentPluginRepositoryService.js';
+import { BrowserPluginGitCommandService } from './pluginGitCommandService.js';
+import { IPluginGitService } from '../common/plugins/pluginGitService.js';
 import { PluginInstallService } from './pluginInstallService.js';
 import './promptSyntax/promptCodingAgentActionContribution.js';
 import './promptSyntax/promptToolsCodeLensProvider.js';
@@ -758,6 +761,11 @@ configurationRegistry.registerConfiguration({
 				}
 			}
 		},
+		[ChatConfiguration.DefaultNewSessionMode]: {
+			type: 'string',
+			description: nls.localize('chat.newSession.defaultMode', "The default mode for new chat sessions. When empty, the chat view's default mode is used."),
+			default: '',
+		},
 		[AgentHostEnabledSettingId]: {
 			type: 'boolean',
 			description: nls.localize('chat.agentHost.enabled', "When enabled, some agents run in a separate agent host process."),
@@ -771,6 +779,12 @@ configurationRegistry.registerConfiguration({
 			default: false,
 			tags: ['experimental', 'advanced'],
 			included: product.quality !== 'stable',
+		},
+		[ChatConfiguration.ToolConfirmationCarousel]: {
+			type: 'boolean',
+			description: nls.localize('chat.tools.confirmationCarousel', "When enabled, multiple tool confirmations are batched into a carousel above the input."),
+			default: product.quality !== 'stable',
+			tags: ['experimental'],
 		},
 		[ChatConfiguration.PlanAgentDefaultModel]: {
 			type: 'string',
@@ -828,15 +842,6 @@ configurationRegistry.registerConfiguration({
 			description: nls.localize('chat.codeBlock.showProgressAnimation.description', "When applying edits, show a progress animation in the code block pill. If disabled, shows the progress percentage instead."),
 			default: true,
 			tags: ['experimental'],
-		},
-		['chat.statusWidget.anonymous']: {
-			type: 'boolean',
-			description: nls.localize('chat.statusWidget.anonymous.description', "Controls whether anonymous users see the status widget in new chat sessions when rate limited."),
-			default: false,
-			tags: ['experimental', 'advanced'],
-			experiment: {
-				mode: 'auto'
-			}
 		},
 		[mcpDiscoverySection]: {
 			type: 'object',
@@ -1358,6 +1363,15 @@ configurationRegistry.registerConfiguration({
 				mode: 'auto'
 			}
 		},
+		[ChatConfiguration.GeneralPurposeAgentEnabled]: {
+			type: 'boolean',
+			description: nls.localize('chat.generalPurposeAgent.enabled', "Controls whether the built-in General Purpose agent is available as a subagent."),
+			default: false,
+			tags: ['experimental', 'advanced'],
+			experiment: {
+				mode: 'auto'
+			}
+		},
 		[ChatConfiguration.SubagentsAllowInvocationsFromSubagents]: {
 			type: 'boolean',
 			description: nls.localize('chat.subagents.allowInvocationsFromSubagents', "Allow subagents to invoke subagents."),
@@ -1382,8 +1396,8 @@ configurationRegistry.registerConfiguration({
 		[ChatConfiguration.CustomizationsProviderApi]: {
 			type: 'boolean',
 			description: nls.localize('chat.customizations.providerApi.enabled', "When enabled, the Customizations management UI reads items from the session type's customizations provider instead of built-in discovery."),
-			default: false,
-			tags: ['experimental'],
+			default: true,
+			tags: ['preview'],
 		},
 	}
 });
@@ -1526,6 +1540,32 @@ class ChatResolverContribution extends Disposable {
 	}
 }
 
+class CopilotTelemetryContribution extends Disposable implements IWorkbenchContribution {
+
+	static readonly ID = 'workbench.contrib.copilotTelemetry';
+
+	constructor(
+		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IChatEntitlementService private readonly chatEntitlementService: IChatEntitlementService,
+	) {
+		super();
+
+		this.updateCopilotTrackingId();
+
+		this._register(this.chatEntitlementService.onDidChangeEntitlement(() => {
+			this.updateCopilotTrackingId();
+		}));
+	}
+
+	private updateCopilotTrackingId(): void {
+		const copilotTrackingId = this.chatEntitlementService.copilotTrackingId;
+		if (copilotTrackingId) {
+			// __GDPR__COMMON__ "common.copilotTrackingId" : { "endPoint": "GoogleAnalyticsID", "classification": "EndUserPseudonymizedInformation", "purpose": "BusinessInsight", "comment": "The anonymized Copilot analytics tracking ID from the entitlement API." }
+			this.telemetryService.setCommonProperty('common.copilotTrackingId', copilotTrackingId);
+		}
+	}
+}
+
 class ChatDebugResolverContribution implements IWorkbenchContribution {
 
 	static readonly ID = 'workbench.contrib.chatDebugResolver';
@@ -1570,6 +1610,7 @@ class ChatAgentSettingContribution extends Disposable implements IWorkbenchContr
 		this.newChatButtonExperimentIcon = ChatContextKeys.newChatButtonExperimentIcon.bindTo(this.contextKeyService);
 		this.registerMaxRequestsSetting();
 		this.registerNewChatButtonIcon();
+		this.registerDefaultModeSetting();
 	}
 
 
@@ -1608,6 +1649,24 @@ class ChatAgentSettingContribution extends Disposable implements IWorkbenchContr
 			} else {
 				this.newChatButtonExperimentIcon.reset();
 			}
+		});
+	}
+
+	private registerDefaultModeSetting(): void {
+		this.experimentService.getTreatment<string>('chatDefaultNewSessionMode').then(value => {
+			const node: IConfigurationNode = {
+				id: 'chatSidebar',
+				title: nls.localize('interactiveSessionConfigurationTitle', "Chat"),
+				type: 'object',
+				properties: {
+					[ChatConfiguration.DefaultNewSessionMode]: {
+						type: 'string',
+						description: nls.localize('chat.newSession.defaultMode', "The default mode for new chat sessions. When empty, the chat view's default mode is used."),
+						default: typeof value === 'string' ? value : '',
+					}
+				}
+			};
+			configurationRegistry.updateConfigurations({ add: [node], remove: [] });
 		});
 	}
 }
@@ -1662,6 +1721,64 @@ class ChatForegroundSessionCountContribution extends Disposable implements IWork
 		}
 
 		this.foregroundSessionCountContextKey.set(count);
+	}
+}
+
+type ChatModelsAtStartupEvent = {
+	totalModels: number;
+	modelsOpenInWidgets: number;
+	backgroundModels: number;
+	modelsKeptAliveOnlyForEdits: number;
+};
+
+type ChatModelsAtStartupClassification = {
+	totalModels: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Total number of live chat models after startup revival.' };
+	modelsOpenInWidgets: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Number of chat models that are open in a chat widget or editor.' };
+	backgroundModels: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Number of chat models kept alive in the background without a widget.' };
+	modelsKeptAliveOnlyForEdits: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Number of chat models kept alive solely because they have unaccepted edits.' };
+	owner: 'roblourens';
+	comment: 'Tracks chat model counts at startup after reviving sessions with pending edits.';
+};
+
+class ChatModelsAtStartupTelemetry extends Disposable implements IWorkbenchContribution {
+
+	static readonly ID = 'workbench.contrib.chatModelsAtStartupTelemetry';
+
+	constructor(
+		@IChatService private readonly chatService: IChatService,
+		@IChatWidgetService private readonly chatWidgetService: IChatWidgetService,
+		@ITelemetryService private readonly telemetryService: ITelemetryService,
+	) {
+		super();
+		void this.logTelemetry();
+	}
+
+	private async logTelemetry(): Promise<void> {
+		await this.chatService.whenSessionsRevived;
+
+		const snapshot = this.chatService.getChatModelReferenceDebugInfo();
+
+		let modelsOpenInWidgets = 0;
+		let backgroundModels = 0;
+		let modelsKeptAliveOnlyForEdits = 0;
+
+		for (const model of snapshot.models) {
+			if (this.chatWidgetService.getWidgetBySessionResource(model.sessionResource)) {
+				modelsOpenInWidgets++;
+			} else {
+				backgroundModels++;
+				if (model.hasPendingEdits && model.referenceCount === 1) {
+					modelsKeptAliveOnlyForEdits++;
+				}
+			}
+		}
+
+		this.telemetryService.publicLog2<ChatModelsAtStartupEvent, ChatModelsAtStartupClassification>('chat.modelsAtStartup', {
+			totalModels: snapshot.totalModels,
+			modelsOpenInWidgets,
+			backgroundModels,
+			modelsKeptAliveOnlyForEdits,
+		});
 	}
 }
 
@@ -1849,6 +1966,7 @@ registerEditorFeature(ChatInputBoxContentProvider);
 Registry.as<IEditorFactoryRegistry>(EditorExtensions.EditorFactory).registerEditorSerializer(ChatEditorInput.TypeID, ChatEditorInputSerializer);
 Registry.as<IEditorFactoryRegistry>(EditorExtensions.EditorFactory).registerEditorSerializer(ChatDebugEditorInput.ID, ChatDebugEditorInputSerializer);
 
+registerWorkbenchContribution2(CopilotTelemetryContribution.ID, CopilotTelemetryContribution, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatResolverContribution.ID, ChatResolverContribution, WorkbenchPhase.BlockStartup);
 registerWorkbenchContribution2(ChatDebugResolverContribution.ID, ChatDebugResolverContribution, WorkbenchPhase.BlockStartup);
 registerWorkbenchContribution2(PromptsDebugContribution.ID, PromptsDebugContribution, WorkbenchPhase.BlockRestore);
@@ -1871,6 +1989,7 @@ registerWorkbenchContribution2(UsagesToolContribution.ID, UsagesToolContribution
 registerWorkbenchContribution2(RenameToolContribution.ID, RenameToolContribution, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatAgentSettingContribution.ID, ChatAgentSettingContribution, WorkbenchPhase.AfterRestored);
 registerWorkbenchContribution2(ChatForegroundSessionCountContribution.ID, ChatForegroundSessionCountContribution, WorkbenchPhase.AfterRestored);
+registerWorkbenchContribution2(ChatModelsAtStartupTelemetry.ID, ChatModelsAtStartupTelemetry, WorkbenchPhase.AfterRestored);
 registerWorkbenchContribution2(ChatAgentActionsContribution.ID, ChatAgentActionsContribution, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(HookSchemaAssociationContribution.ID, HookSchemaAssociationContribution, WorkbenchPhase.AfterRestored);
 registerWorkbenchContribution2(ToolReferenceNamesContribution.ID, ToolReferenceNamesContribution, WorkbenchPhase.AfterRestored);
@@ -1941,6 +2060,7 @@ registerSingleton(IAgentPluginService, AgentPluginService, InstantiationType.Del
 registerSingleton(IPluginMarketplaceService, PluginMarketplaceService, InstantiationType.Delayed);
 registerSingleton(IWorkspacePluginSettingsService, WorkspacePluginSettingsService, InstantiationType.Delayed);
 registerSingleton(IAgentPluginRepositoryService, AgentPluginRepositoryService, InstantiationType.Delayed);
+registerSingleton(IPluginGitService, BrowserPluginGitCommandService, InstantiationType.Delayed);
 registerSingleton(IPluginInstallService, PluginInstallService, InstantiationType.Delayed);
 registerSingleton(ILanguageModelToolsService, LanguageModelToolsService, InstantiationType.Delayed);
 registerSingleton(ILanguageModelToolsConfirmationService, LanguageModelToolsConfirmationService, InstantiationType.Delayed);

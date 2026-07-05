@@ -159,7 +159,7 @@
 
 .ai-customization-management-editor .content-inner {
 	height: 100%;
-	padding: 8px 12px;
+	padding: 10px;
 	box-sizing: border-box;
 }
 
@@ -228,7 +228,7 @@
 	align-items: center;
 	gap: 8px;
 	flex-shrink: 0;
-	padding: 6px 0;
+	padding: 6px 2px;
 }
 
 .ai-customization-list-widget .list-search-container,
@@ -465,6 +465,25 @@
 	line-height: 16px;
 }
 
+/* Status icon for remote customization items (loading/loaded/degraded/error) */
+.ai-customization-list-item .item-status-icon {
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+}
+
+/* Sync checkbox for local items in remote agent harness view */
+.ai-customization-list-item .item-sync-checkbox {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	margin-right: 4px;
+}
+
 /* MCP bridged badge — shown inline next to the server name */
 .mcp-server-item .mcp-server-name-row {
 	display: flex;
@@ -552,7 +571,6 @@
 .ai-customization-list-widget .section-footer .section-footer-description {
 	font-size: 13px;
 	color: var(--vscode-descriptionForeground);
-	line-height: 1.5;
 	margin: 0 0 8px 0;
 }
 
@@ -889,6 +907,12 @@
 	display: flex;
 	gap: 4px;
 	flex-shrink: 0;
+	/* Reserve space so focused button outlines do not clip against the widget's overflow:hidden */
+	padding: 1px;
+}
+
+.mcp-list-widget .list-button-group .monaco-button:focus-visible {
+	outline-offset: -1px;
 }
 
 /* Back to installed link */
@@ -896,19 +920,23 @@
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	padding: 4px 0;
+	padding: 4px 6px;
 	cursor: pointer;
 	font-size: 12px;
-	color: var(--vscode-textLink-foreground);
+	color: var(--vscode-descriptionForeground);
 	flex-shrink: 0;
+	border-radius: 4px;
+	margin: 4px 0;
 }
 
 .mcp-list-widget .mcp-back-link:hover {
-	color: var(--vscode-textLink-activeForeground);
+	background-color: var(--vscode-toolbar-hoverBackground);
+	color: var(--vscode-foreground);
 }
 
-.mcp-list-widget .mcp-back-link:hover span:last-child {
-	text-decoration: underline;
+.mcp-list-widget .mcp-back-link:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
 }
 
 /* Gallery item specifics */
@@ -938,6 +966,7 @@
 .mcp-gallery-item.extension-list-item > .details > .footer {
 	display: flex;
 	align-items: center;
+	padding-bottom: 4px;
 }
 
 .mcp-gallery-item.extension-list-item .mcp-gallery-action {
@@ -960,8 +989,7 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 8px 4px 12px 4px;
-	border-bottom: 1px solid var(--vscode-widget-border);
+	padding: 4px 0;
 	flex-shrink: 0;
 }
 

@@ -31,6 +31,7 @@ import { GlobalCompositeBar } from '../globalCompositeBar.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { Action2, IMenuService, MenuId, MenuRegistry, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IsSessionsWindowContext } from '../../../common/contextkeys.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
 import { getContextMenuActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
 import { IViewDescriptorService, ViewContainerLocation, ViewContainerLocationToString } from '../../../common/views.js';
@@ -450,6 +451,32 @@ export class ActivityBarCompositeBar extends PaneCompositeBar {
 registerAction2(class extends Action2 {
 	constructor() {
 		super({
+			id: 'workbench.action.activityBarLocation.default',
+			title: {
+				...localize2('positionActivityBarDefault', 'Move Activity Bar to Side'),
+				mnemonicTitle: localize({ key: 'miDefaultActivityBar', comment: ['&& denotes a mnemonic'] }, "&&Default"),
+			},
+			shortTitle: localize('default', "Default"),
+			category: Categories.View,
+			toggled: ContextKeyExpr.equals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.DEFAULT),
+			menu: [{
+				id: MenuId.ActivityBarPositionMenu,
+				order: 1
+			}, {
+				id: MenuId.CommandPalette,
+				when: ContextKeyExpr.and(ContextKeyExpr.notEquals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.DEFAULT), IsSessionsWindowContext.negate()),
+			}]
+		});
+	}
+	run(accessor: ServicesAccessor): void {
+		const configurationService = accessor.get(IConfigurationService);
+		configurationService.updateValue(LayoutSettings.ACTIVITY_BAR_LOCATION, ActivityBarPosition.DEFAULT);
+	}
+});
+
+registerAction2(class extends Action2 {
+	constructor() {
+		super({
 			id: 'workbench.action.activityBarLocation.top',
 			title: {
 				...localize2('positionActivityBarTop', 'Move Activity Bar to Top'),
@@ -460,10 +487,10 @@ registerAction2(class extends Action2 {
 			toggled: ContextKeyExpr.equals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.TOP),
 			menu: [{
 				id: MenuId.ActivityBarPositionMenu,
-				order: 1
+				order: 2
 			}, {
 				id: MenuId.CommandPalette,
-				when: ContextKeyExpr.notEquals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.TOP),
+				when: ContextKeyExpr.and(ContextKeyExpr.notEquals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.TOP), IsSessionsWindowContext.negate()),
 			}]
 		});
 	}
@@ -473,11 +500,64 @@ registerAction2(class extends Action2 {
 	}
 });
 
+registerAction2(class extends Action2 {
+	constructor() {
+		super({
+			id: 'workbench.action.activityBarLocation.bottom',
+			title: {
+				...localize2('positionActivityBarBottom', 'Move Activity Bar to Bottom'),
+				mnemonicTitle: localize({ key: 'miBottomActivityBar', comment: ['&& denotes a mnemonic'] }, "&&Bottom"),
+			},
+			shortTitle: localize('bottom', "Bottom"),
+			category: Categories.View,
+			toggled: ContextKeyExpr.equals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.BOTTOM),
+			menu: [{
+				id: MenuId.ActivityBarPositionMenu,
+				order: 3
+			}, {
+				id: MenuId.CommandPalette,
+				when: ContextKeyExpr.and(ContextKeyExpr.notEquals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.BOTTOM), IsSessionsWindowContext.negate()),
+			}]
+		});
+	}
+	run(accessor: ServicesAccessor): void {
+		const configurationService = accessor.get(IConfigurationService);
+		configurationService.updateValue(LayoutSettings.ACTIVITY_BAR_LOCATION, ActivityBarPosition.BOTTOM);
+	}
+});
+
+registerAction2(class extends Action2 {
+	constructor() {
+		super({
+			id: 'workbench.action.activityBarLocation.hide',
+			title: {
+				...localize2('hideActivityBar', 'Hide Activity Bar'),
+				mnemonicTitle: localize({ key: 'miHideActivityBar', comment: ['&& denotes a mnemonic'] }, "&&Hidden"),
+			},
+			shortTitle: localize('hide', "Hidden"),
+			category: Categories.View,
+			toggled: ContextKeyExpr.equals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.HIDDEN),
+			menu: [{
+				id: MenuId.ActivityBarPositionMenu,
+				order: 4
+			}, {
+				id: MenuId.CommandPalette,
+				when: ContextKeyExpr.and(ContextKeyExpr.notEquals(`config.${LayoutSettings.ACTIVITY_BAR_LOCATION}`, ActivityBarPosition.HIDDEN), IsSessionsWindowContext.negate()),
+			}]
+		});
+	}
+	run(accessor: ServicesAccessor): void {
+		const configurationService = accessor.get(IConfigurationService);
+		configurationService.updateValue(LayoutSettings.ACTIVITY_BAR_LOCATION, ActivityBarPosition.HIDDEN);
+	}
+});
+
 MenuRegistry.appendMenuItem(MenuId.MenubarAppearanceMenu, {
 	submenu: MenuId.ActivityBarPositionMenu,
 	title: localize('positionActivituBar', "Activity Bar Position"),
 	group: '3_workbench_layout_move',
-	order: 2
+	order: 2,
+	when: IsSessionsWindowContext.negate()
 });
 
 MenuRegistry.appendMenuItem(MenuId.ViewContainerTitleContext, {
