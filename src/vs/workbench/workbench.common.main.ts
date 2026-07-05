@@ -12,12 +12,6 @@ import './browser/workbench.contribution.js';
 
 //#endregion
 
-//#region --- Void
-import './contrib/void/browser/void.contribution.js'; // Void added this
-import './contrib/neuralInverse/browser/neuralInverse.contribution.js'; // Neural Inverse added this
-import './contrib/neuralInverseModernisation/browser/neuralInverseModernisation.contribution.js'; // Neural Inverse Modernisation added this
-import './contrib/neuralInverseFirmware/browser/neuralInverseFirmware.contribution.js'; // Neural Inverse Firmware added this
-//#endregion
 
 //#region --- workbench actions
 
@@ -192,7 +186,7 @@ registerSingleton(IAllowedMcpServersService, AllowedMcpServersService, Instantia
 //#region --- workbench contributions
 
 // Default Account
-import './services/accounts/common/defaultAccount.js';
+import './services/accounts/browser/defaultAccount.js';
 
 // Telemetry
 import './contrib/telemetry/browser/telemetry.contribution.js';
@@ -212,7 +206,6 @@ import './contrib/notebook/browser/notebook.contribution.js';
 import './contrib/speech/browser/speech.contribution.js';
 
 // Chat
-// Void - this is still registered to avoid console errors, we just commented it out in chatParticipant.contribution.ts
 import './contrib/chat/browser/chat.contribution.js';
 import './contrib/inlineChat/browser/inlineChat.contribution.js';
 import './contrib/mcp/browser/mcp.contribution.js';
@@ -242,6 +235,9 @@ import './contrib/files/browser/files.contribution.js';
 // Bulk Edit
 import './contrib/bulkEdit/browser/bulkEditService.js';
 import './contrib/bulkEdit/browser/preview/bulkEdit.contribution.js';
+
+// Rename Symbol Tracker for Inline completions.
+import './contrib/inlineCompletions/browser/renameSymbolTrackerService.js';
 
 // Search
 import './contrib/search/browser/search.contribution.js';
@@ -356,8 +352,8 @@ import './contrib/surveys/browser/nps.contribution.js';
 import './contrib/surveys/browser/languageSurveys.contribution.js';
 
 // Welcome
-// Void commented this out
-// import './contrib/welcomeGettingStarted/browser/gettingStarted.contribution.js';
+import './contrib/welcomeGettingStarted/browser/gettingStarted.contribution.js';
+import './contrib/welcomeAgentSessions/browser/agentSessionsWelcome.contribution.js';
 import './contrib/welcomeWalkthrough/browser/walkThrough.contribution.js';
 import './contrib/welcomeViews/common/viewsWelcome.contribution.js';
 import './contrib/welcomeViews/common/newFile.contribution.js';
