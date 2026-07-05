@@ -303,7 +303,6 @@ function createGitIndexVinyls(paths) {
 // 				if (some.length > 0) {
 // 					console.log('Reading git index versions...');
 
-<<<<<<< HEAD
 // 					createGitIndexVinyls(some)
 // 						.then(
 // 							(vinyls) =>
@@ -323,26 +322,3 @@ function createGitIndexVinyls(paths) {
 // 		);
 // 	}
 // }
-=======
-					createGitIndexVinyls(some)
-						.then(
-							(vinyls) => {
-								/** @type {Promise<void>} */
-								return (new Promise((c, e) =>
-									hygiene(es.readArray(vinyls).pipe(filter(all)))
-										.on('end', () => c())
-										.on('error', e)
-								))
-							}
-						)
-						.catch((err) => {
-							console.error();
-							console.error(err);
-							process.exit(1);
-						});
-				}
-			}
-		);
-	}
-}
->>>>>>> 1.104.0

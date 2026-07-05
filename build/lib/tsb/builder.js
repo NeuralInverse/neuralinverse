@@ -418,7 +418,7 @@ function createTypeScriptBuilder(config, projectFile, cmd) {
             // print stats
             const headNow = process.memoryUsage().heapUsed;
             const MB = 1024 * 1024;
-            _log('[tsb]', `time:  ${ansi_colors_1.default.yellow((Date.now() - t1) + 'ms')} + \nmem:  ${ansi_colors_1.default.cyan(Math.ceil(headNow / MB) + 'MB')} ${ansi_colors_1.default.bgCyan('delta: ' + Math.ceil((headNow - headUsed) / MB))}`);
+            _log('[tsb]', `time:  ${ansi_colors_1.yellow((Date.now() - t1) + 'ms')} + \nmem:  ${ansi_colors_1.cyan(Math.ceil(headNow / MB) + 'MB')} ${ansi_colors_1.bgCyan('delta: ' + Math.ceil((headNow - headUsed) / MB))}`);
             headUsed = headNow;
         });
     }

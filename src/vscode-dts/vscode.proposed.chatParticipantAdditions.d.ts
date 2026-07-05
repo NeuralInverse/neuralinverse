@@ -337,8 +337,6 @@ declare module 'vscode' {
 		Omitted = 3
 	}
 
-<<<<<<< HEAD
-=======
 	export type ThinkingDelta = {
 		text?: string | string[];
 		id: string;
@@ -354,7 +352,6 @@ declare module 'vscode' {
 		metadata?: { readonly [key: string]: any };
 	};
 
->>>>>>> 1.104.0
 	export enum ChatResponseClearToPreviousToolInvocationReason {
 		NoReason = 0,
 		FilteredContentRetry = 1,

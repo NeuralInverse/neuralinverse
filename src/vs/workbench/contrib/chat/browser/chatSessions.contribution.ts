@@ -15,10 +15,7 @@ import { ContextKeyExpr, IContextKeyService } from '../../../../platform/context
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
-<<<<<<< HEAD
-=======
 import { IEditableData } from '../../../common/views.js';
->>>>>>> 1.104.0
 import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { IExtensionService, isProposedApiEnabled } from '../../../services/extensions/common/extensions.js';
@@ -147,24 +144,14 @@ export class ChatSessionsService extends Disposable implements IChatSessionsServ
 				}
 				for (const contribution of ext.value) {
 					const c: IChatSessionsExtensionPoint = {
-<<<<<<< HEAD
-						id: contribution.id,
-=======
->>>>>>> 1.104.0
 						type: contribution.type,
 						name: contribution.name,
 						displayName: contribution.displayName,
 						description: contribution.description,
 						when: contribution.when,
-<<<<<<< HEAD
-						extensionDescription: ext.description,
-					};
-					this._logService.info(`Registering chat session from extension contribution: ${c.displayName} (id='${c.type}' name='${c.name}')`);
-=======
 						capabilities: contribution.capabilities,
 						extensionDescription: ext.description,
 					};
->>>>>>> 1.104.0
 					this._register(this.registerContribution(c));
 				}
 			}

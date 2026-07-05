@@ -1495,9 +1495,8 @@ const defaultChat = {
 	completionsMenuCommand: product.defaultChatAgent?.completionsMenuCommand ?? '',
 };
 
-// // Add next to the command center if command center is disabled
-// Void commented this out with /* */ - copilot head
-/* MenuRegistry.appendMenuItem(MenuId.CommandCenter, {
+// Add next to the command center if command center is disabled
+MenuRegistry.appendMenuItem(MenuId.CommandCenter, {
 	submenu: MenuId.ChatTitleBarMenu,
 	title: localize('title4', "Chat"),
 	icon: Codicon.chatSparkle,
@@ -1528,7 +1527,7 @@ MenuRegistry.appendMenuItem(MenuId.TitleBar, {
 		ContextKeyExpr.has('config.window.commandCenter').negate(),
 	),
 	order: 1
-}); */
+});
 
 registerAction2(class ToggleCopilotControl extends ToggleTitleBarConfigAction {
 	constructor() {
@@ -1671,16 +1670,6 @@ export interface IClearEditingSessionConfirmationOptions {
 
 // --- Chat Submenus in various Components
 
-<<<<<<< HEAD
-const menuContext = ContextKeyExpr.and(
-	ChatContextKeys.Setup.hidden.negate(),
-	ChatContextKeys.Setup.disabled.negate()
-);
-
-const title = localize('copilot', "Copilot");
-
-=======
->>>>>>> 1.104.0
 MenuRegistry.appendMenuItem(MenuId.EditorContext, {
 	submenu: MenuId.ChatTextEditorMenu,
 	group: '1_chat',

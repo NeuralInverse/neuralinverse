@@ -284,10 +284,7 @@ export class ReleaseNotesManager extends Disposable {
 
 		// Remove HTML comment markers around table of contents navigation
 		const processedContent = content
-<<<<<<< HEAD
-=======
 			.toString()
->>>>>>> 1.104.0
 			.replace(/<!--\s*TOC\s*/gi, '')
 			.replace(/\s*Navigation End\s*-->/gi, '');
 

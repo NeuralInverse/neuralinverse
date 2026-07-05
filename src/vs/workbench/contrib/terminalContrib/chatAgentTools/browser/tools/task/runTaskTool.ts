@@ -106,24 +106,6 @@ export class RunTaskTool implements IToolImpl {
 				inputToolManualChars: r.inputToolManualChars ?? 0,
 			});
 		}
-<<<<<<< HEAD:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/task/runTaskTool.ts
-		let output = '';
-		if (result?.exitCode) {
-			output = `Task \`${taskLabel}\` failed with exit code ${result.exitCode}.`;
-		} else {
-			if (outputAndIdle.terminalExecutionIdleBeforeTimeout) {
-				output += `Task \`${taskLabel}\` finished`;
-			} else {
-				output += `Task \`${taskLabel}\` started and will continue to run in the background.`;
-			}
-		}
-		this._telemetryService.publicLog2?.<RunTaskToolEvent, RunTaskToolClassification>('copilotChat.runTaskTool.run', {
-			taskId: args.id,
-			bufferLength: outputAndIdle.output.length,
-			pollDurationMs: outputAndIdle?.pollDurationMs ?? 0,
-		});
-		return { content: [{ kind: 'text', value: `The output was ${outputAndIdle.output}` }], toolResultMessage: output };
-=======
 
 		const details = terminalResults.map(r => `Terminal: ${r.name}\nOutput:\n${r.output}`);
 		const uniqueDetails = Array.from(new Set(details)).join('\n\n');
@@ -135,7 +117,6 @@ export class RunTaskTool implements IToolImpl {
 			toolResultMessage,
 			toolResultDetails
 		};
->>>>>>> 1.104.0:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/task/runTaskTool.ts
 	}
 
 	private async _isTaskActive(task: Task): Promise<boolean> {

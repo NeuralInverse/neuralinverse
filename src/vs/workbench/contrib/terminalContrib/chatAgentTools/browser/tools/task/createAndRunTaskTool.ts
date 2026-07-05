@@ -147,36 +147,6 @@ export class CreateAndRunTaskTool implements IToolImpl {
 			});
 		}
 
-<<<<<<< HEAD:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/task/createAndRunTaskTool.ts
-		_progress.report({ message: new MarkdownString(localize('copilotChat.checkingOutput', 'Checking output for `{0}`', args.task.label)) });
-		let outputAndIdle = await pollForOutputAndIdle({ getOutput: () => getOutput(terminal), isActive: () => this._isTaskActive(task) }, false, token, this._languageModelsService);
-		if (!outputAndIdle.terminalExecutionIdleBeforeTimeout) {
-			outputAndIdle = await racePollingOrPrompt(
-				() => pollForOutputAndIdle({ getOutput: () => getOutput(terminal), isActive: () => this._isTaskActive(task) }, true, token, this._languageModelsService),
-				() => promptForMorePolling(args.task.label, token, invocation.context!, this._chatService),
-				outputAndIdle,
-				token,
-				this._languageModelsService,
-				{ getOutput: () => getOutput(terminal), isActive: () => this._isTaskActive(task) }
-			);
-		}
-		let output = '';
-		if (result?.exitCode) {
-			output = `Task \`${args.task.label}\` failed with exit code ${result.exitCode}.`;
-		} else {
-			if (outputAndIdle.terminalExecutionIdleBeforeTimeout) {
-				output += `Task \`${args.task.label}\` finished`;
-			} else {
-				output += `Task \`${args.task.label}\` started and will continue to run in the background.`;
-			}
-		}
-		this._telemetryService.publicLog2?.<CreateAndRunTaskToolEvent, CreateAndRunTaskToolClassification>('copilotChat.runTaskTool.createAndRunTask', {
-			taskLabel: args.task.label,
-			bufferLength: outputAndIdle.output.length,
-			pollDurationMs: outputAndIdle?.pollDurationMs ?? 0,
-		});
-		return { content: [{ kind: 'text', value: `The output was ${outputAndIdle.output}` }], toolResultMessage: output };
-=======
 		const details = terminalResults.map(r => `Terminal: ${r.name}\nOutput:\n${r.output}`);
 		const uniqueDetails = Array.from(new Set(details)).join('\n\n');
 		const toolResultDetails = toolResultDetailsFromResponse(terminalResults);
@@ -186,7 +156,6 @@ export class CreateAndRunTaskTool implements IToolImpl {
 			toolResultMessage,
 			toolResultDetails
 		};
->>>>>>> 1.104.0:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/task/createAndRunTaskTool.ts
 	}
 
 	private async _isTaskActive(task: Task): Promise<boolean> {

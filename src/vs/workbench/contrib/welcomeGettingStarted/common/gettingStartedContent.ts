@@ -6,12 +6,6 @@
 import themePickerContent from './media/theme_picker.js';
 import themePickerSmallContent from './media/theme_picker_small.js';
 import notebookProfileContent from './media/notebookProfile.js';
-import niLlmContent from './media/ni-llm.js';
-import niChatContent from './media/ni-chat.js';
-import niAgentsContent from './media/ni-agents.js';
-import niModernisationContent from './media/ni-modernisation.js';
-import niFirmwareContent from './media/ni-firmware.js';
-import niChecksContent from './media/ni-checks.js';
 import { localize } from '../../../../nls.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
@@ -71,21 +65,9 @@ gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGett
 gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/notebookProfile', notebookProfileContent);
 // Register empty media for accessibility walkthrough
 gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/empty', () => '');
-// NeuralInverse walkthrough content
-gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/ni-llm', niLlmContent);
-gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/ni-chat', niChatContent);
-gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/ni-agents', niAgentsContent);
-gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/ni-modernisation', niModernisationContent);
-gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/ni-firmware', niFirmwareContent);
-gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGettingStarted/common/media/ni-checks', niChecksContent);
 
 const setupIcon = registerIcon('getting-started-setup', Codicon.zap, localize('getting-started-setup-icon', "Icon used for the setup category of welcome page"));
 const beginnerIcon = registerIcon('getting-started-beginner', Codicon.lightbulb, localize('getting-started-beginner-icon', "Icon used for the beginner category of welcome page"));
-<<<<<<< HEAD
-const neuralInverseIcon = registerIcon('getting-started-neural-inverse', Codicon.rocket, localize('getting-started-neural-inverse-icon', "Icon used for the Neural Inverse getting started walkthrough"));
-export const NEW_WELCOME_EXPERIENCE = 'NewWelcomeExperience';
-=======
->>>>>>> 1.104.0
 
 export type BuiltinGettingStartedStep = {
 	id: string;
@@ -622,127 +604,5 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				},
 			]
 		}
-<<<<<<< HEAD
-	},
-	{
-		id: 'NeuralInverse',
-		title: localize('neuralInverse.walkthrough.title', "Get Started with Neural Inverse"),
-		description: localize('neuralInverse.walkthrough.description', "Set up your AI provider, explore chat and agentic modes, run compliance checks, and launch a modernisation session."),
-		isFeatured: true,
-		icon: neuralInverseIcon,
-		walkthroughPageTitle: localize('neuralInverse.walkthrough.pageTitle', 'Neural Inverse'),
-		content: {
-			type: 'steps',
-			steps: [
-				{
-					id: 'ni-llm',
-					title: localize('neuralInverse.step.llm.title', "Connect your AI model"),
-					description: localize('neuralInverse.step.llm.description.interpolated', "Neural Inverse works with any cloud or local LLM — no vendor lock-in.\n{0}", Button(localize('neuralInverse.step.llm.button', "Open AI Provider Settings"), 'command:void.settingsAction')),
-					completionEvents: ['onCommand:void.settingsAction'],
-					media: { type: 'markdown', path: 'ni-llm' },
-				},
-				{
-					id: 'ni-chat',
-					title: localize('neuralInverse.step.chat.title', "Chat and Power Mode"),
-					description: localize('neuralInverse.step.chat.description.interpolated', "Chat for conversation, Power Mode for full agentic tool-calling execution.\n{0}", Button(localize('neuralInverse.step.chat.button', "Open Chat"), 'command:void.ctrlLAction')),
-					completionEvents: ['onCommand:void.ctrlLAction'],
-					media: { type: 'markdown', path: 'ni-chat' },
-				},
-				{
-					id: 'ni-agents',
-					title: localize('neuralInverse.step.agents.title', "Agentic mode and sub-agents"),
-					description: localize('neuralInverse.step.agents.description.interpolated', "Orchestrate concurrent agents — Explorer, Editor, and Verifier — across your codebase.\n{0}", Button(localize('neuralInverse.step.agents.button', "Open Agent Manager"), 'command:neuralInverse.openAgentManager')),
-					completionEvents: ['onCommand:neuralInverse.openAgentManager'],
-					media: { type: 'markdown', path: 'ni-agents' },
-				},
-				{
-					id: 'ni-modernisation',
-					title: localize('neuralInverse.step.modernisation.title', "Modernisation engine"),
-					description: localize('neuralInverse.step.modernisation.description.interpolated', "Migrate legacy codebases with a 5-stage AI-assisted pipeline and CPM scheduling.\n{0}", Button(localize('neuralInverse.step.modernisation.button', "Open Modernisation"), 'command:neuralInverse.openModernisation')),
-					completionEvents: ['onCommand:neuralInverse.openModernisation'],
-					media: { type: 'markdown', path: 'ni-modernisation' },
-				},
-				{
-					id: 'ni-firmware',
-					title: localize('neuralInverse.step.firmware.title', "Firmware and safety-critical support"),
-					description: localize('neuralInverse.step.firmware.description.interpolated', "First-class support for embedded, automotive, energy, and IIoT/OT systems with ISO 26262, IEC 61508, and more.\n{0}", Button(localize('neuralInverse.step.firmware.button', "Open Firmware"), 'command:neuralInverse.openFirmware')),
-					completionEvents: ['onCommand:neuralInverse.openFirmware'],
-					media: { type: 'markdown', path: 'ni-firmware' },
-				},
-				{
-					id: 'ni-checks',
-					title: localize('neuralInverse.step.checks.title', "GRC checks and compliance"),
-					description: localize('neuralInverse.step.checks.description.interpolated', "Real-time compliance scanning with the Checks Agent — ask about violations in natural language.\n{0}", Button(localize('neuralInverse.step.checks.button', "Run Workspace Scan"), 'command:neuralInverseChecks.runWorkspaceScan')),
-					completionEvents: ['onCommand:neuralInverseChecks.runWorkspaceScan'],
-					media: { type: 'markdown', path: 'ni-checks' },
-				},
-			]
-		}
-	},
-	{
-		id: `${NEW_WELCOME_EXPERIENCE}`,
-		title: localize('gettingStarted.new.title', "Get started with VS Code"),
-		description: localize('gettingStarted.new.description', "Supercharge coding with AI"),
-		isFeatured: false,
-		icon: setupIcon,
-		when: '!isWeb',
-		walkthroughPageTitle: localize('gettingStarted.new.walkthroughPageTitle', 'Set up VS Code'),
-		content: {
-			type: 'steps',
-			steps: [
-				{
-					id: 'copilotSetup.chat',
-					title: localize('gettingStarted.agentMode.title', "Agent mode"),
-					description: localize('gettingStarted.agentMode.description', "Analyzes the problem, plans next steps, and makes changes for you."),
-					media: {
-						type: 'svg', altText: 'VS Code Copilot multi file edits', path: 'multi-file-edits.svg'
-					},
-				},
-				{
-					id: 'copilotSetup.inline',
-					title: localize('gettingStarted.nes.title', "Next edit suggestions"),
-					description: localize('gettingStarted.nes.description', "Get code suggestions that predict your next edit."),
-					media: {
-						type: 'svg', altText: 'Next edit suggestions', path: 'ai-powered-suggestions.svg'
-					},
-				},
-				{
-					id: 'copilotSetup.customize',
-					title: localize('gettingStarted.customize.title', "Personalized to how you work"),
-					description: localize('gettingStarted.customize.description', "Swap models, add agent mode tools, and create personalized instructions.\n{0}", Button(localize('signUp', "Enable AI features"), 'command:workbench.action.chat.triggerSetupWithoutDialog')),
-					media: {
-						type: 'svg', altText: 'Personalize', path: 'customize-ai.svg'
-					},
-				},
-				{
-					id: 'newCommandPaletteTask',
-					title: localize('newgettingStarted.commandPalette.title', "All commands within reach"),
-					description: localize('gettingStarted.commandPalette.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in VS Code.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
-					media: { type: 'svg', altText: 'Command Palette overlay for searching and executing commands.', path: 'commandPalette.svg' },
-				},
-				{
-					id: 'newPickColorTheme',
-					title: localize('gettingStarted.pickColor.title', "Choose your theme"),
-					description: localize('gettingStarted.pickColor.description.interpolated', "The right theme helps you focus on your code, is easy on your eyes, and is simply more fun to use.\n{0}", Button(localize('titleID', "Browse Color Themes"), 'command:workbench.action.selectTheme')),
-					completionEvents: [
-						'onSettingChanged:workbench.colorTheme',
-						'onCommand:workbench.action.selectTheme'
-					],
-					media: { type: 'markdown', path: 'theme_picker_small', }
-				},
-				{
-					id: 'newFindLanguageExtensions',
-					title: localize('newgettingStarted.findLanguageExts.title', "Support for all languages"),
-					description: localize('newgettingStarted.findLanguageExts.description.interpolated', "Install the language extensions you need in your toolkit.\n{0}", Button(localize('browseLangExts', "Browse Language Extensions"), 'command:workbench.extensions.action.showLanguageExtensions')),
-					when: 'workspacePlatform != \'webworker\'',
-					media: {
-						type: 'svg', altText: 'Language extensions', path: 'languages.svg'
-					},
-				},
-
-			]
-		}
-=======
->>>>>>> 1.104.0
 	}
 ];

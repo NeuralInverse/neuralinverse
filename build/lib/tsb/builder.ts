@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import * as utils from './utils';
-import colors from 'ansi-colors';
+import * as colors from 'ansi-colors';
 import ts from 'typescript';
 import Vinyl from 'vinyl';
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map';

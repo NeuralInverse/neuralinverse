@@ -219,39 +219,24 @@ export class RunInTerminalTool extends Disposable implements IToolImpl {
 		const language = os === OperatingSystem.Windows ? 'pwsh' : 'sh';
 
 		const instance = context.chatSessionId ? this._sessionTerminalAssociations.get(context.chatSessionId)?.instance : undefined;
-<<<<<<< HEAD:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/runInTerminalTool.ts
-		let toolEditedCommand: string | undefined = await this._rewriteCommandIfNeeded(args, instance, shell);
-=======
 		const terminalToolSessionId = generateUuid();
 
 		let toolEditedCommand: string | undefined = await this._commandSimplifier.rewriteIfNeeded(args, instance, shell);
->>>>>>> 1.104.0:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
 		if (toolEditedCommand === args.command) {
 			toolEditedCommand = undefined;
 		}
 
-<<<<<<< HEAD:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/runInTerminalTool.ts
-=======
 		let autoApproveInfo: IMarkdownString | undefined;
->>>>>>> 1.104.0:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
 		let confirmationMessages: IToolConfirmationMessages | undefined;
 		if (alternativeRecommendation) {
 			confirmationMessages = undefined;
 		} else {
-<<<<<<< HEAD:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/runInTerminalTool.ts
-			const actualCommand = toolEditedCommand ?? args.command;
-			const subCommands = splitCommandLineIntoSubCommands(actualCommand, shell, os);
-			const inlineSubCommands = subCommands.map(e => Array.from(extractInlineSubCommands(e, shell, os))).flat();
-			const allSubCommands = [...subCommands, ...inlineSubCommands];
-			const subCommandResults = allSubCommands.map(e => this._commandLineAutoApprover.isCommandAutoApproved(e, shell, os));
-=======
 			// Determine auto approval, this happens even when auto approve is off to that reasoning
 			// can be reviewed in the terminal channel. It also allows gauging the effective set of
 			// commands that would be auto approved if it were enabled.
 			const actualCommand = toolEditedCommand ?? args.command;
 			const subCommands = splitCommandLineIntoSubCommands(actualCommand, shell, os);
 			const subCommandResults = subCommands.map(e => this._commandLineAutoApprover.isCommandAutoApproved(e, shell, os));
->>>>>>> 1.104.0:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
 			const commandLineResult = this._commandLineAutoApprover.isCommandLineAutoApproved(actualCommand);
 			const autoApproveReasons: string[] = [
 				...subCommandResults.map(e => e.reason),
@@ -314,8 +299,6 @@ export class RunInTerminalTool extends Disposable implements IToolImpl {
 				isAutoApproved = false;
 			}
 
-<<<<<<< HEAD:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/runInTerminalTool.ts
-=======
 			// Send telemetry about auto approval process
 			this._telemetry.logPrepare({
 				terminalToolSessionId,
@@ -356,7 +339,6 @@ export class RunInTerminalTool extends Disposable implements IToolImpl {
 			};
 		}
 
->>>>>>> 1.104.0:src/vs/workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
 		return {
 			confirmationMessages,
 			presentation,

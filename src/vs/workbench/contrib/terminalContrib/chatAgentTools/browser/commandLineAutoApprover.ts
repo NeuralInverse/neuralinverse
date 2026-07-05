@@ -254,10 +254,7 @@ export class CommandLineAutoApprover extends Disposable {
 			// Allow .* as users expect this would match everything
 			if (regexPattern === '.*') {
 				return new RegExp(regexPattern);
-<<<<<<< HEAD
-=======
 
->>>>>>> 1.104.0
 			}
 
 			try {
