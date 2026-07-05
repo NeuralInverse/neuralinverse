@@ -142,9 +142,6 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 	get untitledWorkspacesHome(): URI { return joinPath(this.userRoamingDataHome, 'Workspaces'); }
 
 	@memoize
-	get builtinWorkbenchModesHome(): URI { return joinPath(this.userRoamingDataHome, 'builtinWorkbenchModes'); }
-
-	@memoize
 	get serviceMachineIdResource(): URI { return joinPath(this.userRoamingDataHome, 'machineid'); }
 
 	@memoize
@@ -259,6 +256,9 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 
 	@memoize
 	get disableWorkspaceTrust(): boolean { return !this.options.enableWorkspaceTrust; }
+
+	@memoize
+	get isSessionsWindow(): boolean { return false; }
 
 	@memoize
 	get profile(): string | undefined { return this.payload?.get('profile'); }

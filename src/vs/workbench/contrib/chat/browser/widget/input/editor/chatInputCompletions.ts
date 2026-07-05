@@ -54,11 +54,25 @@ import { IDynamicVariable } from '../../../../common/attachments/chatVariables.j
 import { ChatAgentLocation, ChatModeKind, isSupportedChatFileScheme } from '../../../../common/constants.js';
 import { isToolSet } from '../../../../common/tools/languageModelToolsService.js';
 import { IChatSessionsService } from '../../../../common/chatSessionsService.js';
-import { IPromptsService } from '../../../../common/promptSyntax/service/promptsService.js';
+import { IPromptsService, Target } from '../../../../common/promptSyntax/service/promptsService.js';
 import { ChatSubmitAction, IChatExecuteActionContext } from '../../../actions/chatExecuteActions.js';
 import { IChatWidget, IChatWidgetService } from '../../../chat.js';
 import { resizeImage } from '../../../chatImageUtils.js';
 import { ChatDynamicVariableModel } from '../../../attachments/chatDynamicVariables.js';
+import { IChatService } from '../../../../common/chatService/chatService.js';
+import { getPromptFileType } from '../../../../common/promptSyntax/config/promptFileLocations.js';
+import { PromptsType } from '../../../../common/promptSyntax/promptTypes.js';
+
+/**
+ * Regex matching a slash command word (e.g. `/foo`). Uses `\p{L}` for Unicode
+ * letter matching, consistent with `isValidSlashCommandName`.
+ */
+const SlashCommandWord = /\/[\p{L}0-9_.:-]*/gu;
+
+/**
+ * Regex matching an agent-or-slash command word (e.g. `@agent` or `/cmd`).
+ */
+const AgentOrSlashCommandWord = /(@|\/)[\p{L}0-9_.:-]*/gu;
 
 class SlashCommandCompletions extends Disposable {
 	constructor(
@@ -66,6 +80,8 @@ class SlashCommandCompletions extends Disposable {
 		@IChatWidgetService private readonly chatWidgetService: IChatWidgetService,
 		@IChatSlashCommandService private readonly chatSlashCommandService: IChatSlashCommandService,
 		@IPromptsService private readonly promptsService: IPromptsService,
+		@IChatService chatService: IChatService,
+		@IChatSessionsService chatSessionsService: IChatSessionsService,
 		@IMcpService mcpService: IMcpService,
 	) {
 		super();
@@ -79,11 +95,18 @@ class SlashCommandCompletions extends Disposable {
 					return null;
 				}
 
+
+				let customAgentTarget: Target | undefined = undefined;
 				if (widget.lockedAgentId) {
-					return null;
+					if (!widget.attachmentCapabilities.supportsPromptAttachments) {
+						return null;
+					}
+					const sessionResource = widget.viewModel.model.sessionResource;
+					const ctx = sessionResource && chatService.getChatSessionFromInternalUri(sessionResource);
+					customAgentTarget = (ctx ? chatSessionsService.getCustomAgentTargetForSessionType(ctx.chatSessionType) : undefined) ?? Target.Undefined;
 				}
 
-				const range = computeCompletionRanges(model, position, /\/\w*/g);
+				const range = computeCompletionRanges(model, position, SlashCommandWord);
 				if (!range) {
 					return null;
 				}
@@ -106,18 +129,31 @@ class SlashCommandCompletions extends Disposable {
 				}
 
 				return {
-					suggestions: slashCommands.map((c, i): CompletionItem => {
-						const withSlash = `/${c.command}`;
-						return {
-							label: withSlash,
-							insertText: c.executeImmediately ? '' : `${withSlash} `,
-							documentation: c.detail,
-							range,
-							sortText: c.sortText ?? 'a'.repeat(i + 1),
-							kind: CompletionItemKind.Text, // The icons are disabled here anyway,
-							command: c.executeImmediately ? { id: ChatSubmitAction.ID, title: withSlash, arguments: [{ widget, inputValue: `${withSlash} ` } satisfies IChatExecuteActionContext] } : undefined,
-						};
-					})
+					suggestions: slashCommands
+						.filter(c => {
+							if (!widget.lockedAgentId) {
+								return true;
+							}
+							if (c.modes && c.modes.length && !c.modes.includes(ChatModeKind.Agent)) {
+								return false;
+							}
+							if (c.target && customAgentTarget && c.target !== customAgentTarget) {
+								return false;
+							}
+							return true;
+						})
+						.map((c, i): CompletionItem => {
+							const withSlash = `/${c.command}`;
+							return {
+								label: withSlash,
+								insertText: c.executeImmediately ? '' : `${withSlash} `,
+								documentation: c.detail,
+								range,
+								sortText: c.sortText ?? 'a'.repeat(i + 1),
+								kind: CompletionItemKind.Text, // The icons are disabled here anyway,
+								command: c.executeImmediately ? { id: ChatSubmitAction.ID, title: withSlash, arguments: [{ widget, inputValue: `${withSlash} ` } satisfies IChatExecuteActionContext] } : undefined,
+							};
+						})
 				};
 			}
 		}));
@@ -175,7 +211,7 @@ class SlashCommandCompletions extends Disposable {
 					return null;
 				}
 
-				const range = computeCompletionRanges(model, position, /\/\w*/g);
+				const range = computeCompletionRanges(model, position, SlashCommandWord);
 				if (!range) {
 					return null;
 				}
@@ -197,12 +233,37 @@ class SlashCommandCompletions extends Disposable {
 					return null;
 				}
 
-				if (widget.lockedAgentId) {
+				if (widget.lockedAgentId && !widget.attachmentCapabilities.supportsPromptAttachments) {
+					return null;
+				}
+
+				// Filter out commands that are not user-invocable (hidden from / menu)
+				const userInvocableCommands = promptCommands
+					.filter(c => {
+						if (widget.lockedAgentId) {
+							// Exclude extension-provided prompt files for locked agents.
+							if (c.promptPath.extension) {
+								return false;
+							}
+							// Exclude hooks as those don't work in locked agent scenarios.
+							try {
+								const promptType = getPromptFileType(c.promptPath.uri);
+								if (promptType && promptType === PromptsType.hook) {
+									return false;
+								}
+							} catch {
+
+							}
+						}
+						return true;
+					})
+					.filter(c => c.parsedPromptFile?.header?.userInvocable !== false);
+				if (userInvocableCommands.length === 0) {
 					return null;
 				}
 
 				return {
-					suggestions: promptCommands.map((c, i): CompletionItem => {
+					suggestions: userInvocableCommands.map((c, i): CompletionItem => {
 						const label = `/${c.name}`;
 						const description = c.description;
 						return {
@@ -228,7 +289,7 @@ class SlashCommandCompletions extends Disposable {
 				}
 
 				// regex is the opposite of `mcpPromptReplaceSpecialChars` found in `mcpTypes.ts`
-				const range = computeCompletionRanges(model, position, /\/[a-z0-9_.-]*/g);
+				const range = computeCompletionRanges(model, position, /\/[\p{L}0-9_.-]*/gu);
 				if (!range) {
 					return null;
 				}
@@ -285,7 +346,7 @@ class AgentCompletions extends Disposable {
 					return;
 				}
 
-				const range = computeCompletionRanges(model, position, /\/\w*/g);
+				const range = computeCompletionRanges(model, position, SlashCommandWord);
 				if (!range) {
 					return;
 				}
@@ -326,7 +387,7 @@ class AgentCompletions extends Disposable {
 					return null;
 				}
 
-				const range = computeCompletionRanges(model, position, /(@|\/)\w*/g);
+				const range = computeCompletionRanges(model, position, AgentOrSlashCommandWord);
 				if (!range) {
 					return null;
 				}
@@ -356,6 +417,7 @@ class AgentCompletions extends Disposable {
 
 				const justAgents: CompletionItem[] = agents
 					.filter(a => !a.isDefault)
+					.filter(a => !chatSessionAgentIds.has(a.id))
 					.map(agent => {
 						const { label: agentLabel, isDupe } = this.getAgentCompletionDetails(agent);
 						const detail = agent.description;
@@ -425,7 +487,7 @@ class AgentCompletions extends Disposable {
 					return null;
 				}
 
-				const range = computeCompletionRanges(model, position, /(@|\/)\w*/g);
+				const range = computeCompletionRanges(model, position, AgentOrSlashCommandWord);
 				if (!range) {
 					return null;
 				}
@@ -492,7 +554,7 @@ class AgentCompletions extends Disposable {
 					return null;
 				}
 
-				const range = computeCompletionRanges(model, position, /(@|\/)\w*/g);
+				const range = computeCompletionRanges(model, position, AgentOrSlashCommandWord);
 				if (!range) {
 					return;
 				}
@@ -545,7 +607,7 @@ class AgentCompletions extends Disposable {
 
 		for (const partAfterAgent of parsedRequest.slice(usedAgentIdx + 1)) {
 			// Could allow text after 'position'
-			if (!(partAfterAgent instanceof ChatRequestTextPart) || !partAfterAgent.text.trim().match(/^(\/\w*)?$/)) {
+			if (!(partAfterAgent instanceof ChatRequestTextPart) || !partAfterAgent.text.trim().match(/^(\/[\p{L}0-9_.:-]*)?$/u)) {
 				// No text allowed between agent and subcommand
 				return;
 			}

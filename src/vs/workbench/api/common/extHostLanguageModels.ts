@@ -221,12 +221,14 @@ export class ExtHostLanguageModels implements ExtHostLanguageModelsShape {
 					tooltip: m.tooltip,
 					version: m.version,
 					multiplier: m.multiplier,
+					multiplierNumeric: m.multiplierNumeric,
 					maxInputTokens: m.maxInputTokens,
 					maxOutputTokens: m.maxOutputTokens,
 					auth,
 					isDefaultForLocation,
 					isUserSelectable: m.isUserSelectable,
 					statusIcon: m.statusIcon,
+					targetChatSessionType: m.targetChatSessionType,
 					modelPickerCategory: m.category ?? DEFAULT_MODEL_PICKER_CATEGORY,
 					capabilities: m.capabilities ? {
 						vision: m.capabilities.imageInput,
@@ -361,7 +363,8 @@ export class ExtHostLanguageModels implements ExtHostLanguageModelsShape {
 		}
 
 		for (const [modelIdentifier, modelData] of this._localModels) {
-			if (modelData.metadata.isDefaultForLocation[ChatAgentLocation.Chat]) {
+			// TODO: use product.json to determine default vendor
+			if (modelData.metadata.isDefaultForLocation[ChatAgentLocation.Chat] && modelData.metadata.vendor === 'copilot') {
 				defaultModelId = modelIdentifier;
 				break;
 			}

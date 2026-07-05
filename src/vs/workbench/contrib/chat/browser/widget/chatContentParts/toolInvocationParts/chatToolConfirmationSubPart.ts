@@ -73,7 +73,7 @@ export class ToolConfirmationSubPart extends AbstractToolConfirmationSubPart {
 		this.render({
 			allowActionId: AcceptToolConfirmationActionId,
 			skipActionId: SkipToolConfirmationActionId,
-			allowLabel: state.confirmationMessages.confirmResults ? localize('allowReview', "Allow and Review") : localize('allow', "Allow"),
+			allowLabel: state.confirmationMessages.confirmResults ? localize('allowReview', "Allow and Review Once") : localize('allow', "Allow Once"),
 			skipLabel: localize('skip.detail', 'Proceed without running this tool'),
 			partType: 'chatToolConfirmation',
 			subtitle: typeof toolInvocation.originMessage === 'string' ? toolInvocation.originMessage : toolInvocation.originMessage?.value,
@@ -104,6 +104,7 @@ export class ToolConfirmationSubPart extends AbstractToolConfirmationSubPart {
 				actions.push({
 					label: action.label,
 					tooltip: action.detail,
+					scope: action.scope,
 					data: async () => {
 						const shouldConfirm = await action.select();
 						if (shouldConfirm) {
@@ -248,9 +249,6 @@ export class ToolConfirmationSubPart extends AbstractToolConfirmationSubPart {
 					uriPromise: Promise.resolve(model.uri),
 					chatSessionResource: this.context.element.sessionResource
 				});
-				this._register(editor.object.onDidChangeContentHeight(() => {
-					editor.object.layout(this.currentWidthDelegate());
-				}));
 				this._register(model.onDidChangeContent(e => {
 					try {
 						inputData.rawInput = JSON.parse(model.getValue());

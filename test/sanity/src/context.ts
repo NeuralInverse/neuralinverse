@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { spawnSync, SpawnSyncReturns } from 'child_process';
+import { spawn, spawnSync, SpawnSyncReturns } from 'child_process';
 import { createHash } from 'crypto';
 import fs from 'fs';
 import { test } from 'mocha';
@@ -32,7 +32,8 @@ interface ITargetMetadata {
  */
 export class TestContext {
 	private static readonly authenticodeInclude = /^.+\.(exe|dll|sys|cab|cat|msi|jar|ocx|ps1|psm1|psd1|ps1xml|pssc1)$/i;
-	private static readonly codesignExclude = /node_modules\/(@parcel\/watcher\/build\/Release\/watcher\.node|@vscode\/deviceid\/build\/Release\/windows\.node|@vscode\/ripgrep\/bin\/rg|@vscode\/spdlog\/build\/Release\/spdlog.node|kerberos\/build\/Release\/kerberos.node|@vscode\/native-watchdog\/build\/Release\/watchdog\.node|node-pty\/build\/Release\/(pty\.node|spawn-helper)|vsda\/build\/Release\/vsda\.node|native-watchdog\/build\/Release\/watchdog\.node)$/;
+	private static readonly versionInfoInclude = /^.+\.(exe|dll|node|msi)$/i;
+	private static readonly versionInfoExclude = /^(dxil\.dll|ffmpeg\.dll|msalruntime\.dll)$/i;
 
 	private readonly tempDirs = new Set<string>();
 	private readonly wslTempDirs = new Set<string>();
@@ -62,15 +63,12 @@ export class TestContext {
 	/**
 	 * Returns the OS temp directory with expanded long names on Windows.
 	 */
-	public readonly osTempDir = (function () {
+	public readonly osTempDir = (() => {
 		let tempDir = fs.realpathSync(os.tmpdir());
 
 		// On Windows, expand short 8.3 file names to long names
 		if (os.platform() === 'win32') {
-			const result = spawnSync('powershell', ['-Command', `(Get-Item "${tempDir}").FullName`], { encoding: 'utf-8' });
-			if (result.status === 0 && result.stdout) {
-				tempDir = result.stdout.trim();
-			}
+			tempDir = fs.realpathSync.native(tempDir);
 		}
 
 		return tempDir;
@@ -300,19 +298,10 @@ export class TestContext {
 		const filePath = path.join(this.createTempDir(), path.basename(url));
 
 		this.log(`Downloading ${url} to ${filePath}`);
-		const { body } = await this.fetchNoErrors(url);
-
-		const stream = fs.createWriteStream(filePath);
-		await new Promise<void>((resolve, reject) => {
-			body.on('error', reject);
-			stream.on('error', reject);
-			stream.on('finish', resolve);
-			body.pipe(stream);
-		});
-
+		this.runNoErrors('curl', '-fSL', '--retry', '5', '--retry-delay', '2', '--retry-all-errors', '-o', filePath, url);
 		this.log(`Downloaded ${url} to ${filePath}`);
-		this.validateSha256Hash(filePath, sha256hash);
 
+		this.validateSha256Hash(filePath, sha256hash);
 		return filePath;
 	}
 
@@ -343,15 +332,50 @@ export class TestContext {
 		}
 
 		this.log(`Validating Authenticode signature for ${filePath}`);
+		this.validateAuthenticodeSignaturesForFiles([filePath]);
+	}
 
-		const result = this.run('powershell', '-Command', `Get-AuthenticodeSignature "${filePath}" | Select-Object -ExpandProperty Status`);
-		if (result.error !== undefined) {
-			this.error(`Failed to run Get-AuthenticodeSignature: ${result.error.message}`);
+	/**
+	 * Collects all files matching the Authenticode include pattern from the specified directory recursively.
+	 */
+	private collectAuthenticodeFiles(dir: string, files: string[]): void {
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		for (const entry of entries) {
+			const filePath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				this.collectAuthenticodeFiles(filePath, files);
+			} else if (TestContext.authenticodeInclude.test(entry.name)) {
+				files.push(filePath);
+			}
+		}
+	}
+
+	/**
+	 * Validates Authenticode signatures for the specified list of files in a single PowerShell call.
+	 */
+	private validateAuthenticodeSignaturesForFiles(files: string[]): void {
+		if (files.length === 0) {
+			return;
 		}
 
-		const status = result.stdout.trim();
-		if (status !== 'Valid') {
-			this.error(`Authenticode signature is not valid for ${filePath}: ${status}`);
+		const fileList = files.map(file => `"${file}"`).join(',');
+		const command = `@(${fileList}) | ForEach-Object { $sig = Get-AuthenticodeSignature $_; "$($sig.Path)|$($sig.Status)" }`;
+		const result = this.runNoErrors('powershell', '-NoProfile', '-Command', command);
+
+		const invalid: string[] = [];
+		for (const line of result.stdout.trim().split('\n')) {
+			const [, filePath, status] = /^(.+)\|(\w+)$/.exec(line.trim()) ?? [];
+			if (filePath) {
+				if (status === 'Valid') {
+					this.log(`Authenticode signature is valid for ${filePath}`);
+				} else {
+					invalid.push(`${filePath}: ${status}`);
+				}
+			}
+		}
+
+		if (invalid.length > 0) {
+			this.error(`Authenticode signatures are not valid for:\n${invalid.join('\n')}`);
 		}
 	}
 
@@ -365,15 +389,88 @@ export class TestContext {
 			return;
 		}
 
-		const files = fs.readdirSync(dir, { withFileTypes: true });
-		for (const file of files) {
-			const filePath = path.join(dir, file.name);
-			if (file.isDirectory()) {
-				this.validateAllAuthenticodeSignatures(filePath);
-			} else if (TestContext.authenticodeInclude.test(file.name)) {
-				this.validateAuthenticodeSignature(filePath);
+		const files: string[] = [];
+		this.collectAuthenticodeFiles(dir, files);
+		this.log(`Found ${files.length} file(s) to validate Authenticode signatures`);
+		this.validateAuthenticodeSignaturesForFiles(files);
+	}
+
+	/**
+	 * Collects all files matching the VersionInfo include pattern from the specified directory recursively.
+	 */
+	private collectVersionInfoFiles(dir: string, files: string[]): void {
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		for (const entry of entries) {
+			const filePath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				this.collectVersionInfoFiles(filePath, files);
+			} else if (TestContext.versionInfoInclude.test(entry.name)) {
+				if (TestContext.versionInfoExclude.test(entry.name)) {
+					this.log(`Skipping excluded file from VersionInfo validation: ${filePath}`);
+				} else {
+					files.push(filePath);
+				}
 			}
 		}
+	}
+
+	/**
+	 * Validates that a Windows binary has a non-empty ProductName in VersionInfo.
+	 * @param filePath The path to the file to validate.
+	 */
+	public validateVersionInfo(filePath: string) {
+		if (!this.options.checkSigning || !this.capabilities.has('windows')) {
+			this.log(`Skipping VersionInfo validation for ${filePath} (signing checks disabled)`);
+			return;
+		}
+
+		this.log(`Validating VersionInfo for ${filePath}`);
+		this.validateVersionInfoForFiles([filePath]);
+	}
+
+	/**
+	 * Validates VersionInfo ProductName for the specified list of files in a single PowerShell call.
+	 */
+	private validateVersionInfoForFiles(files: string[]): void {
+		if (files.length === 0) {
+			return;
+		}
+
+		const fileList = files.map(file => `"${file}"`).join(',');
+		const command = `@(${fileList}) | ForEach-Object { $vi = (Get-Item $_).VersionInfo; "$($_.ToString())|$($vi.ProductName)" }`;
+		const result = this.runNoErrors('powershell', '-NoProfile', '-Command', command);
+
+		const invalid: string[] = [];
+		for (const line of result.stdout.trim().split('\n')) {
+			const [, filePath, productName] = /^(.+)\|(.*)$/.exec(line.trim()) ?? [];
+			if (filePath) {
+				if (productName && productName.trim().length > 0) {
+					this.log(`VersionInfo ProductName is set for ${filePath}: ${productName.trim()}`);
+				} else {
+					invalid.push(filePath);
+				}
+			}
+		}
+
+		if (invalid.length > 0) {
+			this.error(`VersionInfo ProductName is missing or empty for:\n${invalid.join('\n')}`);
+		}
+	}
+
+	/**
+	 * Validates that all .exe, .dll, .node and .msi binaries in the specified directory have a non-empty ProductName in VersionInfo.
+	 * @param dir The directory to scan for binary files.
+	 */
+	public validateAllVersionInfo(dir: string) {
+		if (!this.options.checkSigning || !this.capabilities.has('windows')) {
+			this.log(`Skipping VersionInfo validation for ${dir} (signing checks disabled)`);
+			return;
+		}
+
+		const files: string[] = [];
+		this.collectVersionInfoFiles(dir, files);
+		this.log(`Found ${files.length} file(s) to validate VersionInfo`);
+		this.validateVersionInfoForFiles(files);
 	}
 
 	/**
@@ -388,13 +485,24 @@ export class TestContext {
 
 		this.log(`Validating codesign signature for ${filePath}`);
 
-		const result = this.run('codesign', '--verify', '--deep', '--strict', '--verbose', filePath);
+		const result = this.run('codesign', '--verify', '--deep', '--strict', '--verbose=2', filePath);
 		if (result.error !== undefined) {
 			this.error(`Failed to run codesign: ${result.error.message}`);
 		}
 
 		if (result.status !== 0) {
 			this.error(`Codesign signature is not valid for ${filePath}: ${result.stderr}`);
+		}
+
+		this.log(`Validating notarization for ${filePath}`);
+
+		const notaryResult = this.run('spctl', '--assess', '--type', 'open', '--context', 'context:primary-signature', '--verbose=2', filePath);
+		if (notaryResult.error !== undefined) {
+			this.error(`Failed to run spctl: ${notaryResult.error.message}`);
+		}
+
+		if (notaryResult.status !== 0) {
+			this.error(`Notarization is not valid for ${filePath}: ${notaryResult.stderr}`);
 		}
 	}
 
@@ -411,9 +519,7 @@ export class TestContext {
 		const files = fs.readdirSync(dir, { withFileTypes: true });
 		for (const file of files) {
 			const filePath = path.join(dir, file.name);
-			if (TestContext.codesignExclude.test(filePath)) {
-				this.log(`Skipping codesign validation for excluded file: ${filePath}`);
-			} else if (file.isDirectory()) {
+			if (file.isDirectory()) {
 				// For .app bundles, validate the bundle itself, not its contents
 				if (file.name.endsWith('.app') || file.name.endsWith('.framework')) {
 					this.validateCodesignSignature(filePath);
@@ -771,18 +877,22 @@ export class TestContext {
 		switch (os.platform()) {
 			case 'darwin': {
 				let appName: string;
+				let binaryName: string;
 				switch (this.options.quality) {
 					case 'stable':
 						appName = 'Visual Studio Code.app';
+						binaryName = 'Code';
 						break;
 					case 'insider':
 						appName = 'Visual Studio Code - Insiders.app';
+						binaryName = 'Code - Insiders';
 						break;
 					case 'exploration':
 						appName = 'Visual Studio Code - Exploration.app';
+						binaryName = 'Code - Exploration';
 						break;
 				}
-				filePath = path.join(dir, appName, 'Contents/MacOS/Electron');
+				filePath = path.join(dir, appName, 'Contents/MacOS', binaryName);
 				break;
 			}
 			case 'linux': {
@@ -916,17 +1026,6 @@ export class TestContext {
 	}
 
 	/**
-	 * Returns the tunnel URL for the VS Code server including vscode-version parameter.
-	 * @param baseUrl The base URL for the VS Code server.
-	 * @returns The tunnel URL with vscode-version parameter.
-	 */
-	public getTunnelUrl(baseUrl: string): string {
-		const url = new URL(baseUrl);
-		url.searchParams.set('vscode-version', this.options.commit);
-		return url.toString();
-	}
-
-	/**
 	 * Launches a web browser for UI testing.
 	 * @returns The launched Browser instance.
 	 */
@@ -994,6 +1093,25 @@ export class TestContext {
 	}
 
 	/**
+	 * Returns the tunnel URL for the VS Code server.
+	 * @param baseUrl The base URL for *vscode.dev/tunnel connection.
+	 * @param workspaceDir Optional folder path to open
+	 * @returns The tunnel URL with folder in pathname.
+	 */
+	public getTunnelUrl(baseUrl: string, workspaceDir?: string): string {
+		const url = new URL(baseUrl);
+		url.searchParams.set('vscode-version', this.options.commit);
+		if (workspaceDir) {
+			let folder = workspaceDir.replaceAll('\\', '/');
+			if (!folder.startsWith('/')) {
+				folder = `/${folder}`;
+			}
+			url.pathname = url.pathname.replace(/\/+$/, '') + folder;
+		}
+		return url.toString();
+	}
+
+	/**
 	 * Returns a random alphanumeric token of length 10.
 	 */
 	public getRandomToken(): string {
@@ -1025,5 +1143,64 @@ export class TestContext {
 				break;
 		}
 		return `~/${serverDir}/extensions`;
+	}
+
+	/**
+	 * Runs a VS Code command-line application (such as server or CLI).
+	 * @param name The name of the app as it will appear in logs.
+	 * @param command Command to run.
+	 * @param args Arguments for the command.
+	 * @param onLine Callback to handle output lines.
+	 */
+	public async runCliApp(name: string, command: string, args: string[], onLine: (text: string) => Promise<boolean | void | undefined>) {
+		this.log(`Starting ${name} with command line: ${command} ${args.join(' ')}`);
+
+		const app = spawn(command, args, {
+			shell: /\.(sh|cmd)$/.test(command),
+			detached: !this.capabilities.has('windows'),
+			stdio: ['ignore', 'pipe', 'pipe']
+		});
+
+		try {
+			await new Promise<void>((resolve, reject) => {
+				app.stderr.on('data', (data) => {
+					const text = `[${name}] ${data.toString().trim()}`;
+					if (/ECONNRESET/.test(text)) {
+						this.log(text);
+					} else {
+						reject(new Error(text));
+					}
+				});
+
+				let terminated = false;
+				app.stdout.on('data', (data) => {
+					const text = data.toString().trim();
+					if (/\berror\b/.test(text)) {
+						reject(new Error(`[${name}] ${text}`));
+					}
+
+					for (const line of text.split('\n')) {
+						this.log(`[${name}] ${line}`);
+						onLine(line).then((result) => {
+							if (terminated = !!result) {
+								this.log(`Terminating ${name} process`);
+								resolve();
+							}
+						}).catch(reject);
+					}
+				});
+
+				app.on('error', reject);
+				app.on('exit', (code) => {
+					if (code === 0) {
+						resolve();
+					} else if (!terminated) {
+						reject(new Error(`[${name}] Exited with code ${code}`));
+					}
+				});
+			});
+		} finally {
+			this.killProcessTree(app.pid!);
+		}
 	}
 }

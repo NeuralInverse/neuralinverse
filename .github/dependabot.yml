@@ -1,13 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "devcontainers" # https://containers.dev/guide/dependabot
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -7,6 +7,7 @@
   "enabledApiProposals": [
     "activeComment",
     "authSession",
+    "environmentPower",
     "chatParticipantPrivate",
     "chatProvider",
     "contribStatusBarItems",
@@ -17,7 +18,7 @@
     "documentFiltersExclusive",
     "editorInsets",
     "embeddings",
-    "envIsAppPortable",
+    "envIsConnectionMetered",
     "extensionRuntime",
     "extensionsAny",
     "externalUriOpener",
@@ -67,7 +68,7 @@
   "contributes": {
     "languageModelChatProviders": [
       {
-        "vendor": "test-lm-vendor",
+        "vendor": "copilot",
         "displayName": "Test LM Vendor"
       }
     ],

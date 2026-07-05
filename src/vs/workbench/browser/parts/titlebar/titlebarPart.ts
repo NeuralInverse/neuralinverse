@@ -18,13 +18,9 @@ import { IThemeService } from '../../../../platform/theme/common/themeService.js
 import { TITLE_BAR_ACTIVE_BACKGROUND, TITLE_BAR_ACTIVE_FOREGROUND, TITLE_BAR_INACTIVE_FOREGROUND, TITLE_BAR_INACTIVE_BACKGROUND, TITLE_BAR_BORDER, WORKBENCH_BACKGROUND } from '../../../common/theme.js';
 import { isMacintosh, isWindows, isLinux, isWeb, isNative, platformLocale } from '../../../../base/common/platform.js';
 import { Color } from '../../../../base/common/color.js';
-import { EventType, EventHelper, Dimension, append, $, addDisposableListener, prepend, getWindow, getWindowId, isAncestor, getActiveDocument, isHTMLElement, clearNode } from '../../../../base/browser/dom.js';
-import { Codicon } from '../../../../base/common/codicons.js';
-import { ThemeIcon } from '../../../../base/common/themables.js';
+import { EventType, EventHelper, Dimension, append, $, addDisposableListener, prepend, reset, getWindow, getWindowId, isAncestor, getActiveDocument, isHTMLElement } from '../../../../base/browser/dom.js';
 import { CustomMenubarControl } from './menubarControl.js';
 import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
-import { IProductService } from '../../../../platform/product/common/productService.js';
-import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
 import { Parts, IWorkbenchLayoutService, ActivityBarPosition, LayoutSettings, EditorActionsLocation, EditorTabsMode } from '../../../services/layout/browser/layoutService.js';
@@ -32,13 +28,12 @@ import { createActionViewItem, fillInActionBarActions } from '../../../../platfo
 import { Action2, IMenu, IMenuService, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { IContextKey, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IHostService } from '../../../services/host/browser/host.js';
-import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
 import { WindowTitle } from './windowTitle.js';
+import { CommandCenterControl } from './commandCenterControl.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
 import { WorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
 import { ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID } from '../../../common/activity.js';
-import { Action, Separator } from '../../../../base/common/actions.js';
-import { AccountsActivityActionViewItem, SimpleAccountActivityActionViewItem, SimpleGlobalActivityActionViewItem } from '../globalCompositeBar.js';
+import { AccountsActivityActionViewItem, isAccountsActionVisible, SimpleAccountActivityActionViewItem, SimpleGlobalActivityActionViewItem } from '../globalCompositeBar.js';
 import { HoverPosition } from '../../../../base/browser/ui/hover/hoverWidget.js';
 import { IEditorGroupsContainer, IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
 import { ActionRunner, IAction } from '../../../../base/common/actions.js';
@@ -52,15 +47,14 @@ import { ResolvedKeybinding } from '../../../../base/common/keybindings.js';
 import { EditorCommandsContextActionRunner } from '../editor/editorTabsControl.js';
 import { IEditorCommandsContext, IEditorPartOptionsChangeEvent, IToolbarActions } from '../../../common/editor.js';
 import { CodeWindow, mainWindow } from '../../../../base/browser/window.js';
-import { GLOBAL_ACTIVITY_TITLE_ACTION } from './titlebarActions.js';
+import { ACCOUNTS_ACTIVITY_TILE_ACTION, GLOBAL_ACTIVITY_TITLE_ACTION } from './titlebarActions.js';
 import { IView } from '../../../../base/browser/ui/grid/grid.js';
 import { createInstantHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
-import { ActionViewItem, IBaseActionViewItemOptions } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
+import { IBaseActionViewItemOptions } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
 import { IHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate.js';
 import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
 import { safeIntl } from '../../../../base/common/date.js';
 import { IsCompactTitleBarContext, TitleBarVisibleContext } from '../../../common/contextkeys.js';
-import { IUpdateService, StateType } from '../../../../platform/update/common/update.js';
 
 export interface ITitleVariable {
 	readonly name: string;
@@ -257,9 +251,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	protected rootContainer!: HTMLElement;
 	protected windowControlsContainer: HTMLElement | undefined;
 
-
 	protected dragRegion: HTMLElement | undefined;
-
 	private title!: HTMLElement;
 
 	private leftContent!: HTMLElement;
@@ -284,10 +276,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private readonly editorToolbarMenuDisposables = this._register(new DisposableStore());
 	private readonly layoutToolbarMenuDisposables = this._register(new DisposableStore());
 	private readonly activityToolbarDisposables = this._register(new DisposableStore());
-
-	private searchAction: Action | undefined;
-	private agentsAction: Action | undefined;
-	private restartToUpdateAction: Action | undefined;
 
 	private readonly hoverDelegate: IHoverDelegate;
 
@@ -318,8 +306,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		@IHostService private readonly hostService: IHostService,
 		@IEditorService private readonly editorService: IEditorService,
 		@IMenuService private readonly menuService: IMenuService,
-		@IKeybindingService private readonly keybindingService: IKeybindingService,
-		@IUpdateService private readonly updateService: IUpdateService
+		@IKeybindingService private readonly keybindingService: IKeybindingService
 	) {
 		super(id, { hasTitle: false }, themeService, storageService, layoutService);
 
@@ -341,7 +328,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		this._register(this.hostService.onDidChangeActiveWindow(windowId => windowId === targetWindowId ? this.onFocus() : this.onBlur()));
 		this._register(this.configurationService.onDidChangeConfiguration(e => this.onConfigurationChanged(e)));
 		this._register(this.editorGroupsContainer.onDidChangeEditorPartOptions(e => this.onEditorPartConfigurationChange(e)));
-		this._register(this.updateService.onStateChange(() => this.createActionToolBarMenus()));
 	}
 
 	private onBlur(): void {
@@ -468,8 +454,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
 		this.rightContent = append(this.rootContainer, $('.titlebar-right'));
 
-
-
 		// App Icon (Windows, Linux)
 		if ((isWindows || isLinux) && !hasNativeTitlebar(this.configurationService, this.titleBarStyle)) {
 			this.appIcon = prepend(this.leftContent, $('a.window-appicon'));
@@ -498,9 +482,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			this.createActionToolBar();
 			this.createActionToolBarMenus();
 		}
-
-
-
 
 		// Window Controls Container
 		if (!hasNativeTitlebar(this.configurationService, this.titleBarStyle)) {
@@ -576,42 +557,29 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private createTitle(): void {
 		this.titleDisposables.clear();
 
-		// Title Text
-		// Clear existing content in this.title
-		clearNode(this.title);
+		const isShowingTitleInNativeTitlebar = hasNativeTitlebar(this.configurationService, this.titleBarStyle);
 
-		// Container for title text to ensure proper centering/styling
-		const titleContainer = append(this.title, $('div.custom-title-text-container'));
-		titleContainer.style.display = 'flex';
-		titleContainer.style.alignItems = 'center';
-		titleContainer.style.justifyContent = 'center';
-		titleContainer.style.height = '100%';
-
-		const titleText = append(titleContainer, $('span.window-title-text'));
-
-
-		const updateTitle = () => {
-			const productService = this.instantiationService.invokeFunction(accessor => accessor.get(IProductService));
-			const originalTitle = this.windowTitle.value;
-			const newTitle = originalTitle.replace(productService.nameLong, 'Neural Inverse');
-			titleText.innerText = newTitle;
-		};
-
-		updateTitle();
-
-		// React to Title Changes
-		this.titleDisposables.add(this.windowTitle.onDidChange(() => {
-			updateTitle();
-			if (this.lastLayoutDimensions) {
-				this.updateLayout(this.lastLayoutDimensions);
+		// Text Title
+		if (!this.isCommandCenterVisible) {
+			if (!isShowingTitleInNativeTitlebar) {
+				this.title.textContent = this.windowTitle.value;
+				this.titleDisposables.add(this.windowTitle.onDidChange(() => {
+					this.title.textContent = this.windowTitle.value;
+					if (this.lastLayoutDimensions) {
+						this.updateLayout(this.lastLayoutDimensions); // layout menubar and other renderings in the titlebar
+					}
+				}));
+			} else {
+				reset(this.title);
 			}
-		}));
+		}
 
-		this.titleDisposables.add(this.instantiationService.invokeFunction(accessor => accessor.get(IConfigurationService).onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration('window.title')) {
-				updateTitle();
-			}
-		})));
+		// Menu Title
+		else {
+			const commandCenter = this.instantiationService.createInstance(CommandCenterControl, this.windowTitle, this.hoverDelegate);
+			reset(this.title, commandCenter.element);
+			this.titleDisposables.add(commandCenter);
+		}
 	}
 
 	private actionViewItemProvider(action: IAction, options: IBaseActionViewItemOptions): IActionViewItem | undefined {
@@ -624,20 +592,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			if (action.id === ACCOUNTS_ACTIVITY_ID) {
 				return this.instantiationService.createInstance(SimpleAccountActivityActionViewItem, { position: () => HoverPosition.BELOW }, options);
 			}
-		}
-
-		if (action.id === 'neuralInverse.openAgentManager') {
-			return new ActionViewItem(undefined, action, { ...options, label: true, icon: false, keybinding: null });
-		}
-
-		if (action.id === 'titlebar.restartToUpdate') {
-			const item = new ActionViewItem(undefined, action, { ...options, label: true, icon: false, keybinding: null });
-			const originalRender = item.render.bind(item);
-			item.render = (container: HTMLElement) => {
-				originalRender(container);
-				container.classList.add('restart-to-update-action');
-			};
-			return item;
 		}
 
 		// --- Editor Actions
@@ -672,7 +626,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			orientation: ActionsOrientation.HORIZONTAL,
 			ariaLabel: localize('ariaLabelTitleActions', "Title actions"),
 			getKeyBinding: action => this.getKeybinding(action),
-			overflowBehavior: { maxItems: 20, exempted: [ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID, ...EDITOR_CORE_NAVIGATION_COMMANDS] },
+			overflowBehavior: { maxItems: 9, exempted: [ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID, ...EDITOR_CORE_NAVIGATION_COMMANDS] },
 			anchorAlignmentProvider: () => AnchorAlignment.RIGHT,
 			telemetrySource: 'titlePart',
 			highlightToggledItems: this.editorActionsEnabled || this.isAuxiliary, // Only show toggled state for editor actions or auxiliary title bars
@@ -708,14 +662,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 				}
 			}
 
-			// --- Global Actions
-			if (this.globalToolbarMenu) {
-				fillInActionBarActions(
-					this.globalToolbarMenu.getActions(),
-					actions
-				);
-			}
-
 			// --- Layout Actions
 			if (this.layoutToolbarMenu) {
 				fillInActionBarActions(
@@ -725,107 +671,20 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 				);
 			}
 
-			// --- Search Action (Custom Placement: Between Layout and Activity Actions)
-			if (!this.searchAction) {
-				this.searchAction = new Action(
-					'void.searchAction',
-					localize('search', "Search"),
-					ThemeIcon.asClassName(Codicon.search),
-					true,
-					async () => {
-						this.instantiationService.invokeFunction(accessor => {
-							const quickInputService = accessor.get(IQuickInputService);
-							const commandService = accessor.get(ICommandService);
-
-							const picker = quickInputService.createQuickPick();
-							picker.items = [
-								{ label: 'Go to File', id: 'file' },
-								{ label: 'Show and Run Commands', id: 'commands' },
-								{ label: 'Neural Inverse: Open Agent Manager', id: 'agent' },
-								{ label: 'Search for Text', id: 'text' },
-								{ label: 'Go to Symbol in Editor', id: 'symbol' },
-							];
-							picker.placeholder = 'Search files by name (append : to go to line or @ to go to symbol)';
-
-							picker.onDidChangeValue(value => {
-								if (value) {
-									picker.dispose();
-									quickInputService.quickAccess.show(value);
-								}
-							});
-
-							picker.onDidAccept(() => {
-								const selected = picker.selectedItems[0];
-								if (selected) {
-									const id = (selected as any).id;
-									if (id === 'file') quickInputService.quickAccess.show('');
-									if (id === 'commands') quickInputService.quickAccess.show('>');
-									if (id === 'agent') commandService.executeCommand('void.openAgentManager');
-									if (id === 'text') commandService.executeCommand('workbench.action.findInFiles');
-									if (id === 'symbol') quickInputService.quickAccess.show('@');
-								}
-								picker.dispose();
-							});
-							picker.show();
-						});
-					}
+			// --- Global Actions (after layout so e.g. notification bell appears to the right of layout controls)
+			if (this.globalToolbarMenu) {
+				fillInActionBarActions(
+					this.globalToolbarMenu.getActions(),
+					actions
 				);
-			}
-			// actions.primary.push(this.searchAction);
-			// User requested specific placement: before the last layout action (likely 'Customize Layout')
-			// If we have layout actions, insert before the last one.
-			// --- Neural Inverse Actions
-			if (!this.agentsAction) {
-				this.agentsAction = new Action(
-					'neuralInverse.openAgentManager',
-					'Agents',
-					undefined, // Text only
-					true,
-					async () => {
-						this.instantiationService.invokeFunction(accessor => {
-							const commandService = accessor.get(ICommandService);
-							commandService.executeCommand('neuralInverse.openAgentManager');
-						});
-					}
-				);
-			}
-
-			// fallback if no layout actions
-			if (this.layoutToolbarMenu && actions.primary.length > 0) {
-				const separator = new Separator();
-				// Use opacity via style? Separator doesn't expose style directly easily here but we can try subclass or just standard Separator.
-				// User asked for "Less opacity". Standard separator is usually quite subtle.
-				// Let's insert it.
-				// Insert Agents and Checks before Search
-				actions.primary.splice(actions.primary.length - 1, 0, this.searchAction, separator);
-			} else {
-				// Fallback if no layout actions
-				actions.primary.push(this.searchAction);
-			}
-
-			// Prepend Neural Inverse Actions
-			if (this.agentsAction) {
-				actions.primary.unshift(this.agentsAction);
-			}
-
-			// --- Restart to Update (shown only when update is ready)
-			if (this.updateService.state.type === StateType.Ready) {
-				if (!this.restartToUpdateAction) {
-					this.restartToUpdateAction = new Action(
-						'titlebar.restartToUpdate',
-						'Restart to Update →',
-						undefined,
-						true,
-						async () => this.updateService.quitAndInstall()
-					);
-				}
-				actions.primary.push(this.restartToUpdateAction);
-			} else {
-				this.restartToUpdateAction = undefined;
 			}
 
 			// --- Activity Actions (always at the end)
 			if (this.activityActionsEnabled) {
+				if (isAccountsActionVisible(this.storageService)) {
+					actions.primary.push(ACCOUNTS_ACTIVITY_TILE_ACTION);
+				}
+
 				actions.primary.push(GLOBAL_ACTIVITY_TITLE_ACTION);
 			}
 
@@ -1049,9 +908,8 @@ export class MainBrowserTitlebarPart extends BrowserTitlebarPart {
 		@IEditorService editorService: IEditorService,
 		@IMenuService menuService: IMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@IUpdateService updateService: IUpdateService,
 	) {
-		super(Parts.TITLEBAR_PART, mainWindow, editorGroupService.mainPart, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService, updateService);
+		super(Parts.TITLEBAR_PART, mainWindow, editorGroupService.mainPart, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService);
 	}
 }
 
@@ -1085,10 +943,9 @@ export class AuxiliaryBrowserTitlebarPart extends BrowserTitlebarPart implements
 		@IEditorService editorService: IEditorService,
 		@IMenuService menuService: IMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@IUpdateService updateService: IUpdateService,
 	) {
 		const id = AuxiliaryBrowserTitlebarPart.COUNTER++;
-		super(`workbench.parts.auxiliaryTitle.${id}`, getWindow(container), editorGroupsContainer, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService, updateService);
+		super(`workbench.parts.auxiliaryTitle.${id}`, getWindow(container), editorGroupsContainer, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService);
 	}
 
 	override get preventZoom(): boolean {
