@@ -224,7 +224,6 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 			rightClickSelectsWord: config.rightClickBehavior === 'selectWord',
 			fastScrollSensitivity: config.fastScrollSensitivity,
 			scrollSensitivity: config.mouseWheelScrollSensitivity,
-			scrollOnEraseInDisplay: true,
 			wordSeparator: config.wordSeparators,
 			overviewRuler: {
 				width: 14,

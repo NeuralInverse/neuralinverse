@@ -67,6 +67,7 @@ import './services/userDataProfile/browser/userDataProfileStorageService.js';
 import './services/configurationResolver/browser/configurationResolverService.js';
 import '../platform/extensionResourceLoader/browser/extensionResourceLoaderService.js';
 import './services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import './services/browserElements/browser/webBrowserElementsService.js';
 
 import { InstantiationType, registerSingleton } from '../platform/instantiation/common/extensions.js';
 import { IAccessibilityService } from '../platform/accessibility/common/accessibility.js';
@@ -171,6 +172,8 @@ import './contrib/void/common/voidUpdateServiceWeb.js';
 import './contrib/void/common/mcpServiceWeb.js';
 import './contrib/void/common/sendLLMMessageServiceWeb.js';
 import './contrib/void/browser/voidSCMServiceWeb.js';
+// Process Explorer
+import './contrib/processExplorer/browser/processExplorer.web.contribution.js';
 
 //#endregion
 

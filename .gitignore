@@ -28,3 +28,5 @@ product.overrides.json
 .tool-versions
 src/vs/workbench/contrib/void/browser/react/out/**
 src/vs/workbench/contrib/void/browser/react/src2/**
+
+memory/

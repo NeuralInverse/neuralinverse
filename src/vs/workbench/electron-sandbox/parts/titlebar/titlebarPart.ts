@@ -18,7 +18,7 @@ import { IContextMenuService } from '../../../../platform/contextview/browser/co
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
 import { IWorkbenchLayoutService, Parts } from '../../../services/layout/browser/layoutService.js';
 import { INativeHostService } from '../../../../platform/native/common/native.js';
-import { hasNativeTitlebar, useWindowControlsOverlay, DEFAULT_CUSTOM_TITLEBAR_HEIGHT } from '../../../../platform/window/common/window.js';
+import { hasNativeTitlebar, useWindowControlsOverlay, DEFAULT_CUSTOM_TITLEBAR_HEIGHT, hasNativeMenu } from '../../../../platform/window/common/window.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
@@ -63,7 +63,7 @@ export class NativeTitlebarPart extends BrowserTitlebarPart {
 	constructor(
 		id: string,
 		targetWindow: CodeWindow,
-		editorGroupsContainer: IEditorGroupsContainer | 'main',
+		editorGroupsContainer: IEditorGroupsContainer,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@INativeWorkbenchEnvironmentService environmentService: INativeWorkbenchEnvironmentService,
@@ -80,7 +80,7 @@ export class NativeTitlebarPart extends BrowserTitlebarPart {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IUpdateService updateService: IUpdateService
 	) {
-		super(id, targetWindow, editorGroupsContainer, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorGroupService, editorService, menuService, keybindingService, updateService);
+		super(id, targetWindow, editorGroupsContainer, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService, updateService);
 
 		this.bigSurOrNewer = isBigSurOrNewer(environmentService.os.release);
 
@@ -88,7 +88,7 @@ export class NativeTitlebarPart extends BrowserTitlebarPart {
 	}
 
 	private async handleWindowsAlwaysOnTop(targetWindowId: number): Promise<void> {
-		const isWindowAlwaysOnTopContext = IsWindowAlwaysOnTopContext.bindTo(this.scopedContextKeyService);
+		const isWindowAlwaysOnTopContext = IsWindowAlwaysOnTopContext.bindTo(this.contextKeyService);
 
 		this._register(this.nativeHostService.onDidChangeWindowAlwaysOnTop(({ windowId, alwaysOnTop }) => {
 			if (windowId === targetWindowId) {
@@ -140,8 +140,8 @@ export class NativeTitlebarPart extends BrowserTitlebarPart {
 			return;
 		}
 
-		if (this.customMenubar) {
-			this._register(this.customMenubar.onFocusStateChange(e => this.onMenubarFocusChanged(e)));
+		if (this.customMenubar.value) {
+			this._register(this.customMenubar.value.onFocusStateChange(e => this.onMenubarFocusChanged(e)));
 		}
 	}
 
@@ -161,7 +161,7 @@ export class NativeTitlebarPart extends BrowserTitlebarPart {
 		const targetWindowId = getWindowId(targetWindow);
 
 		// Native menu controller
-		if (isMacintosh || hasNativeTitlebar(this.configurationService)) {
+		if (isMacintosh || hasNativeMenu(this.configurationService)) {
 			this._register(this.instantiationService.createInstance(NativeMenubarControl));
 		}
 
@@ -311,7 +311,7 @@ export class MainNativeTitlebarPart extends NativeTitlebarPart {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IUpdateService updateService: IUpdateService
 	) {
-		super(Parts.TITLEBAR_PART, mainWindow, 'main', contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, nativeHostService, editorGroupService, editorService, menuService, keybindingService, updateService);
+		super(Parts.TITLEBAR_PART, mainWindow, editorGroupService.mainPart, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, nativeHostService, editorGroupService, editorService, menuService, keybindingService, updateService);
 	}
 }
 
@@ -363,7 +363,7 @@ export class NativeTitleService extends BrowserTitleService {
 		return this.instantiationService.createInstance(MainNativeTitlebarPart);
 	}
 
-	protected override doCreateAuxiliaryTitlebarPart(container: HTMLElement, editorGroupsContainer: IEditorGroupsContainer): AuxiliaryNativeTitlebarPart {
-		return this.instantiationService.createInstance(AuxiliaryNativeTitlebarPart, container, editorGroupsContainer, this.mainPart);
+	protected override doCreateAuxiliaryTitlebarPart(container: HTMLElement, editorGroupsContainer: IEditorGroupsContainer, instantiationService: IInstantiationService): AuxiliaryNativeTitlebarPart {
+		return instantiationService.createInstance(AuxiliaryNativeTitlebarPart, container, editorGroupsContainer, this.mainPart);
 	}
 }
