@@ -4,103 +4,77 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { coalesce, isNonEmptyArray } from '../../../../base/common/arrays.js';
-// import { Codicon } from '../../../../base/common/codicons.js';
+import { Codicon } from '../../../../base/common/codicons.js';
 import { toErrorMessage } from '../../../../base/common/errorMessage.js';
 import { Event } from '../../../../base/common/event.js';
-import { MarkdownString } from '../../../../base/common/htmlContent.js';
-// import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
+import { createCommandUri, MarkdownString } from '../../../../base/common/htmlContent.js';
+import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
 import { Disposable, DisposableMap, DisposableStore } from '../../../../base/common/lifecycle.js';
 import * as strings from '../../../../base/common/strings.js';
-// import { URI } from '../../../../base/common/uri.js';
-// import { ServicesAccessor } from '../../../../editor/browser/editorExtensions.js';
-import { localize } from '../../../../nls.js';
-// import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
-// import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
-import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { localize, localize2 } from '../../../../nls.js';
+import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { ExtensionIdentifier, IExtensionManifest } from '../../../../platform/extensions/common/extensions.js';
 import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
-// import { ILogService } from '../../../../platform/log/common/log.js';
-// import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
-// import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
-// import { ViewPane } from '../../../browser/parts/views/viewPane.js';
-// import { ViewPaneContainer } from '../../../browser/parts/views/viewPaneContainer.js';
-import { IWorkbenchContribution, } from '../../../common/contributions.js';
-import { IViewsRegistry, Extensions as ViewExtensions } from '../../../common/views.js';
+import { ViewPaneContainer } from '../../../browser/parts/views/viewPaneContainer.js';
+import { IWorkbenchContribution } from '../../../common/contributions.js';
+import { IViewContainersRegistry, IViewDescriptor, IViewsRegistry, ViewContainer, ViewContainerLocation, Extensions as ViewExtensions } from '../../../common/views.js';
 import { Extensions, IExtensionFeaturesRegistry, IExtensionFeatureTableRenderer, IRenderedData, IRowData, ITableData } from '../../../services/extensionManagement/common/extensionFeatures.js';
 import { isProposedApiEnabled } from '../../../services/extensions/common/extensions.js';
 import * as extensionsRegistry from '../../../services/extensions/common/extensionsRegistry.js';
-// import { IViewsService } from '../../../services/views/common/viewsService.js';
 import { showExtensionsWithIdsCommandId } from '../../extensions/browser/extensionsActions.js';
 import { IExtension, IExtensionsWorkbenchService } from '../../extensions/common/extensions.js';
 import { IChatAgentData, IChatAgentService } from '../common/chatAgents.js';
 import { ChatContextKeys } from '../common/chatContextKeys.js';
 import { IRawChatParticipantContribution } from '../common/chatParticipantContribTypes.js';
-// import { IChatService } from '../common/chatService.js';
 import { ChatAgentLocation, ChatModeKind } from '../common/constants.js';
 import { ChatViewId } from './chat.js';
-// import { CHAT_EDITING_SIDEBAR_PANEL_ID, CHAT_SIDEBAR_PANEL_ID, ChatViewPane } from './chatViewPane.js';
+import { CHAT_SIDEBAR_PANEL_ID, ChatViewPane } from './chatViewPane.js';
 
 // --- Chat Container &  View Registration
 
-// Void commented this out
-// const chatViewContainer: ViewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
-// 	id: CHAT_SIDEBAR_PANEL_ID,
-// 	title: localize2('chat.viewContainer.label', "Chat"),
-// 	icon: Codicon.commentDiscussion,
-// 	ctorDescriptor: new SyncDescriptor(ViewPaneContainer, [CHAT_SIDEBAR_PANEL_ID, { mergeViewWithContainerWhenSingleView: true }]),
-// 	storageId: CHAT_SIDEBAR_PANEL_ID,
-// 	hideIfEmpty: true,
-// 	order: 100,
-// }, ViewContainerLocation.AuxiliaryBar, { isDefault: true, doNotRegisterOpenCommand: true });
+const chatViewContainer: ViewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
+	id: CHAT_SIDEBAR_PANEL_ID,
+	title: localize2('chat.viewContainer.label', "Chat"),
+	icon: Codicon.chatSparkle,
+	ctorDescriptor: new SyncDescriptor(ViewPaneContainer, [CHAT_SIDEBAR_PANEL_ID, { mergeViewWithContainerWhenSingleView: true }]),
+	storageId: CHAT_SIDEBAR_PANEL_ID,
+	hideIfEmpty: true,
+	order: 1,
+}, ViewContainerLocation.AuxiliaryBar, { isDefault: true, doNotRegisterOpenCommand: true });
 
-// Void commented this out
-// const chatViewDescriptor: IViewDescriptor[] = [{
-// 	id: ChatViewId,
-// 	containerIcon: chatViewContainer.icon,
-// 	containerTitle: chatViewContainer.title.value,
-// 	singleViewPaneContainerTitle: chatViewContainer.title.value,
-// 	name: localize2('chat.viewContainer.label', "Chat"),
-// 	canToggleVisibility: false,
-// 	canMoveView: true,
-// 	openCommandActionDescriptor: {
-// 		id: CHAT_SIDEBAR_PANEL_ID,
-// 		title: chatViewContainer.title,
-// 		mnemonicTitle: localize({ key: 'miToggleChat', comment: ['&& denotes a mnemonic'] }, "&&Chat"),
-// 		keybindings: {
-// 			primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyI,
-// 			mac: {
-// 				primary: KeyMod.CtrlCmd | KeyMod.WinCtrl | KeyCode.KeyI
-// 			}
-// 		},
-// 		order: 1
-// 	},
-// 	ctorDescriptor: new SyncDescriptor(ChatViewPane, [{ location: ChatAgentLocation.Panel }]),
-// 	when: ContextKeyExpr.or(
-// 		ContextKeyExpr.and(
-// 			ChatContextKeys.Setup.hidden.negate(),
-// 			ChatContextKeys.Setup.disabled.negate() // do not pretend a working Chat view if extension is explicitly disabled
-// 		),
-// 		ChatContextKeys.Setup.installed,
-// 		ChatContextKeys.panelParticipantRegistered,
-// 		ChatContextKeys.extensionInvalid
-// 	)
-// }];
-// Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).registerViews(chatViewDescriptor, chatViewContainer);
-
-// --- Edits Container &  View Registration
-// Void commented this out
-
-// const editsViewContainer: ViewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
-// 	id: CHAT_EDITING_SIDEBAR_PANEL_ID,
-// 	title: localize2('chatEditing.viewContainer.label', "Copilot Edits"),
-// 	icon: Codicon.editSession,
-// 	ctorDescriptor: new SyncDescriptor(ViewPaneContainer, [CHAT_EDITING_SIDEBAR_PANEL_ID, { mergeViewWithContainerWhenSingleView: true }]),
-// 	storageId: CHAT_EDITING_SIDEBAR_PANEL_ID,
-// 	hideIfEmpty: true,
-// 	order: 101,
-// }, ViewContainerLocation.AuxiliaryBar, { doNotRegisterOpenCommand: true });
+const chatViewDescriptor: IViewDescriptor[] = [{
+	id: ChatViewId,
+	containerIcon: chatViewContainer.icon,
+	containerTitle: chatViewContainer.title.value,
+	singleViewPaneContainerTitle: chatViewContainer.title.value,
+	name: localize2('chat.viewContainer.label', "Chat"),
+	canToggleVisibility: false,
+	canMoveView: true,
+	openCommandActionDescriptor: {
+		id: CHAT_SIDEBAR_PANEL_ID,
+		title: chatViewContainer.title,
+		mnemonicTitle: localize({ key: 'miToggleChat', comment: ['&& denotes a mnemonic'] }, "&&Chat"),
+		keybindings: {
+			primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyI,
+			mac: {
+				primary: KeyMod.CtrlCmd | KeyMod.WinCtrl | KeyCode.KeyI
+			}
+		},
+		order: 1
+	},
+	ctorDescriptor: new SyncDescriptor(ChatViewPane, [{ location: ChatAgentLocation.Chat }]),
+	when: ContextKeyExpr.or(
+		ContextKeyExpr.or(
+			ChatContextKeys.Setup.hidden,
+			ChatContextKeys.Setup.disabled
+		)?.negate(),
+		ChatContextKeys.panelParticipantRegistered,
+		ChatContextKeys.extensionInvalid
+	)
+}];
+Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).registerViews(chatViewDescriptor, chatViewContainer);
 
 const chatParticipantExtensionPoint = extensionsRegistry.ExtensionsRegistry.registerExtensionPoint<IRawChatParticipantContribution[]>({
 	extensionPoint: 'chatParticipants',
@@ -176,7 +150,7 @@ const chatParticipantExtensionPoint = extensionsRegistry.ExtensionsRegistry.regi
 						required: ['name'],
 						properties: {
 							name: {
-								description: localize('chatCommand', "A short name by which this command is referred to in the UI, e.g. `fix` or * `explain` for commands that fix an issue or explain code. The name should be unique among the commands provided by this participant."),
+								description: localize('chatCommand', "A short name by which this command is referred to in the UI, e.g. `fix` or `explain` for commands that fix an issue or explain code. The name should be unique among the commands provided by this participant."),
 								type: 'string'
 							},
 							description: {
@@ -225,9 +199,9 @@ const chatParticipantExtensionPoint = extensionsRegistry.ExtensionsRegistry.regi
 			}
 		}
 	},
-	activationEventsGenerator: (contributions: IRawChatParticipantContribution[], result: { push(item: string): void }) => {
+	activationEventsGenerator: function* (contributions: readonly IRawChatParticipantContribution[]) {
 		for (const contrib of contributions) {
-			result.push(`onChatParticipant:${contrib.id}`);
+			yield `onChatParticipant:${contrib.id}`;
 		}
 	},
 });
@@ -297,6 +271,7 @@ export class ChatExtensionPointHandler implements IWorkbenchContribution {
 							providerDescriptor.id,
 							{
 								extensionId: extension.description.identifier,
+								extensionVersion: extension.description.version,
 								publisherDisplayName: extension.description.publisherDisplayName ?? extension.description.publisher, // May not be present in OSS
 								extensionPublisherId: extension.description.publisher,
 								extensionDisplayName: extension.description.displayName ?? extension.description.name,
@@ -312,11 +287,10 @@ export class ChatExtensionPointHandler implements IWorkbenchContribution {
 								isDefault: providerDescriptor.isDefault,
 								locations: isNonEmptyArray(providerDescriptor.locations) ?
 									providerDescriptor.locations.map(ChatAgentLocation.fromRaw) :
-									[ChatAgentLocation.Panel],
+									[ChatAgentLocation.Chat],
 								modes: providerDescriptor.isDefault ? (providerDescriptor.modes ?? [ChatModeKind.Ask]) : [ChatModeKind.Agent, ChatModeKind.Ask, ChatModeKind.Edit],
 								slashCommands: providerDescriptor.commands ?? [],
 								disambiguation: coalesce(participantsDisambiguation.flat()),
-								extensionVersion: undefined,
 							} satisfies IChatAgentData));
 
 						this._participantRegistrationDisposables.set(
@@ -380,7 +354,7 @@ export class ChatCompatibilityNotifier extends Disposable implements IWorkbenchC
 		this.registeredWelcomeView = true;
 		const showExtensionLabel = localize('showExtension', "Show Extension");
 		const mainMessage = localize('chatFailErrorMessage', "Chat failed to load because the installed version of the Copilot Chat extension is not compatible with this version of {0}. Please ensure that the Copilot Chat extension is up to date.", this.productService.nameLong);
-		const commandButton = `[${showExtensionLabel}](command:${showExtensionsWithIdsCommandId}?${encodeURIComponent(JSON.stringify([[this.productService.defaultChatAgent?.chatExtensionId]]))})`;
+		const commandButton = `[${showExtensionLabel}](${createCommandUri(showExtensionsWithIdsCommandId, [this.productService.defaultChatAgent?.chatExtensionId])})`;
 		const versionMessage = `Copilot Chat version: ${chatExtension.version}`;
 		const viewsRegistry = Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry);
 		this._register(viewsRegistry.registerViewWelcomeContent(ChatViewId, {
@@ -437,145 +411,3 @@ Registry.as<IExtensionFeaturesRegistry>(Extensions.ExtensionFeaturesRegistry).re
 	},
 	renderer: new SyncDescriptor(ChatParticipantDataRenderer),
 });
-
-
-// Void commented this out
-// // TODO@roblourens remove after a few months
-
-// export class MovedChatEditsViewPane extends ViewPane {
-// 	override shouldShowWelcome(): boolean {
-// 		return true;
-// 	}
-// }
-
-// const editsViewId = 'workbench.panel.chat.view.edits';
-// const baseEditsViewDescriptor: IViewDescriptor = {
-// 	id: editsViewId,
-// 	containerIcon: editsViewContainer.icon,
-// 	containerTitle: editsViewContainer.title.value,
-// 	singleViewPaneContainerTitle: editsViewContainer.title.value,
-// 	name: editsViewContainer.title,
-// 	canToggleVisibility: false,
-// 	canMoveView: true,
-// 	openCommandActionDescriptor: {
-// 		id: CHAT_EDITING_SIDEBAR_PANEL_ID,
-// 		title: editsViewContainer.title,
-// 		mnemonicTitle: localize({ key: 'miToggleEdits', comment: ['&& denotes a mnemonic'] }, "Copilot Ed&&its"),
-// 		keybindings: {
-// 			primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyI,
-// 			linux: {
-// 				primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyMod.Shift | KeyCode.KeyI
-// 			}
-// 		},
-// 		order: 2
-// 	},
-// 	ctorDescriptor: new SyncDescriptor(ChatViewPane, [{ location: ChatAgentLocation.EditingSession }]),
-// 	when: ContextKeyExpr.and(
-// 		ContextKeyExpr.has(`config.${ChatConfiguration.UnifiedChatView}`).negate(),
-// 		ContextKeyExpr.or(
-// 			ChatContextKeys.Setup.hidden.negate(),
-// 			ChatContextKeys.Setup.installed,
-// 			ChatContextKeys.editingParticipantRegistered
-// 		)
-// 	)
-// };
-
-// const ShowMovedChatEditsView = new RawContextKey<boolean>('showMovedChatEditsView', true, { type: 'boolean', description: localize('hideMovedChatEditsView', "True when the moved chat edits view should be hidden.") });
-
-// class EditsViewContribution extends Disposable implements IWorkbenchContribution {
-// 	static readonly ID = 'workbench.contrib.chatEditsView';
-
-// 	private static readonly HideMovedEditsViewKey = 'chatEditsView.hideMovedEditsView';
-
-// 	private readonly showWelcomeViewCtx: IContextKey<boolean>;
-
-// 	constructor(
-// 		@IConfigurationService private readonly configurationService: IConfigurationService,
-// 		@IStorageService private readonly storageService: IStorageService,
-// 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
-// 		@IChatService private readonly chatService: IChatService,
-// 	) {
-// 		super();
-
-// 		this.showWelcomeViewCtx = ShowMovedChatEditsView.bindTo(this.contextKeyService);
-
-// 		const unifiedViewEnabled = this.configurationService.getValue(ChatConfiguration.UnifiedChatView);
-
-// 		const movedEditsViewDescriptor = {
-// 			...baseEditsViewDescriptor,
-// 			ctorDescriptor: new SyncDescriptor(MovedChatEditsViewPane),
-// 			when: ContextKeyExpr.and(
-// 				ContextKeyExpr.has(`config.${ChatConfiguration.UnifiedChatView}`),
-// 				ShowMovedChatEditsView,
-// 				ContextKeyExpr.or(
-// 					ChatContextKeys.Setup.hidden.negate(),
-// 					ChatContextKeys.Setup.installed,
-// 					ChatContextKeys.editingParticipantRegistered
-// 				)
-// 			)
-// 		};
-
-// 		const editsViewToRegister = unifiedViewEnabled ?
-// 			movedEditsViewDescriptor : baseEditsViewDescriptor;
-
-// 		if (unifiedViewEnabled) {
-// 			this.init();
-// 			this.updateContextKey();
-// 			this.registerWelcomeView();
-// 			this.registerCommands();
-// 		}
-// 		Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).registerViews([editsViewToRegister], editsViewContainer);
-// 	}
-
-// 	private registerWelcomeView(): void {
-// 		const welcomeViewMainMessage = localize('editsMovedMainMessage', "Copilot Edits has been moved to the [main Chat view](command:workbench.action.chat.open). You can switch between modes by using the dropdown in the Chat input box.");
-// 		const okButton = `[${localize('ok', "Got it")}](command:_movedEditsView.ok)`;
-// 		const welcomeViewFooterMessage = localize('editsMovedFooterMessage', "[Learn more](command:_movedEditsView.learnMore) about the Chat view.");
-
-// 		const viewsRegistry = Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry);
-// 		this._register(viewsRegistry.registerViewWelcomeContent(editsViewId, {
-// 			content: [welcomeViewMainMessage, okButton, welcomeViewFooterMessage].join('\n\n'),
-// 			renderSecondaryButtons: true,
-// 			when: ShowMovedChatEditsView
-// 		}));
-// 	}
-
-// 	private markViewToHide(): void {
-// 		this.storageService.store(EditsViewContribution.HideMovedEditsViewKey, true, StorageScope.APPLICATION, StorageTarget.USER);
-// 		this.updateContextKey();
-// 	}
-
-// 	private init() {
-// 		const hasChats = this.chatService.hasSessions();
-// 		if (!hasChats) {
-// 			// No chats from previous sessions, might be a new user, so hide the view.
-// 			// Could also be a previous user who happened to first open a workspace with no chats.
-// 			this.markViewToHide();
-// 		}
-// 	}
-
-// 	private updateContextKey(): void {
-// 		const hidden = this.storageService.getBoolean(EditsViewContribution.HideMovedEditsViewKey, StorageScope.APPLICATION, false);
-// 		const hasChats = this.chatService.hasSessions();
-// 		this.showWelcomeViewCtx.set(!hidden && hasChats);
-// 	}
-
-// 	private registerCommands(): void {
-// 		this._register(CommandsRegistry.registerCommand({
-// 			id: '_movedEditsView.ok',
-// 			handler: async (accessor: ServicesAccessor) => {
-// 				showChatView(accessor.get(IViewsService));
-// 				this.markViewToHide();
-// 			}
-// 		}));
-// 		this._register(CommandsRegistry.registerCommand({
-// 			id: '_movedEditsView.learnMore',
-// 			handler: async (accessor: ServicesAccessor) => {
-// 				const openerService = accessor.get(IOpenerService);
-// 				openerService.open(URI.parse('https://aka.ms/vscode-chat-modes'));
-// 			}
-// 		}));
-// 	}
-// }
-
-// registerWorkbenchContribution2(EditsViewContribution.ID, EditsViewContribution, WorkbenchPhase.BlockRestore);
