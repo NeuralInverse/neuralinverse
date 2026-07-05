@@ -1,133 +1,99 @@
-# Contributing to Neural Inverse OSS
+# Contributing to VS Code
 
-Thank you for your interest in contributing! Neural Inverse is open source and we welcome contributions of all kinds.
+Welcome, and thank you for your interest in contributing to VS Code!
 
-## Documentation
+There are several ways in which you can contribute, beyond writing code. The goal of this document is to provide a high-level overview of how you can get involved.
 
-Full contributor guides are available at:
+## Asking Questions
 
-- [Getting Started](https://neuralinverse.com/guides/contributing/getting-started) - dev setup and first contribution
-- [Architecture](https://neuralinverse.com/guides/contributing/architecture) - module map, DI, how features connect
-- [Bring Your Own LLM](https://neuralinverse.com/guides/contributing/byollm) - supported providers, per-feature model selection, adding providers
-- [AI Chat & Inline Edit](https://neuralinverse.com/guides/contributing/ai-chat) - sidebar chat, Ctrl+K, autocomplete, Fast Apply
-- [Power Mode](https://neuralinverse.com/guides/contributing/power-mode) - autonomous agent, tools, sub-agents, configuration
-- [Firmware & Embedded](https://neuralinverse.com/guides/contributing/firmware) - MCU database, SVD, serial monitor, agent tools
-- [Legacy Modernisation](https://neuralinverse.com/guides/contributing/modernisation) - 5-stage pipeline, adding languages and profiles
-- [Model Management](https://neuralinverse.com/guides/contributing/model-management) - deployment registry, cloud provisioning, agent manager UI
 
-## Ways to contribute
+Have a question? Instead of opening an issue, please ask on [Stack Overflow](https://stackoverflow.com/questions/tagged/visual-studio-code) using the tag `visual-studio-code`.
 
-- Report bugs via [GitHub Issues](https://github.com/NeuralInverse/neuralinverse/issues)
-- Suggest features or improvements
-- Submit pull requests for bug fixes or new features
-- Improve documentation
-- Add new LLM provider integrations
-- Add new language support to the modernisation engine
-- Add new MCU/platform support to the firmware module
+The active community will be eager to assist you. Your well-worded question will serve as a resource to others searching for help.
 
-## Getting started
+## Providing Feedback
 
-1. Fork the repo and clone it locally
-2. Install dependencies: `npm install`
-3. Start dev mode:
-   - Terminal 1: `npm run watch`
-   - Terminal 2: `npm run watchreact`
-   - Terminal 3: `./scripts/code.sh` (macOS/Linux) or `.\scripts\code.bat` (Windows)
-4. Make your changes on a new branch
-5. Verify the build: `npm run compile`
-6. Open a pull request against `main`
+Your comments and feedback are welcome, and the development team is available via a handful of different channels.
 
-See [HOW_TO_CONTRIBUTE.md](./HOW_TO_CONTRIBUTE.md) for full platform-specific setup instructions.
+See the [Feedback Channels](https://github.com/microsoft/vscode/wiki/Feedback-Channels) wiki page for details on how to share your thoughts.
 
-## Project structure
+## Reporting Issues
 
-All Neural Inverse code lives under `src/vs/workbench/contrib/`:
+Have you identified a reproducible problem in VS Code? Do you have a feature request? We want to hear about it! Here's how you can report your issue as effectively as possible.
 
-| Module | Path | What it does |
-|--------|------|--------------|
-| AI Chat & Core | `contrib/void/` | Sidebar chat (Ctrl+L), inline edit (Ctrl+K), autocomplete, LLM routing, settings |
-| Power Mode | `contrib/powerMode/` | Autonomous agent with tool calling (Cmd+Alt+P) |
-| Agent Manager | `contrib/neuralInverse/` | Model management, deployments, agent orchestration (Cmd+Alt+A) |
-| Firmware | `contrib/neuralInverseFirmware/` | MCU database, SVD register maps, serial monitor, fw_* tools (Cmd+Alt+F) |
-| Modernisation | `contrib/neuralInverseModernisation/` | 5-stage legacy migration engine (Cmd+Alt+M) |
+### Identify Where to Report
 
-Each module has a `.contribution.ts` file that registers all its services.
+The VS Code project is distributed across multiple repositories. Try to file the issue against the correct repository. Check the list of [Related Projects](https://github.com/microsoft/vscode/wiki/Related-Projects) if you aren't sure which repo is correct.
 
-## Pull request guidelines
+Can you recreate the issue even after [disabling all extensions](https://code.visualstudio.com/docs/editor/extension-gallery#_disable-an-extension)? If you find the issue is caused by an extension you have installed, please file an issue on the extension's repo directly.
 
-- Keep PRs focused - one feature or fix per PR
-- Write a clear description of what changed and why
-- Make sure `npm run compile` passes with zero errors
-- No non-ASCII characters in TypeScript/JavaScript string literals (breaks the release build)
-- Fill out the PR template (area, testing, checklist)
+### Look For an Existing Issue
 
-## Key rules
+Before you create a new issue, please do a search in [open issues](https://github.com/microsoft/vscode/issues) to see if the issue or feature request has already been filed.
 
-- **ASCII only** in TS/JS string literals. Use unicode escapes (`–`) if non-ASCII is semantically required.
-- **No `any` casts.** Find and use the correct type.
-- **No changes outside `src/vs/workbench/contrib/`** without discussion first.
-- **Follow existing conventions** per file (semicolons, formatting).
+Be sure to scan through the [most popular](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc) feature requests.
 
-## Scope of contributions
+If you find your issue already exists, make relevant comments and add your [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments). Use a reaction in place of a "+1" comment:
 
-Contributions to the following are welcome:
+* 👍 - upvote
+* 👎 - downvote
 
-- AI chat and agentic workflows (`contrib/void/`, `contrib/powerMode/`)
-- Agent manager and model management (`contrib/neuralInverse/`)
-- Modernisation engine (`contrib/neuralInverseModernisation/`)
-- Firmware tooling (`contrib/neuralInverseFirmware/`)
-- General IDE improvements
+If you cannot find an existing issue that describes your bug or feature, create a new issue using the guidelines below.
 
-Enterprise features (Checks, GRC, compliance engine, auth) are not part of this repo.
+### Writing Good Bug Reports and Feature Requests
 
-## Adding a new LLM provider
+File a single issue per problem and feature request. Do not enumerate multiple bugs or feature requests in the same issue.
 
-1. Add provider name to `ProviderName` in `contrib/void/common/voidSettingsTypes.ts`
-2. Implement SDK call in `contrib/void/electron-main/llmMessage/sendLLMMessage.impl.ts`
-3. Add default models to `contrib/void/common/modelCapabilities.ts`
-4. Settings UI auto-generates from the schema - just add the entry
+Do not add your issue as a comment to an existing issue unless it's for the identical issue. Many issues look similar but have different causes.
 
-## Adding a language to modernisation
+The more information you can provide, the more likely someone will be successful at reproducing the issue and finding a fix.
 
-1. `discovery/languageDetector.ts` - file extensions + heuristics
-2. `discovery/unitDecomposer.ts` - how to split into migration units
-3. `discovery/dependencyExtractor.ts` - import/include patterns
-4. `discovery/fileWalker.ts` - add to SOURCE_EXTS
-5. `discovery/complexityAnalyzer.ts` - cyclomatic complexity patterns
-6. `translation/impl/languagePairRegistry.ts` - add translation profile with idiom mappings
+The built-in tool for reporting an issue, which you can access by using `Report Issue` in VS Code's Help menu, can help streamline this process by automatically providing the version of VS Code, all your installed extensions, and your system info. Additionally, the tool will search among existing issues to see if a similar issue already exists.
 
-## Adding MCU support to firmware
+Please include the following with each issue:
 
-1. Add MCU variants to `neuralInverseFirmware/common/mcuDatabase.ts`
-2. Add SVD file URL to the SVD registry
-3. Add platform knowledge pack if needed (clock trees, DMA, ISR patterns)
+* Version of VS Code
+* Your operating system
+* List of extensions that you have installed
+* Reproducible steps (1... 2... 3...) that cause the issue
+* What you expected to see, versus what you actually saw
+* Images, animations, or a link to a video showing the issue occurring
+* A code snippet that demonstrates the issue or a link to a code repository the developers can easily pull down to recreate the issue locally
+  * **Note:** Because the developers need to copy and paste the code snippet, including a code snippet as a media file (i.e. .gif) is not sufficient.
+* Errors from the Dev Tools Console (open from the menu: Help > Toggle Developer Tools)
 
-## AI-assisted contributions (BYOLLM)
+### Creating Pull Requests
 
-Neural Inverse is a BYOLLM platform. If you used AI assistance, include TWO `Co-authored-by` trailers:
+* Please refer to the article on [creating pull requests](https://github.com/microsoft/vscode/wiki/How-to-Contribute#pull-requests) and contributing to this project.
 
-1. **Always include the NeuralInverse platform trailer:**
-```
-Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
-```
+### Final Checklist
 
-2. **Plus the specific LLM you used:**
+Please remember to do the following:
 
-| Model | Trailer |
-|---|---|
-| Claude (Anthropic) | `Co-authored-by: Claude <noreply@anthropic.com>` |
-| ChatGPT / GPT-4 (OpenAI) | `Co-authored-by: ChatGPT <noreply@openai.com>` |
-| Gemini (Google) | `Co-authored-by: Gemini <noreply@google.com>` |
-| Custom / self-hosted | `Co-authored-by: [Model Name] <your-contact-email>` |
+* [ ] Search the issue repository to ensure your report is a new issue
+* [ ] Recreate the issue after disabling all extensions
+* [ ] Simplify your code around the issue to better isolate the problem
 
-Example:
-```
-fix: resolve null pointer in session service
+Don't feel bad if the developers can't reproduce the issue right away. They will simply ask for more information!
 
-Co-authored-by: neuralinverse-dev <noreply@neuralinverse.com>
-Co-authored-by: Claude <noreply@anthropic.com>
-```
+### Follow Your Issue
 
-## Questions?
+Once submitted, your report will go into the [issue tracking](https://github.com/microsoft/vscode/wiki/Issue-Tracking) workflow. Be sure to understand what will happen next, so you know what to expect and how to continue to assist throughout the process.
 
-Open an issue or email github@neuralinverse.com.
+## Automated Issue Management
+
+We use GitHub Actions to help us manage issues. These Actions and their descriptions can be [viewed here](https://github.com/microsoft/vscode-github-triage-actions). Some examples of what these Actions do are:
+
+* Automatically close any issue marked `info-needed` if there has been no response in the past 7 days.
+* Automatically lock issues 45 days after they are closed.
+* Automatically implement the VS Code [feature request pipeline](https://github.com/microsoft/vscode/wiki/Issues-Triaging#managing-feature-requests).
+
+If you believe the bot got something wrong, please open a new issue and let us know.
+
+## Contributing Fixes
+
+If you are interested in writing code to fix issues, please see [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute) in the wiki.
+
+## Thank You
+
+Your contributions to open source, large or small, make great projects like this possible. Thank you for taking the time to contribute.
