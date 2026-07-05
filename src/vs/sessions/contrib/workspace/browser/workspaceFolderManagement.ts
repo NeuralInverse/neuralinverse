@@ -13,10 +13,14 @@ import { IWorkspaceTrustManagementService } from '../../../../platform/workspace
 import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
 import { URI } from '../../../../base/common/uri.js';
 import { autorun } from '../../../../base/common/observable.js';
+import { IWorkspaceFolderCreationData } from '../../../../platform/workspaces/common/workspaces.js';
+import { getGitHubRemoteFileDisplayName } from '../../fileTreeView/browser/githubFileSystemProvider.js';
+import { Queue } from '../../../../base/common/async.js';
 
 export class WorkspaceFolderManagementContribution extends Disposable implements IWorkbenchContribution {
 
 	static readonly ID = 'workbench.contrib.workspaceFolderManagement';
+	private queue = this._register(new Queue<void>());
 
 	constructor(
 		@ISessionsManagementService private readonly sessionManagementService: ISessionsManagementService,
@@ -28,16 +32,16 @@ export class WorkspaceFolderManagementContribution extends Disposable implements
 		super();
 		this._register(autorun(reader => {
 			const activeSession = this.sessionManagementService.activeSession.read(reader);
-			this.updateWorkspaceFoldersForSession(activeSession);
+			this.queue.queue(() => this.updateWorkspaceFoldersForSession(activeSession));
 		}));
 	}
 
 	private async updateWorkspaceFoldersForSession(session: IActiveSessionItem | undefined): Promise<void> {
 		await this.manageTrustWorkspaceForSession(session);
-		const activeSessionRepo = session?.providerType === AgentSessionProviders.Background ? session.worktree ?? session.repository : undefined;
+		const activeSessionFolderData = this.getActiveSessionFolderData(session);
 		const currentRepo = this.workspaceContextService.getWorkspace().folders[0]?.uri;
 
-		if (!activeSessionRepo) {
+		if (!activeSessionFolderData) {
 			if (currentRepo) {
 				await this.workspaceEditingService.removeFolders([currentRepo], true);
 			}
@@ -45,15 +49,42 @@ export class WorkspaceFolderManagementContribution extends Disposable implements
 		}
 
 		if (!currentRepo) {
-			await this.workspaceEditingService.addFolders([{ uri: activeSessionRepo }], true);
+			await this.workspaceEditingService.addFolders([activeSessionFolderData], true);
 			return;
 		}
 
-		if (this.uriIdentityService.extUri.isEqual(currentRepo, activeSessionRepo)) {
+		if (this.uriIdentityService.extUri.isEqual(currentRepo, activeSessionFolderData.uri)) {
 			return;
 		}
 
-		await this.workspaceEditingService.updateFolders(0, 1, [{ uri: activeSessionRepo }], true);
+		await this.workspaceEditingService.updateFolders(0, 1, [activeSessionFolderData], true);
+	}
+
+	private getActiveSessionFolderData(session: IActiveSessionItem | undefined): IWorkspaceFolderCreationData | undefined {
+		if (!session) {
+			return undefined;
+		}
+
+		if (session.worktree) {
+			return {
+				uri: session.worktree,
+				name: session.repository ? `${this.uriIdentityService.extUri.basename(session.repository)} (${this.uriIdentityService.extUri.basename(session.worktree)})` : this.uriIdentityService.extUri.basename(session.worktree)
+			};
+		}
+
+		if (session.repository) {
+			if (session.providerType === AgentSessionProviders.Background) {
+				return { uri: session.repository };
+			}
+			if (session.providerType === AgentSessionProviders.Cloud) {
+				return {
+					uri: session.repository,
+					name: getGitHubRemoteFileDisplayName(session.repository),
+				};
+			}
+		}
+
+		return undefined;
 	}
 
 	private async manageTrustWorkspaceForSession(session: IActiveSessionItem | undefined): Promise<void> {
@@ -62,10 +93,6 @@ export class WorkspaceFolderManagementContribution extends Disposable implements
 		}
 
 		if (!session.repository || !session.worktree) {
-			return;
-		}
-
-		if (!this.isUriTrusted(session.repository)) {
 			return;
 		}
 

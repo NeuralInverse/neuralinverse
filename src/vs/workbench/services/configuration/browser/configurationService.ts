@@ -195,6 +195,10 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		return WorkbenchState.EMPTY;
 	}
 
+	public hasWorkspaceData(): boolean {
+		return this.getWorkbenchState() !== WorkbenchState.EMPTY;
+	}
+
 	public getWorkspaceFolder(resource: URI): IWorkspaceFolder | null {
 		return this.workspace.getFolder(resource);
 	}

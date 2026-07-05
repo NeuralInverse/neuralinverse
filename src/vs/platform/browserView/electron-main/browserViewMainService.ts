@@ -19,6 +19,7 @@ import { IProductService } from '../../product/common/productService.js';
 import { CDPBrowserProxy } from '../common/cdp/proxy.js';
 import { logBrowserOpen } from '../common/browserViewTelemetry.js';
 import { ITelemetryService } from '../../telemetry/common/telemetry.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
 
 export const IBrowserViewMainService = createDecorator<IBrowserViewMainService>('browserViewMainService');
 
@@ -158,7 +159,7 @@ export class BrowserViewMainService extends Disposable implements IBrowserViewMa
 		return this.browserViews.values();
 	}
 
-	async createTarget(url: string, browserContextId?: string): Promise<ICDPTarget> {
+	async createTarget(url: string, browserContextId?: string, windowId?: number): Promise<ICDPTarget> {
 		const targetId = generateUuid();
 		const browserSession = browserContextId && BrowserSession.get(browserContextId) || BrowserSession.getOrCreateEphemeral(targetId);
 
@@ -167,10 +168,15 @@ export class BrowserViewMainService extends Disposable implements IBrowserViewMa
 
 		logBrowserOpen(this.telemetryService, 'cdpCreated');
 
+		const window = windowId !== undefined ? this.windowsMainService.getWindowById(windowId) : this.windowsMainService.getFocusedWindow();
+		if (!window) {
+			throw new Error(`Window ${windowId} not found`);
+		}
+
 		// Request the workbench to open the editor
-		this.windowsMainService.sendToFocused('vscode:runAction', {
-			id: 'vscode.open',
-			args: [BrowserViewUri.forUrl(url, targetId)]
+		window.sendWhenReady('vscode:runAction', CancellationToken.None, {
+			id: '_workbench.open',
+			args: [BrowserViewUri.forUrl(url, targetId), [undefined, { preserveFocus: true }], undefined]
 		});
 
 		return view;
@@ -278,6 +284,10 @@ export class BrowserViewMainService extends Disposable implements IBrowserViewMa
 		return this._getBrowserView(id).onDidClose;
 	}
 
+	async getState(id: string): Promise<IBrowserViewState> {
+		return this._getBrowserView(id).getState();
+	}
+
 	async destroyBrowserView(id: string): Promise<void> {
 		return this.browserViews.deleteAndDispose(id);
 	}
@@ -306,8 +316,8 @@ export class BrowserViewMainService extends Disposable implements IBrowserViewMa
 		return this._getBrowserView(id).goForward();
 	}
 
-	async reload(id: string): Promise<void> {
-		return this._getBrowserView(id).reload();
+	async reload(id: string, hard?: boolean): Promise<void> {
+		return this._getBrowserView(id).reload(hard);
 	}
 
 	async toggleDevTools(id: string): Promise<void> {
@@ -328,10 +338,6 @@ export class BrowserViewMainService extends Disposable implements IBrowserViewMa
 
 	async dispatchKeyEvent(id: string, keyEvent: IBrowserViewKeyDownEvent): Promise<void> {
 		return this._getBrowserView(id).dispatchKeyEvent(keyEvent);
-	}
-
-	async setZoomFactor(id: string, zoomFactor: number): Promise<void> {
-		return this._getBrowserView(id).setZoomFactor(zoomFactor);
 	}
 
 	async focus(id: string): Promise<void> {
