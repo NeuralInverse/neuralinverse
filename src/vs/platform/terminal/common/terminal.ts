@@ -154,7 +154,7 @@ export const enum GeneralShellType {
 	NuShell = 'nu',
 	Node = 'node',
 }
-export type TerminalShellType = PosixShellType | WindowsShellType | GeneralShellType;
+export type TerminalShellType = PosixShellType | WindowsShellType | GeneralShellType | undefined;
 
 export interface IRawTerminalInstanceLayoutInfo<T> {
 	relativeSize: number;
@@ -251,7 +251,8 @@ export const enum ProcessPropertyType {
 	ResolvedShellLaunchConfig = 'resolvedShellLaunchConfig',
 	OverrideDimensions = 'overrideDimensions',
 	FailedShellIntegrationActivation = 'failedShellIntegrationActivation',
-	UsedShellIntegrationInjection = 'usedShellIntegrationInjection'
+	UsedShellIntegrationInjection = 'usedShellIntegrationInjection',
+	ShellIntegrationInjectionFailureReason = 'shellIntegrationInjectionFailureReason',
 }
 
 export interface IProcessProperty<T extends ProcessPropertyType> {
@@ -270,6 +271,7 @@ export interface IProcessPropertyMap {
 	[ProcessPropertyType.OverrideDimensions]: ITerminalDimensionsOverride | undefined;
 	[ProcessPropertyType.FailedShellIntegrationActivation]: boolean | undefined;
 	[ProcessPropertyType.UsedShellIntegrationInjection]: boolean | undefined;
+	[ProcessPropertyType.ShellIntegrationInjectionFailureReason]: ShellIntegrationInjectionFailureReason | undefined;
 }
 
 export interface IFixedTerminalDimensions {
@@ -282,6 +284,10 @@ export interface IFixedTerminalDimensions {
 	 * The fixed rows of the terminal.
 	 */
 	rows?: number;
+}
+
+export interface ITerminalLaunchResult {
+	injectedArgs: string[];
 }
 
 /**
@@ -325,9 +331,10 @@ export interface IPtyService {
 	 */
 	getLatency(): Promise<IPtyHostLatencyMeasurement[]>;
 
-	start(id: number): Promise<ITerminalLaunchError | { injectedArgs: string[] } | undefined>;
+	start(id: number): Promise<ITerminalLaunchError | ITerminalLaunchResult | undefined>;
 	shutdown(id: number, immediate: boolean): Promise<void>;
 	input(id: number, data: string): Promise<void>;
+	sendSignal(id: number, signal: string): Promise<void>;
 	resize(id: number, cols: number, rows: number): Promise<void>;
 	clearBuffer(id: number): Promise<void>;
 	getInitialCwd(id: number): Promise<string>;
@@ -647,6 +654,12 @@ export interface IShellLaunchConfig {
 	 * Report terminal's shell environment variables to VS Code and extensions
 	 */
 	shellIntegrationEnvironmentReporting?: boolean;
+
+	/**
+	 * A custom nonce to use for shell integration when provided by an extension.
+	 * This allows extensions to control shell integration for terminals they create.
+	 */
+	shellIntegrationNonce?: string;
 }
 
 export interface ITerminalTabAction {
@@ -763,7 +776,7 @@ export interface ITerminalChildProcess {
 	 * @returns undefined when the process was successfully started, otherwise an object containing
 	 * information on what went wrong.
 	 */
-	start(): Promise<ITerminalLaunchError | { injectedArgs: string[] } | undefined>;
+	start(): Promise<ITerminalLaunchError | ITerminalLaunchResult | undefined>;
 
 	/**
 	 * Detach the process from the UI and await reconnect.
@@ -784,6 +797,7 @@ export interface ITerminalChildProcess {
 	 */
 	shutdown(immediate: boolean): void;
 	input(data: string): void;
+	sendSignal(signal: string): void;
 	processBinary(data: string): Promise<void>;
 	resize(cols: number, rows: number): void;
 	clearBuffer(): void | Promise<void>;
@@ -973,6 +987,51 @@ export const enum ShellIntegrationStatus {
 	FinalTerm,
 	/** VS Code shell integration sequences have been encountered. Supercedes FinalTerm. */
 	VSCode
+}
+
+
+export const enum ShellIntegrationInjectionFailureReason {
+	/**
+	 * The setting is disabled.
+	 */
+	InjectionSettingDisabled = 'injectionSettingDisabled',
+	/**
+	 * There is no executable (so there's no way to determine how to inject).
+	 */
+	NoExecutable = 'noExecutable',
+	/**
+	 * It's a feature terminal (tasks, debug), unless it's explicitly being forced.
+	 */
+	FeatureTerminal = 'featureTerminal',
+	/**
+	 * The ignoreShellIntegration flag is passed (eg. relaunching without shell integration).
+	 */
+	IgnoreShellIntegrationFlag = 'ignoreShellIntegrationFlag',
+	/**
+	 * Shell integration doesn't work with winpty.
+	 */
+	Winpty = 'winpty',
+	/**
+	 * We're conservative whether we inject when we don't recognize the arguments used for the
+	 * shell as we would prefer launching one without shell integration than breaking their profile.
+	 */
+	UnsupportedArgs = 'unsupportedArgs',
+	/**
+	 * The shell doesn't have built-in shell integration. Note that this doesn't mean the shell
+	 * won't have shell integration in the end.
+	 */
+	UnsupportedShell = 'unsupportedShell',
+
+
+	/**
+	 * For zsh, we failed to set the sticky bit on the shell integration script folder.
+	 */
+	FailedToSetStickyBit = 'failedToSetStickyBit',
+
+	/**
+	 * For zsh, we failed to create a temp directory for the shell integration script.
+	 */
+	FailedToCreateTmpDir = 'failedToCreateTmpDir',
 }
 
 export enum TerminalExitReason {

@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 # Neural Inverse - Open Source ("Neural Inverse OSS")
 
 [![Feature Requests](https://img.shields.io/github/issues/NeuralInverse/neuralinverse/enhancement?label=Feature%20Requests&color=38b2ac)](https://github.com/NeuralInverse/neuralinverse/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 [![Bugs](https://img.shields.io/github/issues/NeuralInverse/neuralinverse/bug?label=Bugs&color=e53e3e)](https://github.com/NeuralInverse/neuralinverse/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 [![Sponsor](https://img.shields.io/badge/Sponsor-NeuralInverse-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/NeuralInverse)
+=======
+# Visual Studio Code - Open Source ("Code - OSS")
+[![Feature Requests](https://img.shields.io/github/issues/microsoft/vscode/feature-request.svg)](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
+[![Bugs](https://img.shields.io/github/issues/microsoft/vscode/bug.svg)](https://github.com/microsoft/vscode/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
+[![Gitter](https://img.shields.io/badge/chat-on%20gitter-yellow.svg)](https://gitter.im/Microsoft/vscode)
+>>>>>>> 1.104.0
 
 ## The Repository
 
@@ -102,7 +109,11 @@ This repository includes a [Visual Studio Code Dev Containers](https://aka.ms/vs
 
 Docker / the Codespace should have at least 4 cores and 6 GB of RAM (8 GB recommended) to run a full build.
 
+<<<<<<< HEAD
 ## Building from Source
+=======
+Docker / the Codespace should have at least **4 Cores and 6 GB of RAM (8 GB recommended)** to run a full build. See the [development container README](.devcontainer/README.md) for more information.
+>>>>>>> 1.104.0
 
 ```bash
 npm install

@@ -4,10 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DeferredPromise } from '../../../../../base/common/async.js';
+import { encodeBase64 } from '../../../../../base/common/buffer.js';
 import { IMarkdownString } from '../../../../../base/common/htmlContent.js';
+import { observableValue } from '../../../../../base/common/observable.js';
 import { localize } from '../../../../../nls.js';
-import { IChatTerminalToolInvocationData, IChatToolInputInvocationData, IChatToolInvocation, IChatToolInvocationSerialized } from '../chatService.js';
-import { IPreparedToolInvocation, IToolConfirmationMessages, IToolData, IToolResult } from '../languageModelToolsService.js';
+import { IChatExtensionsContent, IChatToolInputInvocationData, IChatTodoListContent, IChatToolInvocation, IChatToolInvocationSerialized, type IChatTerminalToolInvocationData, ConfirmedReason, ToolConfirmKind } from '../chatService.js';
+import { IPreparedToolInvocation, isToolResultOutputDetails, IToolConfirmationMessages, IToolData, IToolProgressStep, IToolResult, ToolDataSource } from '../languageModelToolsService.js';
 
 export class ChatToolInvocation implements IChatToolInvocation {
 	public readonly kind: 'toolInvocation' = 'toolInvocation';
@@ -22,13 +24,13 @@ export class ChatToolInvocation implements IChatToolInvocation {
 		return this._isCompleteDeferred.p;
 	}
 
-	private _confirmDeferred = new DeferredPromise<boolean>();
+	private _confirmDeferred = new DeferredPromise<ConfirmedReason>();
 	public get confirmed() {
 		return this._confirmDeferred;
 	}
 
-	private _isConfirmed: boolean | undefined;
-	public get isConfirmed(): boolean | undefined {
+	private _isConfirmed: ConfirmedReason | undefined;
+	public get isConfirmed(): ConfirmedReason | undefined {
 		return this._isConfirmed;
 	}
 
@@ -38,27 +40,33 @@ export class ChatToolInvocation implements IChatToolInvocation {
 	}
 
 	public readonly invocationMessage: string | IMarkdownString;
+	public readonly originMessage: string | IMarkdownString | undefined;
 	public pastTenseMessage: string | IMarkdownString | undefined;
 	private _confirmationMessages: IToolConfirmationMessages | undefined;
 	public readonly presentation: IPreparedToolInvocation['presentation'];
 	public readonly toolId: string;
+	public readonly source: ToolDataSource;
 
-	public readonly toolSpecificData?: IChatTerminalToolInvocationData | IChatToolInputInvocationData;
+	public readonly toolSpecificData?: IChatTerminalToolInvocationData | IChatToolInputInvocationData | IChatExtensionsContent | IChatTodoListContent;
+
+	public readonly progress = observableValue<{ message?: string | IMarkdownString; progress: number }>(this, { progress: 0 });
 
 	constructor(preparedInvocation: IPreparedToolInvocation | undefined, toolData: IToolData, public readonly toolCallId: string) {
 		const defaultMessage = localize('toolInvocationMessage', "Using {0}", `"${toolData.displayName}"`);
 		const invocationMessage = preparedInvocation?.invocationMessage ?? defaultMessage;
 		this.invocationMessage = invocationMessage;
 		this.pastTenseMessage = preparedInvocation?.pastTenseMessage;
+		this.originMessage = preparedInvocation?.originMessage;
 		this._confirmationMessages = preparedInvocation?.confirmationMessages;
 		this.presentation = preparedInvocation?.presentation;
 		this.toolSpecificData = preparedInvocation?.toolSpecificData;
 		this.toolId = toolData.id;
+		this.source = toolData.source;
 
 		if (!this._confirmationMessages) {
 			// No confirmation needed
-			this._isConfirmed = true;
-			this._confirmDeferred.complete(true);
+			this._isConfirmed = { type: ToolConfirmKind.ConfirmationNotNeeded };
+			this._confirmDeferred.complete(this._isConfirmed);
 		}
 
 		this._confirmDeferred.p.then(confirmed => {
@@ -84,17 +92,30 @@ export class ChatToolInvocation implements IChatToolInvocation {
 		return this._confirmationMessages;
 	}
 
+	public acceptProgress(step: IToolProgressStep) {
+		const prev = this.progress.get();
+		this.progress.set({
+			progress: step.increment ? (prev.progress + step.increment) : prev.progress,
+			message: step.message,
+		}, undefined);
+	}
+
 	public toJSON(): IChatToolInvocationSerialized {
 		return {
 			kind: 'toolInvocationSerialized',
 			presentation: this.presentation,
 			invocationMessage: this.invocationMessage,
 			pastTenseMessage: this.pastTenseMessage,
+			originMessage: this.originMessage,
 			isConfirmed: this._isConfirmed,
-			isComplete: this._isComplete,
-			resultDetails: this._resultDetails,
+			isComplete: true,
+			source: this.source,
+			resultDetails: isToolResultOutputDetails(this._resultDetails)
+				? { output: { type: 'data', mimeType: this._resultDetails.output.mimeType, base64Data: encodeBase64(this._resultDetails.output.value) } }
+				: this._resultDetails,
 			toolSpecificData: this.toolSpecificData,
 			toolCallId: this.toolCallId,
+			toolId: this.toolId,
 		};
 	}
 }

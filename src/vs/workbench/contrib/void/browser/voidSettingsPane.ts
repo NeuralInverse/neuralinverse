@@ -120,7 +120,8 @@ Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane
 
 
 // register the gear on the top right
-export const VOID_TOGGLE_SETTINGS_ACTION_ID = 'workbench.action.toggleVoidSettings'
+export { VOID_TOGGLE_SETTINGS_ACTION_ID } from '../common/voidActionIds.js';
+import { VOID_TOGGLE_SETTINGS_ACTION_ID } from '../common/voidActionIds.js';
 registerAction2(class extends Action2 {
 	constructor() {
 		super({
@@ -169,7 +170,8 @@ registerAction2(class extends Action2 {
 
 
 
-export const VOID_OPEN_SETTINGS_ACTION_ID = 'workbench.action.openVoidSettings'
+export { VOID_OPEN_SETTINGS_ACTION_ID } from '../common/voidActionIds.js';
+import { VOID_OPEN_SETTINGS_ACTION_ID } from '../common/voidActionIds.js';
 registerAction2(class extends Action2 {
 	constructor() {
 		super({

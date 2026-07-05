@@ -9,7 +9,7 @@ import { ICodeEditor, IOverlayWidget, IOverlayWidgetPosition, OverlayWidgetPosit
 import { EditorContributionInstantiation, registerEditorContribution } from '../../../browser/editorExtensions.js';
 import { IEditorContribution } from '../../../common/editorCommon.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
-import { IQuickInputService, IQuickPickItem, IQuickPick, IInputBox, IQuickNavigateConfiguration, IPickOptions, QuickPickInput, IInputOptions, IQuickWidget } from '../../../../platform/quickinput/common/quickInput.js';
+import { IQuickInputService, IQuickPickItem, IQuickPick, IInputBox, IQuickNavigateConfiguration, IPickOptions, QuickPickInput, IInputOptions, IQuickWidget, IQuickTree, IQuickTreeItem } from '../../../../platform/quickinput/common/quickInput.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
@@ -133,6 +133,10 @@ export class StandaloneQuickInputService implements IQuickInputService {
 		return this.activeService.createQuickWidget();
 	}
 
+	createQuickTree<T extends IQuickTreeItem>(): IQuickTree<T> {
+		return this.activeService.createQuickTree();
+	}
+
 	focus(): void {
 		return this.activeService.focus();
 	}
@@ -174,9 +178,11 @@ export class QuickInputEditorContribution implements IEditorContribution {
 		return editor.getContribution<QuickInputEditorContribution>(QuickInputEditorContribution.ID);
 	}
 
-	readonly widget = new QuickInputEditorWidget(this.editor);
+	readonly widget: QuickInputEditorWidget;
 
-	constructor(private editor: ICodeEditor) { }
+	constructor(private editor: ICodeEditor) {
+		this.widget = new QuickInputEditorWidget(this.editor);
+	}
 
 	dispose(): void {
 		this.widget.dispose();
