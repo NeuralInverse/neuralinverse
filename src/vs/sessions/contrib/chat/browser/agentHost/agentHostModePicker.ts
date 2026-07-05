@@ -14,10 +14,12 @@ import { localize } from '../../../../../nls.js';
 import { ActionListItemKind, IActionListDelegate, IActionListItem } from '../../../../../platform/actionWidget/browser/actionList.js';
 import { IActionWidgetService } from '../../../../../platform/actionWidget/browser/actionWidget.js';
 import { SessionConfigKey } from '../../../../../platform/agentHost/common/sessionConfigKeys.js';
+import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
 import { type IAgentHostSessionsProvider, isAgentHostProvider } from '../../../../common/agentHostSessionsProvider.js';
 import { ISessionsProvidersService } from '../../../../services/sessions/browser/sessionsProvidersService.js';
 import { ISessionsManagementService } from '../../../../services/sessions/common/sessionsManagement.js';
 import { type ISessionsProvider } from '../../../../services/sessions/common/sessionsProvider.js';
+import { reportNewChatPickerClosed } from '../newChatPickerTelemetry.js';
 import { isWellKnownModeSchema } from './agentHostPermissionPickerDelegate.js';
 
 interface IModePickerItem {
@@ -52,12 +54,13 @@ export class AgentHostModePicker extends Disposable {
 	private readonly _renderDisposables = this._register(new DisposableStore());
 	private readonly _providerListeners = this._register(new DisposableMap<string>());
 	private _slotElement: HTMLElement | undefined;
-	private _triggerElement: HTMLElement | undefined;
+	protected _triggerElement: HTMLElement | undefined;
 
 	constructor(
 		@IActionWidgetService private readonly _actionWidgetService: IActionWidgetService,
 		@ISessionsManagementService private readonly _sessionsManagementService: ISessionsManagementService,
 		@ISessionsProvidersService private readonly _sessionsProvidersService: ISessionsProvidersService,
+		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 	) {
 		super();
 
@@ -171,7 +174,7 @@ export class AgentHostModePicker extends Disposable {
 		this._triggerElement.ariaLabel = localize('agentHostModePicker.triggerAriaLabel', "Pick Agent Mode, {0}", label);
 	}
 
-	private _showPicker(): void {
+	protected _showPicker(): void {
 		if (!this._triggerElement || this._actionWidgetService.isVisible) {
 			return;
 		}
@@ -192,6 +195,15 @@ export class AgentHostModePicker extends Disposable {
 		const delegate: IActionListDelegate<IModePickerItem> = {
 			onSelect: item => {
 				this._actionWidgetService.hide();
+				const previousItem = ctx.items.find(i => i.value === ctx.currentValue);
+				reportNewChatPickerClosed(this._telemetryService, {
+					id: 'NewChatAgentHostModePicker',
+					optionIdBefore: ctx.currentValue,
+					optionIdAfter: item.value,
+					optionLabelBefore: previousItem?.label ?? ctx.currentValue,
+					optionLabelAfter: item.label,
+					isPII: false,
+				});
 				ctx.provider.setSessionConfigValue(ctx.sessionId, SessionConfigKey.Mode, item.value)
 					.catch(() => { /* best-effort */ });
 			},

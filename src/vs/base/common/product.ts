@@ -83,10 +83,10 @@ export interface IProductConfiguration {
 	readonly win32RegValueName?: string;
 	readonly win32NameVersion?: string;
 	readonly win32VersionedUpdate?: boolean;
-	readonly win32SiblingExeBasename?: string;
+	readonly win32ContextMenu?: { readonly [arch: string]: { readonly clsid: string } };
 	readonly applicationName: string;
 	readonly embedderIdentifier?: string;
-	readonly telemetryAppName?: string;
+	readonly agentsTelemetryAppName?: string;
 
 	readonly urlProtocol: string;
 	readonly dataFolderName: string; // location for extensions (e.g. ~/.vscode-insiders)
@@ -216,6 +216,7 @@ export interface IProductConfiguration {
 	}>;
 	readonly extensionsForceVersionByQuality?: readonly string[];
 	readonly builtInExtensionsEnabledWithAutoUpdates: readonly string[];
+	readonly sessionsWindowAllowedExtensions?: readonly string[];
 
 	readonly msftInternalDomains?: string[];
 	readonly linkProtectionTrustedDomains?: readonly string[];
@@ -227,7 +228,6 @@ export interface IProductConfiguration {
 	readonly 'editSessions.store'?: Omit<ConfigurationSyncStore, 'insidersUrl' | 'stableUrl'>;
 	readonly darwinUniversalAssetId?: string;
 	readonly darwinBundleIdentifier?: string;
-	readonly darwinSiblingBundleIdentifier?: string;
 	readonly profileTemplatesUrl?: string;
 
 	readonly commonlyUsedSettings?: string[];
@@ -244,8 +244,6 @@ export interface IProductConfiguration {
 
 	readonly onboardingKeymaps?: readonly IProductOnboardingKeymap[];
 	readonly onboardingThemes?: readonly IProductOnboardingTheme[];
-
-	readonly embedded?: IEmbeddedProductConfiguration;
 
 	/**
 	 * When running as an embedded app, the parent VS Code's policy
@@ -272,22 +270,6 @@ export interface IProductOnboardingTheme {
 	readonly themeId: string;
 	readonly type: 'dark' | 'light' | 'hcDark' | 'hcLight';
 }
-
-export type IEmbeddedProductConfiguration = Pick<IProductConfiguration,
-	'nameShort' |
-	'nameLong' |
-	'applicationName' |
-	'dataFolderName' |
-	'darwinBundleIdentifier' |
-	'darwinSiblingBundleIdentifier' |
-	'urlProtocol' |
-	'win32AppUserModelId' |
-	'win32MutexName' |
-	'win32RegValueName' |
-	'win32NameVersion' |
-	'win32VersionedUpdate' |
-	'win32SiblingExeBasename'
->;
 
 export interface ITunnelApplicationConfig {
 	authenticationProviders: IStringDictionary<{ scopes: string[] }>;
