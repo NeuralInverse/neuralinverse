@@ -136,20 +136,6 @@ export class ChatEditor extends EditorPane {
 		}
 
 		let isContributedChatSession = false;
-<<<<<<< HEAD
-		if (input.resource.scheme === Schemas.vscodeChatSession) {
-			const identifier = ChatSessionUri.parse(input.resource);
-			if (identifier) {
-				await this.chatSessionsService.canResolveContentProvider(input.resource.authority);
-				const contributions = this.chatSessionsService.getChatSessionContributions();
-				const contribution = contributions.find(c => c.type === identifier.chatSessionType);
-				if (contribution) {
-					this.widget.lockToCodingAgent(contribution.name, contribution.displayName);
-					isContributedChatSession = true;
-				} else {
-					this.widget.unlockFromCodingAgent();
-				}
-=======
 		const chatSessionType = getChatSessionType(input);
 		if (chatSessionType !== 'local') {
 			await raceCancellationError(this.chatSessionsService.canResolveContentProvider(chatSessionType), token);
@@ -158,7 +144,6 @@ export class ChatEditor extends EditorPane {
 			if (contribution) {
 				this.widget.lockToCodingAgent(contribution.name, contribution.displayName, contribution.type);
 				isContributedChatSession = true;
->>>>>>> 1.104.0
 			} else {
 				this.widget.unlockFromCodingAgent();
 			}

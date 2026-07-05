@@ -627,11 +627,7 @@ configurationRegistry.registerConfiguration({
 			description: nls.localize('chat.todoListTool.enabled', "Enables todo lists in chat, which the agent uses as a tool for planning, progress tracking, and context management for complex development workflows."),
 			tags: ['experimental'],
 			experiment: {
-<<<<<<< HEAD
-				mode: 'startup'
-=======
 				mode: 'auto'
->>>>>>> 1.104.0
 			}
 		},
 		'chat.todoListTool.writeOnly': {

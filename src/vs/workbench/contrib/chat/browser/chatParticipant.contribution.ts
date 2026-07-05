@@ -316,6 +316,7 @@ export class ChatExtensionPointHandler implements IWorkbenchContribution {
 								modes: providerDescriptor.isDefault ? (providerDescriptor.modes ?? [ChatModeKind.Ask]) : [ChatModeKind.Agent, ChatModeKind.Ask, ChatModeKind.Edit],
 								slashCommands: providerDescriptor.commands ?? [],
 								disambiguation: coalesce(participantsDisambiguation.flat()),
+								extensionVersion: undefined,
 							} satisfies IChatAgentData));
 
 						this._participantRegistrationDisposables.set(

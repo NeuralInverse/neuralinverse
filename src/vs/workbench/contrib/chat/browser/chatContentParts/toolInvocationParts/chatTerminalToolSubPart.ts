@@ -18,7 +18,7 @@ import { IInstantiationService } from '../../../../../../platform/instantiation/
 import { IKeybindingService } from '../../../../../../platform/keybinding/common/keybinding.js';
 import { migrateLegacyTerminalToolSpecificData } from '../../../common/chat.js';
 import { ChatContextKeys } from '../../../common/chatContextKeys.js';
-import { IChatToolInvocation, type IChatTerminalToolInvocationData, type ILegacyChatTerminalToolInvocationData } from '../../../common/chatService.js';
+import { ConfirmedReason, IChatToolInvocation, ToolConfirmKind, type IChatTerminalToolInvocationData, type ILegacyChatTerminalToolInvocationData } from '../../../common/chatService.js';
 import { CancelChatActionId } from '../../actions/chatExecuteActions.js';
 import { AcceptToolConfirmationActionId } from '../../actions/chatToolActions.js';
 import { IChatCodeBlockInfo, IChatWidgetService } from '../../chat.js';
@@ -64,15 +64,15 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 		const cancelKeybinding = keybindingService.lookupKeybinding(CancelChatActionId)?.getLabel();
 		const cancelTooltip = cancelKeybinding ? `${cancelLabel} (${cancelKeybinding})` : cancelLabel;
 
-		const buttons: IChatConfirmationButton[] = [
+		const buttons: IChatConfirmationButton<ConfirmedReason>[] = [
 			{
 				label: continueLabel,
-				data: true,
+				data: { type: ToolConfirmKind.UserAction },
 				tooltip: continueTooltip
 			},
 			{
 				label: cancelLabel,
-				data: false,
+				data: { type: ToolConfirmKind.Denied },
 				isSecondary: true,
 				tooltip: cancelTooltip
 			}];
@@ -132,16 +132,13 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 		dom.append(element, renderedMessage.element);
 		const confirmWidget = this._register(this.instantiationService.createInstance(
 			ChatCustomConfirmationWidget,
-			title,
-			undefined,
-			element,
-			buttons,
 			this.context.container,
+			{ title, message: element, buttons },
 		));
 
 		ChatContextKeys.Editing.hasToolConfirmation.bindTo(this.contextKeyService).set(true);
 		this._register(confirmWidget.onDidClick(button => {
-			toolInvocation.confirmed.complete(button.data);
+			toolInvocation.confirmed.complete(button.data as ConfirmedReason);
 			this.chatWidgetService.getWidgetBySessionId(this.context.element.sessionId)?.focusInput();
 		}));
 		this._register(confirmWidget.onDidChangeHeight(() => this._onDidChangeHeight.fire()));

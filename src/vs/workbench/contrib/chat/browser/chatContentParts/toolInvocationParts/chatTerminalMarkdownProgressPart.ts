@@ -61,7 +61,7 @@ export class ChatTerminalMarkdownProgressPart extends BaseChatToolInvocationSubP
 				wordWrap: 'on'
 			}
 		};
-		this.markdownPart = this._register(instantiationService.createInstance(ChatMarkdownContentPart, chatMarkdownContent, context, editorPool, false, codeBlockStartIndex, renderer, currentWidthDelegate(), codeBlockModelCollection, { codeBlockRenderOptions }));
+		this.markdownPart = this._register(instantiationService.createInstance(ChatMarkdownContentPart, chatMarkdownContent, context, editorPool, false, codeBlockStartIndex, renderer, undefined, currentWidthDelegate(), codeBlockModelCollection, { codeBlockRenderOptions }));
 		this._register(this.markdownPart.onDidChangeHeight(() => this._onDidChangeHeight.fire()));
 		const icon = !toolInvocation.isConfirmed ?
 			Codicon.error :

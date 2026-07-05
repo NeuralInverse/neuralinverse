@@ -321,29 +321,6 @@ export async function showToolsPicker(
 		}
 	};
 
-<<<<<<< HEAD
-			if (toolSetOrTool instanceof ToolSet) {
-				// Add ToolSet as child with its tools as grandchildren - create directly instead of using legacy pick structure
-				const iconProps = mapIconToTreeItem(toolSetOrTool.icon);
-				const toolSetTreeItem: IToolSetTreeItem = {
-					itemType: 'toolset',
-					toolset: toolSetOrTool,
-					buttons,
-					id: toolSetOrTool.id,
-					label: toolSetOrTool.referenceName,
-					description: toolSetOrTool.description,
-					checked: picked,
-					collapsed: true,
-					// TODO: Bring this back when tools in toolsets can be enabled/disabled.
-					// children: Array.from(toolSetOrTool.getTools()).map(tool => createToolTreeItemFromData(tool, picked)),
-					...iconProps
-				};
-				bucketItem.children = [...(bucketItem.children || []), toolSetTreeItem];
-			} else if (toolSetOrTool.canBeReferencedInPrompt) {
-				// Add individual tool as child
-				const toolTreeItem = createToolTreeItemFromData(toolSetOrTool, picked);
-				bucketItem.children = [...(bucketItem.children || []), toolTreeItem];
-=======
 	const getBucket = (source: ToolDataSource): IBucketTreeItem | undefined => {
 		const key = getKey(source);
 		let bucket = bucketMap.get(key);
@@ -351,7 +328,6 @@ export async function showToolsPicker(
 			bucket = createBucket(source, key);
 			if (bucket) {
 				bucketMap.set(key, bucket);
->>>>>>> 1.104.0
 			}
 		}
 		return bucket;

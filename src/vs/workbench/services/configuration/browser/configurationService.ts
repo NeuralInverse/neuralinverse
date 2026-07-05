@@ -1372,20 +1372,8 @@ class ConfigurationDefaultOverridesContribution extends Disposable implements IW
 	) {
 		super();
 
-<<<<<<< HEAD
-		this.autoRefetchExperimentalSettingsScheduler = new RunOnceScheduler(() => {
-			this.processExperimentalSettings(this.autoRefetchExperimentalSettings, true);
-			if (ASSIGNMENT_REFETCH_INTERVAL !== 0) {
-				// TODO@sandy081 wait for the promise returned by processExperimentalSettings to avoid unbounded queuing
-				this.autoRefetchExperimentalSettingsScheduler.schedule();
-			}
-		}, ASSIGNMENT_REFETCH_INTERVAL);
-
-		this.updateDefaults();
-=======
 		this.throttler.queue(() => this.updateDefaults());
 		this._register(workbenchAssignmentService.onDidRefetchAssignments(() => this.throttler.queue(() => this.processExperimentalSettings(this.autoExperimentalSettings, true))));
->>>>>>> 1.104.0
 
 		// When configuration is updated make sure to apply experimental configuration overrides
 		this._register(this.configurationRegistry.onDidUpdateConfiguration(({ properties }) => this.processExperimentalSettings(properties, false)));

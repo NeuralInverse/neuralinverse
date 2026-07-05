@@ -617,11 +617,7 @@ export function setupTerminalMenus(): void {
 						title: terminalStrings.unsplit.value
 					},
 					when: ContextKeyExpr.and(TerminalContextKeys.tabsSingularSelection, TerminalContextKeys.splitTerminalTabFocused),
-<<<<<<< HEAD
-					group: ContextMenuGroup.Config
-=======
 					group: TerminalContextMenuGroup.Config
->>>>>>> 1.104.0
 				}
 			},
 			{
