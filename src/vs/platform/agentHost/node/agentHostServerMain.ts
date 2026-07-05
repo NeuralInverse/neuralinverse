@@ -14,8 +14,9 @@ import { fileURLToPath } from 'url';
 globalThis._VSCODE_FILE_ROOT = fileURLToPath(new URL('../../../..', import.meta.url));
 
 import * as fs from 'fs';
+import * as os from 'os';
 import { DisposableStore } from '../../../base/common/lifecycle.js';
-import { observableValue } from '../../../base/common/observable.js';
+import { URI } from '../../../base/common/uri.js';
 import { generateUuid } from '../../../base/common/uuid.js';
 import { localize } from '../../../nls.js';
 import { NativeEnvironmentService } from '../../environment/node/environmentService.js';
@@ -29,14 +30,15 @@ import { IProductService } from '../../product/common/productService.js';
 import { InstantiationService } from '../../instantiation/common/instantiationService.js';
 import { ServiceCollection } from '../../instantiation/common/serviceCollection.js';
 import { CopilotAgent } from './copilot/copilotAgent.js';
-import { AgentSession, type AgentProvider, type IAgent } from '../common/agentService.js';
-import { AgentSideEffects } from './agentSideEffects.js';
-import { SessionStateManager } from './sessionStateManager.js';
+import { AgentService } from './agentService.js';
 import { WebSocketProtocolServer } from './webSocketTransport.js';
 import { ProtocolServerHandler } from './protocolServerHandler.js';
 import { FileService } from '../../files/common/fileService.js';
+import { IFileService } from '../../files/common/files.js';
 import { DiskFileSystemProvider } from '../../files/node/diskFileSystemProvider.js';
 import { Schemas } from '../../../base/common/network.js';
+import { ISessionDataService } from '../common/sessionDataService.js';
+import { SessionDataService } from './sessionDataService.js';
 
 /** Log to stderr so messages appear in the terminal alongside the process. */
 function log(msg: string): void {
@@ -112,7 +114,12 @@ async function main(): Promise<void> {
 	const options = parseServerOptions();
 	const disposables = new DisposableStore();
 
-	// Services — production logging unless --quiet
+	// Services
+	const productService: IProductService = { _serviceBrand: undefined, ...product };
+	const args = parseArgs(process.argv.slice(2), OPTIONS);
+	const environmentService = new NativeEnvironmentService(args, productService);
+
+	// Logging — production logging unless --quiet
 	let logService: ILogService;
 	let loggerService: LoggerService | undefined;
 
@@ -120,10 +127,7 @@ async function main(): Promise<void> {
 		logService = new NullLogService();
 	} else {
 		const services = new ServiceCollection();
-		const productService: IProductService = { _serviceBrand: undefined, ...product };
 		services.set(IProductService, productService);
-		const args = parseArgs(process.argv.slice(2), OPTIONS);
-		const environmentService = new NativeEnvironmentService(args, productService);
 		services.set(INativeEnvironmentService, environmentService);
 		loggerService = new LoggerService(getLogLevel(environmentService), environmentService.logsHome);
 		const logger = loggerService.createLogger('agenthost-server', { name: localize('agentHostServer', "Agent Host Server") });
@@ -134,48 +138,29 @@ async function main(): Promise<void> {
 
 	logService.info('[AgentHostServer] Starting standalone agent host server');
 
-	// Create state manager
-	const stateManager = disposables.add(new SessionStateManager(logService));
-
-	// Agent registry — maps provider id to agent instance
-	const agents = new Map<AgentProvider, IAgent>();
-
-	// Observable agents list for root state
-	const registeredAgents = observableValue<readonly IAgent[]>('agents', []);
-
 	// File service
 	const fileService = disposables.add(new FileService(logService));
 	disposables.add(fileService.registerProvider(Schemas.file, disposables.add(new DiskFileSystemProvider(logService))));
 
-	// Shared side-effect handler
-	const sideEffects = disposables.add(new AgentSideEffects(stateManager, {
-		getAgent(session) {
-			const provider = AgentSession.provider(session);
-			return provider ? agents.get(provider) : agents.values().next().value;
-		},
-		agents: registeredAgents,
-	}, logService, fileService));
+	// Session data service
+	const sessionDataService = new SessionDataService(URI.file(environmentService.userDataPath), fileService, logService);
 
-	function registerAgent(agent: IAgent): void {
-		agents.set(agent.id, agent);
-		disposables.add(sideEffects.registerProgressListener(agent));
-		registeredAgents.set([...agents.values()], undefined);
-		logService.info(`[AgentHostServer] Registered agent: ${agent.id}`);
-	}
+	// Create the agent service (owns SessionStateManager + AgentSideEffects internally)
+	const agentService = new AgentService(logService, fileService, sessionDataService);
+	disposables.add(agentService);
 
 	// Register agents
 	if (!options.quiet) {
 		// Production agents (require DI)
-		const services = new ServiceCollection();
-		const productService: IProductService = { _serviceBrand: undefined, ...product };
-		services.set(IProductService, productService);
-		const args = parseArgs(process.argv.slice(2), OPTIONS);
-		const environmentService = new NativeEnvironmentService(args, productService);
-		services.set(INativeEnvironmentService, environmentService);
-		services.set(ILogService, logService);
-		const instantiationService = new InstantiationService(services);
+		const diServices = new ServiceCollection();
+		diServices.set(IProductService, productService);
+		diServices.set(INativeEnvironmentService, environmentService);
+		diServices.set(ILogService, logService);
+		diServices.set(IFileService, fileService);
+		diServices.set(ISessionDataService, sessionDataService);
+		const instantiationService = new InstantiationService(diServices);
 		const copilotAgent = disposables.add(instantiationService.createInstance(CopilotAgent));
-		registerAgent(copilotAgent);
+		agentService.registerProvider(copilotAgent);
 		log('CopilotAgent registered');
 	}
 
@@ -183,7 +168,7 @@ async function main(): Promise<void> {
 		// Dynamic import to avoid bundling test code in production
 		import('../test/node/mockAgent.js').then(({ ScriptedMockAgent }) => {
 			const mockAgent = disposables.add(new ScriptedMockAgent());
-			registerAgent(mockAgent);
+			agentService.registerProvider(mockAgent);
 		}).catch(err => {
 			logService.error('[AgentHostServer] Failed to load mock agent', err);
 		});
@@ -198,7 +183,13 @@ async function main(): Promise<void> {
 	}, logService));
 
 	// Wire up protocol handler
-	disposables.add(new ProtocolServerHandler(stateManager, wsServer, sideEffects, logService));
+	disposables.add(new ProtocolServerHandler(
+		agentService,
+		agentService.stateManager,
+		wsServer,
+		{ defaultDirectory: URI.file(os.homedir()).toString() },
+		logService,
+	));
 
 	// Report ready
 	function reportReady(addr: string): void {

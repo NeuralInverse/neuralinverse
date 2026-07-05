@@ -115,9 +115,14 @@ export interface IQuickPickSeparator {
 export interface IKeyMods {
 	readonly ctrlCmd: boolean;
 	readonly alt: boolean;
+	readonly shift: boolean;
 }
 
-export const NO_KEY_MODS: IKeyMods = { ctrlCmd: false, alt: false };
+export function isKeyModified(keyMods: IKeyMods): boolean {
+	return keyMods.ctrlCmd || keyMods.alt || keyMods.shift;
+}
+
+export const NO_KEY_MODS: IKeyMods = { ctrlCmd: false, alt: false, shift: false };
 
 export interface IQuickNavigateConfiguration {
 	keybindings: readonly ResolvedKeybinding[];
@@ -200,7 +205,7 @@ export interface IPickOptions<T extends IQuickPickItem> {
 	/**
 	 * an optional anchor for the picker
 	 */
-	anchor?: HTMLElement | { x: number; y: number };
+	anchor?: unknown /* HTMLElement */ | { x: number; y: number };
 
 	onKeyMods?: (keyMods: IKeyMods) => void;
 	onDidFocus?: (entry: T) => void;
@@ -361,7 +366,7 @@ export interface IQuickInput extends IDisposable {
 	/**
 	 * An optional anchor for the quick input.
 	 */
-	anchor?: HTMLElement | { x: number; y: number };
+	anchor?: unknown /* HTMLElement */ | { x: number; y: number };
 
 	/**
 	 * Shows the quick input.
@@ -396,7 +401,7 @@ export interface IQuickWidget extends IQuickInput {
 	/**
 	 * A HTML element that will be rendered inside the quick input.
 	 */
-	widget: HTMLElement | undefined;
+	widget: unknown /* HTMLElement */ | undefined;
 }
 
 export interface IQuickPickWillAcceptEvent {

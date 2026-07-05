@@ -38,7 +38,7 @@ import { defaultCheckboxStyles } from '../../theme/browser/defaultStyles.js';
 import { QuickInputTreeController } from './tree/quickInputTreeController.js';
 import { QuickTree } from './tree/quickTree.js';
 import { AnchorAlignment, AnchorPosition, layout2d } from '../../../base/common/layout.js';
-import { getAnchorRect } from '../../../base/browser/ui/contextview/contextview.js';
+import { getAnchorRect, IAnchor } from '../../../base/browser/ui/contextview/contextview.js';
 
 const $ = dom.$;
 
@@ -60,7 +60,7 @@ export class QuickInputController extends Disposable {
 	private readonly onDidAcceptEmitter = this._register(new Emitter<void>());
 	private readonly onDidCustomEmitter = this._register(new Emitter<void>());
 	private readonly onDidTriggerButtonEmitter = this._register(new Emitter<IQuickInputButton>());
-	private keyMods: Writeable<IKeyMods> = { ctrlCmd: false, alt: false };
+	private keyMods: Writeable<IKeyMods> = { ctrlCmd: false, alt: false, shift: false };
 
 	private controller: IQuickInput | null = null;
 	get currentQuickInput() { return this.controller ?? undefined; }
@@ -120,6 +120,7 @@ export class QuickInputController extends Disposable {
 		const listener = (e: KeyboardEvent | MouseEvent) => {
 			this.keyMods.ctrlCmd = e.ctrlKey || e.metaKey;
 			this.keyMods.alt = e.altKey;
+			this.keyMods.shift = e.shiftKey;
 		};
 
 		for (const event of [dom.EventType.KEY_DOWN, dom.EventType.KEY_UP, dom.EventType.MOUSE_DOWN]) {
@@ -837,13 +838,14 @@ export class QuickInputController extends Disposable {
 		}
 	}
 
-	async accept(keyMods: IKeyMods = { alt: false, ctrlCmd: false }) {
+	async accept(keyMods: IKeyMods = { alt: false, ctrlCmd: false, shift: false }) {
 		// When accepting the item programmatically, it is important that
 		// we update `keyMods` either from the provided set or unset it
 		// because the accept did not happen from mouse or keyboard
 		// interaction on the list itself
 		this.keyMods.alt = keyMods.alt;
 		this.keyMods.ctrlCmd = keyMods.ctrlCmd;
+		this.keyMods.shift = keyMods.shift;
 
 		this.onDidAcceptEmitter.fire();
 	}
@@ -873,7 +875,7 @@ export class QuickInputController extends Disposable {
 			// Position
 			if (this.controller?.anchor) {
 				const container = this.layoutService.getContainer(dom.getActiveWindow()).getBoundingClientRect();
-				const anchor = getAnchorRect(this.controller.anchor);
+				const anchor = getAnchorRect(this.controller.anchor as HTMLElement | IAnchor);
 				width = 380;
 				listHeight = this.dimension ? Math.min(this.dimension.height * 0.2, 200) : 200;
 
