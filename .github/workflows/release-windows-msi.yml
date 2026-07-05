@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout (for WXS template)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
@@ -133,7 +133,7 @@ jobs:
 
     steps:
       - name: Checkout (for WXS template)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
