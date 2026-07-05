@@ -2487,7 +2487,7 @@ describe('XtabProvider integration', () => {
 			}
 		});
 
-		it('backward compat: undefined disables divergence', async () => {
+		it('backward compat: undefined falls back to default (Cursor mode)', async () => {
 			await configService.setConfig(ConfigKey.TeamInternal.InlineEditsXtabEarlyCursorLineDivergenceCancellation, undefined as any);
 
 			const provider = createProvider();
@@ -2504,10 +2504,9 @@ describe('XtabProvider integration', () => {
 			const gen = provider.provideNextEdit(request, createMockLogger(), createLogContext(), CancellationToken.None);
 			const { edits, finalReason } = await collectEdits(gen);
 
-			expect(edits.length).toBeGreaterThan(0);
-			if (finalReason.v instanceof NoNextEditReason.GotCancelled) {
-				expect(finalReason.v.message).not.toBe('cursorLineDiverged');
-			}
+			expect(edits.length).toBe(0);
+			expect(finalReason.v).toBeInstanceOf(NoNextEditReason.GotCancelled);
+			expect((finalReason.v as NoNextEditReason.GotCancelled).message).toBe('cursorLineDiverged');
 		});
 
 		describe('cursor mode — adversarial scenarios', () => {

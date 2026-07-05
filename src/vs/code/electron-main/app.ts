@@ -1154,7 +1154,7 @@ export class CodeApplication extends Disposable {
 
 		// Agent Host
 		if (this.configurationService.getValue(AgentHostEnabledSettingId)) {
-			const agentHostStarter = new ElectronAgentHostStarter(this.environmentMainService, this.lifecycleMainService, this.logService);
+			const agentHostStarter = new ElectronAgentHostStarter(this.configurationService, this.environmentMainService, this.lifecycleMainService, this.logService);
 			this._register(new AgentHostProcessManager(agentHostStarter, this.logService, this.loggerService));
 		}
 

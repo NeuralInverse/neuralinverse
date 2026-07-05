@@ -16,6 +16,7 @@ globalThis._VSCODE_FILE_ROOT = fileURLToPath(new URL('../../../..', import.meta.
 import * as fs from 'fs';
 import * as os from 'os';
 import { DisposableStore } from '../../../base/common/lifecycle.js';
+import { raceTimeout } from '../../../base/common/async.js';
 import { URI } from '../../../base/common/uri.js';
 import { generateUuid } from '../../../base/common/uuid.js';
 import { localize } from '../../../nls.js';
@@ -161,25 +162,31 @@ async function main(): Promise<void> {
 	// Session data service
 	const sessionDataService = new SessionDataService(URI.file(environmentService.userDataPath), fileService, logService);
 
+	// Build the DI container early so the git service can be created via
+	// `createInstance` (it needs IFileService + INativeEnvironmentService).
+	// The git service is shared by AgentService (for diff computation +
+	// showBlob) and the production agent registration path.
+	const diServices = new ServiceCollection();
+	diServices.set(IProductService, productService);
+	diServices.set(INativeEnvironmentService, environmentService);
+	diServices.set(ILogService, logService);
+	diServices.set(IFileService, fileService);
+	diServices.set(ISessionDataService, sessionDataService);
+	const instantiationService = new InstantiationService(diServices);
+	const gitService = instantiationService.createInstance(AgentHostGitService);
+
 	// Create the agent service (owns AgentHostStateManager + AgentSideEffects internally)
-	const agentService = new AgentService(logService, fileService, sessionDataService, productService);
+	const agentService = new AgentService(logService, fileService, sessionDataService, productService, gitService);
 	disposables.add(agentService);
 
 	// Register agents
 	if (!options.quiet) {
 		// Production agents (require DI)
-		const diServices = new ServiceCollection();
 		const pluginManager = new AgentPluginManager(URI.file(environmentService.userDataPath), fileService, logService);
-		diServices.set(IProductService, productService);
-		diServices.set(INativeEnvironmentService, environmentService);
-		diServices.set(ILogService, logService);
-		diServices.set(IFileService, fileService);
-		diServices.set(ISessionDataService, sessionDataService);
 		diServices.set(IAgentPluginManager, pluginManager);
 		diServices.set(IDiffComputeService, disposables.add(new NodeWorkerDiffComputeService(logService)));
 		diServices.set(IAgentHostTerminalManager, agentService.terminalManager);
-		const instantiationService = new InstantiationService(diServices);
-		diServices.set(IAgentHostGitService, instantiationService.createInstance(AgentHostGitService));
+		diServices.set(IAgentHostGitService, gitService);
 		const copilotAgent = disposables.add(instantiationService.createInstance(CopilotAgent));
 		agentService.registerProvider(copilotAgent);
 		log('CopilotAgent registered');
@@ -253,12 +260,31 @@ async function main(): Promise<void> {
 
 	// Keep alive until stdin closes or signal
 	process.stdin.resume();
-	process.stdin.on('end', shutdown);
-	process.on('SIGTERM', shutdown);
-	process.on('SIGINT', shutdown);
+	process.stdin.on('end', () => { void shutdown(); });
+	process.on('SIGTERM', () => { void shutdown(); });
+	process.on('SIGINT', () => { void shutdown(); });
 
-	function shutdown(): void {
+	let shuttingDown = false;
+	async function shutdown(): Promise<void> {
+		if (shuttingDown) {
+			return;
+		}
+		shuttingDown = true;
 		logService.info('[AgentHostServer] Shutting down...');
+		// Close the WebSocket server first so no further actions can be
+		// dispatched while we wait for in-flight writes to flush — otherwise
+		// a late-arriving action could keep queuing DB writes and either
+		// undermine the flush or push us past the timeout.
+		wsServer.dispose();
+		// Wait for in-flight persistence writes to flush to the per-session
+		// SQLite databases. Without this, a SIGTERM arriving while a
+		// `setMetadata` write (configValues, customTitle, isRead, isDone,
+		// diffs) is in flight can drop the latest value — see the
+		// "Session Config persistence across restarts" integration test.
+		// Capped so a stuck write cannot hang shutdown indefinitely.
+		await raceTimeout(sessionDataService.whenIdle(), 3000, () => {
+			logService.warn('[AgentHostServer] Timed out waiting for session database writes to flush; exiting anyway.');
+		});
 		disposables.dispose();
 		loggerService?.dispose();
 		process.exit(0);
