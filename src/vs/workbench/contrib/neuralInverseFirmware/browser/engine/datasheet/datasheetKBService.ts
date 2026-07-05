@@ -82,7 +82,7 @@ export interface IDatasheetKBService {
 	 * Compute a lightweight content hash for a PDF buffer.
 	 * Used as the cache key — same content = same hash = KB hit.
 	 */
-	hashBuffer(buffer: ArrayBufferLike): string;
+	hashBuffer(buffer: Uint8Array): string;
 
 	/**
 	 * Check if a KB entry exists for this content hash.
@@ -123,10 +123,10 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 
 	// ─── Public API ───────────────────────────────────────────────────────
 
-	hashBuffer(buffer: ArrayBufferLike): string {
+	hashBuffer(buffer: Uint8Array): string {
 		// Lightweight FNV-1a on first 64KB + last 8KB + total size
 		// Not cryptographic but collision-resistant enough for a file cache key.
-		const bytes = new Uint8Array(buffer);
+		const bytes = buffer;
 		const sampleSize = Math.min(bytes.length, 64 * 1024);
 		const tailSize   = Math.min(bytes.length, 8  * 1024);
 		let hash = 2166136261; // FNV offset basis

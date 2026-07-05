@@ -6,6 +6,9 @@
 import * as dom from '../../../../../../base/browser/dom.js';
 import { MarkdownString } from '../../../../../../base/common/htmlContent.js';
 import { thenIfNotDisposed } from '../../../../../../base/common/lifecycle.js';
+import { Schemas } from '../../../../../../base/common/network.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { generateUuid } from '../../../../../../base/common/uuid.js';
 import { MarkdownRenderer } from '../../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js';
 import { ILanguageService } from '../../../../../../editor/common/languages/language.js';
 import { IModelService } from '../../../../../../editor/common/services/model.js';
@@ -13,8 +16,9 @@ import { localize } from '../../../../../../nls.js';
 import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
 import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { IKeybindingService } from '../../../../../../platform/keybinding/common/keybinding.js';
+import { migrateLegacyTerminalToolSpecificData } from '../../../common/chat.js';
 import { ChatContextKeys } from '../../../common/chatContextKeys.js';
-import { IChatTerminalToolInvocationData, IChatToolInvocation } from '../../../common/chatService.js';
+import { IChatToolInvocation, type IChatTerminalToolInvocationData, type ILegacyChatTerminalToolInvocationData } from '../../../common/chatService.js';
 import { CancelChatActionId } from '../../actions/chatExecuteActions.js';
 import { AcceptToolConfirmationActionId } from '../../actions/chatToolActions.js';
 import { IChatCodeBlockInfo, IChatWidgetService } from '../../chat.js';
@@ -30,7 +34,7 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 
 	constructor(
 		toolInvocation: IChatToolInvocation,
-		terminalData: IChatTerminalToolInvocationData,
+		terminalData: IChatTerminalToolInvocationData | ILegacyChatTerminalToolInvocationData,
 		private readonly context: IChatContentPartRenderContext,
 		private readonly renderer: MarkdownRenderer,
 		private readonly editorPool: EditorPool,
@@ -48,6 +52,8 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 		if (!toolInvocation.confirmationMessages) {
 			throw new Error('Confirmation messages are missing');
 		}
+
+		terminalData = migrateLegacyTerminalToolSpecificData(terminalData);
 
 		const title = toolInvocation.confirmationMessages.title;
 		const message = toolInvocation.confirmationMessages.message;
@@ -86,7 +92,12 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 			}
 		};
 		const langId = this.languageService.getLanguageIdByLanguageName(terminalData.language ?? 'sh') ?? 'shellscript';
-		const model = this.modelService.createModel(terminalData.command, this.languageService.createById(langId), undefined, true);
+		const model = this.modelService.createModel(
+			terminalData.commandLine.toolEdited ?? terminalData.commandLine.original,
+			this.languageService.createById(langId),
+			this._getUniqueCodeBlockUri(),
+			true
+		);
 		const editor = this._register(this.editorPool.get());
 		const renderPromise = editor.object.render({
 			codeBlockIndex: this.codeBlockStartIndex,
@@ -114,7 +125,7 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 			this._onDidChangeHeight.fire();
 		}));
 		this._register(model.onDidChangeContent(e => {
-			terminalData.command = model.getValue();
+			terminalData.commandLine.userEdited = model.getValue();
 		}));
 		const element = dom.$('');
 		dom.append(element, editor.object.element);
@@ -139,5 +150,12 @@ export class TerminalConfirmationWidgetSubPart extends BaseChatToolInvocationSub
 			this._onNeedsRerender.fire();
 		});
 		this.domNode = confirmWidget.domNode;
+	}
+
+	private _getUniqueCodeBlockUri() {
+		return URI.from({
+			scheme: Schemas.vscodeChatCodeBlock,
+			path: generateUuid(),
+		});
 	}
 }
