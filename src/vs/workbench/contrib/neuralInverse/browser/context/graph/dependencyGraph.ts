@@ -8,7 +8,7 @@ import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { ITextModel } from '../../../../../../editor/common/model.js';
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
-import { ITreeSitterParserService } from '../../../../../../editor/common/services/treeSitterParserService.js';
+import { ITreeSitterLibraryService } from '../../../../../../editor/common/services/treeSitter/treeSitterLibraryService.js';
 
 export const IDependencyGraphService = createDecorator<IDependencyGraphService>('neuralInverseDependencyGraphService');
 
@@ -29,7 +29,7 @@ export class DependencyGraphService extends Disposable implements IDependencyGra
 	_serviceBrand: undefined;
 
 	constructor(
-		@ITreeSitterParserService private readonly _treeSitter: ITreeSitterParserService,
+		@ITreeSitterLibraryService private readonly _treeSitter: ITreeSitterLibraryService,
 	) {
 		super();
 	}
@@ -50,7 +50,14 @@ export class DependencyGraphService extends Disposable implements IDependencyGra
 		const content = model.getValue();
 
 		// Try TreeSitter first
-		const tree = await this._treeSitter.getTree(content, languageId);
+		const lang = this._treeSitter.getLanguage(languageId, undefined);
+		let tree: any;
+		if (lang) {
+			const ParserClass = await this._treeSitter.getParserClass();
+			const parser = new ParserClass();
+			parser.setLanguage(lang);
+			tree = parser.parse(content);
+		}
 		if (tree) {
 			return this._extractImportsFromTree(tree, languageId);
 		}
@@ -63,7 +70,14 @@ export class DependencyGraphService extends Disposable implements IDependencyGra
 		const languageId = model.getLanguageId();
 		const content = model.getValue();
 
-		const tree = await this._treeSitter.getTree(content, languageId);
+		const lang = this._treeSitter.getLanguage(languageId, undefined);
+		let tree: any;
+		if (lang) {
+			const ParserClass = await this._treeSitter.getParserClass();
+			const parser = new ParserClass();
+			parser.setLanguage(lang);
+			tree = parser.parse(content);
+		}
 		if (tree) {
 			return this._extractExportsFromTree(tree, languageId);
 		}

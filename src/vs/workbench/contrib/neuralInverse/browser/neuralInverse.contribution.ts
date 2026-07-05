@@ -147,7 +147,7 @@ registerAction2(class OpenAgentManagerAction extends Action2 {
 
 		let window = auxWindowService.getWindowByType(AGENT_MANAGER_WINDOW_TYPE);
 		if (window && !window.window.closed) {
-			hostService.focus(window.window, { force: true });
+			hostService.focus(window.window);
 			return;
 		}
 

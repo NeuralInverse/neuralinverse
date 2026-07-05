@@ -12,7 +12,7 @@ import { Circle, MoreVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { VoidSelectionHelperProps } from '../../../../../../contrib/void/browser/voidSelectionHelperWidget.js';
-import { VOID_OPEN_SETTINGS_ACTION_ID } from '../../../voidSettingsPane.js';
+import { VOID_OPEN_SETTINGS_ACTION_ID } from '../../../../common/voidActionIds.js';
 
 
 export const VoidSelectionHelperMain = (props: VoidSelectionHelperProps) => {

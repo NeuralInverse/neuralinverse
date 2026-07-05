@@ -165,7 +165,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 
 		const existing = auxWindowService.getWindowByType(POWER_MODE_WINDOW_TYPE);
 		if (existing && !existing.window.closed) {
-			hostService.focus(existing.window, { force: true });
+			hostService.focus(existing.window);
 			return;
 		}
 

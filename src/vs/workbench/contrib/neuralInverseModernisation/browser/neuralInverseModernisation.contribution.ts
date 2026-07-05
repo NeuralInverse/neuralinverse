@@ -67,7 +67,7 @@ async function openModernisationWindow(
 ): Promise<void> {
 	const existing = auxWindowService.getWindowByType(MODERNISATION_WINDOW_TYPE);
 	if (existing && !existing.window.closed) {
-		hostService.focus(existing.window, { force: true });
+		hostService.focus(existing.window);
 		return;
 	}
 

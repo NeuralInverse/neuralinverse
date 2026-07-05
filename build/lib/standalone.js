@@ -1,8 +1,4 @@
 "use strict";
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -41,6 +37,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.extractEditor = extractEditor;
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const tss = __importStar(require("./treeshaking"));
@@ -141,7 +141,8 @@ function extractEditor(options) {
     delete tsConfig.compilerOptions.moduleResolution;
     writeOutputFile('tsconfig.json', JSON.stringify(tsConfig, null, '\t'));
     [
-        'vs/loader.js'
+        'vs/loader.js',
+        'typings/css.d.ts'
     ].forEach(copyFile);
 }
 function transportCSS(module, enqueue, write) {

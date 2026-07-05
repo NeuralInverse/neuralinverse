@@ -872,7 +872,7 @@ export class AutocompleteService extends Disposable implements IAutocompleteServ
 				// console.log('item: ', items?.[0]?.insertText)
 				return { items: items, }
 			},
-			freeInlineCompletions: (completions) => {
+			disposeInlineCompletions: (completions, reason) => {
 				// get the `docUriStr` and the `position` of the cursor
 				const activePane = this._editorService.activeEditorPane;
 				if (!activePane) return;

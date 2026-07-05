@@ -3,10 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IChatRequestVariableData, IChatRequestVariableEntry } from '../../common/chatModel.js';
-import { IParsedChatRequest } from '../../common/chatParserTypes.js';
 import { IChatVariablesService, IDynamicVariable } from '../../common/chatVariables.js';
-import { ChatAgentLocation } from '../../common/constants.js';
+import { IToolAndToolSetEnablementMap } from '../../common/languageModelToolsService.js';
 
 export class MockChatVariablesService implements IChatVariablesService {
 	_serviceBrand: undefined;
@@ -15,13 +13,8 @@ export class MockChatVariablesService implements IChatVariablesService {
 		return [];
 	}
 
-	resolveVariables(prompt: IParsedChatRequest, attachedContextVariables: IChatRequestVariableEntry[] | undefined): IChatRequestVariableData {
-		return {
-			variables: []
-		};
+	getSelectedToolAndToolSets(sessionId: string): IToolAndToolSetEnablementMap {
+		return new Map();
 	}
 
-	attachContext(name: string, value: unknown, location: ChatAgentLocation): void {
-		throw new Error('Method not implemented.');
-	}
 }
