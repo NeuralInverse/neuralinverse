@@ -17,14 +17,14 @@ import { SessionsNavigation } from '../../browser/sessionNavigation.js';
 import { Event } from '../../../../../base/common/event.js';
 import { ISendRequestOptions } from '../../common/sessionsProvider.js';
 
-const stubChat: IChat = {
+const stubChat = {
 	resource: URI.parse('test:///chat'),
 	createdAt: new Date(),
 	title: constObservable('Chat'),
 	updatedAt: constObservable(new Date()),
 	status: constObservable(SessionStatus.Completed),
-	changesets: constObservable([]),
 	changes: constObservable([]),
+	checkpoints: constObservable(undefined),
 	modelId: constObservable(undefined),
 	mode: constObservable(undefined),
 	isArchived: constObservable(false),
@@ -40,7 +40,7 @@ function stubChatWithId(id: string, status: SessionStatus = SessionStatus.Comple
 		title: constObservable(`Chat ${id}`),
 		updatedAt: constObservable(new Date()),
 		status: constObservable(status),
-		changesets: constObservable([]),
+		checkpoints: constObservable(undefined),
 		changes: constObservable([]),
 		modelId: constObservable(undefined),
 		mode: constObservable(undefined),
@@ -73,7 +73,6 @@ function stubSession(id: string, status: SessionStatus = SessionStatus.Completed
 		isRead: constObservable(true),
 		description: constObservable(undefined),
 		lastTurnEnd: constObservable(undefined),
-		gitHubInfo: constObservable(undefined),
 		chats: constObservable(sessionChats),
 		mainChat: sessionChats[0],
 		capabilities: { supportsMultipleChats: chats !== undefined && chats.length > 1 },
