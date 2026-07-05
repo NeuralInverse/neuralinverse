@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertCircle, ChevronDown, ChevronUp, X, Cloud, ExternalLink, Settings } from 'lucide-react';
 import { useAccessor, useSettingsState } from '../util/services.js';
 import { errorDetails } from '../../../../common/sendLLMMessageTypes.js';
-import { VOID_OPEN_SETTINGS_ACTION_ID } from '../../../voidSettingsPane.js';
+import { VOID_OPEN_SETTINGS_ACTION_ID } from '../../../../common/voidActionIds.js';
 
 
 type ErrorCardInfo = {

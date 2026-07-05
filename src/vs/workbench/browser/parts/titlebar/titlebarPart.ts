@@ -592,7 +592,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		const updateTitle = () => {
 			const productService = this.instantiationService.invokeFunction(accessor => accessor.get(IProductService));
 			const originalTitle = this.windowTitle.value;
-			// Replace product name (e.g. NeuralInverse) with Void
 			const newTitle = originalTitle.replace(productService.nameLong, 'Neural Inverse');
 			titleText.innerText = newTitle;
 		};
@@ -602,7 +601,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		// React to Title Changes
 		this.titleDisposables.add(this.windowTitle.onDidChange(() => {
 			updateTitle();
-			// layout menubar and other renderings in the titlebar
 			if (this.lastLayoutDimensions) {
 				this.updateLayout(this.lastLayoutDimensions);
 			}
@@ -994,17 +992,22 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private updateLayout(dimension: Dimension): void {
 		this.lastLayoutDimensions = dimension;
 
-		if (hasCustomTitlebar(this.configurationService, this.titleBarStyle)) {
-			const zoomFactor = getZoomFactor(getWindow(this.element));
-
-			this.element.style.setProperty('--zoom-factor', zoomFactor.toString());
-			this.rootContainer.classList.toggle('counter-zoom', this.preventZoom);
-
-			if (this.customMenubar.value) {
-				const menubarDimension = new Dimension(0, dimension.height);
-				this.customMenubar.value.layout(menubarDimension);
-			}
+		if (!hasCustomTitlebar(this.configurationService, this.titleBarStyle)) {
+			return;
 		}
+
+		const zoomFactor = getZoomFactor(getWindow(this.element));
+
+		this.element.style.setProperty('--zoom-factor', zoomFactor.toString());
+		this.rootContainer.classList.toggle('counter-zoom', this.preventZoom);
+
+		if (this.customMenubar.value) {
+			const menubarDimension = new Dimension(0, dimension.height);
+			this.customMenubar.value.layout(menubarDimension);
+		}
+
+		const hasCenter = this.isCommandCenterVisible || this.title.innerText !== '';
+		this.rootContainer.classList.toggle('has-center', hasCenter);
 	}
 
 	focus(): void {
