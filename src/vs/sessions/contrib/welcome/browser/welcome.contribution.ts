@@ -66,8 +66,7 @@ export function resetSessionsWelcome(
 	store.add(defaultAccountService.onDidChangeDefaultAccount(account => {
 		if (!walkthrough.isShowingWelcome && walkthrough.isShowingSignIn && account !== null) {
 			storageService.store(WELCOME_COMPLETE_KEY, true, StorageScope.APPLICATION, StorageTarget.MACHINE);
-			walkthrough.complete();
-			store.dispose();
+			walkthrough.showThemeStep();
 		}
 	}));
 
@@ -160,6 +159,8 @@ export class SessionsWelcomeContribution extends Disposable implements IWorkbenc
 	 * sign-out from the account menu), clear the welcome completion marker
 	 * and show the sign-in walkthrough again. Without this, passive sign-out
 	 * leaves the user on a seemingly-working workbench with a stale UI.
+	 *
+	 * Also watches for passive token expiry on web.
 	 */
 	private _watchWebAuth(): void {
 		this._register(this.authenticationService.onDidChangeSessions(async e => {
@@ -238,7 +239,7 @@ export class SessionsWelcomeContribution extends Disposable implements IWorkbenc
 			if (!welcomeCompletionStored && !walkthrough.isShowingWelcome && walkthrough.isShowingSignIn && account !== null) {
 				welcomeCompletionStored = true;
 				this.storageService.store(WELCOME_COMPLETE_KEY, true, StorageScope.APPLICATION, StorageTarget.MACHINE);
-				walkthrough.complete();
+				walkthrough.showThemeStep();
 			}
 		}));
 
