@@ -43,7 +43,8 @@ import { IHoverService } from '../../../../../platform/hover/browser/hover.js';
 import { HoverStyle } from '../../../../../base/browser/ui/hover/hover.js';
 import { HoverPosition } from '../../../../../base/browser/ui/hover/hoverWidget.js';
 import { ISessionsManagementService, IActiveSession } from '../../../../services/sessions/common/sessionsManagement.js';
-import { ISessionsViewService } from '../../../../browser/sessionsViewService.js';
+import { ISessionsViewService } from '../../../../services/sessions/browser/sessionsViewService.js';
+import { ISessionsListModelService } from '../../../../services/sessions/browser/sessionsListModelService.js';
 import { IWorkbenchAssignmentService } from '../../../../../workbench/services/assignment/common/assignmentService.js';
 // =============================================================================
 // TEMPORARY (tracked by https://github.com/microsoft/vscode/issues/320480)
@@ -58,8 +59,8 @@ import { IWorkbenchAssignmentService } from '../../../../../workbench/services/a
 // DO NOT add further usages of this import in the sessions workbench, and DO NOT
 // copy this suppression elsewhere.
 // =============================================================================
+// eslint-disable-next-line no-restricted-imports
 import { IAgentSessionsService } from '../../../../../workbench/contrib/chat/browser/agentSessions/agentSessionsService.js';
-import { ISessionsListModelService } from '../../../../services/sessions/browser/sessionsListModelService.js';
 import { IAgentHostFilterService } from '../../../../services/agentHostFilter/common/agentHostFilter.js';
 import { LocalSelectionTransfer } from '../../../../../platform/dnd/browser/dnd.js';
 import { DraggedSessionIdentifier, SessionsDataTransfers } from '../../../../browser/dnd.js';
@@ -215,8 +216,9 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 		private readonly contextKeyService: IContextKeyService,
 		private readonly markdownRendererService: IMarkdownRendererService,
 		private readonly hoverService: IHoverService,
-		private readonly agentSessionsService: IAgentSessionsService,
 		private readonly sessionsProvidersService: ISessionsProvidersService,
+		// TEMPORARY — see the note on the `IAgentSessionsService` import above (#320480).
+		private readonly agentSessionsService: IAgentSessionsService,
 	) {
 	}
 
@@ -269,10 +271,11 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 	private renderSession(element: ISession, template: ISessionItemTemplate, matches?: IMatch[]): void {
 		template.elementDisposables.clear();
 
-		// Trigger lazy resolve for expensive session properties (e.g. changes)
-		// so that providers which populate them on demand deliver fresh data
-		// by the time the row renders. Only fires for sessions that become
-		// visible in the viewport (O(visible rows), not O(all sessions)).
+		// TEMPORARY (#320480): trigger lazy resolve of expensive session
+		// properties (e.g. changes) for rows that scroll into view, so providers
+		// that populate them on demand deliver fresh data by the time the row
+		// renders. This reaches into a Copilot-provider internal and must be
+		// moved into the provider — see the note on the import above.
 		this.agentSessionsService.model.observeSession(element.resource);
 
 		// Rich hover on the row showing folder, branch, diff stats and provider.
@@ -927,8 +930,9 @@ export class SessionsList extends Disposable implements ISessionsList {
 		const approvalModel = this._register(instantiationService.createInstance(AgentSessionApprovalModel));
 		const markdownRendererService = instantiationService.invokeFunction(accessor => accessor.get(IMarkdownRendererService));
 		const hoverService = instantiationService.invokeFunction(accessor => accessor.get(IHoverService));
-		const agentSessionsService = instantiationService.invokeFunction(accessor => accessor.get(IAgentSessionsService));
 		const sessionsProvidersService = instantiationService.invokeFunction(accessor => accessor.get(ISessionsProvidersService));
+		// TEMPORARY (#320480): see the note on the `IAgentSessionsService` import.
+		const agentSessionsService = instantiationService.invokeFunction(accessor => accessor.get(IAgentSessionsService));
 		const sessionRenderer = new SessionItemRenderer(
 			{ grouping: this.options.grouping, sorting: this.options.sorting, isPinned: s => this.isSessionPinned(s), isRead: s => this.isSessionRead(s), visibleSessions: this._sessionsViewService.visibleSessions },
 			approvalModel,
@@ -936,8 +940,8 @@ export class SessionsList extends Disposable implements ISessionsList {
 			contextKeyService,
 			markdownRendererService,
 			hoverService,
-			agentSessionsService,
 			sessionsProvidersService,
+			agentSessionsService,
 		);
 
 		const showMoreRenderer = new SessionShowMoreRenderer();

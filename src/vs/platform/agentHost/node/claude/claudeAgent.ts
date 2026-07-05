@@ -39,6 +39,7 @@ import { mapSessionMessagesToTurns } from './claudeReplayMapper.js';
 import { getSubagentTranscript } from './claudeSubagentResolver.js';
 import { ClaudeAgentSession } from './claudeAgentSession.js';
 import { handleCanUseTool } from './claudeCanUseTool.js';
+import type { IAgentServerToolHost } from '../../common/agentServerTools.js';
 import { tryParseClaudeModelId } from './claudeModelId.js';
 import { resolvePromptToContentBlocks } from './claudePromptResolver.js';
 import { IClaudeProxyHandle, IClaudeProxyService } from './claudeProxyService.js';
@@ -153,6 +154,7 @@ export class ClaudeAgent extends Disposable implements IAgent {
 
 	private _githubToken: string | undefined;
 	private _proxyHandle: IClaudeProxyHandle | undefined;
+	private _serverToolHost: IAgentServerToolHost | undefined;
 
 	/**
 	 * Memoized teardown promise. Set on the first call to {@link shutdown},
@@ -420,7 +422,7 @@ export class ClaudeAgent extends Disposable implements IAgent {
 			);
 
 		try {
-			await session.materialize({ proxyHandle, canUseTool, isResume: false });
+			await session.materialize({ proxyHandle, canUseTool, isResume: false, serverToolHost: this._serverToolHost });
 		} catch (err) {
 			this._sessions.deleteAndDispose(sessionId);
 			throw err;
@@ -501,7 +503,7 @@ export class ClaudeAgent extends Disposable implements IAgent {
 			);
 
 		try {
-			await session.materialize({ proxyHandle, canUseTool, isResume: true });
+			await session.materialize({ proxyHandle, canUseTool, isResume: true, serverToolHost: this._serverToolHost });
 		} catch (err) {
 			this._sessions.deleteAndDispose(sessionId);
 			throw err;
@@ -918,7 +920,11 @@ export class ClaudeAgent extends Disposable implements IAgent {
 		});
 	}
 
-	setClientTools(session: URI, clientId: string, tools: ToolDefinition[]): void {
+	setServerToolHost(host: IAgentServerToolHost): void {
+		this._serverToolHost = host;
+	}
+
+	setClientTools(session: URI, clientId: string | undefined, tools: ToolDefinition[]): void {
 		const sessionId = AgentSession.id(session);
 		this._logService.info(`[Claude:${sessionId}] setClientTools clientId=${clientId} tools=[${tools.map(t => t.name).join(', ') || '(none)'}]`);
 		const sess = this._findAnySession(sessionId);
