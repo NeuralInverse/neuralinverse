@@ -28,7 +28,6 @@ import { ExtHostDocuments } from './extHostDocuments.js';
 import { Schemas } from '../../../base/common/network.js';
 import { isLinux } from '../../../base/common/platform.js';
 import { structuralEquals } from '../../../base/common/equals.js';
-import { Iterable } from '../../../base/common/iterator.js';
 
 type ProviderHandle = number;
 type GroupHandle = number;
@@ -543,12 +542,6 @@ class ExtHostSourceControl implements vscode.SourceControl {
 
 	private static _handlePool: number = 0;
 
-	readonly onDidDisposeParent: Event<void>;
-
-	private readonly _onDidDispose = new Emitter<void>();
-	readonly onDidDispose = this._onDidDispose.event;
-
-
 	#proxy: MainThreadSCMShape;
 
 	private _groups: Map<GroupHandle, ExtHostSourceControlResourceGroup> = new Map<GroupHandle, ExtHostSourceControlResourceGroup>();
@@ -563,24 +556,6 @@ class ExtHostSourceControl implements vscode.SourceControl {
 
 	get rootUri(): vscode.Uri | undefined {
 		return this._rootUri;
-	}
-
-	private _contextValue: string | undefined = undefined;
-
-	get contextValue(): string | undefined {
-		checkProposedApiEnabled(this._extension, 'scmProviderOptions');
-		return this._contextValue;
-	}
-
-	set contextValue(contextValue: string | undefined) {
-		checkProposedApiEnabled(this._extension, 'scmProviderOptions');
-
-		if (this._contextValue === contextValue) {
-			return;
-		}
-
-		this._contextValue = contextValue;
-		this.#proxy.$updateSourceControl(this.handle, { contextValue });
 	}
 
 	private _inputBox: ExtHostSCMInputBox;
@@ -614,21 +589,6 @@ class ExtHostSourceControl implements vscode.SourceControl {
 			quickDiffLabel = quickDiffProvider?.label;
 		}
 		this.#proxy.$updateSourceControl(this.handle, { hasQuickDiffProvider: !!quickDiffProvider, quickDiffLabel });
-	}
-
-	private _secondaryQuickDiffProvider: vscode.QuickDiffProvider | undefined = undefined;
-
-	get secondaryQuickDiffProvider(): vscode.QuickDiffProvider | undefined {
-		checkProposedApiEnabled(this._extension, 'quickDiffProvider');
-		return this._secondaryQuickDiffProvider;
-	}
-
-	set secondaryQuickDiffProvider(secondaryQuickDiffProvider: vscode.QuickDiffProvider | undefined) {
-		checkProposedApiEnabled(this._extension, 'quickDiffProvider');
-
-		this._secondaryQuickDiffProvider = secondaryQuickDiffProvider;
-		const secondaryQuickDiffLabel = secondaryQuickDiffProvider?.label;
-		this.#proxy.$updateSourceControl(this.handle, { hasSecondaryQuickDiffProvider: !!secondaryQuickDiffProvider, secondaryQuickDiffLabel });
 	}
 
 	private _historyProvider: vscode.SourceControlHistoryProvider | undefined;
@@ -765,7 +725,7 @@ class ExtHostSourceControl implements vscode.SourceControl {
 	private readonly _onDidChangeSelection = new Emitter<boolean>();
 	readonly onDidChangeSelection = this._onDidChangeSelection.event;
 
-	readonly handle: number = ExtHostSourceControl._handlePool++;
+	private handle: number = ExtHostSourceControl._handlePool++;
 
 	constructor(
 		private readonly _extension: IExtensionDescription,
@@ -774,9 +734,7 @@ class ExtHostSourceControl implements vscode.SourceControl {
 		private _commands: ExtHostCommands,
 		private _id: string,
 		private _label: string,
-		private _rootUri?: vscode.Uri,
-		_iconPath?: vscode.IconPath,
-		_parent?: ExtHostSourceControl
+		private _rootUri?: vscode.Uri
 	) {
 		this.#proxy = proxy;
 
@@ -787,9 +745,7 @@ class ExtHostSourceControl implements vscode.SourceControl {
 		});
 
 		this._inputBox = new ExtHostSCMInputBox(_extension, _extHostDocuments, this.#proxy, this.handle, inputBoxDocumentUri);
-		this.#proxy.$registerSourceControl(this.handle, _parent?.handle, _id, _label, _rootUri, getHistoryItemIconDto(_iconPath), inputBoxDocumentUri);
-
-		this.onDidDisposeParent = _parent ? _parent.onDidDispose : Event.None;
+		this.#proxy.$registerSourceControl(this.handle, _id, _label, _rootUri, inputBoxDocumentUri);
 	}
 
 	private createdResourceGroups = new Map<ExtHostSourceControlResourceGroup, IDisposable>();
@@ -876,13 +832,12 @@ class ExtHostSourceControl implements vscode.SourceControl {
 
 		this._groups.forEach(group => group.dispose());
 		this.#proxy.$unregisterSourceControl(this.handle);
-
-		this._onDidDispose.fire();
-		this._onDidDispose.dispose();
 	}
 }
 
 export class ExtHostSCM implements ExtHostSCMShape {
+
+	private static _handlePool: number = 0;
 
 	private _proxy: MainThreadSCMShape;
 	private readonly _telemetry: MainThreadTelemetryShape;
@@ -942,7 +897,7 @@ export class ExtHostSCM implements ExtHostSCMShape {
 		});
 	}
 
-	createSourceControl(extension: IExtensionDescription, id: string, label: string, rootUri: vscode.Uri | undefined, iconPath: vscode.IconPath | undefined, parent: vscode.SourceControl | undefined): vscode.SourceControl {
+	createSourceControl(extension: IExtensionDescription, id: string, label: string, rootUri: vscode.Uri | undefined): vscode.SourceControl {
 		this.logService.trace('ExtHostSCM#createSourceControl', extension.identifier.value, id, label, rootUri);
 
 		type TEvent = { extensionId: string };
@@ -955,9 +910,9 @@ export class ExtHostSCM implements ExtHostSCMShape {
 			extensionId: extension.identifier.value,
 		});
 
-		const parentSourceControl = parent ? Iterable.find(this._sourceControls.values(), s => s === parent) : undefined;
-		const sourceControl = new ExtHostSourceControl(extension, this._extHostDocuments, this._proxy, this._commands, id, label, rootUri, iconPath, parentSourceControl);
-		this._sourceControls.set(sourceControl.handle, sourceControl);
+		const handle = ExtHostSCM._handlePool++;
+		const sourceControl = new ExtHostSourceControl(extension, this._extHostDocuments, this._proxy, this._commands, id, label, rootUri);
+		this._sourceControls.set(handle, sourceControl);
 
 		const sourceControls = this._sourceControlsByExtension.get(extension.identifier) || [];
 		sourceControls.push(sourceControl);
@@ -986,20 +941,6 @@ export class ExtHostSCM implements ExtHostSCMShape {
 		}
 
 		return asPromise(() => sourceControl.quickDiffProvider!.provideOriginalResource!(uri, token))
-			.then<UriComponents | null>(r => r || null);
-	}
-
-	$provideSecondaryOriginalResource(sourceControlHandle: number, uriComponents: UriComponents, token: CancellationToken): Promise<UriComponents | null> {
-		const uri = URI.revive(uriComponents);
-		this.logService.trace('ExtHostSCM#$provideSecondaryOriginalResource', sourceControlHandle, uri.toString());
-
-		const sourceControl = this._sourceControls.get(sourceControlHandle);
-
-		if (!sourceControl || !sourceControl.secondaryQuickDiffProvider || !sourceControl.secondaryQuickDiffProvider.provideOriginalResource) {
-			return Promise.resolve(null);
-		}
-
-		return asPromise(() => sourceControl.secondaryQuickDiffProvider!.provideOriginalResource!(uri, token))
 			.then<UriComponents | null>(r => r || null);
 	}
 
@@ -1076,19 +1017,6 @@ export class ExtHostSCM implements ExtHostSCMShape {
 		return Promise.resolve(undefined);
 	}
 
-	async $resolveHistoryItemChatContext(sourceControlHandle: number, historyItemId: string, token: CancellationToken): Promise<string | undefined> {
-		try {
-			const historyProvider = this._sourceControls.get(sourceControlHandle)?.historyProvider;
-			const chatContext = await historyProvider?.resolveHistoryItemChatContext(historyItemId, token);
-
-			return chatContext ?? undefined;
-		}
-		catch (err) {
-			this.logService.error('ExtHostSCM#$resolveHistoryItemChatContext', err);
-			return undefined;
-		}
-	}
-
 	async $resolveHistoryItemRefsCommonAncestor(sourceControlHandle: number, historyItemRefs: string[], token: CancellationToken): Promise<string | undefined> {
 		try {
 			const historyProvider = this._sourceControls.get(sourceControlHandle)?.historyProvider;
@@ -1115,7 +1043,7 @@ export class ExtHostSCM implements ExtHostSCMShape {
 		}
 	}
 
-	async $provideHistoryItems(sourceControlHandle: number, options: vscode.SourceControlHistoryOptions, token: CancellationToken): Promise<SCMHistoryItemDto[] | undefined> {
+	async $provideHistoryItems(sourceControlHandle: number, options: any, token: CancellationToken): Promise<SCMHistoryItemDto[] | undefined> {
 		try {
 			const historyProvider = this._sourceControls.get(sourceControlHandle)?.historyProvider;
 			const historyItems = await historyProvider?.provideHistoryItems(options, token);

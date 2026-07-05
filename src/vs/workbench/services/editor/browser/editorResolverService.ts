@@ -427,20 +427,15 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 				conflictingDefault: false
 			};
 		}
-		// If the editor is exclusive we use that, else use the user setting, else we check canSupportResource, else take the viewtype of first possible editor
+		// If the editor is exclusive we use that, else use the user setting, else use the built-in+ editor
 		const selectedViewType = possibleEditors[0].editorInfo.priority === RegisteredEditorPriority.exclusive ?
 			possibleEditors[0].editorInfo.id :
-			associationsFromSetting[0]?.viewType ||
-			(possibleEditors.find(editor => (!editor.options?.canSupportResource || editor.options.canSupportResource(resource)))?.editorInfo.id) ||
-			possibleEditors[0].editorInfo.id;
+			associationsFromSetting[0]?.viewType || possibleEditors[0].editorInfo.id;
 
 		let conflictingDefault = false;
 
 		// Filter out exclusive before we check for conflicts as exclusive editors cannot be manually chosen
-		// similar to above, need to check canSupportResource if nothing is exclusive
-		possibleEditors = possibleEditors
-			.filter(editor => editor.editorInfo.priority !== RegisteredEditorPriority.exclusive)
-			.filter(editor => !editor.options?.canSupportResource || editor.options.canSupportResource(resource));
+		possibleEditors = possibleEditors.filter(editor => editor.editorInfo.priority !== RegisteredEditorPriority.exclusive);
 		if (associationsFromSetting.length === 0 && possibleEditors.length > 1) {
 			conflictingDefault = true;
 		}

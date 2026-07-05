@@ -20,7 +20,6 @@ export class QuickAccess {
 
 	async openFileQuickAccessAndWait(searchValue: string, expectedFirstElementNameOrExpectedResultCount: string | number): Promise<void> {
 
-		// Removing this logic just for this release... after this release, all versions should have the `workbench.action.clearEditorHistoryWithoutConfirm` command.
 		// make sure the file quick access is not "polluted"
 		// with entries from the editor history when opening
 		await this.runCommand('workbench.action.clearEditorHistory');
@@ -144,17 +143,13 @@ export class QuickAccess {
 				// Open via keybinding
 				switch (kind) {
 					case QuickAccessKind.Files:
-						await this.code.dispatchKeybinding(process.platform === 'darwin' ? 'cmd+p' : 'ctrl+p', accept);
+						await this.code.sendKeybinding(process.platform === 'darwin' ? 'cmd+p' : 'ctrl+p', accept);
 						break;
 					case QuickAccessKind.Symbols:
-						await this.code.dispatchKeybinding(process.platform === 'darwin' ? 'cmd+shift+o' : 'ctrl+shift+o', accept);
+						await this.code.sendKeybinding(process.platform === 'darwin' ? 'cmd+shift+o' : 'ctrl+shift+o', accept);
 						break;
 					case QuickAccessKind.Commands:
-						await this.code.dispatchKeybinding(process.platform === 'darwin' ? 'cmd+shift+p' : 'ctrl+shift+p', async () => {
-
-							await this.code.wait(100);
-							await this.quickInput.waitForQuickInputOpened(10);
-						});
+						await this.code.sendKeybinding(process.platform === 'darwin' ? 'cmd+shift+p' : 'ctrl+shift+p', accept);
 						break;
 				}
 				break;
@@ -164,7 +159,7 @@ export class QuickAccess {
 				}
 
 				// Retry
-				await this.code.dispatchKeybinding('escape', async () => { });
+				await this.code.sendKeybinding('escape');
 			}
 		}
 

@@ -29,7 +29,7 @@ class ExtHostNotebookDocumentSaveParticipant implements IStoredFileWorkingCopySa
 			return undefined;
 		}
 
-		let _warningTimeout: Timeout;
+		let _warningTimeout: any;
 
 		const p = new Promise<any>((resolve, reject) => {
 

@@ -24,7 +24,7 @@ import { InstantiationType, registerSingleton } from '../../../../platform/insta
 import { equals } from '../../../../base/common/arrays.js';
 import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
 import { ToggleStatusbarVisibilityAction } from '../../actions/layoutActions.js';
-import { assertReturnsDefined } from '../../../../base/common/types.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { isHighContrast } from '../../../../platform/theme/common/theme.js';
 import { hash } from '../../../../base/common/hash.js';
@@ -188,9 +188,6 @@ class StatusbarPart extends Part implements IStatusbarEntryContainer {
 				persistence: {
 					hideOnKeyDown: true,
 					sticky: focus
-				},
-				appearance: {
-					maxHeightRatio: 0.9
 				}
 			}
 		)));
@@ -445,8 +442,8 @@ class StatusbarPart extends Part implements IStatusbarEntryContainer {
 	}
 
 	private appendStatusbarEntries(): void {
-		const leftItemsContainer = assertReturnsDefined(this.leftItemsContainer);
-		const rightItemsContainer = assertReturnsDefined(this.rightItemsContainer);
+		const leftItemsContainer = assertIsDefined(this.leftItemsContainer);
+		const rightItemsContainer = assertIsDefined(this.rightItemsContainer);
 
 		// Clear containers
 		clearNode(leftItemsContainer);
@@ -473,7 +470,7 @@ class StatusbarPart extends Part implements IStatusbarEntryContainer {
 			entries.reverse(); // reversing due to flex: row-reverse
 		}
 
-		const target = assertReturnsDefined(entry.alignment === StatusbarAlignment.LEFT ? this.leftItemsContainer : this.rightItemsContainer);
+		const target = assertIsDefined(entry.alignment === StatusbarAlignment.LEFT ? this.leftItemsContainer : this.rightItemsContainer);
 
 		const index = entries.indexOf(entry);
 		if (index + 1 === entries.length) {
@@ -635,7 +632,7 @@ class StatusbarPart extends Part implements IStatusbarEntryContainer {
 	override updateStyles(): void {
 		super.updateStyles();
 
-		const container = assertReturnsDefined(this.getContainer());
+		const container = assertIsDefined(this.getContainer());
 		const styleOverride: IStatusbarStyleOverride | undefined = [...this.styleOverrides].sort((a, b) => a.priority - b.priority)[0];
 
 		// Background / foreground colors
@@ -678,7 +675,7 @@ class StatusbarPart extends Part implements IStatusbarEntryContainer {
 
 				/* Notification Beak */
 				.monaco-workbench .part.statusbar > .items-container > .statusbar-item.has-beak > .status-bar-item-beak-container:before {
-					border-bottom-color: ${borderColor ?? backgroundColor};
+					border-bottom-color: ${backgroundColor};
 				}
 			`;
 	}
@@ -776,7 +773,7 @@ export class StatusbarService extends MultiWindowParts<StatusbarPart> implements
 
 	//#region Auxiliary Statusbar Parts
 
-	createAuxiliaryStatusbarPart(container: HTMLElement, instantiationService: IInstantiationService): IAuxiliaryStatusbarPart {
+	createAuxiliaryStatusbarPart(container: HTMLElement): IAuxiliaryStatusbarPart {
 
 		// Container
 		const statusbarPartContainer = $('footer.part.statusbar', {
@@ -788,7 +785,7 @@ export class StatusbarService extends MultiWindowParts<StatusbarPart> implements
 		container.appendChild(statusbarPartContainer);
 
 		// Statusbar Part
-		const statusbarPart = instantiationService.createInstance(AuxiliaryStatusbarPart, statusbarPartContainer);
+		const statusbarPart = this.instantiationService.createInstance(AuxiliaryStatusbarPart, statusbarPartContainer);
 		const disposable = this.registerPart(statusbarPart);
 
 		statusbarPart.create(statusbarPartContainer);
@@ -917,8 +914,8 @@ export class ScopedStatusbarService extends Disposable implements IStatusbarServ
 		this.onDidChangeEntryVisibility = this.statusbarEntryContainer.onDidChangeEntryVisibility;
 	}
 
-	createAuxiliaryStatusbarPart(container: HTMLElement, instantiationService: IInstantiationService): IAuxiliaryStatusbarPart {
-		return this.statusbarService.createAuxiliaryStatusbarPart(container, instantiationService);
+	createAuxiliaryStatusbarPart(container: HTMLElement): IAuxiliaryStatusbarPart {
+		return this.statusbarService.createAuxiliaryStatusbarPart(container);
 	}
 
 	createScoped(statusbarEntryContainer: IStatusbarEntryContainer, disposables: DisposableStore): IStatusbarService {

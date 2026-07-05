@@ -8,12 +8,11 @@ import { Categories } from '../../../../platform/action/common/actionCommonCateg
 import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
-import { IHostService } from '../../../services/host/browser/host.js';
-import { PROFILES_CATEGORY } from '../../../services/userDataProfile/common/userDataProfile.js';
+import { IUserDataProfileManagementService, PROFILES_CATEGORY } from '../../../services/userDataProfile/common/userDataProfile.js';
 
 class CreateTransientProfileAction extends Action2 {
 	static readonly ID = 'workbench.profiles.actions.createTemporaryProfile';
-	static readonly TITLE = localize2('create temporary profile', "New Window with Temporary Profile");
+	static readonly TITLE = localize2('create temporary profile', "Create a Temporary Profile");
 	constructor() {
 		super({
 			id: CreateTransientProfileAction.ID,
@@ -24,7 +23,7 @@ class CreateTransientProfileAction extends Action2 {
 	}
 
 	async run(accessor: ServicesAccessor) {
-		accessor.get(IHostService).openWindow({ forceTempProfile: true });
+		return accessor.get(IUserDataProfileManagementService).createAndEnterTransientProfile();
 	}
 }
 

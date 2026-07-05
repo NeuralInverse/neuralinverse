@@ -69,7 +69,9 @@
           "meta.embedded.expression.js": "javascriptreact"
         },
         "tokenTypes": {
-          "punctuation.definition.template-expression": "other",
+          "meta.template.expression": "other",
+          "meta.template.expression string": "string",
+          "meta.template.expression comment": "comment",
           "entity.name.type.instance.jsdoc": "other",
           "entity.name.function.tagged-template": "other",
           "meta.import string.quoted": "other",
@@ -87,7 +89,9 @@
           "meta.embedded.expression.js": "javascript"
         },
         "tokenTypes": {
-          "punctuation.definition.template-expression": "other",
+          "meta.template.expression": "other",
+          "meta.template.expression string": "string",
+          "meta.template.expression comment": "comment",
           "entity.name.type.instance.jsdoc": "other",
           "entity.name.function.tagged-template": "other",
           "meta.import string.quoted": "other",

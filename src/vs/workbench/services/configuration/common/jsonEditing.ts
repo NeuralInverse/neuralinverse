@@ -25,7 +25,7 @@ export class JSONEditingError extends Error {
 
 export interface IJSONValue {
 	path: JSONPath;
-	value: unknown;
+	value: any;
 }
 
 export interface IJSONEditingService {

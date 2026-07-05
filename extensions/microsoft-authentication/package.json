@@ -15,9 +15,7 @@
   "activationEvents": [],
   "enabledApiProposals": [
     "idToken",
-    "nativeWindowHandle",
-    "authIssuers",
-    "authenticationChallenges"
+    "nativeWindowHandle"
   ],
   "capabilities": {
     "virtualWorkspaces": true,
@@ -33,11 +31,7 @@
     "authentication": [
       {
         "label": "Microsoft",
-        "id": "microsoft",
-        "authorizationServerGlobs": [
-          "https://login.microsoftonline.com/*",
-          "https://login.microsoftonline.com/*/v2.0"
-        ]
+        "id": "microsoft"
       },
       {
         "label": "Microsoft Sovereign Cloud",
@@ -111,12 +105,10 @@
             "default": "msal",
             "enum": [
               "msal",
-              "msal-no-broker",
               "classic"
             ],
             "enumDescriptions": [
               "%microsoft-authentication.implementation.enumDescriptions.msal%",
-              "%microsoft-authentication.implementation.enumDescriptions.msal-no-broker%",
               "%microsoft-authentication.implementation.enumDescriptions.classic%"
             ],
             "markdownDescription": "%microsoft-authentication.implementation.description%",
@@ -139,7 +131,7 @@
     "watch-web": "npx webpack-cli --config extension-browser.webpack.config --mode none --watch --info-verbosity verbose"
   },
   "devDependencies": {
-    "@types/node": "22.x",
+    "@types/node": "20.x",
     "@types/node-fetch": "^2.5.7",
     "@types/randombytes": "^2.0.0",
     "@types/sha.js": "^2.4.0",
@@ -147,11 +139,14 @@
   },
   "dependencies": {
     "@azure/ms-rest-azure-env": "^2.0.0",
-    "@azure/msal-node": "^3.7.3",
-    "@azure/msal-node-extensions": "^1.5.22",
+    "@azure/msal-node": "^2.16.2",
+    "@azure/msal-node-extensions": "^1.5.0",
     "@vscode/extension-telemetry": "^0.9.8",
     "keytar": "file:./packageMocks/keytar",
     "vscode-tas-client": "^0.1.84"
+  },
+  "overrides": {
+    "@azure/msal-node-runtime": "^0.18.1"
   },
   "repository": {
     "type": "git",

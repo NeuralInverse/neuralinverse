@@ -142,13 +142,11 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 	}
 
 	private skipDialogs(): boolean {
-		if (this.environmentService.enableSmokeTestDriver) {
-			this.logService.warn('DialogService: Dialog requested during smoke test.');
-			// Disabled for this release to unblock smoke tests
-			return true;
+		if (this.environmentService.isExtensionDevelopment && this.environmentService.extensionTestsLocationURI) {
+			return true; // integration tests
 		}
-		// integration tests
-		return this.environmentService.isExtensionDevelopment && !!this.environmentService.extensionTestsLocationURI;
+
+		return !!this.environmentService.enableSmokeTestDriver; // smoke tests
 	}
 
 	private async doShowSaveConfirm(fileNamesOrResources: (string | URI)[]): Promise<ConfirmResult> {

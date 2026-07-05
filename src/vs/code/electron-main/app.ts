@@ -35,7 +35,6 @@ import { DiagnosticsMainService, IDiagnosticsMainService } from '../../platform/
 import { DialogMainService, IDialogMainService } from '../../platform/dialogs/electron-main/dialogMainService.js';
 import { IEncryptionMainService } from '../../platform/encryption/common/encryptionService.js';
 import { EncryptionMainService } from '../../platform/encryption/electron-main/encryptionMainService.js';
-import { NativeBrowserElementsMainService, INativeBrowserElementsMainService } from '../../platform/browserElements/electron-main/nativeBrowserElementsMainService.js';
 import { NativeParsedArgs } from '../../platform/environment/common/argv.js';
 import { IEnvironmentMainService } from '../../platform/environment/electron-main/environmentMainService.js';
 import { isLaunchedFromCli } from '../../platform/environment/node/argvHelper.js';
@@ -51,6 +50,7 @@ import { DiskFileSystemProvider } from '../../platform/files/node/diskFileSystem
 import { SyncDescriptor } from '../../platform/instantiation/common/descriptors.js';
 import { IInstantiationService, ServicesAccessor } from '../../platform/instantiation/common/instantiation.js';
 import { ServiceCollection } from '../../platform/instantiation/common/serviceCollection.js';
+import { IProcessMainService } from '../../platform/process/common/process.js';
 import { ProcessMainService } from '../../platform/process/electron-main/processMainService.js';
 import { IKeyboardLayoutMainService, KeyboardLayoutMainService } from '../../platform/keyboardLayout/electron-main/keyboardLayoutMainService.js';
 import { ILaunchMainService, LaunchMainService } from '../../platform/launch/electron-main/launchMainService.js';
@@ -101,7 +101,7 @@ import { ExtensionsScannerService } from '../../platform/extensionManagement/nod
 import { UserDataProfilesHandler } from '../../platform/userDataProfile/electron-main/userDataProfilesHandler.js';
 import { ProfileStorageChangesListenerChannel } from '../../platform/userDataProfile/electron-main/userDataProfileStorageIpc.js';
 import { Promises, RunOnceScheduler, runWhenGlobalIdle } from '../../base/common/async.js';
-import { resolveMachineId, resolveSqmId, resolveDevDeviceId, validateDevDeviceId } from '../../platform/telemetry/electron-main/telemetryUtils.js';
+import { resolveMachineId, resolveSqmId, resolvedevDeviceId, validatedevDeviceId } from '../../platform/telemetry/electron-main/telemetryUtils.js';
 import { ExtensionsProfileScannerService } from '../../platform/extensionManagement/node/extensionsProfileScannerService.js';
 import { LoggerChannel } from '../../platform/log/electron-main/logIpc.js';
 import { ILoggerMainService } from '../../platform/log/electron-main/loggerService.js';
@@ -179,10 +179,7 @@ export class CodeApplication extends Disposable {
 		const isUrlFromWindow = (requestingUrl?: string | undefined) => requestingUrl?.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`);
 		const isUrlFromWebview = (requestingUrl: string | undefined) => requestingUrl?.startsWith(`${Schemas.vscodeWebview}://`);
 
-		const alwaysAllowedPermissions = new Set(['pointerLock', 'notifications']);
-
 		const allowedPermissionsInWebview = new Set([
-			...alwaysAllowedPermissions,
 			'clipboard-read',
 			'clipboard-sanitized-write',
 			// TODO(deepak1556): Should be removed once migration is complete
@@ -191,7 +188,6 @@ export class CodeApplication extends Disposable {
 		]);
 
 		const allowedPermissionsInCore = new Set([
-			...alwaysAllowedPermissions,
 			'media',
 			'local-fonts',
 			// TODO(deepak1556): Should be removed once migration is complete
@@ -457,7 +453,7 @@ export class CodeApplication extends Disposable {
 		//#endregion
 
 		let macOpenFileURIs: IWindowOpenable[] = [];
-		let runningTimeout: Timeout | undefined = undefined;
+		let runningTimeout: NodeJS.Timeout | undefined = undefined;
 		app.on('open-file', (event, path) => {
 			path = normalizeNFC(path); // macOS only: normalize paths to NFC form
 
@@ -576,11 +572,13 @@ export class CodeApplication extends Disposable {
 		});
 
 		// Resolve unique machine ID
+		this.logService.trace('Resolving machine identifier...');
 		const [machineId, sqmId, devDeviceId] = await Promise.all([
 			resolveMachineId(this.stateService, this.logService),
 			resolveSqmId(this.stateService, this.logService),
-			resolveDevDeviceId(this.stateService, this.logService)
+			resolvedevDeviceId(this.stateService, this.logService)
 		]);
+		this.logService.trace(`Resolved machine identifier: ${machineId}`);
 
 		// Shared process
 		const { sharedProcessReady, sharedProcessClient } = this.setupSharedProcess(machineId, sqmId, devDeviceId);
@@ -1026,11 +1024,11 @@ export class CodeApplication extends Disposable {
 		services.set(IDiagnosticsMainService, new SyncDescriptor(DiagnosticsMainService, undefined, false /* proxied to other processes */));
 		services.set(IDiagnosticsService, ProxyChannel.toService(getDelayedChannel(sharedProcessReady.then(client => client.getChannel('diagnostics')))));
 
+		// Process
+		services.set(IProcessMainService, new SyncDescriptor(ProcessMainService, [this.userEnv]));
+
 		// Encryption
 		services.set(IEncryptionMainService, new SyncDescriptor(EncryptionMainService));
-
-		// Browser Elements
-		services.set(INativeBrowserElementsMainService, new SyncDescriptor(NativeBrowserElementsMainService, undefined, false /* proxied to other processes */));
 
 		// Keyboard Layout
 		services.set(IKeyboardLayoutMainService, new SyncDescriptor(KeyboardLayoutMainService));
@@ -1095,7 +1093,7 @@ export class CodeApplication extends Disposable {
 			const isInternal = isInternalTelemetry(this.productService, this.configurationService);
 			const channel = getDelayedChannel(sharedProcessReady.then(client => client.getChannel('telemetryAppender')));
 			const appender = new TelemetryAppenderClient(channel);
-			const commonProperties = resolveCommonProperties(release(), hostname(), process.arch, this.productService.commit, this.productService.version, machineId, sqmId, devDeviceId, isInternal, this.productService.date);
+			const commonProperties = resolveCommonProperties(release(), hostname(), process.arch, this.productService.commit, this.productService.version, machineId, sqmId, devDeviceId, isInternal);
 			const piiPaths = getPiiPathsFromEnvironment(this.environmentMainService);
 			const config: ITelemetryServiceConfig = { appenders: [appender], commonProperties, piiPaths, sendErrorTelemetry: true };
 
@@ -1173,17 +1171,12 @@ export class CodeApplication extends Disposable {
 		mainProcessElectronServer.registerChannel('update', updateChannel);
 
 		// Process
-		const processChannel = ProxyChannel.fromService(new ProcessMainService(this.logService, accessor.get(IDiagnosticsService), accessor.get(IDiagnosticsMainService)), disposables);
+		const processChannel = ProxyChannel.fromService(accessor.get(IProcessMainService), disposables);
 		mainProcessElectronServer.registerChannel('process', processChannel);
 
 		// Encryption
 		const encryptionChannel = ProxyChannel.fromService(accessor.get(IEncryptionMainService), disposables);
 		mainProcessElectronServer.registerChannel('encryption', encryptionChannel);
-
-		// Browser Elements
-		const browserElementsChannel = ProxyChannel.fromService(accessor.get(INativeBrowserElementsMainService), disposables);
-		mainProcessElectronServer.registerChannel('browserElements', browserElementsChannel);
-		sharedProcessClient.then(client => client.registerChannel('browserElements', browserElementsChannel));
 
 		// Signing
 		const signChannel = ProxyChannel.fromService(accessor.get(ISignService), disposables);
@@ -1502,6 +1495,6 @@ export class CodeApplication extends Disposable {
 
 		// Validate Device ID is up to date (delay this as it has shown significant perf impact)
 		// Refs: https://github.com/microsoft/vscode/issues/234064
-		validateDevDeviceId(this.stateService, this.logService);
+		validatedevDeviceId(this.stateService, this.logService);
 	}
 }

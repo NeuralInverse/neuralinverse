@@ -11,7 +11,7 @@ import { Disposable, DisposableStore, dispose, IDisposable, MutableDisposable } 
 import { IObservable } from '../../../../base/common/observable.js';
 import { isEqual } from '../../../../base/common/resources.js';
 import { Range } from '../../../../editor/common/core/range.js';
-import { CodeLens, CodeLensList, CodeLensProvider, InlayHint, InlayHintList } from '../../../../editor/common/languages.js';
+import { CodeLensList, CodeLensProvider, InlayHint, InlayHintList } from '../../../../editor/common/languages.js';
 import { ITextModel } from '../../../../editor/common/model.js';
 import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
 import { localize } from '../../../../nls.js';
@@ -19,10 +19,11 @@ import { IMarkerData, IMarkerService, MarkerSeverity } from '../../../../platfor
 import { IWorkbenchContribution } from '../../../common/contributions.js';
 import { IConfigurationResolverService } from '../../../services/configurationResolver/common/configurationResolver.js';
 import { ConfigurationResolverExpression, IResolvedValue } from '../../../services/configurationResolver/common/configurationResolverExpression.js';
-import { McpCommandIds } from '../common/mcpCommandIds.js';
+import { IMcpConfigPath, IMcpConfigPathsService } from '../common/mcpConfigPathsService.js';
 import { mcpConfigurationSection } from '../common/mcpConfiguration.js';
 import { IMcpRegistry } from '../common/mcpRegistryTypes.js';
-import { IMcpConfigPath, IMcpServerStartOpts, IMcpService, IMcpWorkbenchService, McpConnectionState } from '../common/mcpTypes.js';
+import { IMcpService, McpConnectionState } from '../common/mcpTypes.js';
+import { EditStoredInput, RemoveStoredInput, RestartServer, ShowOutput, StartServer, StopServer } from './mcpCommands.js';
 
 const diagnosticOwner = 'vscode.mcp';
 
@@ -32,7 +33,7 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 	constructor(
 		@ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
 		@IMcpRegistry private readonly _mcpRegistry: IMcpRegistry,
-		@IMcpWorkbenchService private readonly _mcpWorkbenchService: IMcpWorkbenchService,
+		@IMcpConfigPathsService private readonly _mcpConfigPathsService: IMcpConfigPathsService,
 		@IMcpService private readonly _mcpService: IMcpService,
 		@IMarkerService private readonly _markerService: IMarkerService,
 		@IConfigurationResolverService private readonly _configurationResolverService: IConfigurationResolverService,
@@ -40,7 +41,8 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 		super();
 
 		const patterns = [
-			{ pattern: '**/mcp.json' },
+			{ pattern: '**/.vscode/mcp.json' },
+			{ pattern: '**/settings.json' },
 			{ pattern: '**/workspace.json' },
 		];
 
@@ -58,13 +60,13 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 	}
 
 	/** Simple mechanism to avoid extra json parsing for hints+lenses */
-	private async _parseModel(model: ITextModel) {
+	private _parseModel(model: ITextModel) {
 		if (this._cachedMcpSection.value?.model === model) {
 			return this._cachedMcpSection.value;
 		}
 
 		const uri = model.uri;
-		const inConfig = await this._mcpWorkbenchService.getMcpConfigPath(model.uri);
+		const inConfig = this._mcpConfigPathsService.paths.get().find(u => isEqual(u.uri, uri));
 		if (!inConfig) {
 			return undefined;
 		}
@@ -138,8 +140,8 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 		}
 	}
 
-	private async _provideCodeLenses(model: ITextModel, onDidChangeCodeLens: () => void): Promise<CodeLensList | undefined> {
-		const parsed = await this._parseModel(model);
+	private _provideCodeLenses(model: ITextModel, onDidChangeCodeLens: () => void): CodeLensList | undefined {
+		const parsed = this._parseModel(model);
 		if (!parsed) {
 			return undefined;
 		}
@@ -151,8 +153,7 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 		}
 
 		const store = new DisposableStore();
-		const lenses: CodeLens[] = [];
-		const lensList: CodeLensList = { lenses, dispose: () => store.dispose() };
+		const lenses: CodeLensList = { lenses: [], dispose: () => store.dispose() };
 		const read = <T>(observable: IObservable<T>): T => {
 			store.add(Event.fromObservableLight(observable)(onDidChangeCodeLens));
 			return observable.get();
@@ -160,7 +161,7 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 
 		const collection = read(this._mcpRegistry.collections).find(c => isEqual(c.presentation?.origin, model.uri));
 		if (!collection) {
-			return lensList;
+			return lenses;
 		}
 
 		const mcpServers = read(this._mcpService.servers).filter(s => s.collection.id === collection.id);
@@ -176,150 +177,99 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 			}
 
 			const range = Range.fromPositions(model.getPositionAt(node.children[0].offset));
-			const canDebug = !!server.readDefinitions().get().server?.devMode?.debug;
-			const state = read(server.connectionState).state;
-			switch (state) {
+			switch (read(server.connectionState).state) {
 				case McpConnectionState.Kind.Error:
-					lenses.push({
+					lenses.lenses.push({
 						range,
 						command: {
-							id: McpCommandIds.ShowOutput,
+							id: ShowOutput.ID,
 							title: '$(error) ' + localize('server.error', 'Error'),
 							arguments: [server.definition.id],
 						},
 					}, {
 						range,
 						command: {
-							id: McpCommandIds.RestartServer,
+							id: RestartServer.ID,
 							title: localize('mcp.restart', "Restart"),
-							arguments: [server.definition.id, { autoTrustChanges: true } satisfies IMcpServerStartOpts],
+							arguments: [server.definition.id],
 						},
 					});
-					if (canDebug) {
-						lenses.push({
-							range,
-							command: {
-								id: McpCommandIds.RestartServer,
-								title: localize('mcp.debug', "Debug"),
-								arguments: [server.definition.id, { debug: true, autoTrustChanges: true } satisfies IMcpServerStartOpts],
-							},
-						});
-					}
 					break;
 				case McpConnectionState.Kind.Starting:
-					lenses.push({
+					lenses.lenses.push({
 						range,
 						command: {
-							id: McpCommandIds.ShowOutput,
+							id: ShowOutput.ID,
 							title: '$(loading~spin) ' + localize('server.starting', 'Starting'),
 							arguments: [server.definition.id],
 						},
 					}, {
 						range,
 						command: {
-							id: McpCommandIds.StopServer,
+							id: StopServer.ID,
 							title: localize('cancel', "Cancel"),
 							arguments: [server.definition.id],
 						},
 					});
 					break;
 				case McpConnectionState.Kind.Running:
-					lenses.push({
+					lenses.lenses.push({
 						range,
 						command: {
-							id: McpCommandIds.ShowOutput,
+							id: ShowOutput.ID,
 							title: '$(check) ' + localize('server.running', 'Running'),
 							arguments: [server.definition.id],
 						},
 					}, {
 						range,
 						command: {
-							id: McpCommandIds.StopServer,
+							id: StopServer.ID,
 							title: localize('mcp.stop', "Stop"),
 							arguments: [server.definition.id],
 						},
 					}, {
 						range,
 						command: {
-							id: McpCommandIds.RestartServer,
+							id: RestartServer.ID,
 							title: localize('mcp.restart', "Restart"),
-							arguments: [server.definition.id, { autoTrustChanges: true } satisfies IMcpServerStartOpts],
+							arguments: [server.definition.id],
 						},
-					});
-					if (canDebug) {
-						lenses.push({
-							range,
-							command: {
-								id: McpCommandIds.RestartServer,
-								title: localize('mcp.debug', "Debug"),
-								arguments: [server.definition.id, { autoTrustChanges: true, debug: true } satisfies IMcpServerStartOpts],
-							},
-						});
-					}
-					break;
-				case McpConnectionState.Kind.Stopped:
-					lenses.push({
-						range,
-						command: {
-							id: McpCommandIds.StartServer,
-							title: '$(debug-start) ' + localize('mcp.start', "Start"),
-							arguments: [server.definition.id, { autoTrustChanges: true } satisfies IMcpServerStartOpts],
-						},
-					});
-					if (canDebug) {
-						lenses.push({
-							range,
-							command: {
-								id: McpCommandIds.StartServer,
-								title: localize('mcp.debug', "Debug"),
-								arguments: [server.definition.id, { autoTrustChanges: true, debug: true } satisfies IMcpServerStartOpts],
-							},
-						});
-					}
-			}
-
-
-			if (state !== McpConnectionState.Kind.Error) {
-				const toolCount = read(server.tools).length;
-				if (toolCount) {
-					lenses.push({
+					}, {
 						range,
 						command: {
 							id: '',
-							title: localize('server.toolCount', '{0} tools', toolCount),
-						}
+							title: localize('server.toolCount', '{0} tools', read(server.tools).length),
+						},
 					});
-				}
-
-
-				const promptCount = read(server.prompts).length;
-				if (promptCount) {
-					lenses.push({
+					break;
+				case McpConnectionState.Kind.Stopped: {
+					lenses.lenses.push({
 						range,
 						command: {
-							id: McpCommandIds.StartPromptForServer,
-							title: localize('server.promptcount', '{0} prompts', promptCount),
-							arguments: [server],
-						}
+							id: StartServer.ID,
+							title: '$(debug-start) ' + localize('mcp.start', "Start"),
+							arguments: [server.definition.id],
+						},
 					});
-				}
-
-				lenses.push({
-					range,
-					command: {
-						id: McpCommandIds.ServerOptions,
-						title: localize('mcp.server.more', 'More...'),
-						arguments: [server.definition.id],
+					const toolCount = read(server.tools).length;
+					if (toolCount) {
+						lenses.lenses.push({
+							range,
+							command: {
+								id: '',
+								title: localize('server.toolCountCached', '{0} cached tools', toolCount),
+							}
+						});
 					}
-				});
+				}
 			}
 		}
 
-		return lensList;
+		return lenses;
 	}
 
 	private async _provideInlayHints(model: ITextModel, range: Range): Promise<InlayHintList | undefined> {
-		const parsed = await this._parseModel(model);
+		const parsed = this._parseModel(model);
 		if (!parsed) {
 			return undefined;
 		}
@@ -388,9 +338,9 @@ export class McpLanguageFeatures extends Disposable implements IWorkbenchContrib
 
 		function pushAnnotation(savedId: string, offset: number, saved: IResolvedValue): InlayHint {
 			const tooltip = new MarkdownString([
-				markdownCommandLink({ id: McpCommandIds.EditStoredInput, title: localize('edit', 'Edit'), arguments: [savedId, model.uri, mcpConfigurationSection, inConfig!.target] }),
-				markdownCommandLink({ id: McpCommandIds.RemoveStoredInput, title: localize('clear', 'Clear'), arguments: [inConfig!.scope, savedId] }),
-				markdownCommandLink({ id: McpCommandIds.RemoveStoredInput, title: localize('clearAll', 'Clear All'), arguments: [inConfig!.scope] }),
+				markdownCommandLink({ id: EditStoredInput.ID, title: localize('edit', 'Edit'), arguments: [savedId, model.uri, mcpConfigurationSection, inConfig!.target] }),
+				markdownCommandLink({ id: RemoveStoredInput.ID, title: localize('clear', 'Clear'), arguments: [inConfig!.scope, savedId] }),
+				markdownCommandLink({ id: RemoveStoredInput.ID, title: localize('clearAll', 'Clear All'), arguments: [inConfig!.scope] }),
 			].join(' | '), { isTrusted: true });
 
 			const hint: InlayHint = {

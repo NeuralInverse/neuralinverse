@@ -9,14 +9,13 @@ import { isMacintosh, isLinux, language, isWeb } from '../../../base/common/plat
 import { ITelemetryService } from '../../../platform/telemetry/common/telemetry.js';
 import { IOpenerService } from '../../../platform/opener/common/opener.js';
 import { URI } from '../../../base/common/uri.js';
-import { MenuId, Action2, registerAction2, MenuRegistry } from '../../../platform/actions/common/actions.js';
+import { MenuId, Action2, registerAction2 } from '../../../platform/actions/common/actions.js';
 import { KeyChord, KeyMod, KeyCode } from '../../../base/common/keyCodes.js';
 import { IProductService } from '../../../platform/product/common/productService.js';
 import { ServicesAccessor } from '../../../platform/instantiation/common/instantiation.js';
 import { KeybindingWeight } from '../../../platform/keybinding/common/keybindingsRegistry.js';
 import { Categories } from '../../../platform/action/common/actionCommonCategories.js';
 import { ICommandService } from '../../../platform/commands/common/commands.js';
-import { ContextKeyExpr } from '../../../platform/contextkey/common/contextkey.js';
 
 class KeybindingsReferenceAction extends Action2 {
 
@@ -280,7 +279,7 @@ class OpenLicenseUrlAction extends Action2 {
 class OpenPrivacyStatementUrlAction extends Action2 {
 
 	static readonly ID = 'workbench.action.openPrivacyStatementUrl';
-	static readonly AVAILABLE = !!product.privacyStatementUrl;
+	static readonly AVAILABE = !!product.privacyStatementUrl;
 
 	constructor() {
 		super({
@@ -332,34 +331,29 @@ class GetStartedWithAccessibilityFeatures extends Action2 {
 	}
 }
 
-class AskVSCodeCopilot extends Action2 {
-	static readonly ID = 'workbench.action.askVScode';
+class GetStartedWithCopilot extends Action2 {
+
+	static readonly ID = 'workbench.action.getStartedWithCopilot';
+	static readonly AVAILABE = !!product.defaultChatAgent?.documentationUrl;
 
 	constructor() {
 		super({
-			id: AskVSCodeCopilot.ID,
-			title: localize2('askVScode', 'Ask @vscode'),
+			id: GetStartedWithCopilot.ID,
+			title: localize2('getStartedWithCopilot', 'Get Started with Copilot'),
 			category: Categories.Help,
 			f1: true,
-			precondition: ContextKeyExpr.equals('chatSetupHidden', false)
+			menu: {
+				id: MenuId.MenubarHelpMenu,
+				group: '1_welcome',
+				order: 7
+			}
 		});
 	}
-
-	async run(accessor: ServicesAccessor): Promise<void> {
-		const commandService = accessor.get(ICommandService);
-		commandService.executeCommand('workbench.action.chat.open', { mode: 'ask', query: '@vscode ', isPartialQuery: true });
+	run(accessor: ServicesAccessor): void {
+		const openerService = accessor.get(IOpenerService);
+		openerService.open(URI.parse(product.defaultChatAgent!.documentationUrl));
 	}
 }
-
-MenuRegistry.appendMenuItem(MenuId.MenubarHelpMenu, {
-	command: {
-		id: AskVSCodeCopilot.ID,
-		title: localize2('askVScode', 'Ask @vscode'),
-	},
-	order: 7,
-	group: '1_welcome',
-	when: ContextKeyExpr.equals('chatSetupHidden', false)
-});
 
 // --- Actions Registration
 
@@ -395,10 +389,12 @@ if (OpenLicenseUrlAction.AVAILABLE) {
 	registerAction2(OpenLicenseUrlAction);
 }
 
-if (OpenPrivacyStatementUrlAction.AVAILABLE) {
+if (OpenPrivacyStatementUrlAction.AVAILABE) {
 	registerAction2(OpenPrivacyStatementUrlAction);
 }
 
 registerAction2(GetStartedWithAccessibilityFeatures);
 
-registerAction2(AskVSCodeCopilot);
+if (GetStartedWithCopilot.AVAILABE) {
+	registerAction2(GetStartedWithCopilot);
+}

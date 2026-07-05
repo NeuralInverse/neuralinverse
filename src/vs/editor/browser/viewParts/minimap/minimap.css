@@ -35,7 +35,6 @@
 	position: absolute;
 	left: -6px;
 	width: 6px;
-	pointer-events: none;
 }
 .monaco-editor.no-minimap-shadow .minimap-shadow-visible {
 	position: absolute;
@@ -44,18 +43,12 @@
 }
 
 /* 0.5s fade in/out for the minimap */
-.minimap.minimap-autohide-mouseover,
-.minimap.minimap-autohide-scroll {
+.minimap.autohide {
 	opacity: 0;
 	transition: opacity 0.5s;
 }
-.minimap.minimap-autohide-scroll{
-	pointer-events: none;
-}
-.minimap.minimap-autohide-mouseover:hover,
-.minimap.minimap-autohide-scroll.active {
+.minimap.autohide:hover {
 	opacity: 1;
-	pointer-events: auto;
 }
 
 .monaco-editor .minimap {

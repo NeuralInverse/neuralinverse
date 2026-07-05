@@ -22,7 +22,6 @@ import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { SnippetController2 } from '../../../../editor/contrib/snippet/browser/snippetController2.js';
 import { SnippetParser } from '../../../../editor/contrib/snippet/browser/snippetParser.js';
 import { ISnippetEdit } from '../../../../editor/contrib/snippet/browser/snippetSession.js';
-import { TextModelEditSource } from '../../../../editor/common/textModelEditSource.js';
 
 type ValidationResult = { canApply: true } | { canApply: false; reason: URI };
 
@@ -95,12 +94,12 @@ class ModelEditTask implements IDisposable {
 		return null;
 	}
 
-	apply(reason?: TextModelEditSource): void {
+	apply(): void {
 		if (this._edits.length > 0) {
 			this._edits = this._edits
 				.map(this._transformSnippetStringToInsertText, this) // no editor -> no snippet mode
 				.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
-			this.model.pushEditOperations(null, this._edits, () => null, undefined, reason);
+			this.model.pushEditOperations(null, this._edits, () => null);
 		}
 		if (this._newEol !== undefined) {
 			this.model.pushEOL(this._newEol);
@@ -135,7 +134,7 @@ class EditorEditTask extends ModelEditTask {
 		return this._canUseEditor() ? this._editor.getSelections() : null;
 	}
 
-	override apply(reason?: TextModelEditSource): void {
+	override apply(): void {
 
 		// Check that the editor is still for the wanted model. It might have changed in the
 		// meantime and that means we cannot use the editor anymore (instead we perform the edit through the model)
@@ -165,7 +164,7 @@ class EditorEditTask extends ModelEditTask {
 				this._edits = this._edits
 					.map(this._transformSnippetStringToInsertText, this) // mixed edits (snippet and normal) -> no snippet mode
 					.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
-				this._editor.executeEdits(reason, this._edits);
+				this._editor.executeEdits('', this._edits);
 			}
 		}
 		if (this._newEol !== undefined) {
@@ -288,7 +287,7 @@ export class BulkTextEdits {
 		return { canApply: true };
 	}
 
-	async apply(reason?: TextModelEditSource): Promise<readonly URI[]> {
+	async apply(): Promise<readonly URI[]> {
 
 		this._validateBeforePrepare();
 		const tasks = await this._createEditsTasks();
@@ -309,7 +308,7 @@ export class BulkTextEdits {
 				if (!task.isNoOp()) {
 					const singleModelEditStackElement = new SingleModelEditStackElement(this._label, this._code, task.model, task.getBeforeCursorState());
 					this._undoRedoService.pushElement(singleModelEditStackElement, this._undoRedoGroup, this._undoRedoSource);
-					task.apply(reason);
+					task.apply();
 					singleModelEditStackElement.close();
 					resources.push(task.model.uri);
 				}

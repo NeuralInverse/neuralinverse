@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from '../../../nls.js';
 import { IAction } from '../../../base/common/actions.js';
 import { Event } from '../../../base/common/event.js';
+import { IDisposable } from '../../../base/common/lifecycle.js';
 import BaseSeverity from '../../../base/common/severity.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 
@@ -21,11 +21,6 @@ export enum NotificationPriority {
 	 * Default priority: notification will be visible unless do not disturb mode is enabled.
 	 */
 	DEFAULT,
-
-	/**
-	 * Optional priority: notification might only be visible from the notifications center.
-	 */
-	OPTIONAL,
 
 	/**
 	 * Silent priority: notification will only be visible from the notifications center.
@@ -273,14 +268,6 @@ export interface INotificationHandle {
 	close(): void;
 }
 
-export interface IStatusHandle {
-
-	/**
-	 * Hide the status message.
-	 */
-	close(): void;
-}
-
 interface IBasePromptChoice {
 
 	/**
@@ -373,6 +360,16 @@ export interface INotificationService {
 	readonly _serviceBrand: undefined;
 
 	/**
+	 * Emitted when a new notification is added.
+	 */
+	readonly onDidAddNotification: Event<INotification>;
+
+	/**
+	 * Emitted when a notification is removed.
+	 */
+	readonly onDidRemoveNotification: Event<INotification>;
+
+	/**
 	 * Emitted when the notifications filter changed.
 	 */
 	readonly onDidChangeFilter: Event<void>;
@@ -448,9 +445,9 @@ export interface INotificationService {
 	 * @param message the message to show as status
 	 * @param options provides some optional configuration options
 	 *
-	 * @returns a handle to hide the status message
+	 * @returns a disposable to hide the status message
 	 */
-	status(message: NotificationMessage, options?: IStatusMessageOptions): IStatusHandle;
+	status(message: NotificationMessage, options?: IStatusMessageOptions): IDisposable;
 }
 
 export class NoOpNotification implements INotificationHandle {
@@ -472,20 +469,4 @@ export class NoOpProgress implements INotificationProgress {
 	done(): void { }
 	total(value: number): void { }
 	worked(value: number): void { }
-}
-
-export function withSeverityPrefix(label: string, severity: Severity): string {
-
-	// Add severity prefix to match WCAG 4.1.3 Status
-	// Messages requirements.
-
-	if (severity === Severity.Error) {
-		return localize('severityPrefix.error', "Error: {0}", label);
-	}
-
-	if (severity === Severity.Warning) {
-		return localize('severityPrefix.warning', "Warning: {0}", label);
-	}
-
-	return localize('severityPrefix.info', "Info: {0}", label);
 }

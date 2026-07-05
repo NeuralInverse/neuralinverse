@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { spawn } from 'child_process';
-import { relative } from '../../../base/common/path.js';
+import { relative } from 'path';
 import { FileAccess } from '../../../base/common/network.js';
 import { StopWatch } from '../../../base/common/stopwatch.js';
 import { IEnvironmentService } from '../../environment/common/environment.js';
@@ -49,23 +49,21 @@ export class CSSDevelopmentService implements ICSSDevelopmentService {
 
 			const sw = StopWatch.create();
 
-			const chunks: Buffer[] = [];
+			const chunks: string[][] = [];
+			const decoder = new TextDecoder();
 			const basePath = FileAccess.asFileUri('').fsPath;
 			const process = spawn(rg.rgPath, ['-g', '**/*.css', '--files', '--no-ignore', basePath], {});
 
 			process.stdout.on('data', data => {
-				chunks.push(data);
+				const chunk = decoder.decode(data, { stream: true });
+				chunks.push(chunk.split('\n').filter(Boolean));
 			});
 			process.on('error', err => {
 				this.logService.error('[CSS_DEV] FAILED to compute CSS data', err);
 				resolve([]);
 			});
 			process.on('close', () => {
-				const data = Buffer.concat(chunks).toString('utf8');
-				const result = data.split('\n').filter(Boolean).map(path => relative(basePath, path).replace(/\\/g, '/')).filter(Boolean).sort();
-				if (result.some(path => path.indexOf('vs/') !== 0)) {
-					this.logService.error(`[CSS_DEV] Detected invalid paths in css modules, raw output: ${data}`);
-				}
+				const result = chunks.flat().map(path => relative(basePath, path).replace(/\\/g, '/')).filter(Boolean).sort();
 				resolve(result);
 				this.logService.info(`[CSS_DEV] DONE, ${result.length} css modules (${Math.round(sw.elapsed())}ms)`);
 			});

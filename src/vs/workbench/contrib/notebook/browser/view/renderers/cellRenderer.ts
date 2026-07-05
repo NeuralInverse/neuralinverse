@@ -6,7 +6,7 @@
 import { PixelRatio } from '../../../../../../base/browser/pixelRatio.js';
 import * as DOM from '../../../../../../base/browser/dom.js';
 import { FastDomNode } from '../../../../../../base/browser/fastDomNode.js';
-import { IListElementRenderDetails, IListRenderer, IListVirtualDelegate } from '../../../../../../base/browser/ui/list/list.js';
+import { IListRenderer, IListVirtualDelegate } from '../../../../../../base/browser/ui/list/list.js';
 import { Disposable, DisposableStore } from '../../../../../../base/common/lifecycle.js';
 import { ICodeEditor } from '../../../../../../editor/browser/editorBrowser.js';
 import { CodeEditorWidget } from '../../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
@@ -208,7 +208,7 @@ export class MarkupCellRenderer extends AbstractCellRenderer implements IListRen
 		return templateData;
 	}
 
-	renderElement(element: MarkupCellViewModel, index: number, templateData: MarkdownCellRenderTemplate, details?: IListElementRenderDetails): void {
+	renderElement(element: MarkupCellViewModel, index: number, templateData: MarkdownCellRenderTemplate, height: number | undefined): void {
 		if (!this.notebookEditor.hasModel()) {
 			throw new Error('The notebook editor is not attached with view model yet.');
 		}
@@ -218,7 +218,7 @@ export class MarkupCellRenderer extends AbstractCellRenderer implements IListRen
 		templateData.editorPart.style.display = 'none';
 		templateData.cellContainer.innerText = '';
 
-		if (details?.height === undefined) {
+		if (height === undefined) {
 			return;
 		}
 
@@ -286,7 +286,6 @@ export class CodeCellRenderer extends AbstractCellRenderer implements IListRende
 
 		const editor = editorInstaService.createInstance(CodeEditorWidget, editorContainer, {
 			...this.editorOptions.getDefaultValue(),
-			allowVariableLineHeights: false,
 			dimension: {
 				width: 0,
 				height: 0
@@ -379,14 +378,14 @@ export class CodeCellRenderer extends AbstractCellRenderer implements IListRende
 		return templateData;
 	}
 
-	renderElement(element: CodeCellViewModel, index: number, templateData: CodeCellRenderTemplate, details?: IListElementRenderDetails): void {
+	renderElement(element: CodeCellViewModel, index: number, templateData: CodeCellRenderTemplate, height: number | undefined): void {
 		if (!this.notebookEditor.hasModel()) {
 			throw new Error('The notebook editor is not attached with view model yet.');
 		}
 
 		templateData.currentRenderedCell = element;
 
-		if (details?.height === undefined) {
+		if (height === undefined) {
 			return;
 		}
 
@@ -401,7 +400,7 @@ export class CodeCellRenderer extends AbstractCellRenderer implements IListRende
 		templateData.templateDisposables.dispose();
 	}
 
-	disposeElement(element: ICellViewModel, index: number, templateData: CodeCellRenderTemplate): void {
+	disposeElement(element: ICellViewModel, index: number, templateData: CodeCellRenderTemplate, height: number | undefined): void {
 		templateData.elementDisposables.clear();
 		this.renderedEditors.delete(element);
 	}

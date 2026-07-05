@@ -18,16 +18,26 @@ import { RefCounted } from '../diffEditor/utils.js';
 import { IDocumentDiffItem, IMultiDiffEditorModel } from './model.js';
 
 export class MultiDiffEditorViewModel extends Disposable {
-	private readonly _documents: IObservable<readonly RefCounted<IDocumentDiffItem>[] | 'loading'>;
+	private readonly _documents: IObservable<readonly RefCounted<IDocumentDiffItem>[] | 'loading'> = observableFromValueWithChangeEvent(this.model, this.model.documents);
 
-	private readonly _documentsArr;
+	private readonly _documentsArr = derived(this, reader => {
+		const result = this._documents.read(reader);
+		if (result === 'loading') { return []; }
+		return result;
+	});
 
-	public readonly isLoading;
+	public readonly isLoading = derived(this, reader => this._documents.read(reader) === 'loading');
 
-	public readonly items: IObservable<readonly DocumentDiffItemViewModel[]>;
+	public readonly items: IObservable<readonly DocumentDiffItemViewModel[]> = mapObservableArrayCached(
+		this,
+		this._documentsArr,
+		(d, store) => store.add(this._instantiationService.createInstance(DocumentDiffItemViewModel, d, this))
+	).recomputeInitiallyAndOnChange(this._store);
 
-	public readonly focusedDiffItem;
-	public readonly activeDiffItem;
+	public readonly focusedDiffItem = derived(this, reader => this.items.read(reader).find(i => i.isFocused.read(reader)));
+	public readonly activeDiffItem = derivedObservableWithWritableCache<DocumentDiffItemViewModel | undefined>(this,
+		(reader, lastValue) => this.focusedDiffItem.read(reader) ?? (lastValue && this.items.read(reader).indexOf(lastValue) !== -1) ? lastValue : undefined
+	);
 
 	public async waitForDiffs(): Promise<void> {
 		for (const d of this.items.get()) {
@@ -60,22 +70,6 @@ export class MultiDiffEditorViewModel extends Disposable {
 		private readonly _instantiationService: IInstantiationService,
 	) {
 		super();
-		this._documents = observableFromValueWithChangeEvent(this.model, this.model.documents);
-		this._documentsArr = derived(this, reader => {
-			const result = this._documents.read(reader);
-			if (result === 'loading') { return []; }
-			return result;
-		});
-		this.isLoading = derived(this, reader => this._documents.read(reader) === 'loading');
-		this.items = mapObservableArrayCached(
-			this,
-			this._documentsArr,
-			(d, store) => store.add(this._instantiationService.createInstance(DocumentDiffItemViewModel, d, this))
-		).recomputeInitiallyAndOnChange(this._store);
-		this.focusedDiffItem = derived(this, reader => this.items.read(reader).find(i => i.isFocused.read(reader)));
-		this.activeDiffItem = derivedObservableWithWritableCache<DocumentDiffItemViewModel | undefined>(this,
-			(reader, lastValue) => this.focusedDiffItem.read(reader) ?? (lastValue && this.items.read(reader).indexOf(lastValue) !== -1) ? lastValue : undefined
-		);
 	}
 }
 

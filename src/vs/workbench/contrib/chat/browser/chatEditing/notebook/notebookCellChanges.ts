@@ -83,8 +83,6 @@ export function countChanges(changes: ICellDiffInfo[]): number {
 }
 
 export function sortCellChanges(changes: ICellDiffInfo[]): ICellDiffInfo[] {
-	const indexes = new Map<ICellDiffInfo, number>();
-	changes.forEach((c, i) => indexes.set(c, i));
 	return [...changes].sort((a, b) => {
 		// For unchanged and modified, use modifiedCellIndex
 		if ((a.type === 'unchanged' || a.type === 'modified') &&
@@ -103,22 +101,10 @@ export function sortCellChanges(changes: ICellDiffInfo[]): ICellDiffInfo[] {
 		}
 
 		if (a.type === 'delete' && b.type === 'insert') {
-			// If the deleted cell comes before the inserted cell, we want the delete to come first
-			// As this means the cell was deleted before it was inserted
-			// We would like to see the deleted cell first in the list
-			// Else in the UI it would look weird to see an inserted cell before a deleted cell,
-			// When the users operation was to first delete the cell and then insert a new one
-			// I.e. this is merely just a simple way to ensure we have a stable sort.
-			return indexes.get(a)! - indexes.get(b)!;
+			return -1;
 		}
 		if (a.type === 'insert' && b.type === 'delete') {
-			// If the deleted cell comes before the inserted cell, we want the delete to come first
-			// As this means the cell was deleted before it was inserted
-			// We would like to see the deleted cell first in the list
-			// Else in the UI it would look weird to see an inserted cell before a deleted cell,
-			// When the users operation was to first delete the cell and then insert a new one
-			// I.e. this is merely just a simple way to ensure we have a stable sort.
-			return indexes.get(a)! - indexes.get(b)!;
+			return 1;
 		}
 
 		if ((a.type === 'delete' && b.type !== 'insert') || (a.type !== 'insert' && b.type === 'delete')) {

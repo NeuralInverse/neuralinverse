@@ -10,16 +10,14 @@ import { ExtHostContext, MainContext, MainThreadDecorationsShape, ExtHostDecorat
 import { extHostNamedCustomer, IExtHostContext } from '../../services/extensions/common/extHostCustomers.js';
 import { IDecorationsService, IDecorationData } from '../../services/decorations/common/decorations.js';
 import { CancellationToken } from '../../../base/common/cancellation.js';
-import { DeferredPromise } from '../../../base/common/async.js';
-import { CancellationError } from '../../../base/common/errors.js';
 
 class DecorationRequestsQueue {
 
 	private _idPool = 0;
 	private _requests = new Map<number, DecorationRequest>();
-	private _resolver = new Map<number, DeferredPromise<DecorationData>>();
+	private _resolver = new Map<number, (data: DecorationData) => any>();
 
-	private _timer: Timeout | undefined;
+	private _timer: any;
 
 	constructor(
 		private readonly _proxy: ExtHostDecorationsShape,
@@ -30,22 +28,20 @@ class DecorationRequestsQueue {
 
 	enqueue(uri: URI, token: CancellationToken): Promise<DecorationData> {
 		const id = ++this._idPool;
-
-		const defer = new DeferredPromise<DecorationData>();
-		this._requests.set(id, { id, uri });
-		this._resolver.set(id, defer);
-		this._processQueue();
-
+		const result = new Promise<DecorationData>(resolve => {
+			this._requests.set(id, { id, uri });
+			this._resolver.set(id, resolve);
+			this._processQueue();
+		});
 		const sub = token.onCancellationRequested(() => {
 			this._requests.delete(id);
 			this._resolver.delete(id);
-			defer.error(new CancellationError());
 		});
-		return defer.p.finally(() => sub.dispose());
+		return result.finally(() => sub.dispose());
 	}
 
 	private _processQueue(): void {
-		if (this._timer !== undefined) {
+		if (typeof this._timer === 'number') {
 			// already queued
 			return;
 		}
@@ -54,8 +50,8 @@ class DecorationRequestsQueue {
 			const requests = this._requests;
 			const resolver = this._resolver;
 			this._proxy.$provideDecorations(this._handle, [...requests.values()], CancellationToken.None).then(data => {
-				for (const [id, defer] of resolver) {
-					defer.complete(data[id]);
+				for (const [id, resolve] of resolver) {
+					resolve(data[id]);
 				}
 			});
 

@@ -76,24 +76,6 @@
 			"\""
 		]
 	],
-	"colorizedBracketPairs": [
-		[
-			"{",
-			"}"
-		],
-		[
-			"[",
-			"]"
-		],
-		[
-			"(",
-			")"
-		],
-		[
-			"<",
-			">"
-		]
-	],
 	"folding": {
 		"markers": {
 			"start": "^\\s*#region\\b",

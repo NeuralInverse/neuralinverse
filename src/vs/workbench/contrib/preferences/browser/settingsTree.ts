@@ -7,7 +7,7 @@ import { BrowserFeatures } from '../../../../base/browser/canIUse.js';
 import * as DOM from '../../../../base/browser/dom.js';
 import * as domStylesheetsJs from '../../../../base/browser/domStylesheets.js';
 import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
-import { renderAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
+import { renderMarkdownAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
 import { IMouseEvent } from '../../../../base/browser/mouseEvent.js';
 import * as aria from '../../../../base/browser/ui/aria/aria.js';
 import { Button } from '../../../../base/browser/ui/button/button.js';
@@ -57,7 +57,6 @@ import { IThemeService } from '../../../../platform/theme/common/themeService.js
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
 import { getIgnoredSettings } from '../../../../platform/userDataSync/common/settingsMerge.js';
 import { IUserDataSyncEnablementService, getDefaultIgnoredSettings } from '../../../../platform/userDataSync/common/userDataSync.js';
-import { hasNativeContextMenu } from '../../../../platform/window/common/window.js';
 import { APPLICATION_SCOPES, APPLY_ALL_PROFILES_SETTING, IWorkbenchConfigurationService } from '../../../services/configuration/common/configuration.js';
 import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
 import { IExtensionService } from '../../../services/extensions/common/extensions.js';
@@ -1029,17 +1028,20 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 		// Rewrite `#editor.fontSize#` to link format
 		text = fixSettingLinks(text);
 
-		const renderedMarkdown = disposables.add(this.markdownRenderer.render({ value: text, isTrusted: true }, {
-			actionHandler: (content: string) => {
-				if (content.startsWith('#')) {
-					const e: ISettingLinkClickEvent = {
-						source: element,
-						targetKey: content.substring(1)
-					};
-					this._onDidClickSettingLink.fire(e);
-				} else {
-					this._openerService.open(content, { allowCommands: true }).catch(onUnexpectedError);
-				}
+		const renderedMarkdown = this.markdownRenderer.render({ value: text, isTrusted: true }, {
+			actionHandler: {
+				callback: (content: string) => {
+					if (content.startsWith('#')) {
+						const e: ISettingLinkClickEvent = {
+							source: element,
+							targetKey: content.substring(1)
+						};
+						this._onDidClickSettingLink.fire(e);
+					} else {
+						this._openerService.open(content, { allowCommands: true }).catch(onUnexpectedError);
+					}
+				},
+				disposables
 			},
 			asyncRenderCallback: () => {
 				const height = container.clientHeight;
@@ -1047,7 +1049,8 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 					this._onDidChangeSettingHeight.fire({ element, height });
 				}
 			},
-		}));
+		});
+		disposables.add(renderedMarkdown);
 
 		renderedMarkdown.element.classList.add('setting-item-markdown');
 		cleanRenderedMarkdown(renderedMarkdown.element);
@@ -1060,7 +1063,7 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 		template.toDispose.dispose();
 	}
 
-	disposeElement(_element: ITreeNode<SettingsTreeElement>, _index: number, template: IDisposableTemplate): void {
+	disposeElement(_element: ITreeNode<SettingsTreeElement>, _index: number, template: IDisposableTemplate, _height: number | undefined): void {
 		(template as ISettingItemTemplate).elementDisposables?.clear();
 	}
 }
@@ -1175,7 +1178,7 @@ export class SettingComplexRenderer extends AbstractSettingRenderer implements I
 
 		const onClickOrKeydown = (e: UIEvent) => {
 			if (isLanguageTagSetting) {
-				this._onApplyFilter.fire(`@${LANGUAGE_SETTING_TAG}${plainKey.replaceAll(' ', '')}`);
+				this._onApplyFilter.fire(`@${LANGUAGE_SETTING_TAG}${plainKey}`);
 			} else {
 				this._onDidOpenSettings.fire(dataElement.setting.key);
 			}
@@ -1813,7 +1816,7 @@ class SettingEnumRenderer extends AbstractSettingRenderer implements ITreeRender
 		});
 
 		const selectBox = new SelectBox([], 0, this._contextViewService, styles, {
-			useCustomDrawn: !hasNativeContextMenu(this._configService) || !(isIOS && BrowserFeatures.pointerEvents)
+			useCustomDrawn: !(isIOS && BrowserFeatures.pointerEvents)
 		});
 
 		common.toDispose.add(selectBox);
@@ -1878,8 +1881,11 @@ class SettingEnumRenderer extends AbstractSettingRenderer implements ITreeRender
 					detail: enumItemLabels[index] ? data : '',
 					description,
 					descriptionIsMarkdown: enumDescriptionsAreMarkdown,
-					descriptionMarkdownActionHandler: (content) => {
-						this._openerService.open(content).catch(onUnexpectedError);
+					descriptionMarkdownActionHandler: {
+						callback: (content) => {
+							this._openerService.open(content).catch(onUnexpectedError);
+						},
+						disposables: disposables
 					},
 					decoratorRight: (((data === stringifiedDefaultValue) || (createdDefault && index === 0)) ? localize('settings.Default', "default") : '')
 				} satisfies ISelectOptionItem;
@@ -1983,7 +1989,7 @@ class SettingBoolRenderer extends AbstractSettingRenderer implements ITreeRender
 		const categoryElement = DOM.append(titleElement, $('span.setting-item-category'));
 		const labelElementContainer = DOM.append(titleElement, $('span.setting-item-label'));
 		const labelElement = toDispose.add(new SimpleIconLabel(labelElementContainer));
-		const indicatorsLabel = toDispose.add(this._instantiationService.createInstance(SettingsTreeIndicatorsLabel, titleElement));
+		const indicatorsLabel = this._instantiationService.createInstance(SettingsTreeIndicatorsLabel, titleElement);
 
 		const descriptionAndValueElement = DOM.append(container, $('.setting-item-value-description'));
 		const controlElement = DOM.append(descriptionAndValueElement, $('.setting-item-bool-control'));
@@ -2001,6 +2007,20 @@ class SettingBoolRenderer extends AbstractSettingRenderer implements ITreeRender
 		toDispose.add(checkbox.onChange(() => {
 			template.onChange!(checkbox.checked);
 		}));
+
+		// Need to listen for mouse clicks on description and toggle checkbox - use target ID for safety
+		// Also have to ignore embedded links - too buried to stop propagation
+		toDispose.add(DOM.addDisposableListener(descriptionElement, DOM.EventType.MOUSE_DOWN, (e) => {
+			const targetElement = <HTMLElement>e.target;
+
+			// Toggle target checkbox
+			if (targetElement.tagName.toLowerCase() !== 'a') {
+				template.checkbox.checked = !template.checkbox.checked;
+				template.onChange!(checkbox.checked);
+			}
+			DOM.EventHelper.stop(e);
+		}));
+
 
 		checkbox.domNode.classList.add(AbstractSettingRenderer.CONTROL_CLASS);
 		const toolbarContainer = DOM.append(container, $('.setting-toolbar-container'));
@@ -2039,26 +2059,6 @@ class SettingBoolRenderer extends AbstractSettingRenderer implements ITreeRender
 	protected renderValue(dataElement: SettingsTreeSettingElement, template: ISettingBoolItemTemplate, onChange: (value: boolean) => void): void {
 		template.onChange = undefined;
 		template.checkbox.checked = dataElement.value;
-		if (dataElement.hasPolicyValue) {
-			template.checkbox.disable();
-			template.descriptionElement.classList.add('disabled');
-		} else {
-			template.checkbox.enable();
-			template.descriptionElement.classList.remove('disabled');
-
-			// Need to listen for mouse clicks on description and toggle checkbox - use target ID for safety
-			// Also have to ignore embedded links - too buried to stop propagation
-			template.elementDisposables.add(DOM.addDisposableListener(template.descriptionElement, DOM.EventType.MOUSE_DOWN, (e) => {
-				const targetElement = <HTMLElement>e.target;
-
-				// Toggle target checkbox
-				if (targetElement.tagName.toLowerCase() !== 'a') {
-					template.checkbox.checked = !template.checkbox.checked;
-					template.onChange!(template.checkbox.checked);
-				}
-				DOM.EventHelper.stop(e);
-			}));
-		}
 		template.checkbox.setTitle(dataElement.setting.key);
 		template.onChange = onChange;
 	}
@@ -2532,7 +2532,7 @@ class SettingsTreeAccessibilityProvider implements IListAccessibilityProvider<Se
 				ariaLabelSections.push(`${indicatorsLabelAriaLabel}.`);
 			}
 
-			const descriptionWithoutSettingLinks = renderAsPlaintext({ value: fixSettingLinks(element.description, false) });
+			const descriptionWithoutSettingLinks = renderMarkdownAsPlaintext({ value: fixSettingLinks(element.description, false) });
 			if (descriptionWithoutSettingLinks.length) {
 				ariaLabelSections.push(descriptionWithoutSettingLinks);
 			}

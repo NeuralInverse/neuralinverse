@@ -21,7 +21,6 @@ import { assertType } from '../../../base/common/types.js';
 import { localize } from '../../../nls.js';
 import { IAccessibilityService } from '../../accessibility/common/accessibility.js';
 import { ICommandAction, isICommandActionToggleInfo } from '../../action/common/action.js';
-import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { IContextKeyService } from '../../contextkey/common/contextkey.js';
 import { IContextMenuService, IContextViewService } from '../../contextview/browser/contextView.js';
 import { IInstantiationService } from '../../instantiation/common/instantiation.js';
@@ -32,7 +31,6 @@ import { defaultSelectBoxStyles } from '../../theme/browser/defaultStyles.js';
 import { asCssVariable, selectBorder } from '../../theme/common/colorRegistry.js';
 import { isDark } from '../../theme/common/theme.js';
 import { IThemeService } from '../../theme/common/themeService.js';
-import { hasNativeContextMenu } from '../../window/common/window.js';
 import { IMenuService, MenuItemAction, SubmenuItemAction } from '../common/actions.js';
 import './menuEntryActionViewItem.css';
 
@@ -168,10 +166,10 @@ function fillInActions(
 }
 
 export interface IMenuEntryActionViewItemOptions {
-	readonly draggable?: boolean;
-	readonly keybinding?: string | null;
-	readonly hoverDelegate?: IHoverDelegate;
-	readonly keybindingNotRenderedWithLabel?: boolean;
+	draggable?: boolean;
+	keybinding?: string | null;
+	hoverDelegate?: IHoverDelegate;
+	keybindingNotRenderedWithLabel?: boolean;
 }
 
 export class MenuEntryActionViewItem<T extends IMenuEntryActionViewItemOptions = IMenuEntryActionViewItemOptions> extends ActionViewItem {
@@ -182,12 +180,12 @@ export class MenuEntryActionViewItem<T extends IMenuEntryActionViewItemOptions =
 
 	constructor(
 		action: MenuItemAction,
-		protected readonly _options: T | undefined,
+		protected _options: T | undefined,
 		@IKeybindingService protected readonly _keybindingService: IKeybindingService,
-		@INotificationService protected readonly _notificationService: INotificationService,
-		@IContextKeyService protected readonly _contextKeyService: IContextKeyService,
-		@IThemeService protected readonly _themeService: IThemeService,
-		@IContextMenuService protected readonly _contextMenuService: IContextMenuService,
+		@INotificationService protected _notificationService: INotificationService,
+		@IContextKeyService protected _contextKeyService: IContextKeyService,
+		@IThemeService protected _themeService: IThemeService,
+		@IContextMenuService protected _contextMenuService: IContextMenuService,
 		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService
 	) {
 		super(undefined, action, { icon: !!(action.class || action.item.icon), label: !action.class && !action.item.icon, draggable: _options?.draggable, keybinding: _options?.keybinding, hoverDelegate: _options?.hoverDelegate, keybindingNotRenderedWithLabel: _options?.keybindingNotRenderedWithLabel });
@@ -339,8 +337,8 @@ export class MenuEntryActionViewItem<T extends IMenuEntryActionViewItemOptions =
 }
 
 export interface ITextOnlyMenuEntryActionViewItemOptions extends IMenuEntryActionViewItemOptions {
-	readonly conversational?: boolean;
-	readonly useComma?: boolean;
+	conversational?: boolean;
+	useComma?: boolean;
 }
 
 export class TextOnlyMenuEntryActionViewItem extends MenuEntryActionViewItem<ITextOnlyMenuEntryActionViewItemOptions> {
@@ -576,13 +574,12 @@ class SubmenuEntrySelectActionViewItem extends SelectActionViewItem {
 
 	constructor(
 		action: SubmenuItemAction,
-		@IContextViewService contextViewService: IContextViewService,
-		@IConfigurationService configurationService: IConfigurationService,
+		@IContextViewService contextViewService: IContextViewService
 	) {
 		super(null, action, action.actions.map(a => ({
 			text: a.id === Separator.ID ? '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500' : a.label,
 			isDisabled: !a.enabled,
-		})), 0, contextViewService, defaultSelectBoxStyles, { ariaLabel: action.tooltip, optionsAsChildren: true, useCustomDrawn: !hasNativeContextMenu(configurationService) });
+		})), 0, contextViewService, defaultSelectBoxStyles, { ariaLabel: action.tooltip, optionsAsChildren: true });
 		this.select(Math.max(0, action.actions.findIndex(a => a.checked)));
 	}
 

@@ -16,7 +16,7 @@ import { IFileService } from '../../../files/common/files.js';
 import { IStorageService, StorageScope } from '../../../storage/common/storage.js';
 import { IUserDataProfilesService } from '../../../userDataProfile/common/userDataProfile.js';
 import { AbstractSynchroniser, IAcceptResult, IMergeResult, IResourcePreview, SyncStrategy } from '../../common/abstractSynchronizer.js';
-import { Change, IRemoteUserData, IResourcePreview as IBaseResourcePreview, IUserDataSyncConfiguration, IUserDataSyncStoreService, MergeState, SyncResource, SyncStatus, USER_DATA_SYNC_SCHEME, IUserData } from '../../common/userDataSync.js';
+import { Change, IRemoteUserData, IResourcePreview as IBaseResourcePreview, IUserDataResourceManifest, IUserDataSyncConfiguration, IUserDataSyncStoreService, MergeState, SyncResource, SyncStatus, USER_DATA_SYNC_SCHEME } from '../../common/userDataSync.js';
 import { UserDataSyncClient, UserDataSyncTestServer } from './userDataSyncClient.js';
 
 interface ITestResourcePreview extends IResourcePreview {
@@ -38,11 +38,11 @@ class TestSynchroniser extends AbstractSynchroniser {
 	getMachineId(): Promise<string> { return this.currentMachineIdPromise; }
 	getLastSyncResource(): URI { return this.lastSyncResource; }
 
-	protected override getLatestRemoteUserData(refOrLatestData: string | IUserData | null, lastSyncUserData: IRemoteUserData | null): Promise<IRemoteUserData> {
+	protected override getLatestRemoteUserData(manifest: IUserDataResourceManifest | null, lastSyncUserData: IRemoteUserData | null): Promise<IRemoteUserData> {
 		if (this.failWhenGettingLatestRemoteUserData) {
 			throw new Error();
 		}
-		return super.getLatestRemoteUserData(refOrLatestData, lastSyncUserData);
+		return super.getLatestRemoteUserData(manifest, lastSyncUserData);
 	}
 
 	protected override async doSync(remoteUserData: IRemoteUserData, lastSyncUserData: IRemoteUserData | null, strategy: SyncStrategy, userDataSyncConfiguration: IUserDataSyncConfiguration): Promise<SyncStatus> {
@@ -200,7 +200,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 
 			const promise = Event.toPromise(testObject.onDoSyncCall.event);
 
-			testObject.sync(await client.getLatestRef(testObject.resource));
+			testObject.sync(await client.getResourceManifest());
 			await promise;
 
 			assert.deepStrictEqual(actual, [SyncStatus.Syncing]);
@@ -217,7 +217,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 
 			const actual: SyncStatus[] = [];
 			disposableStore.add(testObject.onDidChangeStatus(status => actual.push(status)));
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			assert.deepStrictEqual(actual, [SyncStatus.Syncing, SyncStatus.Idle]);
 			assert.deepStrictEqual(testObject.status, SyncStatus.Idle);
@@ -234,7 +234,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 			disposableStore.add(testObject.onDidChangeStatus(status => actual.push(status)));
 
 			try {
-				await testObject.sync(await client.getLatestRef(testObject.resource));
+				await testObject.sync(await client.getResourceManifest());
 				assert.fail('Should fail');
 			} catch (e) {
 				assert.deepStrictEqual(actual, [SyncStatus.Syncing, SyncStatus.Idle]);
@@ -249,7 +249,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 			assertConflicts(testObject.conflicts.conflicts, [testObject.localResource]);
@@ -261,12 +261,12 @@ suite('TestSynchronizer - Auto Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			const promise = Event.toPromise(testObject.onDoSyncCall.event);
 
-			testObject.sync(await client.getLatestRef(testObject.resource));
+			testObject.sync(await client.getResourceManifest());
 			await promise;
 
 			const actual: SyncStatus[] = [];
 			disposableStore.add(testObject.onDidChangeStatus(status => actual.push(status)));
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			assert.deepStrictEqual(actual, []);
 			assert.deepStrictEqual(testObject.status, SyncStatus.Syncing);
@@ -280,11 +280,11 @@ suite('TestSynchronizer - Auto Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			const actual: SyncStatus[] = [];
 			disposableStore.add(testObject.onDidChangeStatus(status => actual.push(status)));
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			assert.deepStrictEqual(actual, []);
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
@@ -297,7 +297,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			await testObject.accept(testObject.conflicts.conflicts[0].previewResource);
@@ -315,14 +315,14 @@ suite('TestSynchronizer - Auto Sync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const fileService = client.instantiationService.get(IFileService);
 			const currentRemoteContent = (await testObject.getRemoteUserData(null)).syncData?.content;
 			const newLocalContent = 'conflict';
 			await fileService.writeFile(testObject.localResource, VSBuffer.fromString(newLocalContent));
 
 			testObject.syncResult = { hasConflicts: true, hasError: false };
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			await testObject.accept(testObject.conflicts.conflicts[0].remoteResource);
@@ -340,13 +340,13 @@ suite('TestSynchronizer - Auto Sync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const fileService = client.instantiationService.get(IFileService);
 			const newLocalContent = 'conflict';
 			await fileService.writeFile(testObject.localResource, VSBuffer.fromString(newLocalContent));
 
 			testObject.syncResult = { hasConflicts: true, hasError: false };
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			await testObject.accept(testObject.conflicts.conflicts[0].localResource);
@@ -364,13 +364,13 @@ suite('TestSynchronizer - Auto Sync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const fileService = client.instantiationService.get(IFileService);
 			const newLocalContent = 'conflict';
 			await fileService.writeFile(testObject.localResource, VSBuffer.fromString(newLocalContent));
 
 			testObject.syncResult = { hasConflicts: true, hasError: false };
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			const mergeContent = 'newContent';
@@ -389,13 +389,13 @@ suite('TestSynchronizer - Auto Sync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const fileService = client.instantiationService.get(IFileService);
 			const newLocalContent = 'conflict';
 			await fileService.writeFile(testObject.localResource, VSBuffer.fromString(newLocalContent));
 
 			testObject.syncResult = { hasConflicts: true, hasError: false };
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			await testObject.accept(testObject.conflicts.conflicts[0].previewResource, null);
@@ -413,12 +413,12 @@ suite('TestSynchronizer - Auto Sync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const fileService = client.instantiationService.get(IFileService);
 			await fileService.del(testObject.localResource);
 
 			testObject.syncResult = { hasConflicts: true, hasError: false };
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			await testObject.accept(testObject.conflicts.conflicts[0].localResource);
@@ -440,7 +440,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 			await fileService.writeFile(testObject.localResource, VSBuffer.fromString('some content'));
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 
 			await testObject.accept(testObject.conflicts.conflicts[0].remoteResource);
@@ -459,25 +459,26 @@ suite('TestSynchronizer - Auto Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			// Sync once
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			testObject.syncBarrier = new Barrier();
 
 			// update remote data before syncing so that 412 is thrown by server
 			const disposable = testObject.onDoSyncCall.event(async () => {
 				disposable.dispose();
-				await testObject.applyRef(ref, ref!);
+				await testObject.applyRef(ref, ref);
 				server.reset();
 				testObject.syncBarrier.open();
 			});
 
 			// Start sycing
-			const ref = await client.getLatestRef(testObject.resource);
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			const manifest = await client.getResourceManifest();
+			const ref = manifest![testObject.resource];
+			await testObject.sync(await client.getResourceManifest());
 
 			assert.deepStrictEqual(server.requests, [
 				{ type: 'POST', url: `${server.url}/v1/resource/${testObject.resource}`, headers: { 'If-Match': ref } },
 				{ type: 'GET', url: `${server.url}/v1/resource/${testObject.resource}/latest`, headers: {} },
-				{ type: 'POST', url: `${server.url}/v1/resource/${testObject.resource}`, headers: { 'If-Match': `${parseInt(ref!) + 1}` } },
+				{ type: 'POST', url: `${server.url}/v1/resource/${testObject.resource}`, headers: { 'If-Match': `${parseInt(ref) + 1}` } },
 			]);
 		});
 	});
@@ -486,7 +487,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			server.reset();
 			const promise = Event.toPromise(testObject.onDidTriggerLocalChangeCall.event);
@@ -503,7 +504,7 @@ suite('TestSynchronizer - Auto Sync', () => {
 			testObject.failWhenGettingLatestRemoteUserData = true;
 
 			try {
-				await testObject.sync(await client.getLatestRef(testObject.resource));
+				await testObject.sync(await client.getResourceManifest());
 				assert.fail('Should throw an error');
 			} catch (error) {
 			}
@@ -535,7 +536,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			const preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			const preview = await testObject.sync(await client.getResourceManifest(), true);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Syncing);
 			assertPreviews(preview!.resourcePreviews, [testObject.localResource]);
@@ -550,7 +551,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].localResource);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Syncing);
@@ -565,18 +566,19 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
-			const ref = await client.getLatestRef(testObject.resource);
-			let preview = await testObject.sync(ref, true);
+			const manifest = await client.getResourceManifest();
+			let preview = await testObject.sync(manifest, true);
 			preview = await testObject.apply(false);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Idle);
 			assert.strictEqual(preview, null);
 			assertConflicts(testObject.conflicts.conflicts, []);
 
-			assert.strictEqual((await testObject.getRemoteUserData(null)).syncData?.content, ref);
-			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), ref);
+			const expectedContent = manifest![testObject.resource];
+			assert.strictEqual((await testObject.getRemoteUserData(null)).syncData?.content, expectedContent);
+			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), expectedContent);
 		});
 	});
 
@@ -585,10 +587,11 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
-			const ref = await client.getLatestRef(testObject.resource);
-			let preview = await testObject.sync(ref, true);
+			const manifest = await client.getResourceManifest();
+			const expectedContent = manifest![testObject.resource];
+			let preview = await testObject.sync(manifest, true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.apply(false);
 
@@ -596,8 +599,8 @@ suite('TestSynchronizer - Manual Sync', () => {
 			assert.strictEqual(preview, null);
 			assertConflicts(testObject.conflicts.conflicts, []);
 
-			assert.strictEqual((await testObject.getRemoteUserData(null)).syncData?.content, ref);
-			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), ref);
+			assert.strictEqual((await testObject.getRemoteUserData(null)).syncData?.content, expectedContent);
+			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), expectedContent);
 		});
 	});
 
@@ -607,7 +610,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Syncing);
@@ -623,7 +626,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
 
@@ -640,7 +643,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
@@ -658,7 +661,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 
@@ -674,10 +677,10 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			const expectedContent = (await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString();
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].localResource);
@@ -697,7 +700,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			const preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			const preview = await testObject.sync(await client.getResourceManifest(), true);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.HasConflicts);
 			assertPreviews(preview!.resourcePreviews, [testObject.localResource]);
@@ -712,7 +715,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			const preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			const preview = await testObject.sync(await client.getResourceManifest(), true);
 			await testObject.discard(preview!.resourcePreviews[0].previewResource);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Syncing);
@@ -728,7 +731,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			const content = await testObject.resolveContent(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].previewResource, content);
 
@@ -744,7 +747,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			const content = await testObject.resolveContent(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].previewResource, content);
 
@@ -759,11 +762,12 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			testObject.syncResult = { hasConflicts: true, hasError: false };
-			const ref = await client.getLatestRef(testObject.resource);
-			let preview = await testObject.sync(ref, true);
+			const manifest = await client.getResourceManifest();
+			const expectedContent = manifest![testObject.resource];
+			let preview = await testObject.sync(manifest, true);
 
 			preview = await testObject.accept(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.apply(false);
@@ -772,8 +776,8 @@ suite('TestSynchronizer - Manual Sync', () => {
 			assert.strictEqual(preview, null);
 			assertConflicts(testObject.conflicts.conflicts, []);
 
-			assert.strictEqual((await testObject.getRemoteUserData(null)).syncData?.content, ref);
-			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), ref);
+			assert.strictEqual((await testObject.getRemoteUserData(null)).syncData?.content, expectedContent);
+			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), expectedContent);
 		});
 	});
 
@@ -783,7 +787,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Syncing);
@@ -799,7 +803,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
 
@@ -816,7 +820,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: true, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
@@ -834,7 +838,7 @@ suite('TestSynchronizer - Manual Sync', () => {
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
 
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 
@@ -850,10 +854,10 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			const expectedContent = (await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString();
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].localResource);
 			preview = await testObject.apply(false);
@@ -871,10 +875,10 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncResult = { hasConflicts: false, hasError: false };
 			testObject.syncBarrier.open();
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			const expectedContent = (await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString();
-			let preview = await testObject.sync(await client.getLatestRef(testObject.resource), true);
+			let preview = await testObject.sync(await client.getResourceManifest(), true);
 			preview = await testObject.accept(preview!.resourcePreviews[0].remoteResource);
 			preview = await testObject.discard(preview!.resourcePreviews[0].previewResource);
 			preview = await testObject.accept(preview!.resourcePreviews[0].localResource);
@@ -894,20 +898,21 @@ suite('TestSynchronizer - Manual Sync', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			const client2 = disposableStore.add(new UserDataSyncClient(server));
 			await client2.setUp();
 			const synchronizer2: TestSynchroniser = disposableStore.add(client2.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client2.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			synchronizer2.syncBarrier.open();
-			const ref = await client2.getLatestRef(testObject.resource);
-			await synchronizer2.sync(ref);
+			const manifest = await client2.getResourceManifest();
+			const expectedContent = manifest![testObject.resource];
+			await synchronizer2.sync(manifest);
 
 			await fileService.del(testObject.getLastSyncResource());
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 
 			assert.deepStrictEqual(testObject.status, SyncStatus.Idle);
-			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), ref);
+			assert.strictEqual((await client.instantiationService.get(IFileService).readFile(testObject.localResource)).value.toString(), expectedContent);
 		});
 	});
 
@@ -945,7 +950,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const machineId = await testObject.getMachineId();
 			const actual = await testObject.getLastSyncUserData();
 
@@ -969,7 +974,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const machineId = await testObject.getMachineId();
 			await fileService.del(testObject.getLastSyncResource());
 			const actual = await testObject.getLastSyncUserData();
@@ -993,7 +998,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const machineId = await testObject.getMachineId();
 			await fileService.writeFile(testObject.getLastSyncResource(), VSBuffer.fromString(JSON.stringify({
 				ref: '1',
@@ -1030,7 +1035,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const machineId = await testObject.getMachineId();
 			await fileService.writeFile(testObject.getLastSyncResource(), VSBuffer.fromString(JSON.stringify({
 				ref: '2',
@@ -1062,7 +1067,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			const machineId = await testObject.getMachineId();
 			await fileService.writeFile(testObject.getLastSyncResource(), VSBuffer.fromString(JSON.stringify({
 				ref: '1',
@@ -1090,7 +1095,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			server.reset();
 			await fileService.writeFile(testObject.getLastSyncResource(), VSBuffer.fromString(JSON.stringify({
 				ref: '1',
@@ -1108,7 +1113,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			storageService.remove('settings.lastSyncUserData', StorageScope.APPLICATION);
 			const actual = await testObject.getLastSyncUserData();
 
@@ -1124,7 +1129,7 @@ suite('TestSynchronizer - Last Sync Data', () => {
 			const testObject: TestSynchroniser = disposableStore.add(client.instantiationService.createInstance(TestSynchroniser, { syncResource: SyncResource.Settings, profile: client.instantiationService.get(IUserDataProfilesService).defaultProfile }, undefined));
 			testObject.syncBarrier.open();
 
-			await testObject.sync(await client.getLatestRef(testObject.resource));
+			await testObject.sync(await client.getResourceManifest());
 			await fileService.del(testObject.getLastSyncResource());
 			await userDataSyncStoreService.deleteResource(testObject.syncResource.syncResource, null);
 			const actual = await testObject.getLastSyncUserData();

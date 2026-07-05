@@ -3,19 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from '../../../../nls.js';
-import * as arrays from '../../../common/arrays.js';
-import { Emitter, Event } from '../../../common/event.js';
-import { KeyCode, KeyCodeUtils } from '../../../common/keyCodes.js';
-import { Disposable, IDisposable } from '../../../common/lifecycle.js';
-import { isMacintosh } from '../../../common/platform.js';
-import { ScrollbarVisibility } from '../../../common/scrollable.js';
-import * as cssJs from '../../cssValue.js';
 import * as dom from '../../dom.js';
 import * as domStylesheetsJs from '../../domStylesheets.js';
+import * as cssJs from '../../cssValue.js';
 import { DomEmitter } from '../../event.js';
+import { IContentActionHandler } from '../../formattedTextRenderer.js';
 import { StandardKeyboardEvent } from '../../keyboardEvent.js';
-import { MarkdownActionHandler, renderMarkdown } from '../../markdownRenderer.js';
+import { renderMarkdown } from '../../markdownRenderer.js';
 import { AnchorPosition, IContextViewProvider } from '../contextview/contextview.js';
 import type { IManagedHover } from '../hover/hover.js';
 import { getBaseLayerHoverDelegate } from '../hover/hoverDelegate2.js';
@@ -23,7 +17,14 @@ import { getDefaultHoverDelegate } from '../hover/hoverDelegateFactory.js';
 import { IListEvent, IListRenderer, IListVirtualDelegate } from '../list/list.js';
 import { List } from '../list/listWidget.js';
 import { ISelectBoxDelegate, ISelectBoxOptions, ISelectBoxStyles, ISelectData, ISelectOptionItem } from './selectBox.js';
+import * as arrays from '../../../common/arrays.js';
+import { Emitter, Event } from '../../../common/event.js';
+import { KeyCode, KeyCodeUtils } from '../../../common/keyCodes.js';
+import { Disposable, IDisposable } from '../../../common/lifecycle.js';
+import { isMacintosh } from '../../../common/platform.js';
+import { ScrollbarVisibility } from '../../../common/scrollable.js';
 import './selectBoxCustom.css';
+import { localize } from '../../../../nls.js';
 
 
 const $ = dom.$;
@@ -62,7 +63,7 @@ class SelectListRenderer implements IListRenderer<ISelectOptionItem, ISelectList
 
 		data.text.textContent = text;
 		data.detail.textContent = !!detail ? detail : '';
-		data.decoratorRight.textContent = !!decoratorRight ? decoratorRight : '';
+		data.decoratorRight.innerText = !!decoratorRight ? decoratorRight : '';
 
 		// pseudo-select disabled option
 		if (isDisabled) {
@@ -449,7 +450,7 @@ export class SelectBoxList extends Disposable implements ISelectBoxDelegate, ILi
 	// ContextView dropdown methods
 
 	private showSelectDropDown() {
-		this.selectionDetailsPane.textContent = '';
+		this.selectionDetailsPane.innerText = '';
 
 		if (!this.contextViewProvider || this._isVisible) {
 			return;
@@ -868,7 +869,7 @@ export class SelectBoxList extends Disposable implements ISelectBoxDelegate, ILi
 	}
 
 
-	private renderDescriptionMarkdown(text: string, actionHandler?: MarkdownActionHandler): HTMLElement {
+	private renderDescriptionMarkdown(text: string, actionHandler?: IContentActionHandler): HTMLElement {
 		const cleanRenderedMarkdown = (element: Node) => {
 			for (let i = 0; i < element.childNodes.length; i++) {
 				const child = <Element>element.childNodes.item(i);
@@ -901,7 +902,7 @@ export class SelectBoxList extends Disposable implements ISelectBoxDelegate, ILi
 	}
 
 	private updateDetail(selectedIndex: number): void {
-		this.selectionDetailsPane.textContent = '';
+		this.selectionDetailsPane.innerText = '';
 		const option = this.options[selectedIndex];
 		const description = option?.description ?? '';
 		const descriptionIsMarkdown = option?.descriptionIsMarkdown ?? false;
@@ -911,7 +912,7 @@ export class SelectBoxList extends Disposable implements ISelectBoxDelegate, ILi
 				const actionHandler = option.descriptionMarkdownActionHandler;
 				this.selectionDetailsPane.appendChild(this.renderDescriptionMarkdown(description, actionHandler));
 			} else {
-				this.selectionDetailsPane.textContent = description;
+				this.selectionDetailsPane.innerText = description;
 			}
 			this.selectionDetailsPane.style.display = 'block';
 		} else {

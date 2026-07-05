@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Event } from '../../../../../base/common/event.js';
 import { localize, localize2 } from '../../../../../nls.js';
 import { IKeyMods, IQuickPickSeparator, IQuickInputService, IQuickPick, ItemActivation } from '../../../../../platform/quickinput/common/quickInput.js';
 import { IEditorService } from '../../../../services/editor/common/editorService.js';
@@ -38,7 +37,7 @@ import { matchesFuzzyIconAware, parseLabelWithIcons } from '../../../../../base/
 
 export class GotoSymbolQuickAccessProvider extends AbstractGotoSymbolQuickAccessProvider {
 
-	protected readonly onDidActiveTextEditorControlChange: Event<void>;
+	protected readonly onDidActiveTextEditorControlChange = this.editorService.onDidActiveEditorChange;
 
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
@@ -51,7 +50,6 @@ export class GotoSymbolQuickAccessProvider extends AbstractGotoSymbolQuickAccess
 		super(languageFeaturesService, outlineModelService, {
 			openSideBySideDirection: () => this.configuration.openSideBySideDirection
 		});
-		this.onDidActiveTextEditorControlChange = this.editorService.onDidActiveEditorChange;
 	}
 
 	//#region DocumentSymbols (text editor required)

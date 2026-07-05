@@ -13,7 +13,7 @@ import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { IWorkbenchContribution } from '../../../common/contributions.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IUpdateService, State as UpdateState, StateType, IUpdate, DisablementReason } from '../../../../platform/update/common/update.js';
-import { INotificationService, NotificationPriority, Severity } from '../../../../platform/notification/common/notification.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { IBrowserWorkbenchEnvironmentService } from '../../../services/environment/browser/environmentService.js';
 import { ReleaseNotesManager } from './releaseNotesEditor.js';
@@ -146,8 +146,7 @@ export class ProductContribution implements IWorkbenchContribution {
 									const uri = URI.parse(releaseNotesUrl);
 									openerService.open(uri);
 								}
-							}],
-							{ priority: NotificationPriority.OPTIONAL }
+							}]
 						);
 					});
 			}
@@ -320,8 +319,7 @@ export class UpdateContribution extends Disposable implements IWorkbenchContribu
 				run: () => {
 					this.instantiationService.invokeFunction(accessor => showReleaseNotes(accessor, productVersion));
 				}
-			}],
-			{ priority: NotificationPriority.OPTIONAL }
+			}]
 		);
 	}
 
@@ -357,8 +355,7 @@ export class UpdateContribution extends Disposable implements IWorkbenchContribu
 				run: () => {
 					this.instantiationService.invokeFunction(accessor => showReleaseNotes(accessor, productVersion));
 				}
-			}],
-			{ priority: NotificationPriority.OPTIONAL }
+			}]
 		);
 	}
 
@@ -391,10 +388,7 @@ export class UpdateContribution extends Disposable implements IWorkbenchContribu
 			severity.Info,
 			nls.localize('updateAvailableAfterRestart', "Restart {0} to apply the latest update.", this.productService.nameLong),
 			actions,
-			{
-				sticky: true,
-				priority: NotificationPriority.OPTIONAL
-			}
+			{ sticky: true }
 		);
 	}
 

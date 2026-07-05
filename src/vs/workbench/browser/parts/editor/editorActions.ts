@@ -12,7 +12,7 @@ import { IWorkbenchLayoutService, Parts } from '../../../services/layout/browser
 import { GoFilter, IHistoryService } from '../../../services/history/common/history.js';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
-import { CLOSE_EDITOR_COMMAND_ID, MOVE_ACTIVE_EDITOR_COMMAND_ID, SelectedEditorsMoveCopyArguments, SPLIT_EDITOR_LEFT, SPLIT_EDITOR_RIGHT, SPLIT_EDITOR_UP, SPLIT_EDITOR_DOWN, splitEditor, LAYOUT_EDITOR_GROUPS_COMMAND_ID, UNPIN_EDITOR_COMMAND_ID, COPY_ACTIVE_EDITOR_COMMAND_ID, SPLIT_EDITOR, TOGGLE_MAXIMIZE_EDITOR_GROUP, MOVE_EDITOR_INTO_NEW_WINDOW_COMMAND_ID, COPY_EDITOR_INTO_NEW_WINDOW_COMMAND_ID, MOVE_EDITOR_GROUP_INTO_NEW_WINDOW_COMMAND_ID, COPY_EDITOR_GROUP_INTO_NEW_WINDOW_COMMAND_ID, NEW_EMPTY_EDITOR_WINDOW_COMMAND_ID as NEW_EMPTY_EDITOR_WINDOW_COMMAND_ID, MOVE_EDITOR_INTO_RIGHT_GROUP, MOVE_EDITOR_INTO_LEFT_GROUP, MOVE_EDITOR_INTO_ABOVE_GROUP, MOVE_EDITOR_INTO_BELOW_GROUP } from './editorCommands.js';
+import { CLOSE_EDITOR_COMMAND_ID, MOVE_ACTIVE_EDITOR_COMMAND_ID, SelectedEditorsMoveCopyArguments, SPLIT_EDITOR_LEFT, SPLIT_EDITOR_RIGHT, SPLIT_EDITOR_UP, SPLIT_EDITOR_DOWN, splitEditor, LAYOUT_EDITOR_GROUPS_COMMAND_ID, UNPIN_EDITOR_COMMAND_ID, COPY_ACTIVE_EDITOR_COMMAND_ID, SPLIT_EDITOR, TOGGLE_MAXIMIZE_EDITOR_GROUP, MOVE_EDITOR_INTO_NEW_WINDOW_COMMAND_ID, COPY_EDITOR_INTO_NEW_WINDOW_COMMAND_ID, MOVE_EDITOR_GROUP_INTO_NEW_WINDOW_COMMAND_ID, COPY_EDITOR_GROUP_INTO_NEW_WINDOW_COMMAND_ID, NEW_EMPTY_EDITOR_WINDOW_COMMAND_ID as NEW_EMPTY_EDITOR_WINDOW_COMMAND_ID } from './editorCommands.js';
 import { IEditorGroupsService, IEditorGroup, GroupsArrangement, GroupLocation, GroupDirection, preferredSideBySideGroupDirection, IFindGroupScope, GroupOrientation, EditorGroupLayout, GroupsOrder, MergeGroupMode } from '../../../services/editor/common/editorGroupsService.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
@@ -32,7 +32,7 @@ import { KeyChord, KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
 import { IKeybindingRule, KeybindingWeight } from '../../../../platform/keybinding/common/keybindingsRegistry.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
-import { ActiveEditorAvailableEditorIdsContext, ActiveEditorContext, ActiveEditorGroupEmptyContext, AuxiliaryBarVisibleContext, EditorPartMaximizedEditorGroupContext, EditorPartMultipleEditorGroupsContext, InAutomationContext, IsAuxiliaryWindowFocusedContext, MultipleEditorGroupsContext, SideBarVisibleContext } from '../../../common/contextkeys.js';
+import { ActiveEditorAvailableEditorIdsContext, ActiveEditorContext, ActiveEditorGroupEmptyContext, AuxiliaryBarVisibleContext, EditorPartMaximizedEditorGroupContext, EditorPartMultipleEditorGroupsContext, IsAuxiliaryWindowFocusedContext, MultipleEditorGroupsContext, SideBarVisibleContext } from '../../../common/contextkeys.js';
 import { getActiveDocument } from '../../../../base/browser/dom.js';
 import { ICommandActionTitle } from '../../../../platform/action/common/action.js';
 import { IProgressService, ProgressLocation } from '../../../../platform/progress/common/progress.js';
@@ -586,17 +586,9 @@ abstract class AbstractCloseAllAction extends Action2 {
 
 		for (const { editor, groupId } of editorService.getEditors(EditorsOrder.SEQUENTIAL, { excludeSticky: this.excludeSticky })) {
 			let confirmClose = false;
-			let handlerDidError = false;
 			if (editor.closeHandler) {
-				try {
-					confirmClose = editor.closeHandler.showConfirm(); // custom handling of confirmation on close
-				} catch (error) {
-					logService.error(error);
-					handlerDidError = true;
-				}
-			}
-
-			if (!editor.closeHandler || handlerDidError) {
+				confirmClose = editor.closeHandler.showConfirm(); // custom handling of confirmation on close
+			} else {
 				confirmClose = editor.isDirty() && !editor.isSaving(); // default confirm only when dirty and not saving
 			}
 
@@ -1178,10 +1170,7 @@ export class ToggleMaximizeEditorGroupAction extends Action2 {
 				when: EditorPartMaximizedEditorGroupContext
 			}],
 			icon: Codicon.screenFull,
-			toggled: {
-				condition: EditorPartMaximizedEditorGroupContext,
-				title: localize('unmaximizeGroup', "Unmaximize Group")
-			},
+			toggled: EditorPartMaximizedEditorGroupContext,
 		});
 	}
 
@@ -1965,25 +1954,6 @@ export class OpenPreviousRecentlyUsedEditorInGroupAction extends Action2 {
 	}
 }
 
-export class ClearEditorHistoryWithoutConfirmAction extends Action2 {
-
-	constructor() {
-		super({
-			id: 'workbench.action.clearEditorHistoryWithoutConfirm',
-			title: localize2('clearEditorHistoryWithoutConfirm', 'Clear Editor History without Confirmation'),
-			f1: true,
-			precondition: InAutomationContext
-		});
-	}
-
-	override async run(accessor: ServicesAccessor): Promise<void> {
-		const historyService = accessor.get(IHistoryService);
-
-		// Clear editor history
-		historyService.clear();
-	}
-}
-
 export class ClearEditorHistoryAction extends Action2 {
 
 	constructor() {
@@ -2095,7 +2065,7 @@ export class MoveEditorToAboveGroupAction extends ExecuteCommandAction {
 
 	constructor() {
 		super({
-			id: MOVE_EDITOR_INTO_ABOVE_GROUP,
+			id: 'workbench.action.moveEditorToAboveGroup',
 			title: localize2('moveEditorToAboveGroup', 'Move Editor into Group Above'),
 			f1: true,
 			category: Categories.View
@@ -2107,7 +2077,7 @@ export class MoveEditorToBelowGroupAction extends ExecuteCommandAction {
 
 	constructor() {
 		super({
-			id: MOVE_EDITOR_INTO_BELOW_GROUP,
+			id: 'workbench.action.moveEditorToBelowGroup',
 			title: localize2('moveEditorToBelowGroup', 'Move Editor into Group Below'),
 			f1: true,
 			category: Categories.View
@@ -2119,7 +2089,7 @@ export class MoveEditorToLeftGroupAction extends ExecuteCommandAction {
 
 	constructor() {
 		super({
-			id: MOVE_EDITOR_INTO_LEFT_GROUP,
+			id: 'workbench.action.moveEditorToLeftGroup',
 			title: localize2('moveEditorToLeftGroup', 'Move Editor into Left Group'),
 			f1: true,
 			category: Categories.View
@@ -2131,7 +2101,7 @@ export class MoveEditorToRightGroupAction extends ExecuteCommandAction {
 
 	constructor() {
 		super({
-			id: MOVE_EDITOR_INTO_RIGHT_GROUP,
+			id: 'workbench.action.moveEditorToRightGroup',
 			title: localize2('moveEditorToRightGroup', 'Move Editor into Right Group'),
 			f1: true,
 			category: Categories.View

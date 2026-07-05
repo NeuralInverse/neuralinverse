@@ -6,9 +6,7 @@
 import { CharCode } from '../../../base/common/charCode.js';
 import { Position } from '../core/position.js';
 import { IRange, Range } from '../core/range.js';
-import { countEOL } from '../core/misc/eolCounter.js';
-import { ITextModel } from '../model.js';
-import { RateLimiter } from './common.js';
+import { countEOL } from '../core/eolCounter.js';
 
 /**
  * Represents sparse tokens over a contiguous range of lines.
@@ -163,10 +161,6 @@ export class SparseMultilineTokens {
 		}
 
 		this._tokens.acceptInsertText(lineIndex, position.column - 1, eolCount, firstLineLength, lastLineLength, firstCharCode);
-	}
-
-	public reportIfInvalid(model: ITextModel): void {
-		this._tokens.reportIfInvalid(model, this._startLineNumber);
 	}
 }
 
@@ -562,28 +556,6 @@ class SparseMultilineTokensStorage {
 			tokens[offset] = tokenDeltaLine;
 			tokens[offset + 1] = tokenStartCharacter;
 			tokens[offset + 2] = tokenEndCharacter;
-		}
-	}
-
-	private static _rateLimiter = new RateLimiter(10 / 60); // limit to 10 times per minute
-
-	public reportIfInvalid(model: ITextModel, startLineNumber: number): void {
-		for (let i = 0; i < this._tokenCount; i++) {
-			const lineNumber = this._getDeltaLine(i) + startLineNumber;
-
-			if (lineNumber < 1) {
-				SparseMultilineTokensStorage._rateLimiter.runIfNotLimited(() => {
-					console.error('Invalid Semantic Tokens Data From Extension: lineNumber < 1');
-				});
-			} else if (lineNumber > model.getLineCount()) {
-				SparseMultilineTokensStorage._rateLimiter.runIfNotLimited(() => {
-					console.error('Invalid Semantic Tokens Data From Extension: lineNumber > model.getLineCount()');
-				});
-			} else if (this._getEndCharacter(i) > model.getLineLength(lineNumber)) {
-				SparseMultilineTokensStorage._rateLimiter.runIfNotLimited(() => {
-					console.error('Invalid Semantic Tokens Data From Extension: end character > model.getLineLength(lineNumber)');
-				});
-			}
 		}
 	}
 }

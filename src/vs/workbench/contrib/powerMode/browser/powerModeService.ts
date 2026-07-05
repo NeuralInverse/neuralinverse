@@ -33,7 +33,7 @@ import { IMigrationPlannerService } from '../../neuralInverseModernisation/brows
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
 import { IModernisationAgentToolService } from '../../neuralInverseModernisation/browser/engine/agentTools/service.js';
 import { IAutonomyService } from '../../neuralInverseModernisation/browser/engine/autonomy/service.js';
-import { INeuralInverseSubAgentService } from '../../void/common/neuralInverseSubAgentServiceInterface.js';
+import { INeuralInverseSubAgentService } from '../../void/browser/neuralInverseSubAgentService.js';
 import {
 	IPowerSession,
 	IPowerMessage,

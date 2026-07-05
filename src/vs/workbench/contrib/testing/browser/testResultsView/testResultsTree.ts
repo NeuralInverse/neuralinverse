@@ -46,10 +46,9 @@ import { ITestResult, ITestRunTaskResults, LiveTestResult, TestResultItemChangeR
 import { ITestResultService } from '../../common/testResultService.js';
 import { IRichLocation, ITestItemContext, ITestMessage, ITestMessageMenuArgs, InternalTestItem, TestMessageType, TestResultItem, TestResultState, TestRunProfileBitset, testResultStateToContextValues } from '../../common/testTypes.js';
 import { TestingContextKeys } from '../../common/testingContextKeys.js';
-import { cmpPriority, isFailedState } from '../../common/testingStates.js';
+import { cmpPriority } from '../../common/testingStates.js';
 import { TestUriType, buildTestUri } from '../../common/testingUri.js';
 import { IEditorService } from '../../../../services/editor/common/editorService.js';
-import { TestId } from '../../common/testId.js';
 
 
 interface ITreeElement {
@@ -80,9 +79,9 @@ class TestResultElement implements ITreeElement {
 	public readonly changeEmitter = new Emitter<void>();
 	public readonly onDidChange = this.changeEmitter.event;
 	public readonly type = 'result';
-	public readonly context: string;
-	public readonly id: string;
-	public readonly label: string;
+	public readonly context = this.value.id;
+	public readonly id = this.value.id;
+	public readonly label = this.value.name;
 
 	public get icon() {
 		return icons.testingStatesToIcons.get(
@@ -92,11 +91,7 @@ class TestResultElement implements ITreeElement {
 		);
 	}
 
-	constructor(public readonly value: ITestResult) {
-		this.id = value.id;
-		this.context = value.id;
-		this.label = value.name;
-	}
+	constructor(public readonly value: ITestResult) { }
 }
 
 const openCoverageLabel = localize('openTestCoverage', 'View Test Coverage');
@@ -105,7 +100,7 @@ const closeCoverageLabel = localize('closeTestCoverage', 'Close Test Coverage');
 class CoverageElement implements ITreeElement {
 	public readonly type = 'coverage';
 	public readonly context: undefined;
-	public readonly id: string;
+	public readonly id = `coverage-${this.results.id}/${this.task.id}`;
 	public readonly onDidChange: Event<void>;
 
 	public get label() {
@@ -121,11 +116,10 @@ class CoverageElement implements ITreeElement {
 	}
 
 	constructor(
-		results: ITestResult,
+		private readonly results: ITestResult,
 		public readonly task: ITestRunTaskResults,
 		private readonly coverageService: ITestCoverageService,
 	) {
-		this.id = `coverage-${results.id}/${task.id}`;
 		this.onDidChange = Event.fromObservableLight(coverageService.selected);
 	}
 }
@@ -133,23 +127,23 @@ class CoverageElement implements ITreeElement {
 class OlderResultsElement implements ITreeElement {
 	public readonly type = 'older';
 	public readonly context: undefined;
-	public readonly id: string;
+	public readonly id = `older-${this.n}`;
 	public readonly onDidChange = Event.None;
 	public readonly label: string;
 
 	constructor(private readonly n: number) {
-		this.label = n === 1
-			? localize('oneOlderResult', '1 older result')
-			: localize('nOlderResults', '{0} older results', n);
-		this.id = `older-${this.n}`;
+		this.label = localize('nOlderResults', '{0} older results', n);
 
 	}
 }
 
 class TestCaseElement implements ITreeElement {
 	public readonly type = 'test';
-	public readonly context: ITestItemContext;
-	public readonly id: string;
+	public readonly context: ITestItemContext = {
+		$mid: MarshalledId.TestItemContext,
+		tests: [InternalTestItem.serialize(this.test)],
+	};
+	public readonly id = `${this.results.id}/${this.test.item.extId}`;
 	public readonly description?: string;
 
 	public get onDidChange() {
@@ -185,29 +179,7 @@ class TestCaseElement implements ITreeElement {
 		public readonly results: ITestResult,
 		public readonly test: TestResultItem,
 		public readonly taskIndex: number,
-	) {
-		this.id = `${results.id}/${test.item.extId}`;
-
-		const parentId = TestId.fromString(test.item.extId).parentId;
-		if (parentId) {
-			this.description = '';
-			for (const part of parentId.idsToRoot()) {
-				if (part.isRoot) { break; }
-				const test = results.getStateById(part.toString());
-				if (!test) { break; }
-				if (this.description.length) {
-					this.description += ' \u2039 ';
-				}
-
-				this.description += test.item.label;
-			}
-		}
-
-		this.context = {
-			$mid: MarshalledId.TestItemContext,
-			tests: [InternalTestItem.serialize(test)],
-		};
-	}
+	) { }
 }
 
 class TaskElement implements ITreeElement {
@@ -745,9 +717,6 @@ class TestRunElementRenderer implements ICompressibleTreeRenderer<ITreeElement, 
 		let { label, labelWithIcons, description } = element;
 		if (subjectElement instanceof TestMessageElement) {
 			description = subjectElement.label;
-			if (element.description) {
-				description = `${description} @ ${element.description}`;
-			}
 		}
 
 		const descriptionElement = description ? dom.$('span.test-label-description', {}, description) : '';
@@ -815,18 +784,6 @@ class TreeActionsProvider {
 					undefined,
 					() => this.commandService.executeCommand(TestCommandId.ReRunLastRun, element.results.id),
 				));
-
-				const hasFailedTests = Iterable.some(element.results.tests, test => isFailedState(test.ownComputedState));
-				if (hasFailedTests) {
-					primary.push(new Action(
-						'testing.outputPeek.rerunFailed',
-						localize('testing.reRunFailedFromLastRun', 'Rerun Failed Tests'),
-						ThemeIcon.asClassName(icons.testingRerunIcon),
-						undefined,
-						() => this.commandService.executeCommand(TestCommandId.ReRunFailedFromLastRun, element.results.id),
-					));
-				}
-
 				primary.push(new Action(
 					'testing.outputPeek.debug',
 					localize('testing.debugLastRun', 'Debug Last Run'),
@@ -834,16 +791,6 @@ class TreeActionsProvider {
 					undefined,
 					() => this.commandService.executeCommand(TestCommandId.DebugLastRun, element.results.id),
 				));
-
-				if (hasFailedTests) {
-					primary.push(new Action(
-						'testing.outputPeek.debugFailed',
-						localize('testing.debugFailedFromLastRun', 'Debug Failed Tests'),
-						ThemeIcon.asClassName(icons.testingDebugIcon),
-						undefined,
-						() => this.commandService.executeCommand(TestCommandId.DebugFailedFromLastRun, element.results.id),
-					));
-				}
 			}
 		}
 
@@ -867,17 +814,6 @@ class TreeActionsProvider {
 				() => this.commandService.executeCommand('testing.reRunLastRun', element.value.id),
 			));
 
-			const hasFailedTests = Iterable.some(element.value.tests, test => isFailedState(test.ownComputedState));
-			if (hasFailedTests) {
-				primary.push(new Action(
-					'testing.outputPeek.rerunFailedResult',
-					localize('testing.reRunFailedFromLastRun', 'Rerun Failed Tests'),
-					ThemeIcon.asClassName(icons.testingRerunIcon),
-					undefined,
-					() => this.commandService.executeCommand(TestCommandId.ReRunFailedFromLastRun, element.value.id),
-				));
-			}
-
 			if (capabilities & TestRunProfileBitset.Debug) {
 				primary.push(new Action(
 					'testing.outputPeek.debugLastRun',
@@ -886,16 +822,6 @@ class TreeActionsProvider {
 					undefined,
 					() => this.commandService.executeCommand('testing.debugLastRun', element.value.id),
 				));
-
-				if (hasFailedTests) {
-					primary.push(new Action(
-						'testing.outputPeek.debugFailedResult',
-						localize('testing.debugFailedFromLastRun', 'Debug Failed Tests'),
-						ThemeIcon.asClassName(icons.testingDebugIcon),
-						undefined,
-						() => this.commandService.executeCommand(TestCommandId.DebugFailedFromLastRun, element.value.id),
-					));
-				}
 			}
 		}
 
@@ -906,17 +832,7 @@ class TreeActionsProvider {
 				...getTestItemContextOverlay(element.test, capabilities),
 			);
 
-			const { extId, uri } = element.test.item;
-			if (uri) {
-				primary.push(new Action(
-					'testing.outputPeek.goToTest',
-					localize('testing.goToTest', "Go to Test"),
-					ThemeIcon.asClassName(Codicon.goToFile),
-					undefined,
-					() => this.commandService.executeCommand('vscode.revealTest', extId),
-				));
-			}
-
+			const extId = element.test.item.extId;
 			if (element.test.tasks[element.taskIndex].messages.some(m => m.type === TestMessageType.Output)) {
 				primary.push(new Action(
 					'testing.outputPeek.showResultOutput',
@@ -960,6 +876,14 @@ class TreeActionsProvider {
 		if (element instanceof TestMessageElement) {
 			id = MenuId.TestMessageContext;
 			contextKeys.push([TestingContextKeys.testMessageContext.key, element.contextValue]);
+
+			primary.push(new Action(
+				'testing.outputPeek.goToTest',
+				localize('testing.goToTest', "Go to Test"),
+				ThemeIcon.asClassName(Codicon.goToFile),
+				undefined,
+				() => this.commandService.executeCommand('vscode.revealTest', element.test.item.extId),
+			));
 
 			if (this.showRevealLocationOnMessages && element.location) {
 				primary.push(new Action(

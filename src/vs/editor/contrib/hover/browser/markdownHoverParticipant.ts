@@ -30,7 +30,7 @@ import { IKeybindingService } from '../../../../platform/keybinding/common/keybi
 import { ClickAction, HoverPosition, KeyDownAction } from '../../../../base/browser/ui/hover/hoverWidget.js';
 import { KeyCode } from '../../../../base/common/keyCodes.js';
 import { IHoverService, WorkbenchHoverDelegate } from '../../../../platform/hover/browser/hover.js';
-import { AsyncIterableProducer } from '../../../../base/common/async.js';
+import { AsyncIterableObject } from '../../../../base/common/async.js';
 import { LanguageFeatureRegistry } from '../../../common/languageFeatureRegistry.js';
 import { getHoverProviderResultsAsAsyncIterable } from './getHover.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
@@ -153,31 +153,31 @@ export class MarkdownHoverParticipant implements IEditorHoverParticipant<Markdow
 		return result;
 	}
 
-	public computeAsync(anchor: HoverAnchor, lineDecorations: IModelDecoration[], source: HoverStartSource, token: CancellationToken): AsyncIterable<MarkdownHover> {
+	public computeAsync(anchor: HoverAnchor, lineDecorations: IModelDecoration[], source: HoverStartSource, token: CancellationToken): AsyncIterableObject<MarkdownHover> {
 		if (!this._editor.hasModel() || anchor.type !== HoverAnchorType.Range) {
-			return AsyncIterableProducer.EMPTY;
+			return AsyncIterableObject.EMPTY;
 		}
 
 		const model = this._editor.getModel();
 
 		const hoverProviderRegistry = this._languageFeaturesService.hoverProvider;
 		if (!hoverProviderRegistry.has(model)) {
-			return AsyncIterableProducer.EMPTY;
+			return AsyncIterableObject.EMPTY;
 		}
-		return this._getMarkdownHovers(hoverProviderRegistry, model, anchor, token);
+		const markdownHovers = this._getMarkdownHovers(hoverProviderRegistry, model, anchor, token);
+		return markdownHovers;
 	}
 
-	private async *_getMarkdownHovers(hoverProviderRegistry: LanguageFeatureRegistry<HoverProvider>, model: ITextModel, anchor: HoverRangeAnchor, token: CancellationToken): AsyncIterable<MarkdownHover> {
+	private _getMarkdownHovers(hoverProviderRegistry: LanguageFeatureRegistry<HoverProvider>, model: ITextModel, anchor: HoverRangeAnchor, token: CancellationToken): AsyncIterableObject<MarkdownHover> {
 		const position = anchor.range.getStartPosition();
 		const hoverProviderResults = getHoverProviderResultsAsAsyncIterable(hoverProviderRegistry, model, position, token);
-
-		for await (const item of hoverProviderResults) {
-			if (!isEmptyMarkdownString(item.hover.contents)) {
+		const markdownHovers = hoverProviderResults.filter(item => !isEmptyMarkdownString(item.hover.contents))
+			.map(item => {
 				const range = item.hover.range ? Range.lift(item.hover.range) : anchor.range;
 				const hoverSource = new HoverSource(item.hover, item.provider, position);
-				yield new MarkdownHover(this, range, item.hover.contents, false, item.ordinal, hoverSource);
-			}
-		}
+				return new MarkdownHover(this, range, item.hover.contents, false, item.ordinal, hoverSource);
+			});
+		return markdownHovers;
 	}
 
 	public renderHoverParts(context: IEditorHoverRenderContext, hoverParts: MarkdownHover[]): IRenderedHoverParts<MarkdownHover> {
@@ -312,7 +312,7 @@ class MarkdownRenderedHoverParts implements IRenderedHoverParts<MarkdownHover> {
 		markdownHover: MarkdownHover,
 		onFinishedRendering: () => void
 	): IRenderedHoverPart<MarkdownHover> {
-		const renderedMarkdownHover = renderMarkdown(
+		const renderedMarkdownHover = renderMarkdownInContainer(
 			this._editor,
 			markdownHover,
 			this._languageService,
@@ -484,20 +484,18 @@ export function renderMarkdownHovers(
 	markdownHovers.sort(compareBy(hover => hover.ordinal, numberComparator));
 	const renderedHoverParts: IRenderedHoverPart<MarkdownHover>[] = [];
 	for (const markdownHover of markdownHovers) {
-		const renderedHoverPart = renderMarkdown(
+		renderedHoverParts.push(renderMarkdownInContainer(
 			editor,
 			markdownHover,
 			languageService,
 			openerService,
 			context.onContentsChanged,
-		);
-		context.fragment.appendChild(renderedHoverPart.hoverElement);
-		renderedHoverParts.push(renderedHoverPart);
+		));
 	}
 	return new RenderedHoverParts(renderedHoverParts);
 }
 
-function renderMarkdown(
+function renderMarkdownInContainer(
 	editor: ICodeEditor,
 	markdownHover: MarkdownHover,
 	languageService: ILanguageService,

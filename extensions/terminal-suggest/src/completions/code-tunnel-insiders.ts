@@ -3,12 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { commonOptions, extensionManagementOptions, troubleshootingOptions, globalTunnelOptions, codeTunnelSubcommands, extTunnelSubcommand, codeTunnelOptions } from './code';
-import codeTunnelCompletionSpec from './code-tunnel';
+import codeTunnelCompletionSpec, { codeTunnelSpecOptions } from './code-tunnel';
 
 const codeTunnelInsidersCompletionSpec: Fig.Spec = {
 	...codeTunnelCompletionSpec,
 	name: 'code-tunnel-insiders',
-	description: 'Visual Studio Code Insiders',
+	description: 'Create a tunnel that\'s accessible on vscode.dev from anywhere, with insider features.',
 	subcommands: [...codeTunnelSubcommands, extTunnelSubcommand],
 	options: [
 		...commonOptions,
@@ -16,6 +16,7 @@ const codeTunnelInsidersCompletionSpec: Fig.Spec = {
 		...troubleshootingOptions('code-tunnel-insiders'),
 		...globalTunnelOptions,
 		...codeTunnelOptions,
+		...codeTunnelSpecOptions
 	]
 };
 

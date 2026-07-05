@@ -49,11 +49,15 @@
 	position: relative;
 }
 
-.runtime-extensions-editor .extension > .icon-container > .extension-icon .icon {
+.runtime-extensions-editor .extension > .icon-container > .icon {
+	width: 42px;
+	height: 42px;
 	padding: 10px 14px 10px 0;
+	flex-shrink: 0;
+	object-fit: contain;
 }
 
-.runtime-extensions-editor .extension > .icon-container .extension-icon-badge .codicon {
+.runtime-extensions-editor .extension > .icon-container .extension-remote-badge .codicon {
 	color: currentColor;
 }
 

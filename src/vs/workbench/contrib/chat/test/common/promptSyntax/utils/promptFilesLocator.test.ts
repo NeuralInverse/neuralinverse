@@ -4,88 +4,74 @@
  *--------------------------------------------------------------------------------------------*/
 
 import assert from 'assert';
-import { CancellationToken } from '../../../../../../../base/common/cancellation.js';
-import { match } from '../../../../../../../base/common/glob.js';
+import { createURI } from '../testUtils/createUri.js';
 import { Schemas } from '../../../../../../../base/common/network.js';
-import { basename, relativePath } from '../../../../../../../base/common/resources.js';
-import { URI } from '../../../../../../../base/common/uri.js';
-import { mock } from '../../../../../../../base/test/common/mock.js';
-import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
-import { IConfigurationOverrides, IConfigurationService } from '../../../../../../../platform/configuration/common/configuration.js';
+import { basename } from '../../../../../../../base/common/resources.js';
+import { isWindows } from '../../../../../../../base/common/platform.js';
+import { IMockFolder, MockFilesystem } from '../testUtils/mockFilesystem.js';
 import { IFileService } from '../../../../../../../platform/files/common/files.js';
+import { PromptsConfig } from '../../../../../../../platform/prompts/common/config.js';
 import { FileService } from '../../../../../../../platform/files/common/fileService.js';
+import { ILogService, NullLogService } from '../../../../../../../platform/log/common/log.js';
+import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
+import { mockObject, mockService } from '../../../../../../../platform/prompts/test/common/utils/mock.js';
+import { isValidGlob, PromptFilesLocator } from '../../../../common/promptSyntax/utils/promptFilesLocator.js';
 import { InMemoryFileSystemProvider } from '../../../../../../../platform/files/common/inMemoryFilesystemProvider.js';
 import { TestInstantiationService } from '../../../../../../../platform/instantiation/test/common/instantiationServiceMock.js';
-import { ILogService, NullLogService } from '../../../../../../../platform/log/common/log.js';
+import { IConfigurationOverrides, IConfigurationService } from '../../../../../../../platform/configuration/common/configuration.js';
 import { IWorkspace, IWorkspaceContextService, IWorkspaceFolder } from '../../../../../../../platform/workspace/common/workspace.js';
-import { IWorkbenchEnvironmentService } from '../../../../../../services/environment/common/environmentService.js';
-import { IFileMatch, IFileQuery, ISearchService } from '../../../../../../services/search/common/search.js';
-import { IUserDataProfileService } from '../../../../../../services/userDataProfile/common/userDataProfile.js';
-import { PromptsConfig } from '../../../../common/promptSyntax/config/config.js';
-import { PromptsType } from '../../../../common/promptSyntax/promptTypes.js';
-import { isValidGlob, PromptFilesLocator } from '../../../../common/promptSyntax/utils/promptFilesLocator.js';
-import { IMockFolder, MockFilesystem } from '../testUtils/mockFilesystem.js';
-import { mockService } from './mock.js';
-import { TestUserDataProfileService } from '../../../../../../test/common/workbenchTestServices.js';
 
 /**
  * Mocked instance of {@link IConfigurationService}.
  */
-function mockConfigService<T>(value: T): IConfigurationService {
+const mockConfigService = <T>(value: T): IConfigurationService => {
 	return mockService<IConfigurationService>({
 		getValue(key?: string | IConfigurationOverrides) {
 			assert(
 				typeof key === 'string',
 				`Expected string configuration key, got '${typeof key}'.`,
 			);
-			if ('explorer.excludeGitIgnore' === key) {
-				return false;
-			}
 
 			assert(
-				[PromptsConfig.KEY, PromptsConfig.PROMPT_LOCATIONS_KEY, PromptsConfig.INSTRUCTIONS_LOCATION_KEY, PromptsConfig.MODE_LOCATION_KEY].includes(key),
+				[PromptsConfig.KEY, PromptsConfig.LOCATIONS_KEY].includes(key),
 				`Unsupported configuration key '${key}'.`,
 			);
 
 			return value;
 		},
 	});
-}
+};
 
 /**
  * Mocked instance of {@link IWorkspaceContextService}.
  */
-function mockWorkspaceService(folders: IWorkspaceFolder[]): IWorkspaceContextService {
+const mockWorkspaceService = (folders: IWorkspaceFolder[]): IWorkspaceContextService => {
 	return mockService<IWorkspaceContextService>({
 		getWorkspace(): IWorkspace {
-			return new class extends mock<IWorkspace>() {
-				override folders = folders;
-			};
+			return mockObject<IWorkspace>({
+				folders,
+			});
 		},
-		getWorkspaceFolder(): IWorkspaceFolder | null {
-			return null;
-		}
-
 	});
-}
+};
 
 suite('PromptFilesLocator', () => {
 	const disposables = ensureNoDisposablesAreLeakedInTestSuite();
 
-	// if (isWindows) {
-	// 	return;
-	// }
+	if (isWindows) {
+		return;
+	}
 
-	let instantiationService: TestInstantiationService;
+	let initService: TestInstantiationService;
 	setup(async () => {
-		instantiationService = disposables.add(new TestInstantiationService());
-		instantiationService.stub(ILogService, new NullLogService());
+		initService = disposables.add(new TestInstantiationService());
+		initService.stub(ILogService, new NullLogService());
 
-		const fileService = disposables.add(instantiationService.createInstance(FileService));
+		const fileService = disposables.add(initService.createInstance(FileService));
 		const fileSystemProvider = disposables.add(new InMemoryFileSystemProvider());
 		disposables.add(fileService.registerProvider(Schemas.file, fileSystemProvider));
 
-		instantiationService.stub(IFileService, fileService);
+		initService.stub(IFileService, fileService);
 	});
 
 	/**
@@ -97,126 +83,90 @@ suite('PromptFilesLocator', () => {
 		workspaceFolderPaths: string[],
 		filesystem: IMockFolder[],
 	): Promise<PromptFilesLocator> => {
+		await (initService.createInstance(MockFilesystem, filesystem)).mock();
 
-		await (instantiationService.createInstance(MockFilesystem, filesystem)).mock();
-
-		instantiationService.stub(IConfigurationService, mockConfigService(configValue));
+		initService.stub(IConfigurationService, mockConfigService(configValue));
 
 		const workspaceFolders = workspaceFolderPaths.map((path, index) => {
-			const uri = URI.file(path);
+			const uri = createURI(path);
 
-			return new class extends mock<IWorkspaceFolder>() {
-				override uri = uri;
-				override name = basename(uri);
-				override index = index;
-			};
+			return mockObject<IWorkspaceFolder>({
+				uri,
+				name: basename(uri),
+				index,
+			});
 		});
-		instantiationService.stub(IWorkspaceContextService, mockWorkspaceService(workspaceFolders));
-		instantiationService.stub(IWorkbenchEnvironmentService, {} as IWorkbenchEnvironmentService);
-		instantiationService.stub(IUserDataProfileService, new TestUserDataProfileService());
-		instantiationService.stub(ISearchService, {
-			async fileSearch(query: IFileQuery) {
-				// mock the search service
-				const fs = instantiationService.get(IFileService);
-				const findFilesInLocation = async (location: URI, results: URI[] = []) => {
-					try {
-						const resolve = await fs.resolve(location);
-						if (resolve.isFile) {
-							results.push(resolve.resource);
-						} else if (resolve.isDirectory && resolve.children) {
-							for (const child of resolve.children) {
-								await findFilesInLocation(child.resource, results);
-							}
-						}
-					} catch (error) {
-					}
-					return results;
-				};
-				const results: IFileMatch[] = [];
-				for (const folderQuery of query.folderQueries) {
-					const allFiles = await findFilesInLocation(folderQuery.folder);
-					for (const resource of allFiles) {
-						const pathInFolder = relativePath(folderQuery.folder, resource) ?? '';
-						if (query.filePattern === undefined || match(query.filePattern, pathInFolder)) {
-							results.push({ resource });
-						}
-					}
+		initService.stub(IWorkspaceContextService, mockWorkspaceService(workspaceFolders));
 
-				}
-				return { results, messages: [] };
-			}
-		});
-		return instantiationService.createInstance(PromptFilesLocator);
+		return initService.createInstance(PromptFilesLocator);
 	};
 
-	suite('empty workspace', () => {
+	suite('• empty workspace', () => {
 		const EMPTY_WORKSPACE: string[] = [];
 
-		suite('empty filesystem', () => {
-			test('no config value', async () => {
+		suite('• empty filesystem', () => {
+			test('• no config value', async () => {
 				const locator = await createPromptsLocator(undefined, EMPTY_WORKSPACE, []);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[],
 					'No prompts must be found.',
 				);
-				locator.dispose();
 			});
 
-			test('object config value', async () => {
+			test('• object config value', async () => {
 				const locator = await createPromptsLocator({
 					'/Users/legomushroom/repos/prompts/': true,
 					'/tmp/prompts/': false,
 				}, EMPTY_WORKSPACE, []);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					await locator.listFiles(),
 					[],
 					'No prompts must be found.',
 				);
-				locator.dispose();
 			});
 
-			test('array config value', async () => {
+			test('• array config value', async () => {
 				const locator = await createPromptsLocator([
 					'relative/path/to/prompts/',
 					'/abs/path',
 				], EMPTY_WORKSPACE, []);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					await locator.listFiles(),
 					[],
 					'No prompts must be found.',
 				);
-				locator.dispose();
 			});
 
-			test('null config value', async () => {
+			test('• null config value', async () => {
 				const locator = await createPromptsLocator(null, EMPTY_WORKSPACE, []);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[],
 					'No prompts must be found.',
 				);
-				locator.dispose();
 			});
 
-			test('string config value', async () => {
+			test('• string config value', async () => {
 				const locator = await createPromptsLocator('/etc/hosts/prompts', EMPTY_WORKSPACE, []);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[],
 					'No prompts must be found.',
 				);
-				locator.dispose();
 			});
 		});
 
-		suite('non-empty filesystem', () => {
-			test('core logic', async () => {
+		suite('• non-empty filesystem', () => {
+			test('• core logic', async () => {
 				const locator = await createPromptsLocator(
 					{
 						'/Users/legomushroom/repos/prompts': true,
@@ -259,20 +209,20 @@ suite('PromptFilesLocator', () => {
 						},
 					]);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[
-						'/Users/legomushroom/repos/prompts/test.prompt.md',
-						'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
-						'/tmp/prompts/translate.to-rust.prompt.md'
+						createURI('/Users/legomushroom/repos/prompts/test.prompt.md').path,
+						createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').path,
+						createURI('/tmp/prompts/translate.to-rust.prompt.md').path,
 					],
 					'Must find correct prompts.',
 				);
-				locator.dispose();
 			});
 
-			suite('absolute', () => {
-				suite('wild card', () => {
+			suite('• absolute', () => {
+				suite('• wild card', () => {
 					const settings = [
 						'/Users/legomushroom/repos/vscode/**',
 						'/Users/legomushroom/repos/vscode/**/*.prompt.md',
@@ -293,7 +243,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const setting of settings) {
-						test(`'${setting}'`, async () => {
+						test(`• '${setting}'`, async () => {
 							const locator = await createPromptsLocator(
 								{ [setting]: true },
 								EMPTY_WORKSPACE,
@@ -336,22 +286,22 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/deps/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/deps/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 
-				suite(`specific`, () => {
+				suite(`• specific`, () => {
 					const testSettings = [
 						[
 							'/Users/legomushroom/repos/vscode/**/*specific*',
@@ -444,7 +394,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const settings of testSettings) {
-						test(`'${JSON.stringify(settings)}'`, async () => {
+						test(`• '${JSON.stringify(settings)}'`, async () => {
 							const vscodeSettings: Record<string, boolean> = {};
 							for (const setting of settings) {
 								vscodeSettings[setting] = true;
@@ -496,16 +446,16 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
@@ -513,10 +463,10 @@ suite('PromptFilesLocator', () => {
 		});
 	});
 
-	suite('single-root workspace', () => {
-		suite('glob pattern', () => {
-			suite('relative', () => {
-				suite('wild card', () => {
+	suite('• single-root workspace', () => {
+		suite('• glob pattern', () => {
+			suite('• relative', () => {
+				suite('• wild card', () => {
 					const testSettings = [
 						'**',
 						'**/*.prompt.md',
@@ -537,7 +487,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const setting of testSettings) {
-						test(`'${setting}'`, async () => {
+						test(`• '${setting}'`, async () => {
 							const locator = await createPromptsLocator(
 								{ [setting]: true },
 								['/Users/legomushroom/repos/vscode'],
@@ -580,22 +530,22 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/deps/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/deps/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 
-				suite(`specific`, () => {
+				suite(`• specific`, () => {
 					const testSettings = [
 						[
 							'**/*specific*',
@@ -688,7 +638,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const settings of testSettings) {
-						test(`'${JSON.stringify(settings)}'`, async () => {
+						test(`• '${JSON.stringify(settings)}'`, async () => {
 							const vscodeSettings: Record<string, boolean> = {};
 							for (const setting of settings) {
 								vscodeSettings[setting] = true;
@@ -740,23 +690,23 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 			});
 
-			suite('absolute', () => {
-				suite('wild card', () => {
+			suite('• absolute', () => {
+				suite('• wild card', () => {
 					const settings = [
 						'/Users/legomushroom/repos/vscode/**',
 						'/Users/legomushroom/repos/vscode/**/*.prompt.md',
@@ -777,7 +727,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const setting of settings) {
-						test(`'${setting}'`, async () => {
+						test(`• '${setting}'`, async () => {
 							const locator = await createPromptsLocator(
 								{ [setting]: true },
 								['/Users/legomushroom/repos/vscode'],
@@ -820,22 +770,22 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/deps/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/deps/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 
-				suite(`specific`, () => {
+				suite(`• specific`, () => {
 					const testSettings = [
 						[
 							'/Users/legomushroom/repos/vscode/**/*specific*',
@@ -928,7 +878,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const settings of testSettings) {
-						test(`'${JSON.stringify(settings)}'`, async () => {
+						test(`• '${JSON.stringify(settings)}'`, async () => {
 							const vscodeSettings: Record<string, boolean> = {};
 							for (const setting of settings) {
 								vscodeSettings[setting] = true;
@@ -980,16 +930,16 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/deps/text/nested/unspecific2.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
@@ -997,7 +947,7 @@ suite('PromptFilesLocator', () => {
 		});
 	});
 
-	test('core logic', async () => {
+	test('• core logic', async () => {
 		const locator = await createPromptsLocator(
 			{
 				'/Users/legomushroom/repos/prompts': true,
@@ -1065,21 +1015,21 @@ suite('PromptFilesLocator', () => {
 				},
 			]);
 
-		assertOutcome(
-			await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+		assert.deepStrictEqual(
+			(await locator.listFiles())
+				.map((file) => file.fsPath),
 			[
-				'/Users/legomushroom/repos/vscode/.github/prompts/my.prompt.md',
-				'/Users/legomushroom/repos/prompts/test.prompt.md',
-				'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
-				'/tmp/prompts/translate.to-rust.prompt.md',
-				'/Users/legomushroom/repos/vscode/.copilot/prompts/default.prompt.md',
+				createURI('/Users/legomushroom/repos/vscode/.github/prompts/my.prompt.md').fsPath,
+				createURI('/Users/legomushroom/repos/prompts/test.prompt.md').fsPath,
+				createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').fsPath,
+				createURI('/tmp/prompts/translate.to-rust.prompt.md').fsPath,
+				createURI('/Users/legomushroom/repos/vscode/.copilot/prompts/default.prompt.md').fsPath,
 			],
 			'Must find correct prompts.',
 		);
-		locator.dispose();
 	});
 
-	test('with disabled `.github/prompts` location', async () => {
+	test('• with disabled `.github/prompts` location', async () => {
 		const locator = await createPromptsLocator(
 			{
 				'/Users/legomushroom/repos/prompts': true,
@@ -1152,22 +1102,22 @@ suite('PromptFilesLocator', () => {
 				},
 			]);
 
-		assertOutcome(
-			await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+		assert.deepStrictEqual(
+			(await locator.listFiles())
+				.map((file) => file.fsPath),
 			[
-				'/Users/legomushroom/repos/prompts/test.prompt.md',
-				'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
-				'/tmp/prompts/translate.to-rust.prompt.md',
-				'/Users/legomushroom/repos/vscode/.copilot/prompts/default.prompt.md',
+				createURI('/Users/legomushroom/repos/prompts/test.prompt.md').path,
+				createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').path,
+				createURI('/tmp/prompts/translate.to-rust.prompt.md').path,
+				createURI('/Users/legomushroom/repos/vscode/.copilot/prompts/default.prompt.md').path,
 			],
 			'Must find correct prompts.',
 		);
-		locator.dispose();
 	});
 
-	suite('multi-root workspace', () => {
-		suite('core logic', () => {
-			test('without top-level `.github` folder', async () => {
+	suite('• multi-root workspace', () => {
+		suite('• core logic', () => {
+			test('• without top-level `.github` folder', async () => {
 				const locator = await createPromptsLocator(
 					{
 						'/Users/legomushroom/repos/prompts': true,
@@ -1273,21 +1223,21 @@ suite('PromptFilesLocator', () => {
 						},
 					]);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[
-						'/Users/legomushroom/repos/vscode/.github/prompts/default.prompt.md',
-						'/Users/legomushroom/repos/node/.github/prompts/refactor-static-classes.prompt.md',
-						'/Users/legomushroom/repos/prompts/test.prompt.md',
-						'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
-						'/tmp/prompts/translate.to-rust.prompt.md',
+						createURI('/Users/legomushroom/repos/vscode/.github/prompts/default.prompt.md').path,
+						createURI('/Users/legomushroom/repos/node/.github/prompts/refactor-static-classes.prompt.md').path,
+						createURI('/Users/legomushroom/repos/prompts/test.prompt.md').path,
+						createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').path,
+						createURI('/tmp/prompts/translate.to-rust.prompt.md').path,
 					],
 					'Must find correct prompts.',
 				);
-				locator.dispose();
 			});
 
-			test('with top-level `.github` folder', async () => {
+			test('• with top-level `.github` folder', async () => {
 				const locator = await createPromptsLocator(
 					{
 						'/Users/legomushroom/repos/prompts': true,
@@ -1298,7 +1248,7 @@ suite('PromptFilesLocator', () => {
 					[
 						'/Users/legomushroom/repos/vscode',
 						'/Users/legomushroom/repos/node',
-						'/var/shared/prompts',
+						'/var/shared/prompts/.github',
 					],
 					[
 						{
@@ -1394,23 +1344,23 @@ suite('PromptFilesLocator', () => {
 						},
 					]);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[
-						'/Users/legomushroom/repos/vscode/.github/prompts/default.prompt.md',
-						'/Users/legomushroom/repos/node/.github/prompts/refactor-static-classes.prompt.md',
-						'/var/shared/prompts/.github/prompts/prompt-name.prompt.md',
-						'/var/shared/prompts/.github/prompts/name-of-the-prompt.prompt.md',
-						'/Users/legomushroom/repos/prompts/test.prompt.md',
-						'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
-						'/tmp/prompts/translate.to-rust.prompt.md',
+						createURI('/Users/legomushroom/repos/vscode/.github/prompts/default.prompt.md').fsPath,
+						createURI('/Users/legomushroom/repos/node/.github/prompts/refactor-static-classes.prompt.md').fsPath,
+						createURI('/var/shared/prompts/.github/prompts/prompt-name.prompt.md').fsPath,
+						createURI('/var/shared/prompts/.github/prompts/name-of-the-prompt.prompt.md').fsPath,
+						createURI('/Users/legomushroom/repos/prompts/test.prompt.md').fsPath,
+						createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').fsPath,
+						createURI('/tmp/prompts/translate.to-rust.prompt.md').fsPath,
 					],
 					'Must find correct prompts.',
 				);
-				locator.dispose();
 			});
 
-			test('with disabled `.github/prompts` location', async () => {
+			test('• with disabled `.github/prompts` location', async () => {
 				const locator = await createPromptsLocator(
 					{
 						'/Users/legomushroom/repos/prompts': true,
@@ -1422,7 +1372,7 @@ suite('PromptFilesLocator', () => {
 					[
 						'/Users/legomushroom/repos/vscode',
 						'/Users/legomushroom/repos/node',
-						'/var/shared/prompts',
+						'/var/shared/prompts/.github',
 					],
 					[
 						{
@@ -1518,19 +1468,19 @@ suite('PromptFilesLocator', () => {
 						},
 					]);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[
-						'/Users/legomushroom/repos/prompts/test.prompt.md',
-						'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
-						'/tmp/prompts/translate.to-rust.prompt.md',
+						createURI('/Users/legomushroom/repos/prompts/test.prompt.md').path,
+						createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').path,
+						createURI('/tmp/prompts/translate.to-rust.prompt.md').path,
 					],
 					'Must find correct prompts.',
 				);
-				locator.dispose();
 			});
 
-			test('mixed', async () => {
+			test('• mixed', async () => {
 				const locator = await createPromptsLocator(
 					{
 						'/Users/legomushroom/repos/**/*test*': true,
@@ -1541,7 +1491,7 @@ suite('PromptFilesLocator', () => {
 					[
 						'/Users/legomushroom/repos/vscode',
 						'/Users/legomushroom/repos/node',
-						'/var/shared/prompts',
+						'/var/shared/prompts/.github',
 					],
 					[
 						{
@@ -1641,29 +1591,29 @@ suite('PromptFilesLocator', () => {
 						},
 					]);
 
-				assertOutcome(
-					await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+				assert.deepStrictEqual(
+					(await locator.listFiles())
+						.map((file) => file.fsPath),
 					[
 						// all of these are due to the `.github/prompts` setting
-						'/Users/legomushroom/repos/vscode/.github/prompts/default.prompt.md',
-						'/Users/legomushroom/repos/node/.github/prompts/refactor-static-classes.prompt.md',
-						'/var/shared/prompts/.github/prompts/prompt-name.prompt.md',
-						'/var/shared/prompts/.github/prompts/name-of-the-prompt.prompt.md',
+						createURI('/Users/legomushroom/repos/vscode/.github/prompts/default.prompt.md').fsPath,
+						createURI('/Users/legomushroom/repos/node/.github/prompts/refactor-static-classes.prompt.md').fsPath,
+						createURI('/var/shared/prompts/.github/prompts/prompt-name.prompt.md').fsPath,
+						createURI('/var/shared/prompts/.github/prompts/name-of-the-prompt.prompt.md').fsPath,
 						// all of these are due to the `/Users/legomushroom/repos/**/*test*` setting
-						'/Users/legomushroom/repos/prompts/test.prompt.md',
-						'/Users/legomushroom/repos/prompts/refactor-tests.prompt.md',
+						createURI('/Users/legomushroom/repos/prompts/test.prompt.md').fsPath,
+						createURI('/Users/legomushroom/repos/prompts/refactor-tests.prompt.md').fsPath,
 						// this one is due to the specific `/absolute/path/prompts/some-prompt-file.prompt.md` setting
-						'/absolute/path/prompts/some-prompt-file.prompt.md',
+						createURI('/absolute/path/prompts/some-prompt-file.prompt.md').fsPath,
 					],
 					'Must find correct prompts.',
 				);
-				locator.dispose();
 			});
 		});
 
-		suite('glob pattern', () => {
-			suite('relative', () => {
-				suite('wild card', () => {
+		suite('• glob pattern', () => {
+			suite('• relative', () => {
+				suite('• wild card', () => {
 					const testSettings = [
 						'**',
 						'**/*.prompt.md',
@@ -1688,7 +1638,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const setting of testSettings) {
-						test(`'${setting}'`, async () => {
+						test(`• '${setting}'`, async () => {
 							const locator = await createPromptsLocator(
 								{ [setting]: true },
 								[
@@ -1756,25 +1706,25 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/gen/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/gen/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md').fsPath,
 									// -
-									'/Users/legomushroom/repos/prompts/general/common.prompt.md',
-									'/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md',
+									createURI('/Users/legomushroom/repos/prompts/general/common.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 
-				suite(`specific`, () => {
+				suite(`• specific`, () => {
 					const testSettings = [
 						[
 							'**/my.prompt.md',
@@ -1889,7 +1839,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const settings of testSettings) {
-						test(`'${JSON.stringify(settings)}'`, async () => {
+						test(`• '${JSON.stringify(settings)}'`, async () => {
 							const vscodeSettings: Record<string, boolean> = {};
 							for (const setting of settings) {
 								vscodeSettings[setting] = true;
@@ -1962,27 +1912,27 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/gen/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/gen/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md').fsPath,
 									// -
-									'/Users/legomushroom/repos/prompts/general/common.prompt.md',
-									'/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md',
+									createURI('/Users/legomushroom/repos/prompts/general/common.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 			});
 
-			suite('absolute', () => {
-				suite('wild card', () => {
+			suite('• absolute', () => {
+				suite('• wild card', () => {
 					const testSettings = [
 						'/Users/legomushroom/repos/**',
 						'/Users/legomushroom/repos/**/*.prompt.md',
@@ -2019,7 +1969,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const setting of testSettings) {
-						test(`'${setting}'`, async () => {
+						test(`• '${setting}'`, async () => {
 							const locator = await createPromptsLocator(
 								{ [setting]: true },
 								[
@@ -2087,25 +2037,25 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/gen/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/gen/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md').fsPath,
 									// -
-									'/Users/legomushroom/repos/prompts/general/common.prompt.md',
-									'/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md',
+									createURI('/Users/legomushroom/repos/prompts/general/common.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
 
-				suite(`specific`, () => {
+				suite(`• specific`, () => {
 					const testSettings = [
 						[
 							'/Users/legomushroom/repos/**/my.prompt.md',
@@ -2250,7 +2200,7 @@ suite('PromptFilesLocator', () => {
 					];
 
 					for (const settings of testSettings) {
-						test(`'${JSON.stringify(settings)}'`, async () => {
+						test(`• '${JSON.stringify(settings)}'`, async () => {
 							const vscodeSettings: Record<string, boolean> = {};
 							for (const setting of settings) {
 								vscodeSettings[setting] = true;
@@ -2323,20 +2273,20 @@ suite('PromptFilesLocator', () => {
 								],
 							);
 
-							assertOutcome(
-								await locator.listFiles(PromptsType.prompt, 'local', CancellationToken.None),
+							assert.deepStrictEqual(
+								(await locator.listFiles())
+									.map((file) => file.fsPath),
 								[
-									'/Users/legomushroom/repos/vscode/gen/text/my.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md',
-									'/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md',
+									createURI('/Users/legomushroom/repos/vscode/gen/text/my.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/specific.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific1.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/vscode/gen/text/nested/unspecific2.prompt.md').fsPath,
 									// -
-									'/Users/legomushroom/repos/prompts/general/common.prompt.md',
-									'/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md',
+									createURI('/Users/legomushroom/repos/prompts/general/common.prompt.md').fsPath,
+									createURI('/Users/legomushroom/repos/prompts/general/uncommon-10.prompt.md').fsPath,
 								],
 								'Must find correct prompts.',
 							);
-							locator.dispose();
 						});
 					}
 				});
@@ -2344,8 +2294,8 @@ suite('PromptFilesLocator', () => {
 		});
 	});
 
-	suite('isValidGlob', () => {
-		test('valid patterns', () => {
+	suite('• isValidGlob', () => {
+		test('• valid patterns', () => {
 			const globs = [
 				'**',
 				'\*',
@@ -2381,7 +2331,7 @@ suite('PromptFilesLocator', () => {
 			}
 		});
 
-		test('invalid patterns', () => {
+		test('• invalid patterns', () => {
 			const globs = [
 				'.',
 				'\\*',
@@ -2419,8 +2369,8 @@ suite('PromptFilesLocator', () => {
 		});
 	});
 
-	suite('getConfigBasedSourceFolders', () => {
-		test('gets unambiguous list of folders', async () => {
+	suite('• getConfigBasedSourceFolders', () => {
+		test('• gets unambiguous list of folders', async () => {
 			const locator = await createPromptsLocator(
 				{
 					'.github/prompts': true,
@@ -2439,26 +2389,22 @@ suite('PromptFilesLocator', () => {
 				[],
 			);
 
-			assertOutcome(
-				locator.getConfigBasedSourceFolders(PromptsType.prompt),
+			assert.deepStrictEqual(
+				locator.getConfigBasedSourceFolders()
+					.map((file) => file.fsPath),
 				[
-					'/Users/legomushroom/repos/vscode/.github/prompts',
-					'/Users/legomushroom/repos/prompts/.github/prompts',
-					'/Users/legomushroom/repos/vscode/gen/text/nested',
-					'/Users/legomushroom/repos/prompts/gen/text/nested',
-					'/Users/legomushroom/repos/vscode/general',
-					'/Users/legomushroom/repos/prompts/general',
-					'/Users/legomushroom/repos/vscode/my-prompts',
-					'/Users/legomushroom/repos/vscode/your-prompts',
-					'/Users/legomushroom/repos/prompts/shared-prompts',
+					createURI('/Users/legomushroom/repos/vscode/.github/prompts').fsPath,
+					createURI('/Users/legomushroom/repos/prompts/.github/prompts').fsPath,
+					createURI('/Users/legomushroom/repos/vscode/gen/text/nested').fsPath,
+					createURI('/Users/legomushroom/repos/prompts/gen/text/nested').fsPath,
+					createURI('/Users/legomushroom/repos/vscode/general').fsPath,
+					createURI('/Users/legomushroom/repos/prompts/general').fsPath,
+					createURI('/Users/legomushroom/repos/vscode/my-prompts').fsPath,
+					createURI('/Users/legomushroom/repos/vscode/your-prompts').fsPath,
+					createURI('/Users/legomushroom/repos/prompts/shared-prompts').fsPath,
 				],
 				'Must find correct prompts.',
 			);
-			locator.dispose();
 		});
 	});
 });
-
-function assertOutcome(actual: readonly URI[], expected: string[], message: string) {
-	assert.deepStrictEqual(actual.map((uri) => uri.path), expected, message);
-}

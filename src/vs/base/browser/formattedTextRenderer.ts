@@ -14,20 +14,30 @@ export interface IContentActionHandler {
 }
 
 export interface FormattedTextRenderOptions {
+	readonly className?: string;
+	readonly inline?: boolean;
 	readonly actionHandler?: IContentActionHandler;
 	readonly renderCodeSegments?: boolean;
 }
 
-export function renderText(text: string, _options?: FormattedTextRenderOptions, target?: HTMLElement): HTMLElement {
-	const element = target ?? document.createElement('div');
+export function renderText(text: string, options: FormattedTextRenderOptions = {}): HTMLElement {
+	const element = createElement(options);
 	element.textContent = text;
 	return element;
 }
 
-export function renderFormattedText(formattedText: string, options?: FormattedTextRenderOptions, target?: HTMLElement): HTMLElement {
-	const element = target ?? document.createElement('div');
-	element.textContent = '';
-	_renderFormattedText(element, parseFormattedText(formattedText, !!options?.renderCodeSegments), options?.actionHandler, options?.renderCodeSegments);
+export function renderFormattedText(formattedText: string, options: FormattedTextRenderOptions = {}): HTMLElement {
+	const element = createElement(options);
+	_renderFormattedText(element, parseFormattedText(formattedText, !!options.renderCodeSegments), options.actionHandler, options.renderCodeSegments);
+	return element;
+}
+
+export function createElement(options: FormattedTextRenderOptions): HTMLElement {
+	const tagName = options.inline ? 'span' : 'div';
+	const element = document.createElement(tagName);
+	if (options.className) {
+		element.className = options.className;
+	}
 	return element;
 }
 

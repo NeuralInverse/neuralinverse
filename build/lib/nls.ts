@@ -11,7 +11,9 @@ import sm from 'source-map';
 import path from 'path';
 import sort from 'gulp-sort';
 
-type FileSourceMap = File & { sourceMap: sm.RawSourceMap };
+declare class FileSourceMap extends File {
+	public sourceMap: sm.RawSourceMap;
+}
 
 enum CollectStepResult {
 	Yes,
@@ -246,7 +248,7 @@ module _nls {
 			.concat(importEqualsDeclarations.map(d => d.name))
 
 			// find read-only references to `nls`
-			.map(n => service.getReferencesAtPosition(filename, n.pos + 1) ?? [])
+			.map(n => service.getReferencesAtPosition(filename, n.pos + 1))
 			.flatten()
 			.filter(r => !r.isWriteAccess)
 
@@ -268,14 +270,14 @@ module _nls {
 		// `localize` read-only references
 		const localizeReferences = allLocalizeImportDeclarations
 			.filter(d => d.name.getText() === functionName)
-			.map(n => service.getReferencesAtPosition(filename, n.pos + 1) ?? [])
+			.map(n => service.getReferencesAtPosition(filename, n.pos + 1))
 			.flatten()
 			.filter(r => !r.isWriteAccess);
 
 		// custom named `localize` read-only references
 		const namedLocalizeReferences = allLocalizeImportDeclarations
 			.filter(d => d.propertyName && d.propertyName.getText() === functionName)
-			.map(n => service.getReferencesAtPosition(filename, n.name.pos + 1) ?? [])
+			.map(n => service.getReferencesAtPosition(filename, n.name.pos + 1))
 			.flatten()
 			.filter(r => !r.isWriteAccess);
 
@@ -502,7 +504,7 @@ module _nls {
 		const { javascript, sourcemap, nlsKeys, nlsMessages } = patch(
 			ts,
 			typescript,
-			javascriptFile.contents!.toString(),
+			javascriptFile.contents.toString(),
 			(<any>javascriptFile).sourceMap,
 			options
 		);

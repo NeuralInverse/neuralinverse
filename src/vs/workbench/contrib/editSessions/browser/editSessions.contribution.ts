@@ -68,7 +68,6 @@ import { EditSessionsStoreClient } from '../common/editSessionsStorageClient.js'
 import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
 import { IWorkspaceIdentityService } from '../../../services/workspaces/common/workspaceIdentityService.js';
 import { hashAsync } from '../../../../base/common/hash.js';
-import { ResourceSet } from '../../../../base/common/map.js';
 
 registerSingleton(IEditSessionsLogService, EditSessionsLogService, InstantiationType.Delayed);
 registerSingleton(IEditSessionsStorageService, EditSessionsWorkbenchService, InstantiationType.Delayed);
@@ -407,7 +406,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 					// Open the URI
 					that.logService.info(`Opening ${uri.toString()}`);
 					await that.openerService.open(uri, { openExternal: true });
-				} else if ((!shouldStoreEditSession || ref === undefined) && uri !== 'noDestinationUri') {
+				} else if (!shouldStoreEditSession && uri !== 'noDestinationUri') {
 					// Open the URI without an edit session ref
 					that.logService.info(`Opening ${uri.toString()}`);
 					await that.openerService.open(uri, { openExternal: true });
@@ -686,24 +685,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		// Save all saveable editors before building edit session contents
 		await this.editorService.saveAll();
 
-		// Do a first pass over all repositories to ensure that the edit session identity is created for each.
-		// This may change the working changes that need to be stored later
-		const createdEditSessionIdentities = new ResourceSet();
-		for (const repository of this.scmService.repositories) {
-			const changedResources = this.getChangedResources(repository);
-			if (!changedResources.size) {
-				continue;
-			}
-			for (const uri of changedResources) {
-				const workspaceFolder = this.contextService.getWorkspaceFolder(uri);
-				if (!workspaceFolder || createdEditSessionIdentities.has(uri)) {
-					continue;
-				}
-				createdEditSessionIdentities.add(uri);
-				await this.editSessionIdentityService.onWillCreateEditSessionIdentity(workspaceFolder, cancellationToken);
-			}
-		}
-
 		for (const repository of this.scmService.repositories) {
 			// Look through all resource groups and compute which files were added/modified/deleted
 			const trackedUris = this.getChangedResources(repository); // A URI might appear in more than one resource group
@@ -721,6 +702,8 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 					continue;
 				}
+
+				await this.editSessionIdentityService.onWillCreateEditSessionIdentity(workspaceFolder, cancellationToken);
 
 				name = name ?? workspaceFolder.name;
 				const relativeFilePath = relativePath(workspaceFolder.uri, uri) ?? uri.path;

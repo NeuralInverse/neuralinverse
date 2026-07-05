@@ -20,7 +20,6 @@ import { CellRevealRangeType, CellRevealType, ICellOutputViewModel, ICellViewMod
 import { CellPartsCollection } from './cellPart.js';
 import { CellViewModel, NotebookViewModel } from '../viewModel/notebookViewModelImpl.js';
 import { ICellRange } from '../../common/notebookRange.js';
-import { createTrustedTypesPolicy } from '../../../../../base/browser/trustedTypes.js';
 
 
 export interface INotebookCellList extends ICoordinatesConverter {
@@ -123,5 +122,3 @@ export interface ICoordinatesConverter {
 	modelIndexIsVisible(modelIndex: number): boolean;
 	convertModelIndexToViewIndex(modelIndex: number): number;
 }
-
-export const collapsedCellTTPolicy = createTrustedTypesPolicy('collapsedCellPreview', { createHTML: value => value });

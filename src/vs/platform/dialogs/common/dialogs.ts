@@ -283,8 +283,7 @@ export interface ICustomDialogOptions {
 export interface ICustomDialogMarkdown {
 	readonly markdown: IMarkdownString;
 	readonly classes?: string[];
-	/** Custom link handler for markdown content, see {@link IContentActionHandler}. Defaults to {@link openLinkFromMarkdown}. */
-	actionHandler?(link: string): Promise<boolean>;
+	readonly dismissOnLinkClick?: boolean;
 }
 
 /**
@@ -310,7 +309,7 @@ export interface IDialogHandler {
 	/**
 	 * Present the about dialog to the user.
 	 */
-	about(title: string, details: string, detailsToCopy: string): Promise<void>;
+	about(): Promise<void>;
 }
 
 enum DialogKind {
@@ -440,7 +439,7 @@ export abstract class AbstractDialogHandler implements IDialogHandler {
 	abstract confirm(confirmation: IConfirmation): Promise<IConfirmationResult>;
 	abstract input(input: IInput): Promise<IInputResult>;
 	abstract prompt<T>(prompt: IPrompt<T>): Promise<IAsyncPromptResult<T>>;
-	abstract about(title: string, details: string, detailsToCopy: string): Promise<void>;
+	abstract about(): Promise<void>;
 }
 
 /**

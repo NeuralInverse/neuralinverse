@@ -10,7 +10,6 @@ import { Event } from '../../../../../base/common/event.js';
 import { Iterable } from '../../../../../base/common/iterator.js';
 import { Lazy } from '../../../../../base/common/lazy.js';
 import { Disposable, DisposableStore, IDisposable, IReference, MutableDisposable, combinedDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
-import { ScrollEvent } from '../../../../../base/common/scrollable.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { ICodeEditor, IDiffEditorConstructionOptions } from '../../../../../editor/browser/editorBrowser.js';
 import { CodeEditorWidget } from '../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
@@ -19,44 +18,40 @@ import { DiffEditorWidget } from '../../../../../editor/browser/widget/diffEdito
 import { EmbeddedDiffEditorWidget } from '../../../../../editor/browser/widget/diffEditor/embeddedDiffEditorWidget.js';
 import { MarkdownRenderer } from '../../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js';
 import { IDiffEditorOptions, IEditorOptions } from '../../../../../editor/common/config/editorOptions.js';
-import { ITextModel } from '../../../../../editor/common/model.js';
 import { IResolvedTextEditorModel, ITextModelService } from '../../../../../editor/common/services/resolverService.js';
 import { peekViewResultsBackground } from '../../../../../editor/contrib/peekView/browser/peekView.js';
 import { localize } from '../../../../../nls.js';
-import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
 import { TerminalCapability } from '../../../../../platform/terminal/common/capabilities/capabilities.js';
 import { TerminalCapabilityStore } from '../../../../../platform/terminal/common/capabilities/terminalCapabilityStore.js';
 import { formatMessageForTerminal } from '../../../../../platform/terminal/common/terminalStrings.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
-import { IEditorConfiguration } from '../../../../browser/parts/editor/textEditor.js';
 import { EditorModel } from '../../../../common/editor/editorModel.js';
 import { PANEL_BACKGROUND, SIDE_BAR_BACKGROUND } from '../../../../common/theme.js';
 import { IViewDescriptorService, ViewContainerLocation } from '../../../../common/views.js';
-import { CALL_STACK_WIDGET_HEADER_HEIGHT } from '../../../debug/browser/callStackWidget.js';
 import { DetachedProcessInfo } from '../../../terminal/browser/detachedTerminal.js';
 import { IDetachedTerminalInstance, ITerminalService } from '../../../terminal/browser/terminal.js';
 import { getXtermScaledDimensions } from '../../../terminal/browser/xterm/xtermTerminal.js';
 import { TERMINAL_BACKGROUND_COLOR } from '../../../terminal/common/terminalColorRegistry.js';
+import { colorizeTestMessageInEditor } from '../testMessageColorizer.js';
+import { InspectSubject, MessageSubject, TaskSubject, TestOutputSubject } from './testResultsSubject.js';
 import { Testing } from '../../common/constants.js';
 import { MutableObservableValue } from '../../common/observableValue.js';
 import { ITaskRawOutput, ITestResult, ITestRunTaskResults, LiveTestResult, TestResultItemChangeReason } from '../../common/testResult.js';
 import { ITestMessage, TestMessageType, getMarkId } from '../../common/testTypes.js';
-import { colorizeTestMessageInEditor } from '../testMessageColorizer.js';
-import { InspectSubject, MessageSubject, TaskSubject, TestOutputSubject } from './testResultsSubject.js';
+import { ScrollEvent } from '../../../../../base/common/scrollable.js';
+import { CALL_STACK_WIDGET_HEADER_HEIGHT } from '../../../debug/browser/callStackWidget.js';
 
 
 class SimpleDiffEditorModel extends EditorModel {
-	public readonly original: ITextModel;
-	public readonly modified: ITextModel;
+	public readonly original = this._original.object.textEditorModel;
+	public readonly modified = this._modified.object.textEditorModel;
 
 	constructor(
 		private readonly _original: IReference<IResolvedTextEditorModel>,
 		private readonly _modified: IReference<IResolvedTextEditorModel>,
 	) {
 		super();
-		this.original = this._original.object.textEditorModel;
-		this.modified = this._modified.object.textEditorModel;
 	}
 
 	public override dispose() {
@@ -112,35 +107,6 @@ const diffEditorOptions: IDiffEditorConstructionOptions = {
 	diffAlgorithm: 'advanced',
 };
 
-function applyEditorMirrorOptions<T extends IEditorOptions>(base: T, cfg: IConfigurationService, update: (options: Partial<IEditorOptions>) => void) {
-	const immutable = new Set(Object.keys(base));
-	function applyCurrent() {
-		const configuration = cfg.getValue<IEditorConfiguration>('editor');
-
-		let changed = false;
-		const patch: Partial<IEditorOptions> = {};
-		for (const [key, value] of Object.entries(configuration)) {
-			if (!immutable.has(key) && (base as any)[key] !== value) {
-				(patch as any)[key] = value;
-				changed = true;
-			}
-		}
-
-		return changed ? patch : undefined;
-	}
-
-	Object.assign(base, applyCurrent());
-
-	return cfg.onDidChangeConfiguration(e => {
-		if (e.affectsConfiguration('editor')) {
-			const patch = applyCurrent();
-			if (patch) {
-				update(patch);
-				Object.assign(base, patch);
-			}
-		}
-	});
-}
 
 export class DiffContentProvider extends Disposable implements IPeekOutputRenderer {
 	private readonly widget = this._register(new MutableDisposable<DiffEditorWidget>());
@@ -157,7 +123,6 @@ export class DiffContentProvider extends Disposable implements IPeekOutputRender
 		private readonly container: HTMLElement,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ITextModelService private readonly modelService: ITextModelService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		super();
 	}
@@ -180,32 +145,21 @@ export class DiffContentProvider extends Disposable implements IPeekOutputRender
 
 		const model = this.model.value = new SimpleDiffEditorModel(original, modified);
 		if (!this.widget.value) {
-			const options = { ...diffEditorOptions };
-			const listener = applyEditorMirrorOptions(
-				options,
-				this.configurationService,
-				u => editor.updateOptions(u)
-			);
-
-			const editor = this.widget.value = this.editor ? this.instantiationService.createInstance(
+			this.widget.value = this.editor ? this.instantiationService.createInstance(
 				EmbeddedDiffEditorWidget,
 				this.container,
-				options,
+				diffEditorOptions,
 				{},
 				this.editor,
 			) : this.instantiationService.createInstance(
 				DiffEditorWidget,
 				this.container,
-				options,
+				diffEditorOptions,
 				{},
 			);
 
-			Event.once(editor.onDidDispose)(() => {
-				listener.dispose();
-			});
-
 			if (this.dimension) {
-				editor.layout(this.dimension);
+				this.widget.value.layout(this.dimension);
 			}
 		}
 
@@ -234,7 +188,6 @@ export class DiffContentProvider extends Disposable implements IPeekOutputRender
 			editor.getOriginalEditor().getContentHeight(),
 			editor.getModifiedEditor().getContentHeight()
 		);
-		editor.updateOptions({ scrollbar: { ...commonEditorOptions.scrollbar, handleMouseWheel: !hasMultipleFrames } });
 		this.helper = new ScrollHelper(hasMultipleFrames, height, dimensions.height);
 		return height;
 	}
@@ -337,7 +290,6 @@ export class PlainTextMessagePeek extends Disposable implements IPeekOutputRende
 		private readonly container: HTMLElement,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ITextModelService private readonly modelService: ITextModelService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		super();
 	}
@@ -356,32 +308,21 @@ export class PlainTextMessagePeek extends Disposable implements IPeekOutputRende
 
 		const modelRef = this.model.value = await this.modelService.createModelReference(subject.messageUri);
 		if (!this.widget.value) {
-			const options = { ...commonEditorOptions };
-			const listener = applyEditorMirrorOptions(
-				options,
-				this.configurationService,
-				u => editor.updateOptions(u)
-			);
-
-			const editor = this.widget.value = this.editor ? this.instantiationService.createInstance(
+			this.widget.value = this.editor ? this.instantiationService.createInstance(
 				EmbeddedCodeEditorWidget,
 				this.container,
-				options,
+				commonEditorOptions,
 				{},
 				this.editor,
 			) : this.instantiationService.createInstance(
 				CodeEditorWidget,
 				this.container,
-				options,
+				commonEditorOptions,
 				{ isSimpleWidget: true }
 			);
 
-			Event.once(editor.onDidDispose)(() => {
-				listener.dispose();
-			});
-
 			if (this.dimension) {
-				editor.layout(this.dimension);
+				this.widget.value.layout(this.dimension);
 			}
 		}
 
@@ -411,8 +352,6 @@ export class PlainTextMessagePeek extends Disposable implements IPeekOutputRende
 		editor.layout(dimensions);
 		const height = editor.getContentHeight();
 		this.helper = new ScrollHelper(hasMultipleFrames, height, dimensions.height);
-		editor.updateOptions({ scrollbar: { ...commonEditorOptions.scrollbar, handleMouseWheel: !hasMultipleFrames } });
-
 		return height;
 	}
 }

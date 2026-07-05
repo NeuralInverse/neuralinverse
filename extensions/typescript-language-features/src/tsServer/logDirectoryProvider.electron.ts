@@ -6,8 +6,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { memoize } from '../utils/memoize';
 import { ILogDirectoryProvider } from './logDirectoryProvider';
-import { Lazy } from '../utils/lazy';
 
 export class NodeLogDirectoryProvider implements ILogDirectoryProvider {
 	public constructor(
@@ -15,7 +15,7 @@ export class NodeLogDirectoryProvider implements ILogDirectoryProvider {
 	) { }
 
 	public getNewLogDirectory(): vscode.Uri | undefined {
-		const root = this.logDirectory.value;
+		const root = this.logDirectory();
 		if (root) {
 			try {
 				return vscode.Uri.file(fs.mkdtempSync(path.join(root, `tsserver-log-`)));
@@ -26,7 +26,8 @@ export class NodeLogDirectoryProvider implements ILogDirectoryProvider {
 		return undefined;
 	}
 
-	private readonly logDirectory = new Lazy<string | undefined>(() => {
+	@memoize
+	private logDirectory(): string | undefined {
 		try {
 			const path = this.context.logPath;
 			if (!fs.existsSync(path)) {
@@ -36,5 +37,5 @@ export class NodeLogDirectoryProvider implements ILogDirectoryProvider {
 		} catch {
 			return undefined;
 		}
-	});
+	}
 }

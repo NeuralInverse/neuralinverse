@@ -3,12 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as path from 'node:path';
+import * as path from 'path';
 import * as fs from 'original-fs';
-import * as os from 'node:os';
-import { performance } from 'node:perf_hooks';
+import * as os from 'os';
+import { performance } from 'perf_hooks';
 import { configurePortable } from './bootstrap-node.js';
 import { bootstrapESM } from './bootstrap-esm.js';
+import { fileURLToPath } from 'url';
 import { app, protocol, crashReporter, Menu, contentTracing } from 'electron';
 import minimist from 'minimist';
 import { product } from './bootstrap-meta.js';
@@ -19,6 +20,8 @@ import { resolveNLSConfiguration } from './vs/base/node/nls.js';
 import { getUNCHost, addUNCHostToAllowlist } from './vs/base/node/unc.js';
 import { INLSConfiguration } from './vs/nls.js';
 import { NativeParsedArgs } from './vs/platform/environment/common/argv.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 perf.mark('code/didStartMain');
 
@@ -126,7 +129,7 @@ if (userLocale) {
 		osLocale,
 		commit: product.commit,
 		userDataPath,
-		nlsMetadataPath: import.meta.dirname
+		nlsMetadataPath: __dirname
 	});
 }
 
@@ -225,9 +228,7 @@ function configureCommandlineSwitchesSync(cliArgs: NativeParsedArgs) {
 		'disable-lcd-text',
 
 		// bypass any specified proxy for the given semi-colon-separated list of hosts
-		'proxy-bypass-list',
-
-		'remote-debugging-port'
+		'proxy-bypass-list'
 	];
 
 	if (process.platform === 'linux') {
@@ -248,10 +249,7 @@ function configureCommandlineSwitchesSync(cliArgs: NativeParsedArgs) {
 		'log-level',
 
 		// Use an in-memory storage for secrets
-		'use-inmemory-secretstorage',
-
-		// Enables display tracking to restore maximized windows under RDP: https://github.com/electron/electron/issues/47016
-		'enable-rdp-display-tracking',
+		'use-inmemory-secretstorage'
 	];
 
 	// Read argv config
@@ -309,29 +307,20 @@ function configureCommandlineSwitchesSync(cliArgs: NativeParsedArgs) {
 						process.argv.push('--use-inmemory-secretstorage');
 					}
 					break;
-
-				case 'enable-rdp-display-tracking':
-					if (argvValue) {
-						process.argv.push('--enable-rdp-display-tracking');
-					}
-					break;
 			}
 		}
 	});
 
 	// Following features are enabled from the runtime:
 	// `DocumentPolicyIncludeJSCallStacksInCrashReports` - https://www.electronjs.org/docs/latest/api/web-frame-main#framecollectjavascriptcallstack-experimental
-	// `EarlyEstablishGpuChannel` - Refs https://issues.chromium.org/issues/40208065
-	// `EstablishGpuChannelAsync` - Refs https://issues.chromium.org/issues/40208065
 	const featuresToEnable =
-		`DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,EstablishGpuChannelAsync,${app.commandLine.getSwitchValue('enable-features')}`;
+		`DocumentPolicyIncludeJSCallStacksInCrashReports, ${app.commandLine.getSwitchValue('enable-features')}`;
 	app.commandLine.appendSwitch('enable-features', featuresToEnable);
 
 	// Following features are disabled from the runtime:
 	// `CalculateNativeWinOcclusion` - Disable native window occlusion tracker (https://groups.google.com/a/chromium.org/g/embedder-dev/c/ZF3uHHyWLKw/m/VDN2hDXMAAAJ)
-	// `FontationsLinuxSystemFonts` - Revert to FreeType for system fonts on Linux Refs https://github.com/microsoft/vscode/issues/260391
 	const featuresToDisable =
-		`CalculateNativeWinOcclusion,FontationsLinuxSystemFonts,${app.commandLine.getSwitchValue('disable-features')}`;
+		`CalculateNativeWinOcclusion,${app.commandLine.getSwitchValue('disable-features')}`;
 	app.commandLine.appendSwitch('disable-features', featuresToDisable);
 
 	// Blink features to configure.
@@ -368,8 +357,6 @@ interface IArgvConfig {
 	readonly 'log-level'?: string | string[];
 	readonly 'disable-chromium-sandbox'?: boolean;
 	readonly 'use-inmemory-secretstorage'?: boolean;
-	readonly 'enable-rdp-display-tracking'?: boolean;
-	readonly 'remote-debugging-port'?: string;
 }
 
 function readArgvConfigSync(): IArgvConfig {
@@ -692,7 +679,7 @@ async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 			userLocale: 'en',
 			osLocale,
 			resolvedLanguage: 'en',
-			defaultMessagesFile: path.join(import.meta.dirname, 'nls.messages.json'),
+			defaultMessagesFile: path.join(__dirname, 'nls.messages.json'),
 
 			// NLS: below 2 are a relic from old times only used by vscode-nls and deprecated
 			locale: 'en',
@@ -708,7 +695,7 @@ async function resolveNlsConfiguration(): Promise<INLSConfiguration> {
 		osLocale,
 		commit: product.commit,
 		userDataPath,
-		nlsMetadataPath: import.meta.dirname
+		nlsMetadataPath: __dirname
 	});
 }
 

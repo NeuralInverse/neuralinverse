@@ -96,22 +96,6 @@ export class StickyScrollController extends Disposable implements IEditorContrib
 
 		this._widgetState = StickyScrollWidgetState.Empty;
 		const stickyScrollDomNode = this._stickyScrollWidget.getDomNode();
-		this._register(this._editor.onDidChangeLineHeight((e) => {
-			e.changes.forEach((change) => {
-				const lineNumber = change.lineNumber;
-				if (this._widgetState.startLineNumbers.includes(lineNumber)) {
-					this._renderStickyScroll(lineNumber);
-				}
-			});
-		}));
-		this._register(this._editor.onDidChangeFont((e) => {
-			e.changes.forEach((change) => {
-				const lineNumber = change.lineNumber;
-				if (this._widgetState.startLineNumbers.includes(lineNumber)) {
-					this._renderStickyScroll(lineNumber);
-				}
-			});
-		}));
 		this._register(this._editor.onDidChangeConfiguration(e => {
 			this._readConfigurationChange(e);
 		}));
@@ -318,18 +302,26 @@ export class StickyScrollController extends Disposable implements IEditorContrib
 			}
 			this._revealPosition(position);
 		}));
-		this._register(dom.addDisposableListener(mainWindow, dom.EventType.MOUSE_MOVE, mouseEvent => {
+		const mouseMoveListener = (mouseEvent: MouseEvent) => {
 			this._mouseTarget = mouseEvent.target;
 			this._onMouseMoveOrKeyDown(mouseEvent);
-		}));
-		this._register(dom.addDisposableListener(mainWindow, dom.EventType.KEY_DOWN, mouseEvent => {
+		};
+		const keyDownListener = (mouseEvent: KeyboardEvent) => {
 			this._onMouseMoveOrKeyDown(mouseEvent);
-		}));
-		this._register(dom.addDisposableListener(mainWindow, dom.EventType.KEY_UP, () => {
+		};
+		const keyUpListener = (e: KeyboardEvent) => {
 			if (this._showEndForLine !== undefined) {
 				this._showEndForLine = undefined;
 				this._renderStickyScroll();
 			}
+		};
+		mainWindow.addEventListener(dom.EventType.MOUSE_MOVE, mouseMoveListener);
+		mainWindow.addEventListener(dom.EventType.KEY_DOWN, keyDownListener);
+		mainWindow.addEventListener(dom.EventType.KEY_UP, keyUpListener);
+		this._register(toDisposable(() => {
+			mainWindow.removeEventListener(dom.EventType.MOUSE_MOVE, mouseMoveListener);
+			mainWindow.removeEventListener(dom.EventType.KEY_DOWN, keyDownListener);
+			mainWindow.removeEventListener(dom.EventType.KEY_UP, keyUpListener);
 		}));
 
 		this._register(gesture.onMouseMoveOrRelevantKeyDown(([mouseEvent, _keyboardEvent]) => {

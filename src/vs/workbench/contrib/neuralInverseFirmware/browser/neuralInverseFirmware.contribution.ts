@@ -135,7 +135,7 @@ async function openFirmwareWindow(
 ): Promise<void> {
 	const existing = auxWindowService.getWindowByType(FIRMWARE_WINDOW_TYPE);
 	if (existing && !existing.window.closed) {
-		hostService.focus(existing.window);
+		hostService.focus(existing.window, { force: true });
 		return;
 	}
 

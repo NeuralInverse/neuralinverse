@@ -33,16 +33,16 @@ export interface IWebSocketCloseEvent {
 	/**
 	 * Underlying event.
 	 */
-	readonly event: unknown | undefined;
+	readonly event: any | undefined;
 }
 
 export interface IWebSocket {
 	readonly onData: Event<ArrayBuffer>;
 	readonly onOpen: Event<void>;
 	readonly onClose: Event<IWebSocketCloseEvent | void>;
-	readonly onError: Event<unknown>;
+	readonly onError: Event<any>;
 
-	traceSocketEvent?(type: SocketDiagnosticsEventType, data?: VSBuffer | Uint8Array | ArrayBuffer | ArrayBufferView | unknown): void;
+	traceSocketEvent?(type: SocketDiagnosticsEventType, data?: VSBuffer | Uint8Array | ArrayBuffer | ArrayBufferView | any): void;
 	send(data: ArrayBuffer | ArrayBufferView): void;
 	close(): void;
 }
@@ -58,7 +58,7 @@ class BrowserWebSocket extends Disposable implements IWebSocket {
 	private readonly _onClose = this._register(new Emitter<IWebSocketCloseEvent>());
 	public readonly onClose = this._onClose.event;
 
-	private readonly _onError = this._register(new Emitter<unknown>());
+	private readonly _onError = this._register(new Emitter<any>());
 	public readonly onError = this._onError.event;
 
 	private readonly _debugLabel: string;
@@ -127,7 +127,7 @@ class BrowserWebSocket extends Disposable implements IWebSocket {
 		// delay the error event processing in the hope of receiving a close event
 		// with more information
 
-		let pendingErrorEvent: unknown | null = null;
+		let pendingErrorEvent: any | null = null;
 
 		const sendPendingErrorNow = () => {
 			const err = pendingErrorEvent;
@@ -137,13 +137,13 @@ class BrowserWebSocket extends Disposable implements IWebSocket {
 
 		const errorRunner = this._register(new RunOnceScheduler(sendPendingErrorNow, 0));
 
-		const sendErrorSoon = (err: unknown) => {
+		const sendErrorSoon = (err: any) => {
 			errorRunner.cancel();
 			pendingErrorEvent = err;
 			errorRunner.schedule();
 		};
 
-		const sendErrorNow = (err: unknown) => {
+		const sendErrorNow = (err: any) => {
 			errorRunner.cancel();
 			pendingErrorEvent = err;
 			sendPendingErrorNow();

@@ -257,7 +257,7 @@ export abstract class AbstractLogger extends Disposable implements ILogger {
 
 	private level: LogLevel = DEFAULT_LOG_LEVEL;
 	private readonly _onDidChangeLogLevel: Emitter<LogLevel> = this._register(new Emitter<LogLevel>());
-	get onDidChangeLogLevel(): Event<LogLevel> { return this._onDidChangeLogLevel.event; }
+	readonly onDidChangeLogLevel: Event<LogLevel> = this._onDidChangeLogLevel.event;
 
 	setLevel(level: LogLevel): void {
 		if (this.level !== level) {
@@ -752,15 +752,6 @@ export class NullLogger implements ILogger {
 
 export class NullLogService extends NullLogger implements ILogService {
 	declare readonly _serviceBrand: undefined;
-}
-
-export class NullLoggerService extends AbstractLoggerService {
-	constructor() {
-		super(LogLevel.Off, URI.parse('log:///log'));
-	}
-	protected override doCreateLogger(resource: URI, logLevel: LogLevel, options?: ILoggerOptions): ILogger {
-		return new NullLogger();
-	}
 }
 
 export function getLogLevel(environmentService: IEnvironmentService): LogLevel {

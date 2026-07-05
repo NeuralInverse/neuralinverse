@@ -3,8 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// eslint-disable-next-line no-var
-declare var MonacoEnvironment: monaco.Environment | undefined;
+declare let MonacoEnvironment: monaco.Environment | undefined;
+
+interface Window {
+	MonacoEnvironment?: monaco.Environment | undefined;
+}
 
 declare namespace monaco {
 
@@ -111,10 +114,9 @@ export interface ICommandMetadata {
 #include(vs/editor/common/core/wordHelper): IWordAtPosition
 #includeAll(vs/editor/common/model): IScrollEvent
 #include(vs/editor/common/diff/legacyLinesDiffComputer): IChange, ICharChange, ILineChange
-#include(vs/editor/common/core/2d/dimension): IDimension
+#include(vs/editor/common/core/dimension): IDimension
 #includeAll(vs/editor/common/editorCommon): IScrollEvent
 #includeAll(vs/editor/common/textModelEvents):
-#include(vs/editor/common/model/mirrorTextModel): IModelContentChange
 #includeAll(vs/editor/common/cursorEvents):
 #include(vs/platform/accessibility/common/accessibility): AccessibilitySupport
 #includeAll(vs/editor/common/config/editorOptions):

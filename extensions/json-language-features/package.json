@@ -24,8 +24,7 @@
   "capabilities": {
     "virtualWorkspaces": true,
     "untrustedWorkspaces": {
-      "supported": "limited",
-      "description": "%json.workspaceTrust%"
+      "supported": true
     }
   },
   "scripts": {
@@ -171,10 +170,10 @@
   "dependencies": {
     "@vscode/extension-telemetry": "^0.9.8",
     "request-light": "^0.8.0",
-    "vscode-languageclient": "^10.0.0-next.16"
+    "vscode-languageclient": "^10.0.0-next.14"
   },
   "devDependencies": {
-    "@types/node": "22.x"
+    "@types/node": "20.x"
   },
   "repository": {
     "type": "git",

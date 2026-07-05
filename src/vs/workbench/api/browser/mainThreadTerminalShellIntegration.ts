@@ -5,13 +5,13 @@
 
 import { Event } from '../../../base/common/event.js';
 import { Disposable, toDisposable, type IDisposable } from '../../../base/common/lifecycle.js';
+import { URI } from '../../../base/common/uri.js';
 import { TerminalCapability, type ITerminalCommand } from '../../../platform/terminal/common/capabilities/capabilities.js';
 import { ExtHostContext, MainContext, type ExtHostTerminalShellIntegrationShape, type MainThreadTerminalShellIntegrationShape } from '../common/extHost.protocol.js';
 import { ITerminalService, type ITerminalInstance } from '../../contrib/terminal/browser/terminal.js';
 import { IWorkbenchEnvironmentService } from '../../services/environment/common/environmentService.js';
 import { extHostNamedCustomer, type IExtHostContext } from '../../services/extensions/common/extHostCustomers.js';
 import { TerminalShellExecutionCommandLineConfidence } from '../common/extHostTypes.js';
-import { IExtensionService } from '../../services/extensions/common/extensions.js';
 
 @extHostNamedCustomer(MainContext.MainThreadTerminalShellIntegration)
 export class MainThreadTerminalShellIntegration extends Disposable implements MainThreadTerminalShellIntegrationShape {
@@ -20,8 +20,7 @@ export class MainThreadTerminalShellIntegration extends Disposable implements Ma
 	constructor(
 		extHostContext: IExtHostContext,
 		@ITerminalService private readonly _terminalService: ITerminalService,
-		@IWorkbenchEnvironmentService workbenchEnvironmentService: IWorkbenchEnvironmentService,
-		@IExtensionService private readonly _extensionService: IExtensionService
+		@IWorkbenchEnvironmentService workbenchEnvironmentService: IWorkbenchEnvironmentService
 	) {
 		super();
 
@@ -54,7 +53,7 @@ export class MainThreadTerminalShellIntegration extends Disposable implements Ma
 		// onDidChangeTerminalShellIntegration via cwd
 		const cwdChangeEvent = this._store.add(this._terminalService.createOnInstanceCapabilityEvent(TerminalCapability.CwdDetection, e => e.onDidChangeCwd));
 		this._store.add(cwdChangeEvent.event(e => {
-			this._proxy.$cwdChange(e.instance.instanceId, e.data);
+			this._proxy.$cwdChange(e.instance.instanceId, this._convertCwdToUri(e.data));
 		}));
 
 		// onDidChangeTerminalShellIntegration via env
@@ -82,7 +81,7 @@ export class MainThreadTerminalShellIntegration extends Disposable implements Ma
 			// String paths are not exposed in the extension API
 			currentCommand = e.data;
 			const instanceId = e.instance.instanceId;
-			this._proxy.$shellExecutionStart(instanceId, e.data.command, convertToExtHostCommandLineConfidence(e.data), e.data.isTrusted, e.data.cwd);
+			this._proxy.$shellExecutionStart(instanceId, e.data.command, convertToExtHostCommandLineConfidence(e.data), e.data.isTrusted, this._convertCwdToUri(e.data.cwd));
 
 			// TerminalShellExecution.createDataStream
 			// Debounce events to reduce the message count - when this listener is disposed the events will be flushed
@@ -112,15 +111,15 @@ export class MainThreadTerminalShellIntegration extends Disposable implements Ma
 		this._terminalService.getInstanceFromId(terminalId)?.runCommand(commandLine, true);
 	}
 
+	private _convertCwdToUri(cwd: string | undefined): URI | undefined {
+		return cwd ? URI.file(cwd) : undefined;
+	}
+
 	private _enableShellIntegration(instance: ITerminalInstance): void {
-		this._extensionService.activateByEvent('onTerminalShellIntegration:*');
-		if (instance.shellType) {
-			this._extensionService.activateByEvent(`onTerminalShellIntegration:${instance.shellType}`);
-		}
 		this._proxy.$shellIntegrationChange(instance.instanceId);
 		const cwdDetection = instance.capabilities.get(TerminalCapability.CwdDetection);
 		if (cwdDetection) {
-			this._proxy.$cwdChange(instance.instanceId, cwdDetection.getCwd());
+			this._proxy.$cwdChange(instance.instanceId, this._convertCwdToUri(cwdDetection.getCwd()));
 		}
 	}
 }

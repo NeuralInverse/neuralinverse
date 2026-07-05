@@ -28,7 +28,7 @@ import { ContextKeyExpr, IContextKey, IContextKeyService, RawContextKey } from '
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { rot } from '../../../../base/common/numbers.js';
 import { ISplice } from '../../../../base/common/sequence.js';
-import { ChangeType, getChangeHeight, getChangeType, getChangeTypeColor, getModifiedEndLineNumber, IQuickDiffService, lineIntersectsChange, QuickDiff, QuickDiffChange } from '../common/quickDiff.js';
+import { ChangeType, getChangeHeight, getChangeType, getChangeTypeColor, getModifiedEndLineNumber, lineIntersectsChange, QuickDiffChange } from '../common/quickDiff.js';
 import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
 import { TextCompareEditorActiveContext } from '../../../common/contextkeys.js';
 import { EditorContextKeys } from '../../../../editor/common/editorContextKeys.js';
@@ -50,36 +50,41 @@ import { Color } from '../../../../base/common/color.js';
 import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
 import { getOuterEditor } from '../../../../editor/browser/widget/codeEditor/embeddedCodeEditorWidget.js';
 import { quickDiffDecorationCount } from './quickDiffDecorator.js';
-import { hasNativeContextMenu } from '../../../../platform/window/common/window.js';
 
 export const isQuickDiffVisible = new RawContextKey<boolean>('dirtyDiffVisible', false);
 
 export interface IQuickDiffSelectItem extends ISelectOptionItem {
-	providerId: string;
+	provider: string;
 }
 
 export class QuickDiffPickerViewItem extends SelectActionViewItem<IQuickDiffSelectItem> {
-	private optionsItems: IQuickDiffSelectItem[] = [];
+	private readonly optionsItems: IQuickDiffSelectItem[];
 
 	constructor(
 		action: IAction,
+		providers: string[],
+		selected: string,
 		@IContextViewService contextViewService: IContextViewService,
-		@IThemeService themeService: IThemeService,
-		@IConfigurationService configurationService: IConfigurationService,
+		@IThemeService themeService: IThemeService
 	) {
+		const items = providers.map(provider => ({ provider, text: provider }));
+		let startingSelection = providers.indexOf(selected);
+		if (startingSelection === -1) {
+			startingSelection = 0;
+		}
 		const styles = { ...defaultSelectBoxStyles };
 		const theme = themeService.getColorTheme();
 		const editorBackgroundColor = theme.getColor(editorBackground);
 		const peekTitleColor = theme.getColor(peekViewTitleBackground);
 		const opaqueTitleColor = peekTitleColor?.makeOpaque(editorBackgroundColor!) ?? editorBackgroundColor!;
 		styles.selectBackground = opaqueTitleColor.lighten(.6).toString();
-		super(null, action, [], 0, contextViewService, styles, { ariaLabel: nls.localize('remotes', 'Switch quick diff base'), useCustomDrawn: !hasNativeContextMenu(configurationService) });
+		super(null, action, items, startingSelection, contextViewService, styles, { ariaLabel: nls.localize('remotes', 'Switch quick diff base') });
+		this.optionsItems = items;
 	}
 
-	public setSelection(quickDiffs: QuickDiff[], providerId: string) {
-		this.optionsItems = quickDiffs.map(quickDiff => ({ providerId: quickDiff.id, text: quickDiff.label }));
-		const index = this.optionsItems.findIndex(item => item.providerId === providerId);
-		this.setOptions(this.optionsItems, index);
+	public setSelection(provider: string) {
+		const index = this.optionsItems.findIndex(item => item.provider === provider);
+		this.select(index);
 	}
 
 	protected override getActionContext(_: string, index: number): IQuickDiffSelectItem {
@@ -151,7 +156,7 @@ class QuickDiffWidget extends PeekViewWidget {
 	private title: string;
 	private menu: IMenu | undefined;
 	private _index: number = 0;
-	private _providerId: string = '';
+	private _provider: string = '';
 	private change: IChange | undefined;
 	private height: number | undefined = undefined;
 	private dropdown: QuickDiffPickerViewItem | undefined;
@@ -163,8 +168,7 @@ class QuickDiffWidget extends PeekViewWidget {
 		@IThemeService private readonly themeService: IThemeService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IMenuService private readonly menuService: IMenuService,
-		@IContextKeyService private contextKeyService: IContextKeyService,
-		@IQuickDiffService private readonly quickDiffService: IQuickDiffService
+		@IContextKeyService private contextKeyService: IContextKeyService
 	) {
 		super(editor, { isResizeable: true, frameWidth: 1, keepEditorSelection: true, className: 'dirty-diff' }, instantiationService);
 
@@ -186,8 +190,8 @@ class QuickDiffWidget extends PeekViewWidget {
 		this.setTitle(this.title);
 	}
 
-	get providerId(): string {
-		return this._providerId;
+	get provider(): string {
+		return this._provider;
 	}
 
 	get index(): number {
@@ -203,12 +207,11 @@ class QuickDiffWidget extends PeekViewWidget {
 		const labeledChange = this.model.changes[index];
 		const change = labeledChange.change;
 		this._index = index;
-		this.contextKeyService.createKey('originalResource', this.model.changes[index].original.toString());
 		this.contextKeyService.createKey('originalResourceScheme', this.model.changes[index].original.scheme);
 		this.updateActions();
 
+		this._provider = labeledChange.label;
 		this.change = change;
-		this._providerId = labeledChange.providerId;
 
 		if (Iterable.isEmpty(this.model.originalTextModels)) {
 			return;
@@ -225,18 +228,16 @@ class QuickDiffWidget extends PeekViewWidget {
 			return;
 		}
 		this.diffEditor.setModel(diffEditorModel);
+		this.dropdown?.setSelection(labeledChange.label);
 
 		const position = new Position(getModifiedEndLineNumber(change), 1);
 
 		const lineHeight = this.editor.getOption(EditorOption.lineHeight);
 		const editorHeight = this.editor.getLayoutInfo().height;
 		const editorHeightInLines = Math.floor(editorHeight / lineHeight);
-		const height = Math.min(
-			getChangeHeight(change) + 2 /* arrow, frame, header */ + 6 /* 3 lines above/below the change */,
-			Math.floor(editorHeightInLines / 3));
+		const height = Math.min(getChangeHeight(change) + /* padding */ 8, Math.floor(editorHeightInLines / 3));
 
-		this.renderTitle();
-		this.updateDropdown();
+		this.renderTitle(labeledChange.label);
 
 		const changeType = getChangeType(change);
 		const changeTypeColor = getChangeTypeColor(this.themeService.getColorTheme(), changeType);
@@ -245,7 +246,7 @@ class QuickDiffWidget extends PeekViewWidget {
 		const providerSpecificChanges: IChange[] = [];
 		let contextIndex = index;
 		for (const change of this.model.changes) {
-			if (change.providerId === this.model.changes[this._index].providerId) {
+			if (change.label === this.model.changes[this._index].label) {
 				providerSpecificChanges.push(change.change);
 				if (labeledChange === change) {
 					contextIndex = providerSpecificChanges.length - 1;
@@ -254,24 +255,18 @@ class QuickDiffWidget extends PeekViewWidget {
 		}
 		this._actionbarWidget!.context = [diffEditorModel.modified.uri, providerSpecificChanges, contextIndex];
 		if (usePosition) {
-			// In order to account for the 1px border-top of the content element we
-			// have to add 1px. The pixel value needs to be expressed as a fraction
-			// of the line height.
-			this.show(position, height + (1 / lineHeight));
+			this.show(position, height);
 			this.editor.setPosition(position);
 			this.editor.focus();
 		}
 	}
 
-	private renderTitle(): void {
-		const providerChanges = this.model.quickDiffChanges.get(this._providerId)!;
+	private renderTitle(label: string): void {
+		const providerChanges = this.model.quickDiffChanges.get(label)!;
 		const providerIndex = providerChanges.indexOf(this._index);
 
 		let detail: string;
 		if (!this.shouldUseDropdown()) {
-			const label = this.model.quickDiffs
-				.find(quickDiff => quickDiff.id === this._providerId)?.label ?? '';
-
 			detail = this.model.changes.length > 1
 				? nls.localize('changes', "{0} - {1} of {2} changes", label, providerIndex + 1, providerChanges.length)
 				: nls.localize('change', "{0} - {1} of {2} change", label, providerIndex + 1, providerChanges.length);
@@ -287,20 +282,20 @@ class QuickDiffWidget extends PeekViewWidget {
 	}
 
 	private switchQuickDiff(event?: IQuickDiffSelectItem) {
-		const newProviderId = event?.providerId;
-		if (newProviderId === this.model.changes[this._index].providerId) {
+		const newProvider = event?.provider;
+		if (newProvider === this.model.changes[this._index].label) {
 			return;
 		}
 		let closestGreaterIndex = this._index < this.model.changes.length - 1 ? this._index + 1 : 0;
 		for (let i = closestGreaterIndex; i !== this._index; i < this.model.changes.length - 1 ? i++ : i = 0) {
-			if (this.model.changes[i].providerId === newProviderId) {
+			if (this.model.changes[i].label === newProvider) {
 				closestGreaterIndex = i;
 				break;
 			}
 		}
 		let closestLesserIndex = this._index > 0 ? this._index - 1 : this.model.changes.length - 1;
-		for (let i = closestLesserIndex; i !== this._index; i > 0 ? i-- : i = this.model.changes.length - 1) {
-			if (this.model.changes[i].providerId === newProviderId) {
+		for (let i = closestLesserIndex; i !== this._index; i >= 0 ? i-- : i = this.model.changes.length - 1) {
+			if (this.model.changes[i].label === newProvider) {
 				closestLesserIndex = i;
 				break;
 			}
@@ -312,8 +307,12 @@ class QuickDiffWidget extends PeekViewWidget {
 	}
 
 	private shouldUseDropdown(): boolean {
-		const quickDiffs = this.getQuickDiffsContainingChange();
-		return quickDiffs.length > 1;
+		const visibleQuickDiffs = this.model.quickDiffs.filter(quickDiff => quickDiff.visible);
+		const visibleQuickDiffResults = this.model.getQuickDiffResults()
+			.filter(result => visibleQuickDiffs.some(quickDiff => quickDiff.label === result.label));
+
+		return visibleQuickDiffResults
+			.filter(quickDiff => quickDiff.changes.length > 0).length > 1;
 	}
 
 	private updateActions(): void {
@@ -337,31 +336,17 @@ class QuickDiffWidget extends PeekViewWidget {
 		this._actionbarWidget.push(this._disposables.add(new Action('peekview.close', nls.localize('label.close', "Close"), ThemeIcon.asClassName(Codicon.close), true, () => this.dispose())), { label: false, icon: true });
 	}
 
-	private updateDropdown(): void {
-		const quickDiffs = this.getQuickDiffsContainingChange();
-		this.dropdown?.setSelection(quickDiffs, this._providerId);
-	}
-
-	private getQuickDiffsContainingChange(): QuickDiff[] {
-		const change = this.model.changes[this._index];
-
-		const quickDiffsWithChange = this.model.changes
-			.filter(c => change.change2.modified.intersectsOrTouches(c.change2.modified))
-			.map(c => c.providerId);
-
-		return this.model.quickDiffs
-			.filter(quickDiff => quickDiffsWithChange.includes(quickDiff.id) &&
-				this.quickDiffService.isQuickDiffProviderVisible(quickDiff.id));
-	}
-
 	protected override _fillHead(container: HTMLElement): void {
 		super._fillHead(container, true);
 
-		// Render an empty picker which will be populated later
+		const visibleQuickDiffs = this.model.quickDiffs.filter(quickDiff => quickDiff.visible);
+
 		this.dropdownContainer = dom.prepend(this._titleElement!, dom.$('.dropdown'));
 		this.dropdown = this.instantiationService.createInstance(QuickDiffPickerViewItem,
-			new QuickDiffPickerBaseAction((event?: IQuickDiffSelectItem) => this.switchQuickDiff(event)));
+			new QuickDiffPickerBaseAction((event?: IQuickDiffSelectItem) => this.switchQuickDiff(event)),
+			visibleQuickDiffs.map(quickDiff => quickDiff.label), this.model.changes[this._index].label);
 		this.dropdown.render(this.dropdownContainer);
+		this.updateActions();
 	}
 
 	protected override _getActionBarOptions(): IActionBarOptions {
@@ -383,15 +368,7 @@ class QuickDiffWidget extends PeekViewWidget {
 
 	protected _fillBody(container: HTMLElement): void {
 		const options: IDiffEditorOptions = {
-			diffAlgorithm: 'advanced',
-			fixedOverflowWidgets: true,
-			ignoreTrimWhitespace: false,
-			minimap: { enabled: false },
-			readOnly: false,
-			renderGutterMenu: false,
-			renderIndicators: false,
-			renderOverviewRuler: false,
-			renderSideBySide: false,
+			scrollBeyondLastLine: true,
 			scrollbar: {
 				verticalScrollbarSize: 14,
 				horizontal: 'auto',
@@ -399,7 +376,14 @@ class QuickDiffWidget extends PeekViewWidget {
 				verticalHasArrows: false,
 				horizontalHasArrows: false
 			},
-			scrollBeyondLastLine: false,
+			overviewRulerLanes: 2,
+			fixedOverflowWidgets: true,
+			minimap: { enabled: false },
+			renderSideBySide: false,
+			readOnly: false,
+			renderIndicators: false,
+			diffAlgorithm: 'advanced',
+			ignoreTrimWhitespace: false,
 			stickyScroll: { enabled: false }
 		};
 
@@ -553,10 +537,10 @@ export class QuickDiffEditorController extends Disposable implements IEditorCont
 		}
 
 		let index: number;
-		if (this.editor.hasModel() && (typeof lineNumber === 'number' || !this.widget.providerId)) {
-			index = this.model.findNextClosestChange(typeof lineNumber === 'number' ? lineNumber : this.editor.getPosition().lineNumber, true, this.widget.providerId);
+		if (this.editor.hasModel() && (typeof lineNumber === 'number' || !this.widget.provider)) {
+			index = this.model.findNextClosestChange(typeof lineNumber === 'number' ? lineNumber : this.editor.getPosition().lineNumber, true, this.widget.provider);
 		} else {
-			const providerChanges: number[] = this.model.quickDiffChanges.get(this.widget.providerId) ?? this.model.quickDiffChanges.values().next().value!;
+			const providerChanges: number[] = this.model.quickDiffChanges.get(this.widget.provider) ?? this.model.quickDiffChanges.values().next().value!;
 			const mapIndex = providerChanges.findIndex(value => value === this.widget!.index);
 			index = providerChanges[rot(mapIndex + 1, providerChanges.length)];
 		}
@@ -573,10 +557,10 @@ export class QuickDiffEditorController extends Disposable implements IEditorCont
 		}
 
 		let index: number;
-		if (this.editor.hasModel() && (typeof lineNumber === 'number' || !this.widget.providerId)) {
-			index = this.model.findPreviousClosestChange(typeof lineNumber === 'number' ? lineNumber : this.editor.getPosition().lineNumber, true, this.widget.providerId);
+		if (this.editor.hasModel() && (typeof lineNumber === 'number')) {
+			index = this.model.findPreviousClosestChange(typeof lineNumber === 'number' ? lineNumber : this.editor.getPosition().lineNumber, true, this.widget.provider);
 		} else {
-			const providerChanges: number[] = this.model.quickDiffChanges.get(this.widget.providerId) ?? this.model.quickDiffChanges.values().next().value!;
+			const providerChanges: number[] = this.model.quickDiffChanges.get(this.widget.provider) ?? this.model.quickDiffChanges.values().next().value!;
 			const mapIndex = providerChanges.findIndex(value => value === this.widget!.index);
 			index = providerChanges[rot(mapIndex - 1, providerChanges.length)];
 		}

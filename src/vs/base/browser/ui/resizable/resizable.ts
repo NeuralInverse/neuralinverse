@@ -23,10 +23,10 @@ export class ResizableHTMLElement {
 	readonly domNode: HTMLElement;
 
 	private readonly _onDidWillResize = new Emitter<void>();
-	get onDidWillResize() { return this._onDidWillResize.event; }
+	readonly onDidWillResize: Event<void> = this._onDidWillResize.event;
 
 	private readonly _onDidResize = new Emitter<IResizeEvent>();
-	get onDidResize() { return this._onDidResize.event; }
+	readonly onDidResize: Event<IResizeEvent> = this._onDidResize.event;
 
 	private readonly _northSash: Sash;
 	private readonly _eastSash: Sash;

@@ -28,8 +28,6 @@
   (template_literal_type)
 ] @string.template.ts)
 
-(template_substitution) @meta.template.expression.ts
-
 (string .
   ([
     "\""
@@ -131,9 +129,6 @@
 
 (arrow_function
   parameter: (identifier) @variable.parameter.ts)
-
-(type_predicate
-  name: (identifier) @variable.parameter.ts)
 
 ; Function and method calls
 
@@ -243,7 +238,6 @@
 
 (unary_expression ([
   "-"
-  "+"
 ]) @keyword.operator.arithmetic.ts)
 
 [

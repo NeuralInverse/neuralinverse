@@ -6,28 +6,24 @@
 'use strict';
 
 const { ESLint } = require('eslint');
-const { Transform, default: Stream } = require('stream');
+const { Transform } = require('stream');
 const { relative } = require('path');
 const fancyLog = require('fancy-log');
 
 /**
- * @typedef {ESLint.LintResult[] & { errorCount: number, warningCount: number}} ESLintResults
- */
-
-/**
- * @param {(results: ESLintResults) => void} action - A function to handle all ESLint results
+ * @param {Function} action - A function to handle all ESLint results
+ * @returns {stream} gulp file stream
  */
 function eslint(action) {
 	const linter = new ESLint({});
 	const formatter = linter.loadFormatter('compact');
 
-	/** @type {ESLintResults} results */
 	const results = [];
 	results.errorCount = 0;
 	results.warningCount = 0;
 
 	return transform(
-		async (file, _enc, cb) => {
+		async (file, enc, cb) => {
 			const filePath = relative(process.cwd(), file.path);
 
 			if (file.isNull()) {
@@ -71,10 +67,6 @@ function eslint(action) {
 		});
 }
 
-/**
- * @param {Stream.TransformOptions['transform']} transform
- * @param {Stream.TransformOptions['flush']} flush
- */
 function transform(transform, flush) {
 	return new Transform({
 		objectMode: true,

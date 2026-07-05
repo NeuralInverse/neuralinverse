@@ -5,9 +5,8 @@
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IObservable, observableFromEvent } from '../../../../base/common/observable.js';
-import { URI } from '../../../../base/common/uri.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
-import { IDataChannelService } from '../../../../platform/dataChannel/common/dataChannel.js';
 
 export interface IRecordableLogEntry {
 	sourceId: string;
@@ -15,45 +14,15 @@ export interface IRecordableLogEntry {
 }
 
 export interface IRecordableEditorLogEntry extends IRecordableLogEntry {
-	modelUri: URI; // This has to be a URI, so that it gets translated automatically in remote scenarios
+	modelUri: string;
 	modelVersion: number;
 }
-
-export type EditorLogEntryData = IDocumentEventDataSetChangeReason | IDocumentEventFetchStart;
-export type LogEntryData = IEventFetchEnd;
-
-export interface IDocumentEventDataSetChangeReason {
-	sourceId: 'TextModel.setChangeReason';
-	source: 'inlineSuggestion.accept' | 'snippet' | string;
-}
-
-interface IDocumentEventFetchStart {
-	sourceId: 'InlineCompletions.fetch';
-	kind: 'start';
-	requestId: number;
-}
-
-export interface IEventFetchEnd {
-	sourceId: 'InlineCompletions.fetch';
-	kind: 'end';
-	requestId: number;
-	error: string | undefined;
-	result: IFetchResult[];
-}
-
-interface IFetchResult {
-	range: string;
-	text: string;
-	isInlineEdit: boolean;
-	source: string;
-}
-
 
 /**
  * The sourceLabel must not contain '@'!
 */
 export function formatRecordableLogEntry<T extends IRecordableLogEntry>(entry: T): string {
-	return entry.sourceId + ' @@ ' + JSON.stringify({ ...entry, modelUri: (entry as any).modelUri?.toString(), sourceId: undefined });
+	return entry.sourceId + ' @@ ' + JSON.stringify({ ...entry, sourceId: undefined });
 }
 
 export class StructuredLogger<T extends IRecordableLogEntry> extends Disposable {
@@ -62,24 +31,24 @@ export class StructuredLogger<T extends IRecordableLogEntry> extends Disposable 
 	}
 
 	public readonly isEnabled;
-	private readonly _isEnabledContextKeyValue;
+	private readonly _contextKeyValue;
 
 	constructor(
-		private readonly _key: string,
+		private readonly _contextKey: string,
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
-		@IDataChannelService private readonly _dataChannelService: IDataChannelService,
+		@ICommandService private readonly _commandService: ICommandService
 	) {
 		super();
-		this._isEnabledContextKeyValue = observableContextKey<boolean>('structuredLogger.enabled:' + this._key, this._contextKeyService).recomputeInitiallyAndOnChange(this._store);
-		this.isEnabled = this._isEnabledContextKeyValue.map(v => v !== undefined);
+		this._contextKeyValue = observableContextKey<string>(this._contextKey, this._contextKeyService).recomputeInitiallyAndOnChange(this._store);
+		this.isEnabled = this._contextKeyValue.map(v => v !== undefined);
 	}
 
 	public log(data: T): boolean {
-		const enabled = this._isEnabledContextKeyValue.get();
-		if (!enabled) {
+		const commandId = this._contextKeyValue.get();
+		if (!commandId) {
 			return false;
 		}
-		this._dataChannelService.getDataChannel<T>('structuredLogger:' + this._key).sendData(data);
+		this._commandService.executeCommand(commandId, data);
 		return true;
 	}
 }

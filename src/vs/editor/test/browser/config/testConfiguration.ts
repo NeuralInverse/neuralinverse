@@ -25,8 +25,7 @@ export class TestConfiguration extends EditorConfiguration {
 			outerHeight: envConfig?.outerHeight ?? 100,
 			emptySelectionClipboard: envConfig?.emptySelectionClipboard ?? true,
 			pixelRatio: envConfig?.pixelRatio ?? 1,
-			accessibilitySupport: envConfig?.accessibilitySupport ?? AccessibilitySupport.Unknown,
-			editContextSupported: true
+			accessibilitySupport: envConfig?.accessibilitySupport ?? AccessibilitySupport.Unknown
 		};
 	}
 

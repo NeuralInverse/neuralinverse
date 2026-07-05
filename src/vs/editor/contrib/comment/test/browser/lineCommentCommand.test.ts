@@ -48,11 +48,6 @@ suite('Editor Contrib - Line Comment Command', () => {
 		(accessor, sel) => new LineCommentCommand(accessor.get(ILanguageConfigurationService), sel, 4, Type.ForceAdd, true, true)
 	);
 
-	const testLineCommentCommandTokenFirstColumn = createTestCommandHelper(
-		{ lineComment: { comment: '!@#', noIndent: true }, blockComment: ['<!@#', '#@!>'] },
-		(accessor, sel) => new LineCommentCommand(accessor.get(ILanguageConfigurationService), sel, 4, Type.Toggle, true, true)
-	);
-
 	test('comment single line', function () {
 		testLineCommentCommand(
 			[
@@ -86,21 +81,6 @@ suite('Editor Contrib - Line Comment Command', () => {
 		);
 	});
 
-	test('comment with token column fixed', function () {
-		testLineCommentCommandTokenFirstColumn(
-			[
-				'some text',
-				'\tsome more text'
-			],
-			new Selection(2, 1, 2, 1),
-			[
-				'some text',
-				'!@# \tsome more text'
-			],
-			new Selection(2, 5, 2, 5)
-		);
-	});
-
 	function createSimpleModel(lines: string[]): ISimpleModel {
 		return {
 			getLineContent: (lineNumber: number) => {
@@ -130,7 +110,7 @@ suite('Editor Contrib - Line Comment Command', () => {
 			'    ',
 			'    c',
 			'\t\td'
-		]), createBasicLinePreflightData(['//', 'rem', '!@#', '!@#']), 1, true, false, disposable.add(new TestLanguageConfigurationService()), 'plaintext');
+		]), createBasicLinePreflightData(['//', 'rem', '!@#', '!@#']), 1, true, false, disposable.add(new TestLanguageConfigurationService()));
 		if (!r.supported) {
 			throw new Error(`unexpected`);
 		}
@@ -161,7 +141,7 @@ suite('Editor Contrib - Line Comment Command', () => {
 			'    rem ',
 			'    !@# c',
 			'\t\t!@#d'
-		]), createBasicLinePreflightData(['//', 'rem', '!@#', '!@#']), 1, true, false, disposable.add(new TestLanguageConfigurationService()), 'plaintext');
+		]), createBasicLinePreflightData(['//', 'rem', '!@#', '!@#']), 1, true, false, disposable.add(new TestLanguageConfigurationService()));
 		if (!r.supported) {
 			throw new Error(`unexpected`);
 		}

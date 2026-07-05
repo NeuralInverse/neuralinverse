@@ -4,7 +4,7 @@
 		"outDir": "./dist/",
 		"jsx": "react",
 		"lib": [
-			"ES2024",
+			"es2018",
 			"DOM",
 			"DOM.Iterable"
 		]

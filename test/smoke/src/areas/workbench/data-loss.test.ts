@@ -7,7 +7,7 @@ import { join } from 'path';
 import { Application, ApplicationOptions, Logger, Quality } from '../../../../automation';
 import { createApp, timeout, installDiagnosticsHandler, installAppAfterHandler, getRandomUserDataDir, suiteLogsPath, suiteCrashPath } from '../../utils';
 
-export function setup(ensureStableCode: () => { stableCodePath: string | undefined; stableCodeVersion: { major: number; minor: number; patch: number } | undefined }, logger: Logger) {
+export function setup(ensureStableCode: () => string | undefined, logger: Logger) {
 	describe('Data Loss (insiders -> insiders)', function () {
 
 		// Double the timeout since these tests involve 2 startups
@@ -146,7 +146,7 @@ export function setup(ensureStableCode: () => { stableCodePath: string | undefin
 		installAppAfterHandler(() => insidersApp ?? stableApp, async () => stableApp?.stop());
 
 		it('verifies opened editors are restored', async function () {
-			const { stableCodePath, stableCodeVersion } = ensureStableCode();
+			const stableCodePath = ensureStableCode();
 			if (!stableCodePath) {
 				this.skip();
 			}
@@ -160,7 +160,7 @@ export function setup(ensureStableCode: () => { stableCodePath: string | undefin
 				this.retries(2);
 			}
 
-			const userDataDir = getRandomUserDataDir(this.defaultOptions.userDataDir);
+			const userDataDir = getRandomUserDataDir(this.defaultOptions);
 			const logsPath = suiteLogsPath(this.defaultOptions, 'test_verifies_opened_editors_are_restored_from_stable');
 			const crashesPath = suiteCrashPath(this.defaultOptions, 'test_verifies_opened_editors_are_restored_from_stable');
 
@@ -170,7 +170,6 @@ export function setup(ensureStableCode: () => { stableCodePath: string | undefin
 			stableOptions.quality = Quality.Stable;
 			stableOptions.logsPath = logsPath;
 			stableOptions.crashesPath = crashesPath;
-			stableOptions.version = stableCodeVersion ?? { major: 0, minor: 0, patch: 0 };
 
 			stableApp = new Application(stableOptions);
 			await stableApp.start();
@@ -211,12 +210,12 @@ export function setup(ensureStableCode: () => { stableCodePath: string | undefin
 		});
 
 		async function testHotExit(this: import('mocha').Context, title: string, restartDelay: number | undefined) {
-			const { stableCodePath, stableCodeVersion } = ensureStableCode();
+			const stableCodePath = ensureStableCode();
 			if (!stableCodePath) {
 				this.skip();
 			}
 
-			const userDataDir = getRandomUserDataDir(this.defaultOptions.userDataDir);
+			const userDataDir = getRandomUserDataDir(this.defaultOptions);
 			const logsPath = suiteLogsPath(this.defaultOptions, title);
 			const crashesPath = suiteCrashPath(this.defaultOptions, title);
 
@@ -226,7 +225,6 @@ export function setup(ensureStableCode: () => { stableCodePath: string | undefin
 			stableOptions.quality = Quality.Stable;
 			stableOptions.logsPath = logsPath;
 			stableOptions.crashesPath = crashesPath;
-			stableOptions.version = stableCodeVersion ?? { major: 0, minor: 0, patch: 0 };
 
 			stableApp = new Application(stableOptions);
 			await stableApp.start();

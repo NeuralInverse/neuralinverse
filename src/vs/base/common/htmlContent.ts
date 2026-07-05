@@ -118,7 +118,7 @@ export function isEmptyMarkdownString(oneOrMany: IMarkdownString | IMarkdownStri
 	}
 }
 
-export function isMarkdownString(thing: unknown): thing is IMarkdownString {
+export function isMarkdownString(thing: any): thing is IMarkdownString {
 	if (thing instanceof MarkdownString) {
 		return true;
 	} else if (thing && typeof thing === 'object') {
@@ -199,12 +199,12 @@ export function parseHrefAndDimensions(href: string): { href: string; dimensions
 	return { href, dimensions };
 }
 
-export function markdownCommandLink(command: { title: string; id: string; arguments?: unknown[] }, escapeTokens = true): string {
+export function markdownCommandLink(command: { title: string; id: string; arguments?: unknown[] }): string {
 	const uri = URI.from({
 		scheme: Schemas.command,
 		path: command.id,
 		query: command.arguments?.length ? encodeURIComponent(JSON.stringify(command.arguments)) : undefined,
 	}).toString();
 
-	return `[${escapeTokens ? escapeMarkdownSyntaxTokens(command.title) : command.title}](${uri})`;
+	return `[${escapeMarkdownSyntaxTokens(command.title)}](${uri})`;
 }

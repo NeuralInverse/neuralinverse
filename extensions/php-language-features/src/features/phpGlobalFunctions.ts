@@ -1664,35 +1664,31 @@ export const globalfunctions: IEntries = {
 	},
 	fclose: {
 		description: 'Closes an open file pointer',
-		signature: '( resource $stream ): bool'
-	},
-	fdatasync: {
-		description: 'Synchronizes data (but not meta-data) to the file',
-		signature: '( resource $stream ): bool'
+		signature: '( resource $handle ): bool'
 	},
 	feof: {
 		description: 'Tests for end-of-file on a file pointer',
-		signature: '( resource $stream ): bool'
+		signature: '( resource $handle ): bool'
 	},
 	fflush: {
 		description: 'Flushes the output to a file',
-		signature: '( resource $stream ): bool'
+		signature: '( resource $handle ): bool'
 	},
 	fgetc: {
 		description: 'Gets character from file pointer',
-		signature: '( resource $string ): string|false'
+		signature: '( resource $handle ): string'
 	},
 	fgetcsv: {
 		description: 'Gets line from file pointer and parse for CSV fields',
-		signature: '( resource $stream [, ?int $length = null [, string $separator = "," [, string $enclosure = \'"\' [, string $escape = "\\" ]]]]): array|false'
+		signature: '( resource $handle [, int $length = 0 [, string $delimiter = "," [, string $enclosure = \'"\' [, string $escape = "\\" ]]]]): array'
 	},
 	fgets: {
 		description: 'Gets line from file pointer',
-		signature: '( resource $stream [, ?int $length = null ]): string|false'
+		signature: '( resource $handle [, int $length ]): string'
 	},
 	fgetss: {
 		description: 'Gets line from file pointer and strip HTML tags',
-		signature: '( resource $handle [, int $length = ? [, string $allowable_tags = ? ]]): string'
+		signature: '( resource $handle [, int $length [, string $allowable_tags ]]): string'
 	},
 	file_exists: {
 		description: 'Checks whether a file or directory exists',
@@ -1700,106 +1696,102 @@ export const globalfunctions: IEntries = {
 	},
 	file_get_contents: {
 		description: 'Reads entire file into a string',
-		signature: '( string $filename [, bool $use_include_path = false [, ?resource $context = null [, int $offset = 0 [, ?int $maxlen = null ]]]]): string|false'
+		signature: '( string $filename [, bool $use_include_path [, resource $context [, int $offset = 0 [, int $maxlen ]]]]): string'
 	},
 	file_put_contents: {
 		description: 'Write data to a file',
-		signature: '( string $filename , mixed $data [, int $flags = 0 [, ?resource $context = null ]]): int|false'
+		signature: '( string $filename , mixed $data [, int $flags = 0 [, resource $context ]]): int'
 	},
 	file: {
 		description: 'Reads entire file into an array',
-		signature: '( string $filename [, int $flags = 0 [, ?resource $context = null ]]): array|false'
+		signature: '( string $filename [, int $flags = 0 [, resource $context ]]): array'
 	},
 	fileatime: {
 		description: 'Gets last access time of file',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	filectime: {
 		description: 'Gets inode change time of file',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	filegroup: {
 		description: 'Gets file group',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	fileinode: {
 		description: 'Gets file inode',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	filemtime: {
 		description: 'Gets file modification time',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	fileowner: {
 		description: 'Gets file owner',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	fileperms: {
 		description: 'Gets file permissions',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	filesize: {
 		description: 'Gets file size',
-		signature: '( string $filename ): int|false'
+		signature: '( string $filename ): int'
 	},
 	filetype: {
 		description: 'Gets file type',
-		signature: '( string $filename ): string|false'
+		signature: '( string $filename ): string'
 	},
 	flock: {
 		description: 'Portable advisory file locking',
-		signature: '( resource $stream , int $operation [, int &$would_block = null ]): bool'
+		signature: '( resource $handle , int $operation [, int $wouldblock ]): bool'
 	},
 	fnmatch: {
 		description: 'Match filename against a pattern',
-		signature: '( string $pattern , string $filename [, int $flags = 0 ]): bool'
+		signature: '( string $pattern , string $string [, int $flags = 0 ]): bool'
 	},
 	fopen: {
 		description: 'Opens file or URL',
-		signature: '( string $filename , string $mode [, bool $use_include_path = false [, ?resource $context = null ]]): resource|false'
+		signature: '( string $filename , string $mode [, bool $use_include_path [, resource $context ]]): resource'
 	},
 	fpassthru: {
 		description: 'Output all remaining data on a file pointer',
-		signature: '( resource $stream ): int'
+		signature: '( resource $handle ): int'
 	},
 	fputcsv: {
 		description: 'Format line as CSV and write to file pointer',
-		signature: '( resource $stream , array $fields [, string $separator = "," [, string $enclosure = \'"\' [, string $escape = "\\" [, string $eol = "\n" ]]]]): int|false'
+		signature: '( resource $handle , array $fields [, string $delimiter = "," [, string $enclosure = \'"\' [, string $escape_char = "\\" ]]]): int'
 	},
 	fputs: {
 		description: 'Alias of fwrite',
 	},
 	fread: {
 		description: 'Binary-safe file read',
-		signature: '( resource $stream , int $length ): string|false'
+		signature: '( resource $handle , int $length ): string'
 	},
 	fscanf: {
 		description: 'Parses input from a file according to a format',
-		signature: '( resource $stream , string $format [, mixed &...$vars ]): array|int|false|null'
+		signature: '( resource $handle , string $format [, mixed $... ]): mixed'
 	},
 	fseek: {
 		description: 'Seeks on a file pointer',
-		signature: '( resource $stream , int $offset [, int $whence = SEEK_SET ]): int'
+		signature: '( resource $handle , int $offset [, int $whence = SEEK_SET ]): int'
 	},
 	fstat: {
 		description: 'Gets information about a file using an open file pointer',
-		signature: '( resource $stream ): array|false'
-	},
-	fsync: {
-		description: 'Synchronizes changes to the file (including meta-data)',
-		signature: '( resource $stream ): bool'
+		signature: '( resource $handle ): array'
 	},
 	ftell: {
 		description: 'Returns the current position of the file read/write pointer',
-		signature: '( resource $stream ): int|false'
+		signature: '( resource $handle ): int'
 	},
 	ftruncate: {
 		description: 'Truncates a file to a given length',
-		signature: '( resource $stream , int $size ): bool'
+		signature: '( resource $handle , int $size ): bool'
 	},
 	fwrite: {
 		description: 'Binary-safe file write',
-		signature: '( resource $stream , string $data [, ?int $length = null ]): int|false'
+		signature: '( resource $handle , string $string [, int $length ]): int'
 	},
 	glob: {
 		description: 'Find pathnames matching a pattern',

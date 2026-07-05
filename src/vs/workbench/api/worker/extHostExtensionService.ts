@@ -12,7 +12,6 @@ import { IExtensionDescription } from '../../../platform/extensions/common/exten
 import { ExtensionRuntime } from '../common/extHostTypes.js';
 import { timeout } from '../../../base/common/async.js';
 import { ExtHostConsoleForwarder } from './extHostConsoleForwarder.js';
-import { extname } from '../../../base/common/path.js';
 
 class WorkerRequireInterceptor extends RequireInterceptor {
 
@@ -126,10 +125,6 @@ export class ExtHostExtensionService extends AbstractExtHostExtensionService {
 		}
 	}
 
-	protected override _loadESMModule<T>(extension: IExtensionDescription | null, module: URI, activationTimesBuilder: ExtensionActivationTimesBuilder): Promise<T> {
-		throw new Error('ESM modules are not supported in the web worker extension host');
-	}
-
 	async $setRemoteEnvironment(_env: { [key: string]: string | null }): Promise<void> {
 		return;
 	}
@@ -148,6 +143,5 @@ export class ExtHostExtensionService extends AbstractExtHostExtensionService {
 }
 
 function ensureSuffix(path: string, suffix: string): string {
-	const extName = extname(path);
-	return extName ? path : path + suffix;
+	return path.endsWith(suffix) ? path : path + suffix;
 }

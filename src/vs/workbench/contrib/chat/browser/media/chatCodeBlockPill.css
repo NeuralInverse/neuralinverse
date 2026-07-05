@@ -10,7 +10,7 @@
 	width: fit-content;
 	font-weight: normal;
 	text-decoration: none;
-	font-size: var(--vscode-chat-font-size-body-xs);
+	font-size: 11px;
 	padding: 0 3px;
 	cursor: pointer;
 }
@@ -58,11 +58,11 @@ span.label-detail {
 span.label-added {
 	font-weight: bold;
 	padding-left: 4px;
-	color: var(--vscode-chat-linesAddedForeground);
+	color: var(--vscode-editorGutter-addedBackground);
 }
 
 span.label-removed {
 	font-weight: bold;
 	padding-left: 4px;
-	color: var(--vscode-chat-linesRemovedForeground);
+	color: var(--vscode-editorGutter-deletedBackground);
 }

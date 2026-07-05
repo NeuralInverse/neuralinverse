@@ -674,7 +674,7 @@ export class RawDebugSession implements IDisposable {
 					}
 				}
 				response.body = {
-					rendererDebugAddr: result.rendererDebugAddr,
+					rendererDebugPort: result.rendererDebugPort,
 				};
 				safeSendResponse(response);
 			} catch (err) {

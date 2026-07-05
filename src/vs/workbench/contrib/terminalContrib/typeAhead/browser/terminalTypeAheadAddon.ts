@@ -1290,8 +1290,8 @@ export const enum CharPredictState {
 
 export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 	private _typeaheadStyle?: TypeAheadStyle;
-	private _typeaheadThreshold: number;
-	private _excludeProgramRe: RegExp;
+	private _typeaheadThreshold = this._configurationService.getValue<ITerminalTypeAheadConfiguration>(TERMINAL_CONFIG_SECTION).localEchoLatencyThreshold;
+	private _excludeProgramRe = compileExcludeRegexp(this._configurationService.getValue<ITerminalTypeAheadConfiguration>(TERMINAL_CONFIG_SECTION).localEchoExcludePrograms);
 	protected _lastRow?: { y: number; startingX: number; endingX: number; charState: CharPredictState };
 	protected _timeline?: PredictionTimeline;
 	private _terminalTitle = '';
@@ -1308,8 +1308,6 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 	) {
 		super();
-		this._typeaheadThreshold = this._configurationService.getValue<ITerminalTypeAheadConfiguration>(TERMINAL_CONFIG_SECTION).localEchoLatencyThreshold;
-		this._excludeProgramRe = compileExcludeRegexp(this._configurationService.getValue<ITerminalTypeAheadConfiguration>(TERMINAL_CONFIG_SECTION).localEchoExcludePrograms);
 		this._register(toDisposable(() => this._clearPredictionDebounce?.dispose()));
 	}
 
@@ -1346,7 +1344,7 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 		}));
 		this._register(this._processManager.onBeforeProcessData(e => this._onBeforeProcessData(e)));
 
-		let nextStatsSend: Timeout | undefined;
+		let nextStatsSend: any;
 		this._register(stats.onChange(() => {
 			if (!nextStatsSend) {
 				nextStatsSend = setTimeout(() => {

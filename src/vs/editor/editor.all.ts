@@ -41,7 +41,6 @@ import './contrib/linesOperations/browser/linesOperations.js';
 import './contrib/linkedEditing/browser/linkedEditing.js';
 import './contrib/links/browser/links.js';
 import './contrib/longLinesHelper/browser/longLinesHelper.js';
-import './contrib/middleScroll/browser/middleScroll.contribution.js';
 import './contrib/multicursor/browser/multicursor.js';
 import './contrib/parameterHints/browser/parameterHints.js';
 import './contrib/placeholderText/browser/placeholderText.contribution.js';
@@ -69,4 +68,3 @@ import './contrib/diffEditorBreadcrumbs/browser/contribution.js';
 import './common/standaloneStrings.js';
 
 import '../base/browser/ui/codicons/codiconStyles.js'; // The codicons are defined here and must be loaded
-

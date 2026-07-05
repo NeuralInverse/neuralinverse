@@ -7,7 +7,6 @@ import { KeyCode, KeyMod } from '../../../../../base/common/keyCodes.js';
 import { asyncTransaction, transaction } from '../../../../../base/common/observable.js';
 import { splitLines } from '../../../../../base/common/strings.js';
 import * as nls from '../../../../../nls.js';
-import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from '../../../../../platform/accessibility/common/accessibility.js';
 import { Action2, MenuId } from '../../../../../platform/actions/common/actions.js';
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
@@ -36,7 +35,7 @@ export class ShowNextInlineSuggestionAction extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
 		controller?.model.get()?.next();
 	}
@@ -56,7 +55,7 @@ export class ShowPreviousInlineSuggestionAction extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
 		controller?.model.get()?.previous();
 	}
@@ -71,7 +70,7 @@ export class TriggerInlineSuggestionAction extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
 		await asyncTransaction(async tx => {
 			/** @description triggerExplicitly from command */
@@ -90,8 +89,8 @@ export class ExplicitTriggerInlineEditAction extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
-		const notificationService = accessor.get(INotificationService);
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
+		const notificationService = accessor!.get(INotificationService);
 		const controller = InlineCompletionsController.get(editor);
 
 		await controller?.model.get()?.triggerExplicitly(undefined, true);
@@ -112,7 +111,7 @@ export class TriggerInlineEditAction extends EditorCommand {
 		});
 	}
 
-	public override async runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: { triggerKind?: 'automatic' | 'explicit' }): Promise<void> {
+	public override async runEditorCommand(accessor: ServicesAccessor | null, editor: ICodeEditor, args: { triggerKind?: 'automatic' | 'explicit' }): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
 		await controller?.model.get()?.trigger(undefined, { onlyFetchInlineEdits: true });
 	}
@@ -127,7 +126,7 @@ export class AcceptNextWordOfInlineCompletion extends EditorAction {
 			kbOpts: {
 				weight: KeybindingWeight.EditorContrib + 1,
 				primary: KeyMod.CtrlCmd | KeyCode.RightArrow,
-				kbExpr: ContextKeyExpr.and(EditorContextKeys.writable, InlineCompletionContextKeys.inlineSuggestionVisible, InlineCompletionContextKeys.cursorBeforeGhostText, CONTEXT_ACCESSIBILITY_MODE_ENABLED.negate()),
+				kbExpr: ContextKeyExpr.and(EditorContextKeys.writable, InlineCompletionContextKeys.inlineSuggestionVisible),
 			},
 			menuOpts: [{
 				menuId: MenuId.InlineSuggestionToolbar,
@@ -138,9 +137,9 @@ export class AcceptNextWordOfInlineCompletion extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
-		await controller?.model.get()?.acceptNextWord();
+		await controller?.model.get()?.acceptNextWord(controller.editor);
 	}
 }
 
@@ -162,9 +161,9 @@ export class AcceptNextLineOfInlineCompletion extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
-		await controller?.model.get()?.acceptNextLine();
+		await controller?.model.get()?.acceptNextLine(controller.editor);
 	}
 }
 
@@ -195,7 +194,6 @@ export class AcceptInlineCompletion extends EditorAction {
 							EditorContextKeys.tabMovesFocus.toNegated(),
 							SuggestContext.Visible.toNegated(),
 							EditorContextKeys.hoverFocused.toNegated(),
-							InlineCompletionContextKeys.hasSelection.toNegated(),
 
 							InlineCompletionContextKeys.inlineSuggestionHasIndentationLessThanTabSize,
 						),
@@ -255,11 +253,30 @@ export class JumpToNextInlineEdit extends EditorAction {
 		});
 	}
 
-	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
 		if (controller) {
 			controller.jump();
 		}
+	}
+}
+
+export class AcceptNextInlineEditPart extends EditorAction {
+	constructor() {
+		super({
+			id: 'editor.action.inlineSuggest.acceptNextInlineEditPart',
+			label: nls.localize2('action.inlineSuggest.acceptNextInlineEditPart', "Accept Next Inline Edit Part"),
+			precondition: ContextKeyExpr.and(EditorContextKeys.writable, InlineCompletionContextKeys.inlineEditVisible),
+			kbOpts: {
+				weight: KeybindingWeight.EditorContrib + 1,
+				kbExpr: ContextKeyExpr.and(EditorContextKeys.writable, InlineCompletionContextKeys.inlineEditVisible),
+			},
+		});
+	}
+
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
+		const controller = InlineCompletionsController.get(editor);
+		await controller?.model.get()?.acceptNextInlineEditPart(controller.editor);
 	}
 }
 
@@ -351,7 +368,7 @@ export class DevExtractReproSample extends EditorAction {
 			id: 'editor.action.inlineSuggest.dev.extractRepro',
 			label: nls.localize('action.inlineSuggest.dev.extractRepro', "Developer: Extract Inline Suggest State"),
 			alias: 'Developer: Inline Suggest Extract Repro',
-			precondition: ContextKeyExpr.or(InlineCompletionContextKeys.inlineEditVisible, InlineCompletionContextKeys.inlineSuggestionVisible),
+			precondition: InlineCompletionContextKeys.inlineEditVisible,
 		});
 	}
 

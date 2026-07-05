@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-// @ts-check
 
 /**
  * @param {string} name
@@ -19,7 +18,7 @@ exports.workerExtensionHost = createModuleDescription('vs/workbench/api/worker/e
 exports.workerNotebook = createModuleDescription('vs/workbench/contrib/notebook/common/services/notebookWebWorkerMain');
 exports.workerLanguageDetection = createModuleDescription('vs/workbench/services/languageDetection/browser/languageDetectionWebWorkerMain');
 exports.workerLocalFileSearch = createModuleDescription('vs/workbench/services/search/worker/localFileSearchMain');
-exports.workerProfileAnalysis = createModuleDescription('vs/platform/profiling/electron-browser/profileAnalysisWorkerMain');
+exports.workerProfileAnalysis = createModuleDescription('vs/platform/profiling/electron-sandbox/profileAnalysisWorkerMain');
 exports.workerOutputLinks = createModuleDescription('vs/workbench/contrib/output/common/outputLinkComputerMain');
 exports.workerBackgroundTokenization = createModuleDescription('vs/workbench/services/textMate/browser/backgroundTokenization/worker/textMateTokenizationWorker.workerMain');
 
@@ -44,7 +43,9 @@ exports.code = [
 	// 'vs/code/node/cli' is not included here because it comes in via ./src/cli.js
 	createModuleDescription('vs/code/node/cliProcessMain'),
 	createModuleDescription('vs/code/electron-utility/sharedProcess/sharedProcessMain'),
-	createModuleDescription('vs/code/electron-browser/workbench/workbench'),
+	createModuleDescription('vs/code/electron-sandbox/processExplorer/processExplorerMain'),
+	createModuleDescription('vs/code/electron-sandbox/workbench/workbench'),
+	createModuleDescription('vs/code/electron-sandbox/processExplorer/processExplorer')
 ];
 
 exports.codeWeb = createModuleDescription('vs/code/browser/workbench/workbench');

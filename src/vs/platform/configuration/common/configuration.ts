@@ -347,8 +347,5 @@ export function merge(base: any, add: any, overwrite: boolean): void {
 }
 
 export function getLanguageTagSettingPlainKey(settingKey: string) {
-	return settingKey
-		.replace(/^\[/, '')
-		.replace(/]$/g, '')
-		.replace(/\]\[/g, ', ');
+	return settingKey.replace(/[\[\]]/g, '');
 }

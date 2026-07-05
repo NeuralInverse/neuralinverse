@@ -14,7 +14,7 @@ import {
 	Color, ColorInformation, ColorPresentation, WorkspaceEdit,
 	WorkspaceFolder
 } from 'vscode-languageserver';
-import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { getLanguageModelCache, LanguageModelCache } from '../languageModelCache';
 import { getCSSMode } from './cssMode';
@@ -34,7 +34,7 @@ export {
 
 export { ClientCapabilities, DocumentContext, LanguageService, HTMLDocument, HTMLFormatConfiguration, TokenType } from 'vscode-html-languageservice';
 
-export { TextDocument, DocumentUri } from 'vscode-languageserver-textdocument';
+export { TextDocument } from 'vscode-languageserver-textdocument';
 
 export interface Settings {
 	readonly css?: any;
@@ -89,7 +89,6 @@ export interface LanguageMode {
 	onDocumentRemoved(document: TextDocument): void;
 	getSemanticTokens?(document: TextDocument): Promise<SemanticTokenData[]>;
 	getSemanticTokenLegend?(): { types: string[]; modifiers: string[] };
-	getTextDocumentContent?(uri: DocumentUri): Promise<string | undefined>;
 	dispose(): void;
 }
 
@@ -108,8 +107,6 @@ export interface LanguageModeRange extends Range {
 	mode: LanguageMode | undefined;
 	attributeValue?: boolean;
 }
-
-export const FILE_PROTOCOL = 'html-server';
 
 export function getLanguageModes(supportedLanguages: { [languageId: string]: boolean }, workspace: Workspace, clientCapabilities: ClientCapabilities, requestService: FileSystemProvider): LanguageModes {
 	const htmlLanguageService = getHTMLLanguageService({ clientCapabilities, fileSystemProvider: requestService });

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as path from 'path';
-import * as testRunner from '../../../../test/integration/electron/testrunner.js';
+import * as testRunner from '../../../../test/integration/electron/testrunner';
 
 const suite = 'Github Tests';
 
@@ -14,19 +14,17 @@ const options: import('mocha').MochaOptions = {
 	timeout: 60000
 };
 
-if (process.env.BUILD_ARTIFACTSTAGINGDIRECTORY || process.env.GITHUB_WORKSPACE) {
+if (process.env.BUILD_ARTIFACTSTAGINGDIRECTORY) {
 	options.reporter = 'mocha-multi-reporters';
 	options.reporterOptions = {
 		reporterEnabled: 'spec, mocha-junit-reporter',
 		mochaJunitReporterReporterOptions: {
 			testsuitesTitle: `${suite} ${process.platform}`,
-			mochaFile: path.join(
-				process.env.BUILD_ARTIFACTSTAGINGDIRECTORY || process.env.GITHUB_WORKSPACE || __dirname,
-				`test-results/${process.platform}-${process.arch}-${suite.toLowerCase().replace(/[^\w]/g, '-')}-results.xml`)
+			mochaFile: path.join(process.env.BUILD_ARTIFACTSTAGINGDIRECTORY, `test-results/${process.platform}-${process.arch}-${suite.toLowerCase().replace(/[^\w]/g, '-')}-results.xml`)
 		}
 	};
 }
 
 testRunner.configure(options);
 
-export default testRunner;
+export = testRunner;

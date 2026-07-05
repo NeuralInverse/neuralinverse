@@ -32,7 +32,7 @@ import { ILanguageService } from '../../../editor/common/languages/language.js';
 import { IHistoryService } from '../../services/history/common/history.js';
 import { IInstantiationService, ServiceIdentifier } from '../../../platform/instantiation/common/instantiation.js';
 import { TestConfigurationService } from '../../../platform/configuration/test/common/testConfigurationService.js';
-import { MenuBarVisibility, IWindowOpenable, IOpenWindowOptions, IOpenEmptyWindowOptions, IRectangle } from '../../../platform/window/common/window.js';
+import { MenuBarVisibility, IWindowOpenable, IOpenWindowOptions, IOpenEmptyWindowOptions } from '../../../platform/window/common/window.js';
 import { TestWorkspace } from '../../../platform/workspace/test/common/testWorkspace.js';
 import { IEnvironmentService } from '../../../platform/environment/common/environment.js';
 import { IThemeService } from '../../../platform/theme/common/themeService.js';
@@ -94,7 +94,7 @@ import { CodeEditorService } from '../../services/editor/browser/codeEditorServi
 import { MainEditorPart } from '../../browser/parts/editor/editorPart.js';
 import { ICodeEditor } from '../../../editor/browser/editorBrowser.js';
 import { IDiffEditor, IEditor } from '../../../editor/common/editorCommon.js';
-import { IInputBox, IInputOptions, IPickOptions, IQuickInputButton, IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickTree, IQuickTreeItem, IQuickWidget, QuickPickInput } from '../../../platform/quickinput/common/quickInput.js';
+import { IInputBox, IInputOptions, IPickOptions, IQuickInputButton, IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickWidget, QuickPickInput } from '../../../platform/quickinput/common/quickInput.js';
 import { QuickInputService } from '../../services/quickinput/browser/quickInputService.js';
 import { IListService } from '../../../platform/list/browser/listService.js';
 import { win32, posix } from '../../../base/common/path.js';
@@ -123,7 +123,7 @@ import { IEnterWorkspaceResult, IRecent, IRecentlyOpened, IWorkspaceFolderCreati
 import { IWorkspaceTrustManagementService, IWorkspaceTrustRequestService } from '../../../platform/workspace/common/workspaceTrust.js';
 import { IExtensionTerminalProfile, IShellLaunchConfig, ITerminalBackend, ITerminalLogService, ITerminalProfile, TerminalIcon, TerminalLocation, TerminalShellType } from '../../../platform/terminal/common/terminal.js';
 import { ICreateTerminalOptions, IDeserializedTerminalEditorInput, ITerminalConfigurationService, ITerminalEditorService, ITerminalGroup, ITerminalGroupService, ITerminalInstance, ITerminalInstanceService, TerminalEditorLocation } from '../../contrib/terminal/browser/terminal.js';
-import { assertReturnsDefined, upcast } from '../../../base/common/types.js';
+import { assertIsDefined, upcast } from '../../../base/common/types.js';
 import { IRegisterContributedProfileArgs, IShellLaunchConfigResolveOptions, ITerminalProfileProvider, ITerminalProfileResolverService, ITerminalProfileService, type ITerminalConfiguration } from '../../contrib/terminal/common/terminal.js';
 import { EditorResolverService } from '../../services/editor/browser/editorResolverService.js';
 import { FILE_EDITOR_INPUT_ID } from '../../contrib/files/common/files.js';
@@ -157,7 +157,7 @@ import { IDiagnosticInfoOptions, IDiagnosticInfo } from '../../../platform/diagn
 import { ExtensionType, IExtension, IExtensionDescription, IRelaxedExtensionManifest, TargetPlatform } from '../../../platform/extensions/common/extensions.js';
 import { IRemoteAgentEnvironment } from '../../../platform/remote/common/remoteAgentEnvironment.js';
 import { ILayoutOffsetInfo } from '../../../platform/layout/browser/layoutService.js';
-import { IUserDataProfile, IUserDataProfilesService, UserDataProfilesService } from '../../../platform/userDataProfile/common/userDataProfile.js';
+import { IUserDataProfile, IUserDataProfilesService, toUserDataProfile, UserDataProfilesService } from '../../../platform/userDataProfile/common/userDataProfile.js';
 import { UserDataProfileService } from '../../services/userDataProfile/common/userDataProfileService.js';
 import { IUserDataProfileService } from '../../services/userDataProfile/common/userDataProfile.js';
 import { EnablementState, IExtensionManagementServer, IResourceExtension, IScannedExtension, IWebExtensionsScannerService, IWorkbenchExtensionEnablementService, IWorkbenchExtensionManagementService } from '../../services/extensionManagement/common/extensionManagement.js';
@@ -183,8 +183,6 @@ import { IHoverService } from '../../../platform/hover/browser/hover.js';
 import { NullHoverService } from '../../../platform/hover/test/browser/nullHoverService.js';
 import { IActionViewItemService, NullActionViewItemService } from '../../../platform/actions/browser/actionViewItemService.js';
 import { IMarkdownString } from '../../../base/common/htmlContent.js';
-import { ITreeSitterLibraryService } from '../../../editor/common/services/treeSitter/treeSitterLibraryService.js';
-import { TestTreeSitterLibraryService } from '../../../editor/test/common/services/testTreeSitterLibraryService.js';
 
 export function createFileEditorInput(instantiationService: IInstantiationService, resource: URI): FileEditorInput {
 	return instantiationService.createInstance(FileEditorInput, resource, undefined, undefined, undefined, undefined, undefined, undefined);
@@ -312,7 +310,6 @@ export function workbenchInstantiationService(
 	const themeService = new TestThemeService();
 	instantiationService.stub(IThemeService, themeService);
 	instantiationService.stub(ILanguageConfigurationService, disposables.add(new TestLanguageConfigurationService()));
-	instantiationService.stub(ITreeSitterLibraryService, new TestTreeSitterLibraryService());
 	instantiationService.stub(IModelService, disposables.add(instantiationService.createInstance(ModelService)));
 	const fileService = overrides?.fileService ? overrides.fileService(instantiationService) : disposables.add(new TestFileService());
 	instantiationService.stub(IFileService, fileService);
@@ -635,7 +632,6 @@ export class TestLayoutService implements IWorkbenchLayoutService {
 	onDidChangeNotificationsVisibility = Event.None;
 	onDidAddContainer = Event.None;
 	onDidChangeActiveContainer = Event.None;
-	onDidChangeAuxiliaryBarMaximized = Event.None;
 
 	layout(): void { }
 	isRestored(): boolean { return true; }
@@ -662,9 +658,6 @@ export class TestLayoutService implements IWorkbenchLayoutService {
 	async setPanelHidden(_hidden: boolean): Promise<void> { }
 	toggleMaximizedPanel(): void { }
 	isPanelMaximized(): boolean { return false; }
-	toggleMaximizedAuxiliaryBar(): void { }
-	setAuxiliaryBarMaximized(maximized: boolean): boolean { return false; }
-	isAuxiliaryBarMaximized(): boolean { return false; }
 	getMenubarVisibility(): MenuBarVisibility { throw new Error('not implemented'); }
 	toggleMenuBar(): void { }
 	getSideBarPosition() { return 0; }
@@ -743,7 +736,7 @@ export class TestPaneCompositeService extends Disposable implements IPaneComposi
 	}
 
 	getPartByLocation(viewContainerLocation: ViewContainerLocation): IPaneCompositePart {
-		return assertReturnsDefined(this.parts.get(viewContainerLocation));
+		return assertIsDefined(this.parts.get(viewContainerLocation));
 	}
 }
 
@@ -973,7 +966,7 @@ export class TestEditorGroupView implements IEditorGroupView {
 	copyEditors(_editors: EditorInputWithOptions[], _target: IEditorGroup): void { }
 	async closeEditor(_editor?: EditorInput, options?: ICloseEditorOptions): Promise<boolean> { return true; }
 	async closeEditors(_editors: EditorInput[] | ICloseEditorsFilter, options?: ICloseEditorOptions): Promise<boolean> { return true; }
-	closeAllEditors(options?: ICloseAllEditorsOptions): any { return true; }
+	async closeAllEditors(options?: ICloseAllEditorsOptions): Promise<boolean> { return true; }
 	async replaceEditors(_editors: IEditorReplacement[]): Promise<void> { }
 	pinEditor(_editor?: EditorInput): void { }
 	stickEditor(editor?: EditorInput | undefined): void { }
@@ -1122,10 +1115,6 @@ export class TestFileService implements IFileService {
 
 	stat(resource: URI): Promise<IFileStatWithPartialMetadata> {
 		return this.resolve(resource, { resolveMetadata: true });
-	}
-
-	async realpath(resource: URI): Promise<URI> {
-		return resource;
 	}
 
 	async resolveAll(toResolve: { resource: URI; options?: IResolveFileOptions }[]): Promise<IFileStatResult[]> {
@@ -1588,7 +1577,7 @@ export class TestHostService implements IHostService {
 
 	async toggleFullScreen(): Promise<void> { }
 
-	async getScreenshot(rect?: IRectangle): Promise<VSBuffer | undefined> { return undefined; }
+	async getScreenshot(): Promise<ArrayBufferLike | undefined> { return undefined; }
 
 	async getNativeWindowHandle(_windowId: number): Promise<VSBuffer | undefined> { return undefined; }
 
@@ -2146,7 +2135,6 @@ export class TestQuickInputService implements IQuickInputService {
 	createQuickPick<T extends IQuickPickItem>(): IQuickPick<T, { useSeparators: boolean }> { throw new Error('not implemented.'); }
 	createInputBox(): IInputBox { throw new Error('not implemented.'); }
 	createQuickWidget(): IQuickWidget { throw new Error('Method not implemented.'); }
-	createQuickTree<T extends IQuickTreeItem>(): IQuickTree<T> { throw new Error('not implemented.'); }
 	focus(): void { throw new Error('not implemented.'); }
 	toggle(): void { throw new Error('not implemented.'); }
 	navigate(next: boolean, quickNavigate?: IQuickNavigateConfiguration): void { throw new Error('not implemented.'); }
@@ -2217,7 +2205,6 @@ export class TestWorkbenchExtensionManagementService implements IWorkbenchExtens
 	onProfileAwareDidUpdateExtensionMetadata = Event.None;
 	onDidChangeProfile = Event.None;
 	onDidEnableExtensions = Event.None;
-	preferPreReleases = true;
 	installVSIX(location: URI, manifest: Readonly<IRelaxedExtensionManifest>, installOptions?: InstallOptions | undefined): Promise<ILocalExtension> {
 		throw new Error('Method not implemented.');
 	}
@@ -2260,7 +2247,7 @@ export class TestWorkbenchExtensionManagementService implements IWorkbenchExtens
 		throw new Error('Method not implemented.');
 	}
 	copyExtensions(): Promise<void> { throw new Error('Not Supported'); }
-	toggleApplicationScope(): Promise<ILocalExtension> { throw new Error('Not Supported'); }
+	toggleAppliationScope(): Promise<ILocalExtension> { throw new Error('Not Supported'); }
 	installExtensionsFromProfile(): Promise<ILocalExtension[]> { throw new Error('Not Supported'); }
 	whenProfileChanged(from: IUserDataProfile, to: IUserDataProfile): Promise<void> { throw new Error('Not Supported'); }
 	getInstalledWorkspaceExtensionLocations(): URI[] { throw new Error('Method not implemented.'); }
@@ -2276,7 +2263,13 @@ export class TestWorkbenchExtensionManagementService implements IWorkbenchExtens
 	async requestPublisherTrust(extensions: InstallExtensionInfo[]): Promise<void> { }
 }
 
+export class TestUserDataProfileService implements IUserDataProfileService {
 
+	readonly _serviceBrand: undefined;
+	readonly onDidChangeCurrentProfile = Event.None;
+	readonly currentProfile = toUserDataProfile('test', 'test', URI.file('tests').with({ scheme: 'vscode-tests' }), URI.file('tests').with({ scheme: 'vscode-tests' }));
+	async updateCurrentProfile(): Promise<void> { }
+}
 
 export class TestWebExtensionsScannerService implements IWebExtensionsScannerService {
 	_serviceBrand: undefined;

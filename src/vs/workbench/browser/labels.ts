@@ -64,11 +64,6 @@ export interface IResourceLabelOptions extends IIconLabelValueOptions {
 	readonly forceLabel?: boolean;
 
 	/**
-	 * A prefix to be added to the name of the label.
-	 */
-	readonly namePrefix?: string;
-
-	/**
 	 * Uses the provided icon instead of deriving a resource icon.
 	 */
 	readonly icon?: ThemeIcon | URI;
@@ -120,7 +115,7 @@ export const DEFAULT_LABELS_CONTAINER: IResourceLabelsContainer = {
 export class ResourceLabels extends Disposable {
 
 	private readonly _onDidChangeDecorations = this._register(new Emitter<void>());
-	get onDidChangeDecorations() { return this._onDidChangeDecorations.event; }
+	readonly onDidChangeDecorations = this._onDidChangeDecorations.event;
 
 	private widgets: ResourceLabelWidget[] = [];
 	private labels: IResourceLabel[] = [];
@@ -220,7 +215,7 @@ export class ResourceLabels extends Disposable {
 		// Only expose a handle to the outside
 		const label: IResourceLabel = {
 			element: widget.element,
-			get onDidRender() { return widget.onDidRender; },
+			onDidRender: widget.onDidRender,
 			setLabel: (label: string, description?: string, options?: IIconLabelValueOptions) => widget.setLabel(label, description, options),
 			setResource: (label: IResourceLabelProps, options?: IResourceLabelOptions) => widget.setResource(label, options),
 			setFile: (resource: URI, options?: IFileLabelOptions) => widget.setFile(resource, options),
@@ -293,7 +288,7 @@ enum Redraw {
 class ResourceLabelWidget extends IconLabel {
 
 	private readonly _onDidRender = this._register(new Emitter<void>());
-	get onDidRender() { return this._onDidRender.event; }
+	readonly onDidRender = this._onDidRender.event;
 
 	private label: IResourceLabelProps | undefined = undefined;
 	private readonly decoration = this._register(new MutableDisposable<IDecoration>());
@@ -524,14 +519,6 @@ class ResourceLabelWidget extends IconLabel {
 						`${cellIndex + 1}`
 					);
 				}
-			}
-		}
-
-		if (options.namePrefix) {
-			if (typeof label.name === 'string') {
-				label.name = options.namePrefix + label.name;
-			} else if (Array.isArray(label.name) && label.name.length > 0) {
-				label.name = [options.namePrefix + label.name[0], ...label.name.slice(1)];
 			}
 		}
 

@@ -6,11 +6,8 @@
 import assert from 'assert';
 import { isFunction } from '../../../../base/common/types.js';
 import { Registry } from '../../common/platform.js';
-import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
 
 suite('Platform / Registry', () => {
-
-	ensureNoDisposablesAreLeakedInTestSuite();
 
 	test('registry - api', function () {
 		assert.ok(isFunction(Registry.add));

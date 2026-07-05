@@ -43,14 +43,6 @@ export class PlaywrightDriver {
 	) {
 	}
 
-	get browserContext(): playwright.BrowserContext {
-		return this.context;
-	}
-
-	get currentPage(): playwright.Page {
-		return this.page;
-	}
-
 	async startTracing(name: string): Promise<void> {
 		if (!this.options.tracing) {
 			return; // tracing disabled
@@ -182,7 +174,7 @@ export class PlaywrightDriver {
 		await this.page.reload();
 	}
 
-	async close() {
+	async exitApplication() {
 
 		// Stop tracing
 		try {
@@ -202,11 +194,22 @@ export class PlaywrightDriver {
 			}
 		}
 
-		//  exit via `close` method
-		try {
-			await measureAndLog(() => this.application.close(), 'playwright.close()', this.options.logger);
-		} catch (error) {
-			this.options.logger.log(`Error closing application (${error})`);
+		// Web: exit via `close` method
+		if (this.options.web) {
+			try {
+				await measureAndLog(() => this.application.close(), 'playwright.close()', this.options.logger);
+			} catch (error) {
+				this.options.logger.log(`Error closing appliction (${error})`);
+			}
+		}
+
+		// Desktop: exit via `driver.exitApplication`
+		else {
+			try {
+				await measureAndLog(() => this.evaluateWithDriver(([driver]) => driver.exitApplication()), 'driver.exitApplication()', this.options.logger);
+			} catch (error) {
+				this.options.logger.log(`Error exiting appliction (${error})`);
+			}
 		}
 
 		// Server: via `teardown`
@@ -253,7 +256,9 @@ export class PlaywrightDriver {
 			}
 		}
 
-		await accept?.();
+		if (accept) {
+			await accept();
+		}
 	}
 
 	async click(selector: string, xoffset?: number | undefined, yoffset?: number | undefined) {
@@ -323,15 +328,6 @@ export class PlaywrightDriver {
 
 	private async getDriverHandle(): Promise<playwright.JSHandle<IWindowDriver>> {
 		return this.page.evaluateHandle('window.driver');
-	}
-
-	async isAlive(): Promise<boolean> {
-		try {
-			await this.getDriverHandle();
-			return true;
-		} catch (error) {
-			return false;
-		}
 	}
 }
 

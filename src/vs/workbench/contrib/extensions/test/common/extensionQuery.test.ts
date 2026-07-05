@@ -5,11 +5,8 @@
 
 import assert from 'assert';
 import { Query } from '../../common/extensionQuery.js';
-import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../base/test/common/utils.js';
 
 suite('Extension query', () => {
-	ensureNoDisposablesAreLeakedInTestSuite();
-
 	test('parse', () => {
 		let query = Query.parse('');
 		assert.strictEqual(query.value, '');

@@ -15,7 +15,6 @@ import * as nls from '../../../../nls.js';
 import { IExtensionDescription } from '../../../../platform/extensions/common/extensions.js';
 import { IDebugAdapterExecutable, IDebugAdapterNamedPipeServer, IDebugAdapterServer, IDebuggerContribution, IPlatformSpecificAdapterContribution } from '../common/debug.js';
 import { AbstractDebugAdapter } from '../common/abstractDebugAdapter.js';
-import { killTree } from '../../../../base/node/processes.js';
 
 /**
  * An implementation that communicates via two streams with the debug adapter.
@@ -289,8 +288,14 @@ export class ExecutableDebugAdapter extends StreamDebugAdapter {
 		// processes. Therefore we use TASKKILL.EXE
 		await this.cancelPendingRequests();
 		if (platform.isWindows) {
-			return killTree(this.serverProcess!.pid!, true).catch(() => {
-				this.serverProcess?.kill();
+			return new Promise<void>((c, e) => {
+				const killer = cp.exec(`taskkill /F /T /PID ${this.serverProcess!.pid}`, function (err, stdout, stderr) {
+					if (err) {
+						return e(err);
+					}
+				});
+				killer.on('exit', c);
+				killer.on('error', e);
 			});
 		} else {
 			this.serverProcess.kill('SIGTERM');

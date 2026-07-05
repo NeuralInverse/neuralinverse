@@ -16,7 +16,7 @@ import { ILanguageConfigurationService } from './languages/languageConfiguration
 import { createScopedLineTokens } from './languages/supports.js';
 import { IElectricAction } from './languages/supports/electricCharacter.js';
 import { CursorColumns } from './core/cursorColumns.js';
-import { normalizeIndentation } from './core/misc/indentation.js';
+import { normalizeIndentation } from './core/indentation.js';
 import { InputMode } from './inputMode.js';
 
 export interface IColumnSelectData {
@@ -60,7 +60,6 @@ export class CursorConfiguration {
 	public readonly lineHeight: number;
 	public readonly typicalHalfwidthCharacterWidth: number;
 	public readonly useTabStops: boolean;
-	public readonly trimWhitespaceOnDelete: boolean;
 	public readonly wordSeparators: string;
 	public readonly emptySelectionClipboard: boolean;
 	public readonly copyWithSyntaxHighlighting: boolean;
@@ -99,7 +98,6 @@ export class CursorConfiguration {
 			|| e.hasChanged(EditorOption.autoClosingOvertype)
 			|| e.hasChanged(EditorOption.autoSurround)
 			|| e.hasChanged(EditorOption.useTabStops)
-			|| e.hasChanged(EditorOption.trimWhitespaceOnDelete)
 			|| e.hasChanged(EditorOption.fontInfo)
 			|| e.hasChanged(EditorOption.readOnly)
 			|| e.hasChanged(EditorOption.wordSegmenterLocales)
@@ -128,7 +126,6 @@ export class CursorConfiguration {
 		this.typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;
 		this.pageSize = Math.max(1, Math.floor(layoutInfo.height / this.lineHeight) - 2);
 		this.useTabStops = options.get(EditorOption.useTabStops);
-		this.trimWhitespaceOnDelete = options.get(EditorOption.trimWhitespaceOnDelete);
 		this.wordSeparators = options.get(EditorOption.wordSeparators);
 		this.emptySelectionClipboard = options.get(EditorOption.emptySelectionClipboard);
 		this.copyWithSyntaxHighlighting = options.get(EditorOption.copyWithSyntaxHighlighting);

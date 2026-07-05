@@ -98,7 +98,7 @@ export class ChatRelatedFilesContribution extends Disposable implements IWorkben
 		disposableStore.add(onDebouncedType(() => {
 			this._updateRelatedFileSuggestions(currentEditingSession, widget);
 		}));
-		disposableStore.add(widget.attachmentModel.onDidChange(() => {
+		disposableStore.add(widget.attachmentModel.onDidChangeContext(() => {
 			this._updateRelatedFileSuggestions(currentEditingSession, widget);
 		}));
 		disposableStore.add(currentEditingSession.onDidDispose(() => {

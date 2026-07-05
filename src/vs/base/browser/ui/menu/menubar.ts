@@ -583,17 +583,17 @@ export class MenuBar extends Disposable {
 			const replaceDoubleEscapes = (str: string) => str.replace(/&amp;&amp;/g, '&amp;');
 
 			if (escMatch) {
-				titleElement.textContent = '';
+				titleElement.innerText = '';
 				titleElement.append(
 					strings.ltrim(replaceDoubleEscapes(cleanLabel.substr(0, escMatch.index)), ' '),
 					$('mnemonic', { 'aria-hidden': 'true' }, escMatch[3]),
 					strings.rtrim(replaceDoubleEscapes(cleanLabel.substr(escMatch.index + escMatch[0].length)), ' ')
 				);
 			} else {
-				titleElement.textContent = replaceDoubleEscapes(cleanLabel).trim();
+				titleElement.innerText = replaceDoubleEscapes(cleanLabel).trim();
 			}
 		} else {
-			titleElement.textContent = cleanMenuLabel.replace(/&&/g, '&');
+			titleElement.innerText = cleanMenuLabel.replace(/&&/g, '&');
 		}
 
 		const mnemonicMatches = MENU_MNEMONIC_REGEX.exec(label);

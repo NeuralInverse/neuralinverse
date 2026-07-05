@@ -9,9 +9,9 @@ import { derived, IObservable, ISettableObservable } from '../../../../../../bas
 import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { ICodeEditor } from '../../../../../browser/editorBrowser.js';
 import { ObservableCodeEditor, observableCodeEditor } from '../../../../../browser/observableCodeEditor.js';
-import { LineRange } from '../../../../../common/core/ranges/lineRange.js';
+import { LineRange } from '../../../../../common/core/lineRange.js';
 import { Range } from '../../../../../common/core/range.js';
-import { TextReplacement, TextEdit } from '../../../../../common/core/edits/textEdit.js';
+import { SingleTextEdit, TextEdit } from '../../../../../common/core/textEdit.js';
 import { TextModelText } from '../../../../../common/model/textModelText.js';
 import { InlineCompletionsModel } from '../../model/inlineCompletionsModel.js';
 import { InlineEdit } from '../../model/inlineEdit.js';
@@ -33,15 +33,16 @@ export class InlineEditsViewAndDiffProducer extends Disposable { // TODO: This c
 		const textModel = this._editor.getModel();
 		if (!textModel) { return undefined; }
 
-		const editOffset = model.inlineEditState.get()?.inlineCompletion.updatedEdit;
+		const editOffset = model.inlineEditState.get()?.inlineCompletion.updatedEdit.read(reader);
 		if (!editOffset) { return undefined; }
 
-		const edits = editOffset.replacements.map(e => {
+		const offsetEdits = model.inPartialAcceptFlow.read(reader) ? [editOffset.edits[0]] : editOffset.edits;
+		const edits = offsetEdits.map(e => {
 			const innerEditRange = Range.fromPositions(
 				textModel.getPositionAt(e.replaceRange.start),
 				textModel.getPositionAt(e.replaceRange.endExclusive)
 			);
-			return new TextReplacement(innerEditRange, e.newText);
+			return new SingleTextEdit(innerEditRange, e.newText);
 		});
 
 		const diffEdits = new TextEdit(edits);
@@ -81,7 +82,7 @@ export class InlineEditsViewAndDiffProducer extends Disposable { // TODO: This c
 		const inlineCompletion = state.inlineCompletion;
 		if (!inlineCompletion) { return undefined; }
 
-		if (!inlineCompletion.showInlineEditMenu) {
+		if (!inlineCompletion.sourceInlineCompletion.showInlineEditMenu) {
 			return undefined;
 		}
 

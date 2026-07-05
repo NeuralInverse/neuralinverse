@@ -5,7 +5,7 @@
 
 import * as cp from 'child_process';
 import * as os from 'os';
-import * as playwright from 'playwright';
+import * as treekill from 'tree-kill';
 import { IElement, ILocaleInfo, ILocalizedStrings, ILogFile } from './driver';
 import { Logger, measureAndLog } from './logger';
 import { launch as launchPlaywrightBrowser } from './playwrightBrowser';
@@ -15,26 +15,22 @@ import { teardown } from './processes';
 import { Quality } from './application';
 
 export interface LaunchOptions {
-	// Allows you to override the Playwright instance
-	playwright?: typeof playwright;
 	codePath?: string;
 	readonly workspacePath: string;
-	userDataDir?: string;
-	readonly extensionsPath?: string;
+	userDataDir: string;
+	readonly extensionsPath: string;
 	readonly logger: Logger;
 	logsPath: string;
 	crashesPath: string;
-	verbose?: boolean;
-	useInMemorySecretStorage?: boolean;
+	readonly verbose?: boolean;
 	readonly extraArgs?: string[];
 	readonly remote?: boolean;
 	readonly web?: boolean;
 	readonly tracing?: boolean;
 	snapshots?: boolean;
 	readonly headless?: boolean;
-	readonly browser?: 'chromium' | 'webkit' | 'firefox' | 'chromium-msedge' | 'chromium-chrome';
+	readonly browser?: 'chromium' | 'webkit' | 'firefox';
 	readonly quality: Quality;
-	version: { major: number; minor: number; patch: number };
 }
 
 interface ICodeInstance {
@@ -43,28 +39,18 @@ interface ICodeInstance {
 
 const instances = new Set<ICodeInstance>();
 
-function registerInstance(process: cp.ChildProcess, logger: Logger, type: 'electron' | 'server'): { safeToKill: Promise<void> } {
+function registerInstance(process: cp.ChildProcess, logger: Logger, type: string) {
 	const instance = { kill: () => teardown(process, logger) };
 	instances.add(instance);
 
-	const safeToKill = new Promise<void>(resolve => {
-		process.stdout?.on('data', data => {
-			const output = data.toString();
-			if (output.indexOf('calling app.quit()') >= 0 && type === 'electron') {
-				setTimeout(() => resolve(), 500 /* give Electron some time to actually terminate fully */);
-			}
-			logger.log(`[${type}] stdout: ${output}`);
-		});
-		process.stderr?.on('data', error => logger.log(`[${type}] stderr: ${error}`));
-	});
+	process.stdout?.on('data', data => logger.log(`[${type}] stdout: ${data}`));
+	process.stderr?.on('data', error => logger.log(`[${type}] stderr: ${error}`));
 
 	process.once('exit', (code, signal) => {
 		logger.log(`[${type}] Process terminated (pid: ${process.pid}, code: ${code}, signal: ${signal})`);
 
 		instances.delete(instance);
 	});
-
-	return { safeToKill };
 }
 
 async function teardownAll(signal?: number) {
@@ -94,15 +80,15 @@ export async function launch(options: LaunchOptions): Promise<Code> {
 		const { serverProcess, driver } = await measureAndLog(() => launchPlaywrightBrowser(options), 'launch playwright (browser)', options.logger);
 		registerInstance(serverProcess, options.logger, 'server');
 
-		return new Code(driver, options.logger, serverProcess, undefined, options.quality, options.version);
+		return new Code(driver, options.logger, serverProcess, options.quality);
 	}
 
 	// Electron smoke tests (playwright)
 	else {
 		const { electronProcess, driver } = await measureAndLog(() => launchPlaywrightElectron(options), 'launch playwright (electron)', options.logger);
-		const { safeToKill } = registerInstance(electronProcess, options.logger, 'electron');
+		registerInstance(electronProcess, options.logger, 'electron');
 
-		return new Code(driver, options.logger, electronProcess, safeToKill, options.quality, options.version);
+		return new Code(driver, options.logger, electronProcess, options.quality);
 	}
 }
 
@@ -114,9 +100,7 @@ export class Code {
 		driver: PlaywrightDriver,
 		readonly logger: Logger,
 		private readonly mainProcess: cp.ChildProcess,
-		private readonly safeToKill: Promise<void> | undefined,
-		readonly quality: Quality,
-		readonly version: { major: number; minor: number; patch: number }
+		readonly quality: Quality
 	) {
 		this.driver = new Proxy(driver, {
 			get(target, prop) {
@@ -137,10 +121,6 @@ export class Code {
 		});
 	}
 
-	get editContextEnabled(): boolean {
-		return !(this.quality === Quality.Stable && this.version.major === 1 && this.version.minor < 101);
-	}
-
 	async startTracing(name: string): Promise<void> {
 		return await this.driver.startTracing(name);
 	}
@@ -149,20 +129,7 @@ export class Code {
 		return await this.driver.stopTracing(name, persist);
 	}
 
-	/**
-	 * Dispatch a keybinding to the application.
-	 * @param keybinding The keybinding to dispatch, e.g. 'ctrl+shift+p'.
-	 * @param accept The acceptance function to await before returning. Wherever
-	 * possible this should verify that the keybinding did what was expected,
-	 * otherwise it will likely be a cause of difficult to investigate race
-	 * conditions. This is particularly insidious when used in the automation
-	 * library as it can surface across many test suites.
-	 *
-	 * This requires an async function even when there's no implementation to
-	 * force the author to think about the accept callback and prevent mistakes
-	 * like not making it async.
-	 */
-	async dispatchKeybinding(keybinding: string, accept: () => Promise<void>): Promise<void> {
+	async sendKeybinding(keybinding: string, accept?: () => Promise<void> | void): Promise<void> {
 		await this.driver.sendKeybinding(keybinding, accept);
 	}
 
@@ -177,13 +144,7 @@ export class Code {
 			let done = false;
 
 			// Start the exit flow via driver
-			this.driver.close();
-
-			let safeToKill = false;
-			this.safeToKill?.then(() => {
-				this.logger.log('Smoke test exit(): safeToKill() called');
-				safeToKill = true;
-			});
+			this.driver.exitApplication();
 
 			// Await the exit of the application
 			(async () => {
@@ -191,27 +152,38 @@ export class Code {
 				while (!done) {
 					retries++;
 
-					if (safeToKill) {
-						this.logger.log('Smoke test exit(): call did not terminate the process yet, but safeToKill is true, so we can kill it');
-						this.kill(pid);
-					}
-
 					switch (retries) {
 
-						// after 10 seconds: forcefully kill
+						// after 5 / 10 seconds: try to exit gracefully again
+						case 10:
 						case 20: {
-							this.logger.log('Smoke test exit(): call did not terminate process after 10s, forcefully exiting the application...');
-							this.kill(pid);
+							this.logger.log('Smoke test exit call did not terminate process after 5-10s, gracefully trying to exit the application again...');
+							this.driver.exitApplication();
 							break;
 						}
 
-						// after 20 seconds: give up
+						// after 20 seconds: forcefully kill
 						case 40: {
-							this.logger.log('Smoke test exit(): call did not terminate process after 20s, giving up');
-							this.kill(pid);
-							done = true;
-							resolve();
+							this.logger.log('Smoke test exit call did not terminate process after 20s, forcefully exiting the application...');
+
+							// no need to await since we're polling for the process to die anyways
+							treekill(pid, err => {
+								try {
+									process.kill(pid, 0); // throws an exception if the process doesn't exist anymore
+									this.logger.log('Failed to kill Electron process tree:', err?.message);
+								} catch (error) {
+									// Expected when process is gone
+								}
+							});
+
 							break;
+						}
+
+						// after 30 seconds: give up
+						case 60: {
+							done = true;
+							this.logger.log('Smoke test exit call did not terminate process after 30s, giving up');
+							resolve();
 						}
 					}
 
@@ -219,30 +191,12 @@ export class Code {
 						process.kill(pid, 0); // throws an exception if the process doesn't exist anymore.
 						await this.wait(500);
 					} catch (error) {
-						this.logger.log('Smoke test exit(): call terminated process successfully');
-
 						done = true;
 						resolve();
 					}
 				}
 			})();
 		}), 'Code#exit()', this.logger);
-	}
-
-	private kill(pid: number): void {
-		try {
-			process.kill(pid, 0); // throws an exception if the process doesn't exist anymore.
-		} catch (e) {
-			this.logger.log('Smoke test kill(): returning early because process does not exist anymore');
-			return;
-		}
-
-		try {
-			this.logger.log(`Smoke test kill(): Trying to SIGTERM process: ${pid}`);
-			process.kill(pid);
-		} catch (e) {
-			this.logger.log('Smoke test kill(): SIGTERM failed', e);
-		}
 	}
 
 	async getElement(selector: string): Promise<IElement | undefined> {

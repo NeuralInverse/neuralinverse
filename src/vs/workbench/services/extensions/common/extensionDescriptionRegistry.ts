@@ -26,7 +26,7 @@ export interface IReadOnlyExtensionDescriptionRegistry {
 	getExtensionDescriptionByIdOrUUID(extensionId: ExtensionIdentifier | string, uuid: string | undefined): IExtensionDescription | undefined;
 }
 
-export class ExtensionDescriptionRegistry extends Disposable implements IReadOnlyExtensionDescriptionRegistry {
+export class ExtensionDescriptionRegistry implements IReadOnlyExtensionDescriptionRegistry {
 
 	public static isHostExtension(extensionId: ExtensionIdentifier | string, myRegistry: ExtensionDescriptionRegistry, globalRegistry: ExtensionDescriptionRegistry): boolean {
 		if (myRegistry.getExtensionDescription(extensionId)) {
@@ -44,7 +44,7 @@ export class ExtensionDescriptionRegistry extends Disposable implements IReadOnl
 		return false;
 	}
 
-	private readonly _onDidChange = this._register(new Emitter<void>());
+	private readonly _onDidChange = new Emitter<void>();
 	public readonly onDidChange = this._onDidChange.event;
 
 	private _versionId: number = 0;
@@ -57,7 +57,6 @@ export class ExtensionDescriptionRegistry extends Disposable implements IReadOnl
 		private readonly _activationEventsReader: IActivationEventsReader,
 		extensionDescriptions: IExtensionDescription[]
 	) {
-		super();
 		this._extensionDescriptions = extensionDescriptions;
 		this._initialize();
 	}

@@ -12,7 +12,6 @@ import { IJSONContributionRegistry, Extensions as JSONExtensions } from '../../j
 import * as platform from '../../registry/common/platform.js';
 import { IColorTheme } from './themeService.js';
 import * as nls from '../../../nls.js';
-import { Disposable } from '../../../base/common/lifecycle.js';
 
 //  ------ API types
 
@@ -51,8 +50,7 @@ export const enum ColorTransformType {
 	Opaque,
 	OneOf,
 	LessProminent,
-	IfDefinedThenElse,
-	Mix,
+	IfDefinedThenElse
 }
 
 export type ColorTransform =
@@ -62,8 +60,7 @@ export type ColorTransform =
 	| { op: ColorTransformType.Opaque; value: ColorValue; background: ColorValue }
 	| { op: ColorTransformType.OneOf; values: readonly ColorValue[] }
 	| { op: ColorTransformType.LessProminent; value: ColorValue; background: ColorValue; factor: number; transparency: number }
-	| { op: ColorTransformType.IfDefinedThenElse; if: ColorIdentifier; then: ColorValue; else: ColorValue }
-	| { op: ColorTransformType.Mix; color: ColorValue; with: ColorValue; ratio?: number };
+	| { op: ColorTransformType.IfDefinedThenElse; if: ColorIdentifier; then: ColorValue; else: ColorValue };
 
 export interface ColorDefaults {
 	light: ColorValue | null;
@@ -136,9 +133,9 @@ export interface IColorRegistry {
 type IJSONSchemaForColors = IJSONSchema & { properties: { [name: string]: { oneOf: [IJSONSchemaWithSnippets, IJSONSchema] } } };
 type IJSONSchemaWithSnippets = IJSONSchema & { defaultSnippets: IJSONSchemaSnippet[] };
 
-class ColorRegistry extends Disposable implements IColorRegistry {
+class ColorRegistry implements IColorRegistry {
 
-	private readonly _onDidChangeSchema = this._register(new Emitter<void>());
+	private readonly _onDidChangeSchema = new Emitter<void>();
 	readonly onDidChangeSchema: Event<void> = this._onDidChangeSchema.event;
 
 	private colorsById: { [key: string]: ColorContribution };
@@ -146,7 +143,6 @@ class ColorRegistry extends Disposable implements IColorRegistry {
 	private colorReferenceSchema: IJSONSchema & { enum: string[]; enumDescriptions: string[] } = { type: 'string', enum: [], enumDescriptions: [] };
 
 	constructor() {
-		super();
 		this.colorsById = {};
 	}
 
@@ -218,7 +214,7 @@ class ColorRegistry extends Disposable implements IColorRegistry {
 		return this.colorReferenceSchema;
 	}
 
-	public override toString() {
+	public toString() {
 		const sorter = (a: string, b: string) => {
 			const cat1 = a.indexOf('.') === -1 ? 0 : 1;
 			const cat2 = b.indexOf('.') === -1 ? 0 : 1;
@@ -257,12 +253,6 @@ export function executeTransform(transform: ColorTransform, theme: IColorTheme):
 
 		case ColorTransformType.Transparent:
 			return resolveColorValue(transform.value, theme)?.transparent(transform.factor);
-
-		case ColorTransformType.Mix: {
-			const primaryColor = resolveColorValue(transform.color, theme) || Color.transparent;
-			const otherColor = resolveColorValue(transform.with, theme) || Color.transparent;
-			return primaryColor.mix(otherColor, transform.ratio);
-		}
 
 		case ColorTransformType.Opaque: {
 			const backgroundColor = resolveColorValue(transform.background, theme);

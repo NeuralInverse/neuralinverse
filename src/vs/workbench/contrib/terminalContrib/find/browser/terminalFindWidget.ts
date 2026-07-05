@@ -21,7 +21,6 @@ import { TerminalFindCommandId } from '../common/terminal.find.js';
 import { TerminalClipboardContribution } from '../../clipboard/browser/terminal.clipboard.contribution.js';
 import { StandardMouseEvent } from '../../../../../base/browser/mouseEvent.js';
 import { createTextInputActions } from '../../../../browser/actions/textInputActions.js';
-import { ILogService } from '../../../../../platform/log/common/log.js';
 
 const TERMINAL_FIND_WIDGET_INITIAL_WIDTH = 419;
 
@@ -42,7 +41,6 @@ export class TerminalFindWidget extends SimpleFindWidget {
 		@IHoverService hoverService: IHoverService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IThemeService themeService: IThemeService,
-		@ILogService logService: ILogService
 	) {
 		super({
 			showCommonFindToggles: true,
@@ -79,7 +77,7 @@ export class TerminalFindWidget extends SimpleFindWidget {
 		this._register(dom.addDisposableListener(findInputDomNode, 'contextmenu', (event) => {
 			const targetWindow = dom.getWindow(findInputDomNode);
 			const standardEvent = new StandardMouseEvent(targetWindow, event);
-			const actions = createTextInputActions(clipboardService, logService);
+			const actions = createTextInputActions(clipboardService);
 
 			contextMenuService.showContextMenu({
 				getAnchor: () => standardEvent,
@@ -160,7 +158,7 @@ export class TerminalFindWidget extends SimpleFindWidget {
 	}
 
 	protected _onFocusTrackerFocus() {
-		if (TerminalClipboardContribution.get(this._instance)?.overrideCopyOnSelection) {
+		if ('overrideCopyOnSelection' in this._instance) {
 			this._overrideCopyOnSelectionDisposable = TerminalClipboardContribution.get(this._instance)?.overrideCopyOnSelection(false);
 		}
 		this._findWidgetFocused.set(true);

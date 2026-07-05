@@ -7,18 +7,16 @@ import { equals } from '../../../../../base/common/arrays.js';
 import { splitLines } from '../../../../../base/common/strings.js';
 import { Position } from '../../../../common/core/position.js';
 import { Range } from '../../../../common/core/range.js';
-import { TextReplacement, TextEdit } from '../../../../common/core/edits/textEdit.js';
+import { SingleTextEdit, TextEdit } from '../../../../common/core/textEdit.js';
 import { LineDecoration } from '../../../../common/viewLayout/lineDecorations.js';
-import { ColumnRange } from '../../../../common/core/ranges/columnRange.js';
-import { assertFn, checkAdjacentItems } from '../../../../../base/common/assert.js';
-import { InlineDecoration } from '../../../../common/viewModel/inlineDecorations.js';
+import { InlineDecoration } from '../../../../common/viewModel.js';
+import { ColumnRange } from '../utils.js';
 
 export class GhostText {
 	constructor(
 		public readonly lineNumber: number,
 		public readonly parts: GhostTextPart[],
 	) {
-		assertFn(() => checkAdjacentItems(parts, (p1, p2) => p1.column <= p2.column));
 	}
 
 	equals(other: GhostText): boolean {
@@ -32,7 +30,7 @@ export class GhostText {
 	*/
 	render(documentText: string, debug: boolean = false): string {
 		return new TextEdit([
-			...this.parts.map(p => new TextReplacement(
+			...this.parts.map(p => new SingleTextEdit(
 				Range.fromPositions(new Position(this.lineNumber, p.column)),
 				debug ? `[${p.lines.map(line => line.line).join('\n')}]` : p.lines.map(line => line.line).join('\n')
 			)),
@@ -47,7 +45,7 @@ export class GhostText {
 
 		const cappedLineText = lineText.substr(0, lastPart.column - 1);
 		const text = new TextEdit([
-			...this.parts.map(p => new TextReplacement(
+			...this.parts.map(p => new SingleTextEdit(
 				Range.fromPositions(new Position(1, p.column)),
 				p.lines.map(line => line.line).join('\n')
 			)),
@@ -129,12 +127,12 @@ export class GhostTextReplacement {
 
 		if (debug) {
 			return new TextEdit([
-				new TextReplacement(Range.fromPositions(replaceRange.getStartPosition()), '('),
-				new TextReplacement(Range.fromPositions(replaceRange.getEndPosition()), `)[${this.newLines.join('\n')}]`),
+				new SingleTextEdit(Range.fromPositions(replaceRange.getStartPosition()), '('),
+				new SingleTextEdit(Range.fromPositions(replaceRange.getEndPosition()), `)[${this.newLines.join('\n')}]`),
 			]).applyToString(documentText);
 		} else {
 			return new TextEdit([
-				new TextReplacement(replaceRange, this.newLines.join('\n')),
+				new SingleTextEdit(replaceRange, this.newLines.join('\n')),
 			]).applyToString(documentText);
 		}
 	}

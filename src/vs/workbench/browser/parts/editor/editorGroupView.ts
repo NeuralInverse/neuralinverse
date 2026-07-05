@@ -9,7 +9,7 @@ import { GroupIdentifier, CloseDirection, IEditorCloseEvent, IEditorPane, SaveRe
 import { ActiveEditorGroupLockedContext, ActiveEditorDirtyContext, EditorGroupEditorsCountContext, ActiveEditorStickyContext, ActiveEditorPinnedContext, ActiveEditorLastInGroupContext, ActiveEditorFirstInGroupContext, ResourceContextKey, applyAvailableEditorIds, ActiveEditorAvailableEditorIdsContext, ActiveEditorCanSplitInGroupContext, SideBySideEditorActiveContext, TextCompareEditorVisibleContext, TextCompareEditorActiveContext, ActiveEditorContext, ActiveEditorReadonlyContext, ActiveEditorCanRevertContext, ActiveEditorCanToggleReadonlyContext, ActiveCompareEditorCanSwapContext, MultipleEditorsSelectedInGroupContext, TwoEditorsSelectedInGroupContext, SelectedEditorsInGroupFileOrUntitledResourceContextKey } from '../../../common/contextkeys.js';
 import { EditorInput } from '../../../common/editor/editorInput.js';
 import { SideBySideEditorInput } from '../../../common/editor/sideBySideEditorInput.js';
-import { Emitter, Event, Relay } from '../../../../base/common/event.js';
+import { Emitter, Relay } from '../../../../base/common/event.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { Dimension, trackFocus, addDisposableListener, EventType, EventHelper, findParentWithClass, isAncestor, IDomNodePagePosition, isMouseEvent, isActiveElement, getWindow, getActiveElement, $ } from '../../../../base/browser/dom.js';
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
@@ -32,7 +32,7 @@ import { IEditorGroupsView, IEditorGroupView, fillActiveEditorViewState, EditorS
 import { ActionBar } from '../../../../base/browser/ui/actionbar/actionbar.js';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 import { SubmenuAction } from '../../../../base/common/actions.js';
-import { IMenuChangeEvent, IMenuService, MenuId } from '../../../../platform/actions/common/actions.js';
+import { IMenuService, MenuId } from '../../../../platform/actions/common/actions.js';
 import { StandardMouseEvent } from '../../../../base/browser/mouseEvent.js';
 import { getActionBarActions, PrimaryAndSecondaryActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
 import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
@@ -1036,7 +1036,7 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 
 	findEditors(resource: URI, options?: IFindEditorOptions): EditorInput[] {
 		const canonicalResource = this.uriIdentityService.asCanonicalUri(resource);
-		return this.getEditors(options?.order ?? EditorsOrder.SEQUENTIAL).filter(editor => {
+		return this.getEditors(EditorsOrder.SEQUENTIAL).filter(editor => {
 			if (editor.resource && isEqual(editor.resource, canonicalResource)) {
 				return true;
 			}
@@ -1771,18 +1771,12 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 			await this.hostService.focus(getWindow(this.element));
 
 			// Let editor handle confirmation if implemented
-			let handlerDidError = false;
 			if (typeof editor.closeHandler?.confirm === 'function') {
-				try {
-					confirmation = await editor.closeHandler.confirm([{ editor, groupId: this.id }]);
-				} catch (e) {
-					this.logService.error(e);
-					handlerDidError = true;
-				}
+				confirmation = await editor.closeHandler.confirm([{ editor, groupId: this.id }]);
 			}
 
-			// Show a file specific confirmation if there is no handler or it errored
-			if (typeof editor.closeHandler?.confirm !== 'function' || handlerDidError) {
+			// Show a file specific confirmation
+			else {
 				let name: string;
 				if (editor instanceof SideBySideEditorInput) {
 					name = editor.primary.getName(); // prefer shorter names by using primary's name in this case
@@ -1845,11 +1839,7 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 
 	private shouldConfirmClose(editor: EditorInput): boolean {
 		if (editor.closeHandler) {
-			try {
-				return editor.closeHandler.showConfirm(); // custom handling of confirmation on close
-			} catch (error) {
-				this.logService.error(error);
-			}
+			return editor.closeHandler.showConfirm(); // custom handling of confirmation on close
 		}
 
 		return editor.isDirty() && !editor.isSaving(); // editor must be dirty and not saving
@@ -1935,9 +1925,7 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 
 	//#region closeAllEditors()
 
-	closeAllEditors(options: { excludeConfirming: true }): boolean;
-	closeAllEditors(options?: ICloseAllEditorsOptions): Promise<boolean>;
-	closeAllEditors(options?: ICloseAllEditorsOptions): boolean | Promise<boolean> {
+	async closeAllEditors(options?: ICloseAllEditorsOptions): Promise<boolean> {
 		if (this.isEmpty) {
 
 			// If the group is empty and the request is to close all editors, we still close
@@ -1950,21 +1938,22 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 			return true;
 		}
 
-		// We can go ahead and close "sync" when we exclude confirming editors
+		// Apply the `excludeConfirming` filter if present
+		let editors = this.model.getEditors(EditorsOrder.MOST_RECENTLY_ACTIVE, options);
 		if (options?.excludeConfirming) {
-			this.doCloseAllEditors(options);
-			return true;
+			editors = editors.filter(editor => !this.shouldConfirmClose(editor));
 		}
 
-		// Otherwise go through potential confirmation "async"
-		return this.handleCloseConfirmation(this.model.getEditors(EditorsOrder.MOST_RECENTLY_ACTIVE, options)).then(veto => {
-			if (veto) {
-				return false;
-			}
+		// Check for confirmation and veto
+		const veto = await this.handleCloseConfirmation(editors);
+		if (veto) {
+			return false;
+		}
 
-			this.doCloseAllEditors(options);
-			return true;
-		});
+		// Do close
+		this.doCloseAllEditors(options);
+
+		return true;
 	}
 
 	private doCloseAllEditors(options?: ICloseAllEditorsOptions): void {
@@ -2084,15 +2073,16 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 
 	//#region Editor Actions
 
-	createEditorActions(disposables: DisposableStore, menuId = MenuId.EditorTitle): IActiveEditorActions {
+	createEditorActions(disposables: DisposableStore): IActiveEditorActions {
 		let actions: PrimaryAndSecondaryActions = { primary: [], secondary: [] };
-		let onDidChange: Event<IMenuChangeEvent | void> | undefined;
+
+		let onDidChange;
 
 		// Editor actions require the editor control to be there, so we retrieve it via service
 		const activeEditorPane = this.activeEditorPane;
 		if (activeEditorPane instanceof EditorPane) {
 			const editorScopedContextKeyService = activeEditorPane.scopedContextKeyService ?? this.scopedContextKeyService;
-			const editorTitleMenu = disposables.add(this.menuService.createMenu(menuId, editorScopedContextKeyService, { emitEventsForSubmenuChanges: true, eventDebounceDelay: 0 }));
+			const editorTitleMenu = disposables.add(this.menuService.createMenu(MenuId.EditorTitle, editorScopedContextKeyService, { emitEventsForSubmenuChanges: true, eventDebounceDelay: 0 }));
 			onDidChange = editorTitleMenu.onDidChange;
 
 			const shouldInlineGroup = (action: SubmenuAction, group: string) => group === 'navigation' && action.actions.length <= 1;
@@ -2105,9 +2095,9 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 		} else {
 			// If there is no active pane in the group (it's the last group and it's empty)
 			// Trigger the change event when the active editor changes
-			const onDidChangeEmitter = disposables.add(new Emitter<void>());
-			onDidChange = onDidChangeEmitter.event;
-			disposables.add(this.onDidActiveEditorChange(() => onDidChangeEmitter.fire()));
+			const _onDidChange = disposables.add(new Emitter<void>());
+			onDidChange = _onDidChange.event;
+			disposables.add(this.onDidActiveEditorChange(() => _onDidChange.fire()));
 		}
 
 		return { actions, onDidChange };

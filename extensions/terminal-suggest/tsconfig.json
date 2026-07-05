@@ -3,9 +3,11 @@
 	"compilerOptions": {
 		"outDir": "./out",
 		"esModuleInterop": true,
+		"experimentalDecorators": true,
 		"types": [
 			"node"
 		],
+
 		// Needed to suppress warnings in upstream completions
 		"noImplicitReturns": false,
 		"noUnusedParameters": false

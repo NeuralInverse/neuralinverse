@@ -111,15 +111,14 @@ export class Win32UpdateService extends AbstractUpdateService implements IRelaun
 		return createUpdateURL(platform, quality, this.productService);
 	}
 
-	protected doCheckForUpdates(explicit: boolean): void {
+	protected doCheckForUpdates(context: any): void {
 		if (!this.url) {
 			return;
 		}
 
-		const url = explicit ? this.url : `${this.url}?bg=true`;
-		this.setState(State.CheckingForUpdates(explicit));
+		this.setState(State.CheckingForUpdates(context));
 
-		this.requestService.request({ url }, CancellationToken.None)
+		this.requestService.request({ url: this.url }, CancellationToken.None)
 			.then<IUpdate | null>(asJson)
 			.then(update => {
 				const updateType = getUpdateType();
@@ -171,7 +170,7 @@ export class Win32UpdateService extends AbstractUpdateService implements IRelaun
 				this.logService.error(err);
 
 				// only show message when explicitly checking for updates
-				const message: string | undefined = explicit ? (err.message || err) : undefined;
+				const message: string | undefined = !!context ? (err.message || err) : undefined;
 				this.setState(State.Idle(getUpdateType(), message));
 			});
 	}

@@ -27,9 +27,9 @@ import { ScrollbarVisibility, ScrollEvent } from '../../../common/scrollable.js'
 import { ISpliceable } from '../../../common/sequence.js';
 import { isNumber } from '../../../common/types.js';
 import './list.css';
-import { IIdentityProvider, IKeyboardNavigationDelegate, IKeyboardNavigationLabelProvider, IListContextMenuEvent, IListDragAndDrop, IListDragOverReaction, IListEvent, IListGestureEvent, IListMouseEvent, IListElementRenderDetails, IListRenderer, IListTouchEvent, IListVirtualDelegate, ListError } from './list.js';
+import { IIdentityProvider, IKeyboardNavigationDelegate, IKeyboardNavigationLabelProvider, IListContextMenuEvent, IListDragAndDrop, IListDragOverReaction, IListEvent, IListGestureEvent, IListMouseEvent, IListRenderer, IListTouchEvent, IListVirtualDelegate, ListError } from './list.js';
 import { IListView, IListViewAccessibilityProvider, IListViewDragAndDrop, IListViewOptions, IListViewOptionsUpdate, ListViewTargetSector, ListView } from './listView.js';
-import { IMouseWheelEvent, StandardMouseEvent } from '../../mouseEvent.js';
+import { StandardMouseEvent } from '../../mouseEvent.js';
 import { autorun, constObservable, IObservable } from '../../../common/observable.js';
 
 interface ITraitChangeEvent {
@@ -120,7 +120,7 @@ class Trait<T> implements ISpliceable<boolean>, IDisposable {
 	protected sortedIndexes: number[] = [];
 
 	private readonly _onChange = new Emitter<ITraitChangeEvent>();
-	get onChange(): Event<ITraitChangeEvent> { return this._onChange.event; }
+	readonly onChange: Event<ITraitChangeEvent> = this._onChange.event;
 
 	get name(): string { return this._trait; }
 
@@ -672,11 +672,11 @@ const DefaultMultipleSelectionController = {
 export class MouseController<T> implements IDisposable {
 
 	private multipleSelectionController: IMultipleSelectionController<T> | undefined;
-	private readonly mouseSupport: boolean;
+	private mouseSupport: boolean;
 	private readonly disposables = new DisposableStore();
 
-	private readonly _onPointer = this.disposables.add(new Emitter<IListMouseEvent<T>>());
-	get onPointer() { return this._onPointer.event; }
+	private _onPointer = new Emitter<IListMouseEvent<T>>();
+	readonly onPointer: Event<IListMouseEvent<T>> = this._onPointer.event;
 
 	constructor(protected list: List<T>) {
 		if (list.options.multipleSelectionSupport !== false) {
@@ -856,7 +856,7 @@ export interface IStyleController {
 
 export interface IListAccessibilityProvider<T> extends IListViewAccessibilityProvider<T> {
 	getAriaLabel(element: T): string | IObservable<string> | null;
-	getWidgetAriaLabel(): string | IObservable<string>;
+	getWidgetAriaLabel(): string;
 	getWidgetRole?(): AriaRole;
 	getAriaLevel?(element: T): number | undefined;
 	onDidChangeActiveDescendant?: Event<void>;
@@ -1241,25 +1241,25 @@ class PipelineRenderer<T> implements IListRenderer<T, any> {
 		return this.renderers.map(r => r.renderTemplate(container));
 	}
 
-	renderElement(element: T, index: number, templateData: any[], renderDetails?: IListElementRenderDetails): void {
+	renderElement(element: T, index: number, templateData: any[], height: number | undefined): void {
 		let i = 0;
 
 		for (const renderer of this.renderers) {
-			renderer.renderElement(element, index, templateData[i++], renderDetails);
+			renderer.renderElement(element, index, templateData[i++], height);
 		}
 	}
 
-	disposeElement(element: T, index: number, templateData: any[], renderDetails?: IListElementRenderDetails): void {
+	disposeElement(element: T, index: number, templateData: any[], height: number | undefined): void {
 		let i = 0;
 
 		for (const renderer of this.renderers) {
-			renderer.disposeElement?.(element, index, templateData[i], renderDetails);
+			renderer.disposeElement?.(element, index, templateData[i], height);
 
 			i += 1;
 		}
 	}
 
-	disposeTemplate(templateData: unknown[]): void {
+	disposeTemplate(templateData: any[]): void {
 		let i = 0;
 
 		for (const renderer of this.renderers) {
@@ -1303,11 +1303,11 @@ class AccessibiltyRenderer<T> implements IListRenderer<T, IAccessibilityTemplate
 		}
 	}
 
-	disposeElement(element: T, index: number, templateData: IAccessibilityTemplateData): void {
+	disposeElement(element: T, index: number, templateData: IAccessibilityTemplateData, height: number | undefined): void {
 		templateData.disposables.clear();
 	}
 
-	disposeTemplate(templateData: IAccessibilityTemplateData): void {
+	disposeTemplate(templateData: any): void {
 		templateData.disposables.dispose();
 	}
 }
@@ -1530,12 +1530,7 @@ export class List<T> implements ISpliceable<T>, IDisposable {
 		this.onDidChangeSelection(this._onSelectionChange, this, this.disposables);
 
 		if (this.accessibilityProvider) {
-			const ariaLabel = this.accessibilityProvider.getWidgetAriaLabel();
-			const observable = (ariaLabel && typeof ariaLabel !== 'string') ? ariaLabel : constObservable(ariaLabel);
-
-			this.disposables.add(autorun(reader => {
-				this.ariaLabel = reader.readObservable(observable);
-			}));
+			this.ariaLabel = this.accessibilityProvider.getWidgetAriaLabel();
 		}
 
 		if (this._options.multipleSelectionSupport !== false) {
@@ -1969,10 +1964,6 @@ export class List<T> implements ISpliceable<T>, IDisposable {
 
 	style(styles: IListStyles): void {
 		this.styleController.style(styles);
-	}
-
-	delegateScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent) {
-		this.view.delegateScrollFromMouseWheelEvent(browserEvent);
 	}
 
 	private toListEvent({ indexes, browserEvent }: ITraitChangeEvent) {

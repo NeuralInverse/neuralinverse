@@ -148,7 +148,6 @@ export class SimpleCommentEditor extends CodeEditorWidget {
 			accessibilitySupport: configurationService.getValue<'auto' | 'off' | 'on'>('editor.accessibilitySupport'),
 			fontFamily: configurationService.getValue('editor.fontFamily'),
 			fontSize: configurationService.getValue('editor.fontSize'),
-			allowVariableLineHeights: false
 		};
 	}
 }

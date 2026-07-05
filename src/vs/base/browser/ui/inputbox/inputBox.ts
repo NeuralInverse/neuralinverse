@@ -8,6 +8,7 @@ import * as cssJs from '../../cssValue.js';
 import { DomEmitter } from '../../event.js';
 import { renderFormattedText, renderText } from '../../formattedTextRenderer.js';
 import { IHistoryNavigationWidget } from '../../history.js';
+import { MarkdownRenderOptions } from '../../markdownRenderer.js';
 import { ActionBar } from '../actionbar/actionbar.js';
 import * as aria from '../aria/aria.js';
 import { AnchorAlignment, IContextViewProvider } from '../contextview/contextview.js';
@@ -117,10 +118,10 @@ export class InputBox extends Widget {
 	private readonly hover: MutableDisposable<IDisposable> = this._register(new MutableDisposable());
 
 	private _onDidChange = this._register(new Emitter<string>());
-	public get onDidChange(): Event<string> { return this._onDidChange.event; }
+	public readonly onDidChange: Event<string> = this._onDidChange.event;
 
 	private _onDidHeightChange = this._register(new Emitter<number>());
-	public get onDidHeightChange(): Event<number> { return this._onDidHeightChange.event; }
+	public readonly onDidHeightChange: Event<number> = this._onDidHeightChange.event;
 
 	constructor(container: HTMLElement, contextViewProvider: IContextViewProvider | undefined, options: IInputOptions) {
 		super();
@@ -484,14 +485,14 @@ export class InputBox extends Widget {
 				div = dom.append(container, $('.monaco-inputbox-container'));
 				layout();
 
+				const renderOptions: MarkdownRenderOptions = {
+					inline: true,
+					className: 'monaco-inputbox-message'
+				};
 
-				const spanElement = $('span.monaco-inputbox-message');
-				if (this.message.formatContent) {
-					renderFormattedText(this.message.content!, undefined, spanElement);
-				} else {
-					renderText(this.message.content!, undefined, spanElement);
-				}
-
+				const spanElement = (this.message.formatContent
+					? renderFormattedText(this.message.content!, renderOptions)
+					: renderText(this.message.content!, renderOptions));
 				spanElement.classList.add(this.classForType(this.message.type));
 
 				const styles = this.stylesForType(this.message.type);

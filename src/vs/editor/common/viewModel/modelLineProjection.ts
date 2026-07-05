@@ -9,8 +9,7 @@ import { IRange } from '../core/range.js';
 import { EndOfLinePreference, ITextModel, PositionAffinity } from '../model.js';
 import { LineInjectedText } from '../textModelEvents.js';
 import { InjectedText, ModelLineProjectionData } from '../modelLineProjectionData.js';
-import { ViewLineData } from '../viewModel.js';
-import { SingleLineInlineDecoration } from './inlineDecorations.js';
+import { SingleLineInlineDecoration, ViewLineData } from '../viewModel.js';
 
 export interface IModelLineProjection {
 	isVisible(): boolean;

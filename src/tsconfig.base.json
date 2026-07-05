@@ -7,16 +7,15 @@
 		"noImplicitReturns": true,
 		"noImplicitOverride": true,
 		"noUnusedLocals": true,
-		"noUncheckedSideEffectImports": true,
 		"allowUnreachableCode": false,
 		"strict": true,
 		"exactOptionalPropertyTypes": false,
 		"useUnknownInCatchVariables": false,
 		"forceConsistentCasingInFileNames": true,
-		"target": "ES2024",
+		"target": "es2022",
 		"useDefineForClassFields": false,
 		"lib": [
-			"ES2024",
+			"ES2022",
 			"DOM",
 			"DOM.Iterable",
 			"WebWorker.ImportScripts"

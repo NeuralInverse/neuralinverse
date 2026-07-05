@@ -244,7 +244,7 @@ const apiTestSerializer: vscode.NotebookSerializer = {
 		// no kernel -> no default language
 		assert.strictEqual(getFocusedCell(editor)?.document.languageId, 'typescript');
 
-		await vscode.window.showNotebookDocument(await vscode.workspace.openNotebookDocument(notebook.uri));
+		await vscode.commands.executeCommand('vscode.openWith', notebook.uri, 'default');
 		assert.strictEqual(vscode.window.activeTextEditor?.document.uri.path, notebook.uri.path);
 	});
 

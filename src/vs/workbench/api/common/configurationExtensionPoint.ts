@@ -271,11 +271,6 @@ configurationExtPoint.setHandler((extensions, { added, removed }) => {
 				if (extensionConfigurationPolicy?.[key]) {
 					propertyConfiguration.policy = extensionConfigurationPolicy?.[key];
 				}
-				if (propertyConfiguration.tags?.some(tag => tag.toLowerCase() === 'onexp')) {
-					propertyConfiguration.experiment = {
-						mode: 'startup'
-					};
-				}
 				seenProperties.add(key);
 				propertyConfiguration.scope = propertyConfiguration.scope ? parseScope(propertyConfiguration.scope.toString()) : ConfigurationScope.WINDOW;
 			}
@@ -383,8 +378,8 @@ jsonRegistry.registerSchema('vscode://schemas/workspaceConfig', {
 				inputs: [],
 				servers: {
 					'mcp-server-time': {
-						command: 'uvx',
-						args: ['mcp_server_time', '--local-timezone=America/Los_Angeles']
+						command: 'python',
+						args: ['-m', 'mcp_server_time', '--local-timezone=America/Los_Angeles']
 					}
 				}
 			},

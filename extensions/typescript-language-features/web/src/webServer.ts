@@ -41,12 +41,6 @@ async function initializeSession(
 		removeEventListener('message', listener);
 	});
 	setSys(sys);
-
-	const localeStr = findArgument(args, '--locale');
-	if (localeStr) {
-		ts.validateLocaleAndSetLanguage(localeStr, sys);
-	}
-
 	startWorkerSession(ts, sys, fs, sessionOptions, ports.tsserver, pathMapper, logger);
 }
 

@@ -56,31 +56,31 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 
 	static readonly ID = 'mergeEditor';
 
-	private readonly _sessionDisposables;
-	private readonly _viewModel;
+	private readonly _sessionDisposables = new DisposableStore();
+	private readonly _viewModel = observableValue<MergeEditorViewModel | undefined>(this, undefined);
 
 	public get viewModel(): IObservable<MergeEditorViewModel | undefined> {
 		return this._viewModel;
 	}
 
 	private rootHtmlElement: HTMLElement | undefined;
-	private readonly _grid;
-	private readonly input1View;
-	private readonly baseView;
-	private readonly baseViewOptions;
-	private readonly input2View;
+	private readonly _grid = this._register(new MutableDisposable<Grid<IView>>());
+	private readonly input1View = this._register(this.instantiationService.createInstance(InputCodeEditorView, 1, this._viewModel));
+	private readonly baseView = observableValue<BaseCodeEditorView | undefined>(this, undefined);
+	private readonly baseViewOptions = observableValue<Readonly<ICodeEditorOptions> | undefined>(this, undefined);
+	private readonly input2View = this._register(this.instantiationService.createInstance(InputCodeEditorView, 2, this._viewModel));
 
-	private readonly inputResultView;
-	private readonly _layoutMode;
-	private readonly _layoutModeObs;
-	private readonly _ctxIsMergeEditor: IContextKey<boolean>;
-	private readonly _ctxUsesColumnLayout: IContextKey<string>;
-	private readonly _ctxShowBase: IContextKey<boolean>;
-	private readonly _ctxShowBaseAtTop;
-	private readonly _ctxResultUri: IContextKey<string>;
-	private readonly _ctxBaseUri: IContextKey<string>;
-	private readonly _ctxShowNonConflictingChanges: IContextKey<boolean>;
-	private readonly _inputModel;
+	private readonly inputResultView = this._register(this.instantiationService.createInstance(ResultCodeEditorView, this._viewModel));
+	private readonly _layoutMode = this.instantiationService.createInstance(MergeEditorLayoutStore);
+	private readonly _layoutModeObs = observableValue(this, this._layoutMode.value);
+	private readonly _ctxIsMergeEditor: IContextKey<boolean> = ctxIsMergeEditor.bindTo(this.contextKeyService);
+	private readonly _ctxUsesColumnLayout: IContextKey<string> = ctxMergeEditorLayout.bindTo(this.contextKeyService);
+	private readonly _ctxShowBase: IContextKey<boolean> = ctxMergeEditorShowBase.bindTo(this.contextKeyService);
+	private readonly _ctxShowBaseAtTop = ctxMergeEditorShowBaseAtTop.bindTo(this.contextKeyService);
+	private readonly _ctxResultUri: IContextKey<string> = ctxMergeResultUri.bindTo(this.contextKeyService);
+	private readonly _ctxBaseUri: IContextKey<string> = ctxMergeBaseUri.bindTo(this.contextKeyService);
+	private readonly _ctxShowNonConflictingChanges: IContextKey<boolean> = ctxMergeEditorShowNonConflictingChanges.bindTo(this.contextKeyService);
+	private readonly _inputModel = observableValue<IMergeEditorInputModel | undefined>(this, undefined);
 	public get inputModel(): IObservable<IMergeEditorInputModel | undefined> {
 		return this._inputModel;
 	}
@@ -88,9 +88,13 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		return this.inputModel.get()?.model;
 	}
 
-	private readonly viewZoneComputer;
+	private readonly viewZoneComputer = new ViewZoneComputer(
+		this.input1View.editor,
+		this.input2View.editor,
+		this.inputResultView.editor,
+	);
 
-	private readonly scrollSynchronizer;
+	private readonly scrollSynchronizer = this._register(new ScrollSynchronizer(this._viewModel, this.input1View, this.input2View, this.baseView, this.inputResultView, this._layoutModeObs));
 
 	constructor(
 		group: IEditorGroup,
@@ -106,35 +110,6 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		@ICodeEditorService private readonly _codeEditorService: ICodeEditorService
 	) {
 		super(MergeEditor.ID, group, telemetryService, instantiation, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
-		this._sessionDisposables = new DisposableStore();
-		this._viewModel = observableValue<MergeEditorViewModel | undefined>(this, undefined);
-		this._grid = this._register(new MutableDisposable<Grid<IView>>());
-		this.input1View = this._register(this.instantiationService.createInstance(InputCodeEditorView, 1, this._viewModel));
-		this.baseView = observableValue<BaseCodeEditorView | undefined>(this, undefined);
-		this.baseViewOptions = observableValue<Readonly<ICodeEditorOptions> | undefined>(this, undefined);
-		this.input2View = this._register(this.instantiationService.createInstance(InputCodeEditorView, 2, this._viewModel));
-		this.inputResultView = this._register(this.instantiationService.createInstance(ResultCodeEditorView, this._viewModel));
-		this._layoutMode = this.instantiationService.createInstance(MergeEditorLayoutStore);
-		this._layoutModeObs = observableValue(this, this._layoutMode.value);
-		this._ctxIsMergeEditor = ctxIsMergeEditor.bindTo(this.contextKeyService);
-		this._ctxUsesColumnLayout = ctxMergeEditorLayout.bindTo(this.contextKeyService);
-		this._ctxShowBase = ctxMergeEditorShowBase.bindTo(this.contextKeyService);
-		this._ctxShowBaseAtTop = ctxMergeEditorShowBaseAtTop.bindTo(this.contextKeyService);
-		this._ctxResultUri = ctxMergeResultUri.bindTo(this.contextKeyService);
-		this._ctxBaseUri = ctxMergeBaseUri.bindTo(this.contextKeyService);
-		this._ctxShowNonConflictingChanges = ctxMergeEditorShowNonConflictingChanges.bindTo(this.contextKeyService);
-		this._inputModel = observableValue<IMergeEditorInputModel | undefined>(this, undefined);
-		this.viewZoneComputer = new ViewZoneComputer(
-			this.input1View.editor,
-			this.input2View.editor,
-			this.inputResultView.editor,
-		);
-		this.scrollSynchronizer = this._register(new ScrollSynchronizer(this._viewModel, this.input1View, this.input2View, this.baseView, this.inputResultView, this._layoutModeObs));
-		this._onDidChangeSizeConstraints = new Emitter<void>();
-		this.onDidChangeSizeConstraints = this._onDidChangeSizeConstraints.event;
-		this.baseViewDisposables = this._register(new DisposableStore());
-		this.showNonConflictingChangesStore = this.instantiationService.createInstance(PersistentStore<boolean>, 'mergeEditor/showNonConflictingChanges');
-		this.showNonConflictingChanges = observableValue(this, this.showNonConflictingChangesStore.get() ?? false);
 	}
 
 	override dispose(): void {
@@ -147,8 +122,8 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 
 	// #region layout constraints
 
-	private readonly _onDidChangeSizeConstraints;
-	override readonly onDidChangeSizeConstraints: Event<void>;
+	private readonly _onDidChangeSizeConstraints = new Emitter<void>();
+	override readonly onDidChangeSizeConstraints: Event<void> = this._onDidChangeSizeConstraints.event;
 
 	override get minimumWidth() {
 		return this._layoutMode.value.kind === 'mixed'
@@ -243,18 +218,6 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		});
 		this._sessionDisposables.add(viewModel);
 
-		// Track focus changes to update the editor name
-		this._sessionDisposables.add(autorun(reader => {
-			/** @description Update focused editor name based on focus */
-			const focusedType = viewModel.focusedEditorType.read(reader);
-
-			if (!(input instanceof MergeEditorInput)) {
-				return;
-			}
-
-			input.updateFocusedEditor(focusedType || 'result');
-		}));
-
 		// Set/unset context keys based on input
 		this._ctxResultUri.set(inputModel.resultUri.toString());
 		this._ctxBaseUri.set(model.base.uri.toString());
@@ -263,18 +226,11 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 			this._ctxResultUri.reset();
 		}));
 
-		const viewZoneRegistrationStore = new DisposableStore();
-		this._sessionDisposables.add(viewZoneRegistrationStore);
 		// Set the view zones before restoring view state!
 		// Otherwise scrolling will be off
-		this._sessionDisposables.add(autorunWithStore((reader) => {
+		this._sessionDisposables.add(autorunWithStore((reader, store) => {
 			/** @description update alignment view zones */
 			const baseView = this.baseView.read(reader);
-
-			const resultScrollTop = this.inputResultView.editor.getScrollTop();
-			this.scrollSynchronizer.stopSync();
-
-			viewZoneRegistrationStore.clear();
 
 			this.inputResultView.editor.changeViewZones(resultViewZoneAccessor => {
 				const layout = this._layoutModeObs.read(reader);
@@ -285,7 +241,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 					this.input2View.editor.changeViewZones(input2ViewZoneAccessor => {
 						if (baseView) {
 							baseView.editor.changeViewZones(baseViewZoneAccessor => {
-								viewZoneRegistrationStore.add(this.setViewZones(reader,
+								store.add(this.setViewZones(reader,
 									viewModel,
 									this.input1View.editor,
 									input1ViewZoneAccessor,
@@ -300,7 +256,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 								));
 							});
 						} else {
-							viewZoneRegistrationStore.add(this.setViewZones(reader,
+							store.add(this.setViewZones(reader,
 								viewModel,
 								this.input1View.editor,
 								input1ViewZoneAccessor,
@@ -318,9 +274,6 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 				});
 			});
 
-			this.inputResultView.editor.setScrollTop(resultScrollTop, ScrollType.Smooth);
-
-			this.scrollSynchronizer.startSync();
 			this.scrollSynchronizer.updateScrolling();
 		}));
 
@@ -577,7 +530,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		this.applyLayout(newLayout);
 	}
 
-	private readonly baseViewDisposables;
+	private readonly baseViewDisposables = this._register(new DisposableStore());
 
 	private applyLayout(layout: IMergeEditorLayout): void {
 		transaction(tx => {
@@ -704,8 +657,8 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		return input instanceof MergeEditorInput;
 	}
 
-	private readonly showNonConflictingChangesStore;
-	private readonly showNonConflictingChanges;
+	private readonly showNonConflictingChangesStore = this.instantiationService.createInstance(PersistentStore<boolean>, 'mergeEditor/showNonConflictingChanges');
+	private readonly showNonConflictingChanges = observableValue(this, this.showNonConflictingChangesStore.get() ?? false);
 
 	public toggleShowNonConflictingChanges(): void {
 		this.showNonConflictingChanges.set(!this.showNonConflictingChanges.get(), undefined);

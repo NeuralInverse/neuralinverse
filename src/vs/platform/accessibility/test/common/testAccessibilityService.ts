@@ -14,7 +14,7 @@ export class TestAccessibilityService implements IAccessibilityService {
 	onDidChangeReducedMotion = Event.None;
 
 	isScreenReaderOptimized(): boolean { return false; }
-	isMotionReduced(): boolean { return true; }
+	isMotionReduced(): boolean { return false; }
 	alwaysUnderlineAccessKeys(): Promise<boolean> { return Promise.resolve(false); }
 	setAccessibilitySupport(accessibilitySupport: AccessibilitySupport): void { }
 	getAccessibilitySupport(): AccessibilitySupport { return AccessibilitySupport.Unknown; }

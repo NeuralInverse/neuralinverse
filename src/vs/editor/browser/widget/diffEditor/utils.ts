@@ -14,7 +14,7 @@ import { Position } from '../../../common/core/position.js';
 import { Range } from '../../../common/core/range.js';
 import { DetailedLineRangeMapping } from '../../../common/diff/rangeMapping.js';
 import { IModelDeltaDecoration } from '../../../common/model.js';
-import { TextLength } from '../../../common/core/text/textLength.js';
+import { TextLength } from '../../../common/core/textLength.js';
 
 export function joinCombine<T>(arr1: readonly T[], arr2: readonly T[], keySelector: (val: T) => number, combine: (v1: T, v2: T) => T): readonly T[] {
 	if (arr1.length === 0) {
@@ -137,14 +137,12 @@ export function animatedObservable(targetWindow: Window, base: IObservableWithCh
 	let animationFrame: number | undefined = undefined;
 
 	store.add(autorunHandleChanges({
-		changeTracker: {
-			createChangeSummary: () => ({ animate: false }),
-			handleChange: (ctx, s) => {
-				if (ctx.didChange(base)) {
-					s.animate = s.animate || ctx.change;
-				}
-				return true;
+		createEmptyChangeSummary: () => ({ animate: false }),
+		handleChange: (ctx, s) => {
+			if (ctx.didChange(base)) {
+				s.animate = s.animate || ctx.change;
 			}
+			return true;
 		}
 	}, (reader, s) => {
 		/** @description update value */
@@ -221,42 +219,33 @@ export interface IObservableViewZone extends IViewZone {
 }
 
 export class PlaceholderViewZone implements IObservableViewZone {
-	public readonly domNode;
+	public readonly domNode = document.createElement('div');
 
-	private readonly _actualTop;
-	private readonly _actualHeight;
+	private readonly _actualTop = observableValue<number | undefined>(this, undefined);
+	private readonly _actualHeight = observableValue<number | undefined>(this, undefined);
 
-	public readonly actualTop: IObservable<number | undefined>;
-	public readonly actualHeight: IObservable<number | undefined>;
+	public readonly actualTop: IObservable<number | undefined> = this._actualTop;
+	public readonly actualHeight: IObservable<number | undefined> = this._actualHeight;
 
-	public readonly showInHiddenAreas;
+	public readonly showInHiddenAreas = true;
 
 	public get afterLineNumber(): number { return this._afterLineNumber.get(); }
 
-	public readonly onChange?: IObservable<unknown>;
+	public readonly onChange?: IObservable<unknown> = this._afterLineNumber;
 
 	constructor(
 		private readonly _afterLineNumber: IObservable<number>,
 		public readonly heightInPx: number,
 	) {
-		this.domNode = document.createElement('div');
-		this._actualTop = observableValue<number | undefined>(this, undefined);
-		this._actualHeight = observableValue<number | undefined>(this, undefined);
-		this.actualTop = this._actualTop;
-		this.actualHeight = this._actualHeight;
-		this.showInHiddenAreas = true;
-		this.onChange = this._afterLineNumber;
-		this.onDomNodeTop = (top: number) => {
-			this._actualTop.set(top, undefined);
-		};
-		this.onComputedHeight = (height: number) => {
-			this._actualHeight.set(height, undefined);
-		};
 	}
 
-	onDomNodeTop;
+	onDomNodeTop = (top: number) => {
+		this._actualTop.set(top, undefined);
+	};
 
-	onComputedHeight;
+	onComputedHeight = (height: number) => {
+		this._actualHeight.set(height, undefined);
+	};
 }
 
 
@@ -339,16 +328,14 @@ export function applyViewZones(editor: ICodeEditor, viewZones: IObservable<IObse
 
 		// Layout zone on change
 		store.add(autorunHandleChanges({
-			changeTracker: {
-				createChangeSummary() {
-					return { zoneIds: [] as string[] };
-				},
-				handleChange(context, changeSummary) {
-					const id = viewZoneIdPerOnChangeObservable.get(context.changedObservable);
-					if (id !== undefined) { changeSummary.zoneIds.push(id); }
-					return true;
-				},
-			}
+			createEmptyChangeSummary() {
+				return { zoneIds: [] as string[] };
+			},
+			handleChange(context, changeSummary) {
+				const id = viewZoneIdPerOnChangeObservable.get(context.changedObservable);
+				if (id !== undefined) { changeSummary.zoneIds.push(id); }
+				return true;
+			},
 		}, (reader, changeSummary) => {
 			/** @description layoutZone on change */
 			for (const vz of curViewZones) {

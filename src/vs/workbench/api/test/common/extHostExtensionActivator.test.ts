@@ -13,7 +13,6 @@ import { NullLogService } from '../../../../platform/log/common/log.js';
 import { ActivatedExtension, EmptyExtension, ExtensionActivationTimes, ExtensionsActivator, IExtensionsActivatorHost } from '../../common/extHostExtensionActivator.js';
 import { ExtensionDescriptionRegistry, IActivationEventsReader } from '../../../services/extensions/common/extensionDescriptionRegistry.js';
 import { ExtensionActivationReason, MissingExtensionDependency } from '../../../services/extensions/common/extensions.js';
-import { DisposableStore } from '../../../../base/common/lifecycle.js';
 
 suite('ExtensionsActivator', () => {
 
@@ -24,30 +23,26 @@ suite('ExtensionsActivator', () => {
 	const idC = new ExtensionIdentifier(`c`);
 
 	test('calls activate only once with sequential activations', async () => {
-		const disposables = new DisposableStore();
 		const host = new SimpleExtensionsActivatorHost();
 		const activator = createActivator(host, [
 			desc(idA)
-		], [], disposables);
+		]);
 
 		await activator.activateByEvent('*', false);
 		assert.deepStrictEqual(host.activateCalls, [idA]);
 
 		await activator.activateByEvent('*', false);
 		assert.deepStrictEqual(host.activateCalls, [idA]);
-
-		disposables.dispose();
 	});
 
 	test('calls activate only once with parallel activations', async () => {
-		const disposables = new DisposableStore();
 		const extActivation = new ExtensionActivationPromiseSource();
 		const host = new PromiseExtensionsActivatorHost([
 			[idA, extActivation]
 		]);
 		const activator = createActivator(host, [
 			desc(idA, [], ['evt1', 'evt2'])
-		], [], disposables);
+		]);
 
 		const activate1 = activator.activateByEvent('evt1', false);
 		const activate2 = activator.activateByEvent('evt2', false);
@@ -58,12 +53,9 @@ suite('ExtensionsActivator', () => {
 		await activate2;
 
 		assert.deepStrictEqual(host.activateCalls, [idA]);
-
-		disposables.dispose();
 	});
 
 	test('activates dependencies first', async () => {
-		const disposables = new DisposableStore();
 		const extActivationA = new ExtensionActivationPromiseSource();
 		const extActivationB = new ExtensionActivationPromiseSource();
 		const host = new PromiseExtensionsActivatorHost([
@@ -73,7 +65,7 @@ suite('ExtensionsActivator', () => {
 		const activator = createActivator(host, [
 			desc(idA, [idB], ['evt1']),
 			desc(idB, [], ['evt1']),
-		], [], disposables);
+		]);
 
 		const activate = activator.activateByEvent('evt1', false);
 
@@ -89,28 +81,22 @@ suite('ExtensionsActivator', () => {
 		await activate;
 
 		assert.deepStrictEqual(host.activateCalls, [idB, idA]);
-
-		disposables.dispose();
 	});
 
 	test('Supports having resolved extensions', async () => {
-		const disposables = new DisposableStore();
 		const host = new SimpleExtensionsActivatorHost();
 		const bExt = desc(idB);
 		delete (<Mutable<IExtensionDescription>>bExt).main;
 		delete (<Mutable<IExtensionDescription>>bExt).browser;
 		const activator = createActivator(host, [
 			desc(idA, [idB])
-		], [bExt], disposables);
+		], [bExt]);
 
 		await activator.activateByEvent('*', false);
 		assert.deepStrictEqual(host.activateCalls, [idA]);
-
-		disposables.dispose();
 	});
 
 	test('Supports having external extensions', async () => {
-		const disposables = new DisposableStore();
 		const extActivationA = new ExtensionActivationPromiseSource();
 		const extActivationB = new ExtensionActivationPromiseSource();
 		const host = new PromiseExtensionsActivatorHost([
@@ -121,7 +107,7 @@ suite('ExtensionsActivator', () => {
 		(<Mutable<IExtensionDescription>>bExt).api = 'none';
 		const activator = createActivator(host, [
 			desc(idA, [idB])
-		], [bExt], disposables);
+		], [bExt]);
 
 		const activate = activator.activateByEvent('*', false);
 
@@ -135,17 +121,14 @@ suite('ExtensionsActivator', () => {
 
 		await activate;
 		assert.deepStrictEqual(host.activateCalls, [idB, idA]);
-
-		disposables.dispose();
 	});
 
 	test('Error: activateById with missing extension', async () => {
-		const disposables = new DisposableStore();
 		const host = new SimpleExtensionsActivatorHost();
 		const activator = createActivator(host, [
 			desc(idA),
 			desc(idB),
-		], [], disposables);
+		]);
 
 		let error: Error | undefined = undefined;
 		try {
@@ -155,27 +138,21 @@ suite('ExtensionsActivator', () => {
 		}
 
 		assert.strictEqual(typeof error === 'undefined', false);
-
-		disposables.dispose();
 	});
 
 	test('Error: dependency missing', async () => {
-		const disposables = new DisposableStore();
 		const host = new SimpleExtensionsActivatorHost();
 		const activator = createActivator(host, [
 			desc(idA, [idB]),
-		], [], disposables);
+		]);
 
 		await activator.activateByEvent('*', false);
 
 		assert.deepStrictEqual(host.errors.length, 1);
 		assert.deepStrictEqual(host.errors[0][0], idA);
-
-		disposables.dispose();
 	});
 
 	test('Error: dependency activation failed', async () => {
-		const disposables = new DisposableStore();
 		const extActivationA = new ExtensionActivationPromiseSource();
 		const extActivationB = new ExtensionActivationPromiseSource();
 		const host = new PromiseExtensionsActivatorHost([
@@ -185,7 +162,7 @@ suite('ExtensionsActivator', () => {
 		const activator = createActivator(host, [
 			desc(idA, [idB]),
 			desc(idB)
-		], [], disposables);
+		]);
 
 		const activate = activator.activateByEvent('*', false);
 		extActivationB.reject(new Error(`b fails!`));
@@ -194,12 +171,9 @@ suite('ExtensionsActivator', () => {
 		assert.deepStrictEqual(host.errors.length, 2);
 		assert.deepStrictEqual(host.errors[0][0], idB);
 		assert.deepStrictEqual(host.errors[1][0], idA);
-
-		disposables.dispose();
 	});
 
 	test('issue #144518: Problem with git extension and vscode-icons', async () => {
-		const disposables = new DisposableStore();
 		const extActivationA = new ExtensionActivationPromiseSource();
 		const extActivationB = new ExtensionActivationPromiseSource();
 		const extActivationC = new ExtensionActivationPromiseSource();
@@ -212,7 +186,7 @@ suite('ExtensionsActivator', () => {
 			desc(idA, [idB]),
 			desc(idB),
 			desc(idC),
-		], [], disposables);
+		]);
 
 		activator.activateByEvent('*', false);
 		assert.deepStrictEqual(host.activateCalls, [idB, idC]);
@@ -222,8 +196,6 @@ suite('ExtensionsActivator', () => {
 
 		assert.deepStrictEqual(host.activateCalls, [idB, idC, idA]);
 		extActivationA.resolve();
-
-		disposables.dispose();
 	});
 
 	class SimpleExtensionsActivatorHost implements IExtensionsActivatorHost {
@@ -283,10 +255,10 @@ suite('ExtensionsActivator', () => {
 		}
 	};
 
-	function createActivator(host: IExtensionsActivatorHost, extensionDescriptions: IExtensionDescription[], otherHostExtensionDescriptions: IExtensionDescription[] = [], disposables: DisposableStore): ExtensionsActivator {
-		const registry = disposables.add(new ExtensionDescriptionRegistry(basicActivationEventsReader, extensionDescriptions));
-		const globalRegistry = disposables.add(new ExtensionDescriptionRegistry(basicActivationEventsReader, extensionDescriptions.concat(otherHostExtensionDescriptions)));
-		return disposables.add(new ExtensionsActivator(registry, globalRegistry, host, new NullLogService()));
+	function createActivator(host: IExtensionsActivatorHost, extensionDescriptions: IExtensionDescription[], otherHostExtensionDescriptions: IExtensionDescription[] = []): ExtensionsActivator {
+		const registry = new ExtensionDescriptionRegistry(basicActivationEventsReader, extensionDescriptions);
+		const globalRegistry = new ExtensionDescriptionRegistry(basicActivationEventsReader, extensionDescriptions.concat(otherHostExtensionDescriptions));
+		return new ExtensionsActivator(registry, globalRegistry, host, new NullLogService());
 	}
 
 	function desc(id: ExtensionIdentifier, deps: ExtensionIdentifier[] = [], activationEvents: string[] = ['*']): IExtensionDescription {

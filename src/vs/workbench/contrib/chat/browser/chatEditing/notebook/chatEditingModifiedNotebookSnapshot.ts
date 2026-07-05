@@ -57,9 +57,8 @@ export class SnapshotComparer {
 	private readonly data: NotebookData;
 	private readonly transientOptions: TransientOptions | undefined;
 	constructor(initialCotent: string) {
-		const { transientOptions, data } = deserializeSnapshot(initialCotent);
-		this.transientOptions = transientOptions;
-		this.data = data;
+		this.transientOptions = deserializeSnapshot(initialCotent).transientOptions;
+		this.data = deserializeSnapshot(initialCotent).data;
 	}
 
 	isEqual(notebook: NotebookData | NotebookTextModel): boolean {

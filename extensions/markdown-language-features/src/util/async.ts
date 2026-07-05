@@ -39,7 +39,7 @@ export class Delayer<T> {
 			}).then(() => {
 				this._cancelTimeout = null;
 				this._onSuccess = null;
-				const result = this._task?.() ?? null;
+				const result = this._task && this._task?.();
 				this._task = null;
 				return result;
 			});

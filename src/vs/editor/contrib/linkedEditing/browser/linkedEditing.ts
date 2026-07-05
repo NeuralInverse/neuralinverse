@@ -300,15 +300,8 @@ export class LinkedEditingContribution extends Disposable implements IEditorCont
 			}
 		}
 
-		if (!this._currentRequestPosition?.equals(position)) {
-			// Get the current range of the first decoration (reference range)
-			const currentRange = this._currentDecorations.getRange(0);
-			// If there is no current range or the current range does not contain the new position, clear the ranges
-			if (!currentRange?.containsPosition(position)) {
-				// Clear existing decorations while we compute new ones
-				this.clearRanges();
-			}
-		}
+		// Clear existing decorations while we compute new ones
+		this.clearRanges();
 
 		this._currentRequestPosition = position;
 		this._currentRequestModelVersion = modelVersionId;

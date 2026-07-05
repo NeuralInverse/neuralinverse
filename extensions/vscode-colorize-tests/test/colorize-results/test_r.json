@@ -463,7 +463,7 @@
 	},
 	{
 		"c": "(",
-		"t": "source.r meta.function.r punctuation.definition.parameters.begin.r",
+		"t": "source.r punctuation.section.parens.begin.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -476,22 +476,8 @@
 		}
 	},
 	{
-		"c": "x",
-		"t": "source.r meta.function.r meta.function.parameters.r variable.parameter.function.language.r",
-		"r": {
-			"dark_plus": "variable: #9CDCFE",
-			"light_plus": "variable: #001080",
-			"dark_vs": "default: #D4D4D4",
-			"light_vs": "default: #000000",
-			"hc_black": "variable: #9CDCFE",
-			"dark_modern": "variable: #9CDCFE",
-			"hc_light": "variable: #001080",
-			"light_modern": "variable: #001080"
-		}
-	},
-	{
-		"c": ",",
-		"t": "source.r meta.function.r meta.function.parameters.r punctuation.separator.parameters.r",
+		"c": "x, y",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -501,39 +487,11 @@
 			"dark_modern": "default: #CCCCCC",
 			"hc_light": "default: #292929",
 			"light_modern": "default: #3B3B3B"
-		}
-	},
-	{
-		"c": " ",
-		"t": "source.r meta.function.r meta.function.parameters.r",
-		"r": {
-			"dark_plus": "default: #D4D4D4",
-			"light_plus": "default: #000000",
-			"dark_vs": "default: #D4D4D4",
-			"light_vs": "default: #000000",
-			"hc_black": "default: #FFFFFF",
-			"dark_modern": "default: #CCCCCC",
-			"hc_light": "default: #292929",
-			"light_modern": "default: #3B3B3B"
-		}
-	},
-	{
-		"c": "y",
-		"t": "source.r meta.function.r meta.function.parameters.r variable.parameter.function.language.r",
-		"r": {
-			"dark_plus": "variable: #9CDCFE",
-			"light_plus": "variable: #001080",
-			"dark_vs": "default: #D4D4D4",
-			"light_vs": "default: #000000",
-			"hc_black": "variable: #9CDCFE",
-			"dark_modern": "variable: #9CDCFE",
-			"hc_light": "variable: #001080",
-			"light_modern": "variable: #001080"
 		}
 	},
 	{
 		"c": ")",
-		"t": "source.r meta.function.r punctuation.definition.parameters.end.r",
+		"t": "source.r punctuation.section.parens.end.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -561,7 +519,7 @@
 	},
 	{
 		"c": "{",
-		"t": "source.r punctuation.section.block.begin.bracket.curly.r",
+		"t": "source.r punctuation.section.braces.begin.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -617,7 +575,7 @@
 	},
 	{
 		"c": "}",
-		"t": "source.r punctuation.section.block.end.bracket.curly.r",
+		"t": "source.r punctuation.section.braces.end.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -631,21 +589,21 @@
 	},
 	{
 		"c": "add",
-		"t": "source.r meta.function-call.r",
+		"t": "source.r meta.function-call.r variable.function.r",
 		"r": {
-			"dark_plus": "default: #D4D4D4",
-			"light_plus": "default: #000000",
+			"dark_plus": "variable: #9CDCFE",
+			"light_plus": "variable: #001080",
 			"dark_vs": "default: #D4D4D4",
 			"light_vs": "default: #000000",
-			"hc_black": "default: #FFFFFF",
-			"dark_modern": "default: #CCCCCC",
-			"hc_light": "default: #292929",
-			"light_modern": "default: #3B3B3B"
+			"hc_black": "variable: #9CDCFE",
+			"dark_modern": "variable: #9CDCFE",
+			"hc_light": "variable: #001080",
+			"light_modern": "variable: #001080"
 		}
 	},
 	{
 		"c": "(",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.begin.r",
+		"t": "source.r meta.function-call.r punctuation.section.parens.begin.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -771,7 +729,7 @@
 	},
 	{
 		"c": ")",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.end.r",
+		"t": "source.r meta.function-call.r punctuation.section.parens.end.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -785,21 +743,21 @@
 	},
 	{
 		"c": "add",
-		"t": "source.r meta.function-call.r",
+		"t": "source.r meta.function-call.r variable.function.r",
 		"r": {
-			"dark_plus": "default: #D4D4D4",
-			"light_plus": "default: #000000",
+			"dark_plus": "variable: #9CDCFE",
+			"light_plus": "variable: #001080",
 			"dark_vs": "default: #D4D4D4",
 			"light_vs": "default: #000000",
-			"hc_black": "default: #FFFFFF",
-			"dark_modern": "default: #CCCCCC",
-			"hc_light": "default: #292929",
-			"light_modern": "default: #3B3B3B"
+			"hc_black": "variable: #9CDCFE",
+			"dark_modern": "variable: #9CDCFE",
+			"hc_light": "variable: #001080",
+			"light_modern": "variable: #001080"
 		}
 	},
 	{
 		"c": "(",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.begin.r",
+		"t": "source.r meta.function-call.r punctuation.section.parens.begin.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -869,7 +827,7 @@
 	},
 	{
 		"c": ")",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.end.r",
+		"t": "source.r meta.function-call.r punctuation.section.parens.end.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -883,7 +841,7 @@
 	},
 	{
 		"c": "paste",
-		"t": "source.r meta.function-call.r support.function.r",
+		"t": "source.r support.function.r",
 		"r": {
 			"dark_plus": "support.function: #DCDCAA",
 			"light_plus": "support.function: #795E26",
@@ -897,7 +855,7 @@
 	},
 	{
 		"c": "(",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.begin.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -911,7 +869,7 @@
 	},
 	{
 		"c": "\"",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r punctuation.definition.string.begin.r",
+		"t": "source.r string.quoted.double.r punctuation.definition.string.begin.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -925,7 +883,7 @@
 	},
 	{
 		"c": "one",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r",
+		"t": "source.r string.quoted.double.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -939,7 +897,7 @@
 	},
 	{
 		"c": "\"",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r punctuation.definition.string.end.r",
+		"t": "source.r string.quoted.double.r punctuation.definition.string.end.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -952,22 +910,8 @@
 		}
 	},
 	{
-		"c": ",",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r punctuation.separator.parameters.r",
-		"r": {
-			"dark_plus": "default: #D4D4D4",
-			"light_plus": "default: #000000",
-			"dark_vs": "default: #D4D4D4",
-			"light_vs": "default: #000000",
-			"hc_black": "default: #FFFFFF",
-			"dark_modern": "default: #CCCCCC",
-			"hc_light": "default: #292929",
-			"light_modern": "default: #3B3B3B"
-		}
-	},
-	{
-		"c": " ",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r",
+		"c": ", ",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -981,7 +925,7 @@
 	},
 	{
 		"c": "NULL",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r constant.language.r",
+		"t": "source.r constant.language.r",
 		"r": {
 			"dark_plus": "constant.language: #569CD6",
 			"light_plus": "constant.language: #0000FF",
@@ -995,7 +939,7 @@
 	},
 	{
 		"c": ")",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.end.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1009,7 +953,7 @@
 	},
 	{
 		"c": "paste",
-		"t": "source.r meta.function-call.r support.function.r",
+		"t": "source.r support.function.r",
 		"r": {
 			"dark_plus": "support.function: #DCDCAA",
 			"light_plus": "support.function: #795E26",
@@ -1023,7 +967,7 @@
 	},
 	{
 		"c": "(",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.begin.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1037,7 +981,7 @@
 	},
 	{
 		"c": "NA",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r constant.language.r",
+		"t": "source.r constant.language.r",
 		"r": {
 			"dark_plus": "constant.language: #569CD6",
 			"light_plus": "constant.language: #0000FF",
@@ -1050,22 +994,8 @@
 		}
 	},
 	{
-		"c": ",",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r punctuation.separator.parameters.r",
-		"r": {
-			"dark_plus": "default: #D4D4D4",
-			"light_plus": "default: #000000",
-			"dark_vs": "default: #D4D4D4",
-			"light_vs": "default: #000000",
-			"hc_black": "default: #FFFFFF",
-			"dark_modern": "default: #CCCCCC",
-			"hc_light": "default: #292929",
-			"light_modern": "default: #3B3B3B"
-		}
-	},
-	{
-		"c": " ",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r",
+		"c": ", ",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1079,7 +1009,7 @@
 	},
 	{
 		"c": "'",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r punctuation.definition.string.begin.r",
+		"t": "source.r string.quoted.single.r punctuation.definition.string.begin.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1093,7 +1023,7 @@
 	},
 	{
 		"c": "two",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r",
+		"t": "source.r string.quoted.single.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1107,7 +1037,7 @@
 	},
 	{
 		"c": "'",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r punctuation.definition.string.end.r",
+		"t": "source.r string.quoted.single.r punctuation.definition.string.end.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1121,7 +1051,7 @@
 	},
 	{
 		"c": ")",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.end.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1135,7 +1065,7 @@
 	},
 	{
 		"c": "paste",
-		"t": "source.r meta.function-call.r support.function.r",
+		"t": "source.r support.function.r",
 		"r": {
 			"dark_plus": "support.function: #DCDCAA",
 			"light_plus": "support.function: #795E26",
@@ -1149,7 +1079,7 @@
 	},
 	{
 		"c": "(",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.begin.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1163,7 +1093,7 @@
 	},
 	{
 		"c": "\"",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r punctuation.definition.string.begin.r",
+		"t": "source.r string.quoted.double.r punctuation.definition.string.begin.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1177,7 +1107,7 @@
 	},
 	{
 		"c": "multi-",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r",
+		"t": "source.r string.quoted.double.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1191,7 +1121,7 @@
 	},
 	{
 		"c": "      line",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r",
+		"t": "source.r string.quoted.double.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1205,7 +1135,7 @@
 	},
 	{
 		"c": "\"",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.double.r punctuation.definition.string.end.r",
+		"t": "source.r string.quoted.double.r punctuation.definition.string.end.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1219,7 +1149,7 @@
 	},
 	{
 		"c": ",",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r punctuation.separator.parameters.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1233,7 +1163,7 @@
 	},
 	{
 		"c": "      ",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",
@@ -1247,7 +1177,7 @@
 	},
 	{
 		"c": "'",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r punctuation.definition.string.begin.r",
+		"t": "source.r string.quoted.single.r punctuation.definition.string.begin.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1261,7 +1191,7 @@
 	},
 	{
 		"c": "multi-",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r",
+		"t": "source.r string.quoted.single.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1275,7 +1205,7 @@
 	},
 	{
 		"c": "      line",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r",
+		"t": "source.r string.quoted.single.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1289,7 +1219,7 @@
 	},
 	{
 		"c": "'",
-		"t": "source.r meta.function-call.r meta.function-call.arguments.r string.quoted.single.r punctuation.definition.string.end.r",
+		"t": "source.r string.quoted.single.r punctuation.definition.string.end.r",
 		"r": {
 			"dark_plus": "string: #CE9178",
 			"light_plus": "string: #A31515",
@@ -1303,7 +1233,7 @@
 	},
 	{
 		"c": ")",
-		"t": "source.r meta.function-call.r punctuation.definition.arguments.end.r",
+		"t": "source.r",
 		"r": {
 			"dark_plus": "default: #D4D4D4",
 			"light_plus": "default: #000000",

@@ -565,7 +565,6 @@ export function createMonacoEditorAPI(): typeof monaco.editor {
 		InjectedTextCursorStops: standaloneEnums.InjectedTextCursorStops,
 		PositionAffinity: standaloneEnums.PositionAffinity,
 		ShowLightbulbIconMode: standaloneEnums.ShowLightbulbIconMode,
-		TextDirection: standaloneEnums.TextDirection,
 
 		// classes
 		ConfigurationChangedEvent: <any>ConfigurationChangedEvent,

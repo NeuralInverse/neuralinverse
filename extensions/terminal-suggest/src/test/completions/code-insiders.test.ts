@@ -4,9 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import codeInsidersCompletionSpec from '../../completions/code-insiders';
-import codeTunnelInsidersCompletionSpec from '../../completions/code-tunnel-insiders';
 import type { ISuiteSpec } from '../helpers';
-import { createCodeTestSpecs, createCodeTunnelTestSpecs } from './code.test';
+import { createCodeTestSpecs } from './code.test';
 
 export const codeInsidersTestSuite: ISuiteSpec = {
 	name: 'code-insiders',
@@ -14,11 +13,3 @@ export const codeInsidersTestSuite: ISuiteSpec = {
 	availableCommands: 'code-insiders',
 	testSpecs: createCodeTestSpecs('code-insiders')
 };
-
-export const codeTunnelInsidersTestSuite: ISuiteSpec = {
-	name: 'code-tunnel-insiders',
-	completionSpecs: codeTunnelInsidersCompletionSpec,
-	availableCommands: 'code-tunnel-insiders',
-	testSpecs: createCodeTunnelTestSpecs('code-tunnel-insiders')
-};
-

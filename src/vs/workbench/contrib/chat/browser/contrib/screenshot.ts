@@ -3,17 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { VSBuffer } from '../../../../../base/common/buffer.js';
 import { localize } from '../../../../../nls.js';
-import { IChatRequestVariableEntry } from '../../common/chatVariableEntries.js';
+import { IChatRequestVariableEntry } from '../../common/chatModel.js';
 
 export const ScreenshotVariableId = 'screenshot-focused-window';
 
-export function convertBufferToScreenshotVariable(buffer: VSBuffer): IChatRequestVariableEntry {
+export function convertBufferToScreenshotVariable(buffer: ArrayBufferLike): IChatRequestVariableEntry {
 	return {
 		id: ScreenshotVariableId,
 		name: localize('screenshot', 'Screenshot'),
-		value: buffer.buffer,
-		kind: 'image'
+		value: new Uint8Array(buffer),
+		isImage: true,
 	};
 }

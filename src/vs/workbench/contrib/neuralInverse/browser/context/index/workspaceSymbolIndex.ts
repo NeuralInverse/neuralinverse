@@ -14,7 +14,7 @@ import { registerSingleton, InstantiationType } from '../../../../../../platform
 import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { IModelService } from '../../../../../../editor/common/services/model.js';
-import { ITreeSitterLibraryService } from '../../../../../../editor/common/services/treeSitter/treeSitterLibraryService.js';
+import { ITreeSitterParserService } from '../../../../../../editor/common/services/treeSitterParserService.js';
 import { SymbolKind } from '../../../../../../editor/common/languages.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
 
@@ -106,7 +106,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		@IFileService private readonly _fileService: IFileService,
 		@IWorkspaceContextService private readonly _workspaceService: IWorkspaceContextService,
 		@IModelService private readonly _modelService: IModelService,
-		@ITreeSitterLibraryService private readonly _treeSitterService: ITreeSitterLibraryService,
+		@ITreeSitterParserService private readonly _treeSitterService: ITreeSitterParserService,
 		@ILogService private readonly _logService: ILogService,
 	) {
 		super();
@@ -438,15 +438,10 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		model: import('../../../../../../editor/common/model.js').ITextModel,
 	): Promise<IIndexedSymbol[] | undefined> {
 		try {
-			const languageId = model.getLanguageId();
-			const lang = this._treeSitterService.getLanguage(languageId, undefined);
-			if (!lang) return undefined;
+			const tsModel = await this._treeSitterService.getTextModelTreeSitter(model, true);
+			if (!tsModel?.parseResult?.tree) return undefined;
 
-			const ParserClass = await this._treeSitterService.getParserClass();
-			const parser = new ParserClass();
-			parser.setLanguage(lang);
-			const tree = parser.parse(model.getValue());
-			if (!tree) return undefined;
+			const tree = tsModel.parseResult.tree;
 			const root = tree.rootNode;
 			const symbols: IIndexedSymbol[] = [];
 

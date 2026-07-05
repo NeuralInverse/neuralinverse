@@ -5,6 +5,7 @@
 
 import { localize, localize2 } from '../../../../nls.js';
 import { IQuickInputService, IQuickPickSeparator } from '../../../../platform/quickinput/common/quickInput.js';
+import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
 import { DisposableStore } from '../../../../base/common/lifecycle.js';
 import { Action2, MenuId } from '../../../../platform/actions/common/actions.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
@@ -46,7 +47,9 @@ export class ConfigureDisplayLanguageAction extends Action2 {
 			qp.items = items.concat(this.withMoreInfoButton(installedLanguages));
 		}
 
-		disposables.add(qp.onDidHide(() => {
+		const source = new CancellationTokenSource();
+		disposables.add(qp.onDispose(() => {
+			source.cancel();
 			disposables.dispose();
 		}));
 

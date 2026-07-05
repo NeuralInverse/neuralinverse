@@ -29,18 +29,12 @@ function code() {
 		return
 	fi
 
-	# Disable test extension
-	DISABLE_TEST_EXTENSION="--disable-extension=vscode.vscode-api-tests"
-	if [[ "$@" == *"--extensionTestsPath"* ]]; then
-		DISABLE_TEST_EXTENSION=""
-	fi
-
 	ELECTRON_RUN_AS_NODE=1 \
 	NODE_ENV=development \
 	VSCODE_DEV=1 \
 	ELECTRON_ENABLE_LOGGING=1 \
 	ELECTRON_ENABLE_STACK_DUMPING=1 \
-	"$CODE" --inspect=5874 "$ROOT/out/cli.js" . $DISABLE_TEST_EXTENSION "$@"
+	"$CODE" --inspect=5874 "$ROOT/out/cli.js" . "$@"
 }
 
 code "$@"

@@ -83,6 +83,9 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	get sync(): 'on' | 'off' | undefined { return this.args.sync; }
 
 	@memoize
+	get machineSettingsResource(): URI { return joinPath(URI.file(join(this.userDataPath, 'Machine')), 'settings.json'); }
+
+	@memoize
 	get workspaceStorageHome(): URI { return joinPath(this.appSettingsHome, 'workspaceStorage'); }
 
 	@memoize
@@ -231,9 +234,6 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	get disableTelemetry(): boolean { return !!this.args['disable-telemetry']; }
 
 	@memoize
-	get disableExperiments(): boolean { return !!this.args['disable-experiments']; }
-
-	@memoize
 	get disableWorkspaceTrust(): boolean { return !!this.args['disable-workspace-trust']; }
 
 	@memoize
@@ -263,10 +263,6 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	}
 
 	get args(): NativeParsedArgs { return this._args; }
-
-	get isSimulation(): boolean {
-		return env['SIMULATION'] === '1';
-	}
 
 	constructor(
 		private readonly _args: NativeParsedArgs,

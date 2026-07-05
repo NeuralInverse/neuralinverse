@@ -28,9 +28,6 @@ import { computeDefaultDocumentColors } from '../languages/defaultDocumentColors
 import { FindSectionHeaderOptions, SectionHeader, findSectionHeaders } from './findSectionHeaders.js';
 import { IRawModelData, IWorkerTextModelSyncChannelServer } from './textModelSync/textModelSync.protocol.js';
 import { ICommonModel, WorkerTextModelSyncServer } from './textModelSync/textModelSync.impl.js';
-import { ISerializedStringEdit, StringEdit } from '../core/edits/stringEdit.js';
-import { StringText } from '../core/text/abstractText.js';
-import { ensureDependenciesAreSet } from '../core/text/positionToOffset.js';
 
 export interface IMirrorModel extends IMirrorTextModel {
 	readonly uri: URI;
@@ -38,7 +35,7 @@ export interface IMirrorModel extends IMirrorTextModel {
 	getValue(): string;
 }
 
-export interface IWorkerContext<H = {}> {
+export interface IWorkerContext<H = undefined> {
 	/**
 	 * A proxy to the main thread host object.
 	 */
@@ -202,10 +199,6 @@ export class EditorWorker implements IDisposable, IWorkerTextModelSyncChannelSer
 			maxComputationTime: 1000
 		});
 		return diffComputer.computeDiff().changes;
-	}
-
-	public $computeStringDiff(original: string, modified: string, options: { maxComputationTimeMs: number }, algorithm: DiffAlgorithmName): ISerializedStringEdit {
-		return computeStringDiff(original, modified, options, algorithm).toJson();
 	}
 
 	// ---- END diff --------------------------------------------------------------------------
@@ -534,25 +527,4 @@ declare function importScripts(...urls: string[]): void;
 if (typeof importScripts === 'function') {
 	// Running in a web worker
 	globalThis.monaco = createMonacoBaseAPI();
-}
-
-/**
- * @internal
-*/
-export function computeStringDiff(original: string, modified: string, options: { maxComputationTimeMs: number }, algorithm: DiffAlgorithmName): StringEdit {
-	const diffAlgorithm: ILinesDiffComputer = algorithm === 'advanced' ? linesDiffComputers.getDefault() : linesDiffComputers.getLegacy();
-
-	ensureDependenciesAreSet();
-
-	const originalText = new StringText(original);
-	const originalLines = originalText.getLines();
-	const modifiedText = new StringText(modified);
-	const modifiedLines = modifiedText.getLines();
-
-	const result = diffAlgorithm.computeDiff(originalLines, modifiedLines, { ignoreTrimWhitespace: false, maxComputationTimeMs: options.maxComputationTimeMs, computeMoves: false, extendToSubwords: false });
-
-	const textEdit = DetailedLineRangeMapping.toTextEdit(result.changes, modifiedText);
-	const strEdit = originalText.getTransformer().getStringEdit(textEdit);
-
-	return strEdit;
 }

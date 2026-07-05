@@ -39,7 +39,6 @@ export class EditorScrollbar extends ViewPart {
 		const mouseWheelScrollSensitivity = options.get(EditorOption.mouseWheelScrollSensitivity);
 		const fastScrollSensitivity = options.get(EditorOption.fastScrollSensitivity);
 		const scrollPredominantAxis = options.get(EditorOption.scrollPredominantAxis);
-		const inertialScroll = options.get(EditorOption.inertialScroll);
 
 		const scrollbarOptions: ScrollableElementCreationOptions = {
 			listenOnDomNode: viewDomNode.domNode,
@@ -62,7 +61,6 @@ export class EditorScrollbar extends ViewPart {
 			fastScrollSensitivity: fastScrollSensitivity,
 			scrollPredominantAxis: scrollPredominantAxis,
 			scrollByPage: scrollbar.scrollByPage,
-			inertialScroll: inertialScroll,
 		};
 
 		this.scrollbar = this._register(new SmoothScrollableElement(linesContent.domNode, scrollbarOptions, this._context.viewLayout.getScrollable()));

@@ -1,4 +1,8 @@
 "use strict";
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -41,10 +45,6 @@ exports.createCompile = createCompile;
 exports.transpileTask = transpileTask;
 exports.compileTask = compileTask;
 exports.watchTask = watchTask;
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 const event_stream_1 = __importDefault(require("event-stream"));
 const fs_1 = __importDefault(require("fs"));
 const gulp_1 = __importDefault(require("gulp"));
@@ -59,6 +59,7 @@ const os_1 = __importDefault(require("os"));
 const vinyl_1 = __importDefault(require("vinyl"));
 const task = __importStar(require("./task"));
 const index_1 = require("./mangle/index");
+const postcss_1 = require("./postcss");
 const ts = require("typescript");
 const watch = require('./watch');
 // --- gulp-tsb: compile and transpile --------------------------------
@@ -88,18 +89,21 @@ function createCompile(src, { build, emitError, transpileOnly, preserveEnglish }
     const compilation = tsb.create(projectPath, overrideOptions, {
         verbose: false,
         transpileOnly: Boolean(transpileOnly),
-        transpileWithEsbuild: typeof transpileOnly !== 'boolean' && transpileOnly.esbuild
+        transpileWithSwc: typeof transpileOnly !== 'boolean' && transpileOnly.esbuild
     }, err => reporter(err));
     function pipeline(token) {
         const bom = require('gulp-bom');
         const tsFilter = util.filter(data => /\.ts$/.test(data.path));
         const isUtf8Test = (f) => /(\/|\\)test(\/|\\).*utf8/.test(f.path);
         const isRuntimeJs = (f) => f.path.endsWith('.js') && !f.path.includes('fixtures');
+        const isCSS = (f) => f.path.endsWith('.css') && !f.path.includes('fixtures');
         const noDeclarationsFilter = util.filter(data => !(/\.d\.ts$/.test(data.path)));
+        const postcssNesting = require('postcss-nesting');
         const input = event_stream_1.default.through();
         const output = input
             .pipe(util.$if(isUtf8Test, bom())) // this is required to preserve BOM in test files that loose it otherwise
             .pipe(util.$if(!build && isRuntimeJs, util.appendOwnPathSourceURL()))
+            .pipe(util.$if(isCSS, (0, postcss_1.gulpPostcss)([postcssNesting()], err => reporter(String(err)))))
             .pipe(tsFilter)
             .pipe(util.loadSourcemaps())
             .pipe(compilation(token))
@@ -123,7 +127,7 @@ function createCompile(src, { build, emitError, transpileOnly, preserveEnglish }
 }
 function transpileTask(src, out, esbuild) {
     const task = () => {
-        const transpile = createCompile(src, { build: false, emitError: true, transpileOnly: { esbuild: !!esbuild }, preserveEnglish: false });
+        const transpile = createCompile(src, { build: false, emitError: true, transpileOnly: { esbuild }, preserveEnglish: false });
         const srcPipe = gulp_1.default.src(`${src}/**`, { base: `${src}` });
         return srcPipe
             .pipe(transpile())

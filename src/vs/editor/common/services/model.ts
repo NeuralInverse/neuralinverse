@@ -9,7 +9,6 @@ import { ITextBufferFactory, ITextModel, ITextModelCreationOptions } from '../mo
 import { ILanguageSelection } from '../languages/language.js';
 import { createDecorator } from '../../../platform/instantiation/common/instantiation.js';
 import { DocumentSemanticTokensProvider, DocumentRangeSemanticTokensProvider } from '../languages.js';
-import { TextModelEditSource } from '../textModelEditSource.js';
 
 export const IModelService = createDecorator<IModelService>('modelService');
 
@@ -20,7 +19,7 @@ export interface IModelService {
 
 	createModel(value: string | ITextBufferFactory, languageSelection: ILanguageSelection | null, resource?: URI, isForSimpleWidget?: boolean): ITextModel;
 
-	updateModel(model: ITextModel, value: string | ITextBufferFactory, reason?: TextModelEditSource): void;
+	updateModel(model: ITextModel, value: string | ITextBufferFactory): void;
 
 	destroyModel(resource: URI): void;
 

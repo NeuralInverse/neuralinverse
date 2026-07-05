@@ -23,15 +23,8 @@ set VSCODE_DEV=1
 set ELECTRON_ENABLE_LOGGING=1
 set ELECTRON_ENABLE_STACK_DUMPING=1
 
-set DISABLE_TEST_EXTENSION="--disable-extension=vscode.vscode-api-tests"
-for %%A in (%*) do (
-	if "%%~A"=="--extensionTestsPath" (
-		set DISABLE_TEST_EXTENSION=""
-	)
-)
-
 :: Launch Code
-%CODE% --inspect=5874 out\cli.js %~dp0.. %DISABLE_TEST_EXTENSION% %*
+%CODE% --inspect=5874 out\cli.js %~dp0.. %*
 goto end
 
 :builtin

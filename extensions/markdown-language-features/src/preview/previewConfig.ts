@@ -36,7 +36,7 @@ export class MarkdownPreviewConfiguration {
 		this.scrollBeyondLastLine = editorConfig.get<boolean>('scrollBeyondLastLine', false);
 
 		this.wordWrap = editorConfig.get<string>('wordWrap', 'off') !== 'off';
-		if (markdownEditorConfig?.['editor.wordWrap']) {
+		if (markdownEditorConfig && markdownEditorConfig['editor.wordWrap']) {
 			this.wordWrap = markdownEditorConfig['editor.wordWrap'] !== 'off';
 		}
 
@@ -83,11 +83,13 @@ export class MarkdownPreviewConfigurationManager {
 		return config;
 	}
 
-	public hasConfigurationChanged(resource: vscode.Uri): boolean {
+	public hasConfigurationChanged(
+		resource: vscode.Uri
+	): boolean {
 		const key = this._getKey(resource);
 		const currentConfig = this._previewConfigurationsForWorkspaces.get(key);
 		const newConfig = MarkdownPreviewConfiguration.getForResource(resource);
-		return !currentConfig?.isEqualTo(newConfig);
+		return (!currentConfig || !currentConfig.isEqualTo(newConfig));
 	}
 
 	private _getKey(

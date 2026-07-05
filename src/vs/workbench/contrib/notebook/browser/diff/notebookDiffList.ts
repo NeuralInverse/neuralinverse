@@ -102,7 +102,7 @@ export class CellDiffPlaceholderRenderer implements IListRenderer<DiffElementPla
 		};
 	}
 
-	renderElement(element: DiffElementPlaceholderViewModel, index: number, templateData: CellDiffPlaceholderRenderTemplate): void {
+	renderElement(element: DiffElementPlaceholderViewModel, index: number, templateData: CellDiffPlaceholderRenderTemplate, height: number | undefined): void {
 		templateData.body.classList.remove('left', 'right', 'full');
 		templateData.elementDisposables.add(this.instantiationService.createInstance(CellDiffPlaceholderElement, element, templateData));
 	}
@@ -189,7 +189,7 @@ export class NotebookDocumentMetadataDiffRenderer implements IListRenderer<Noteb
 		return buildDiffEditorWidget(this.instantiationService, this.notebookEditor, sourceContainer, { readOnly: true });
 	}
 
-	renderElement(element: NotebookDocumentMetadataViewModel, index: number, templateData: NotebookDocumentDiffElementRenderTemplate): void {
+	renderElement(element: NotebookDocumentMetadataViewModel, index: number, templateData: NotebookDocumentDiffElementRenderTemplate, height: number | undefined): void {
 		templateData.body.classList.remove('full');
 		templateData.elementDisposables.add(this.instantiationService.createInstance(NotebookDocumentMetadataElement, this.notebookEditor, element, templateData));
 	}
@@ -270,7 +270,7 @@ export class CellDiffSingleSideRenderer implements IListRenderer<SingleSideDiffE
 		return buildSourceEditor(this.instantiationService, this.notebookEditor, sourceContainer);
 	}
 
-	renderElement(element: SingleSideDiffElementViewModel, index: number, templateData: CellDiffSingleSideRenderTemplate): void {
+	renderElement(element: SingleSideDiffElementViewModel, index: number, templateData: CellDiffSingleSideRenderTemplate, height: number | undefined): void {
 		templateData.body.classList.remove('left', 'right', 'full');
 
 		switch (element.type) {
@@ -380,7 +380,7 @@ export class CellDiffSideBySideRenderer implements IListRenderer<SideBySideDiffE
 		return buildDiffEditorWidget(this.instantiationService, this.notebookEditor, sourceContainer);
 	}
 
-	renderElement(element: SideBySideDiffElementViewModel, index: number, templateData: CellDiffSideBySideRenderTemplate): void {
+	renderElement(element: SideBySideDiffElementViewModel, index: number, templateData: CellDiffSideBySideRenderTemplate, height: number | undefined): void {
 		templateData.body.classList.remove('left', 'right', 'full');
 
 		switch (element.type) {
@@ -621,7 +621,6 @@ function buildSourceEditor(instantiationService: IInstantiationService, notebook
 		},
 		automaticLayout: false,
 		overflowWidgetsDomNode: notebookEditor.getOverflowContainerDomNode(),
-		allowVariableLineHeights: false,
 		readOnly: true,
 	}, {
 		contributions: EditorExtensionsRegistry.getEditorContributions().filter(c => skipContributions.indexOf(c.id) === -1)

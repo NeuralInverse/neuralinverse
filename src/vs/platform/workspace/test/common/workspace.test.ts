@@ -10,11 +10,8 @@ import { extUriBiasedIgnorePathCase } from '../../../../base/common/resources.js
 import { URI } from '../../../../base/common/uri.js';
 import { IRawFileWorkspaceFolder, Workspace, WorkspaceFolder } from '../../common/workspace.js';
 import { toWorkspaceFolders } from '../../../workspaces/common/workspaces.js';
-import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
 
 suite('Workspace', () => {
-
-	ensureNoDisposablesAreLeakedInTestSuite();
 
 	const fileFolder = isWindows ? 'c:\\src' : '/src';
 	const abcFolder = isWindows ? 'c:\\abc' : '/abc';

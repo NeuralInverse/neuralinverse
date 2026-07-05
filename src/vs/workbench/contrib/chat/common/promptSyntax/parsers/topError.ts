@@ -19,7 +19,7 @@ export class TopError implements ITopError {
 	public readonly parentUri: ITopError['parentUri'];
 
 	constructor(
-		options: Omit<ITopError, 'localizedMessage'>,
+		readonly options: Omit<ITopError, 'localizedMessage'>,
 	) {
 		this.originalError = options.originalError;
 		this.errorSubject = options.errorSubject;

@@ -6,6 +6,7 @@
 import { References } from './peek';
 import { Commands } from './workbench';
 import { Code } from './code';
+import { Quality } from './application';
 
 const RENAME_BOX = '.monaco-editor .monaco-editor.rename-box';
 const RENAME_INPUT = `${RENAME_BOX} .rename-input`;
@@ -35,9 +36,7 @@ export class Editor {
 		await this.code.waitForActiveElement(RENAME_INPUT);
 		await this.code.waitForSetValue(RENAME_INPUT, to);
 
-		await this.code.dispatchKeybinding('enter', async () => {
-			// TODO: Add an accept callback to verify the keybinding was successful
-		});
+		await this.code.sendKeybinding('enter');
 	}
 
 	async gotoDefinition(filename: string, term: string, line: number): Promise<void> {
@@ -108,7 +107,7 @@ export class Editor {
 	}
 
 	private _editContextSelector() {
-		return !this.code.editContextEnabled ? 'textarea' : '.native-edit-context';
+		return this.code.quality === Quality.Stable ? 'textarea' : '.native-edit-context';
 	}
 
 	async waitForEditorContents(filename: string, accept: (contents: string) => boolean, selectorPrefix = ''): Promise<any> {

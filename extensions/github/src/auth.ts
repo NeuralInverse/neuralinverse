@@ -3,13 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AuthenticationSession, EventEmitter, authentication, window } from 'vscode';
+import { AuthenticationSession, authentication, window } from 'vscode';
 import { Agent, globalAgent } from 'https';
-import { graphql } from '@octokit/graphql/types';
+import { graphql } from '@octokit/graphql/dist-types/types';
 import { Octokit } from '@octokit/rest';
 import { httpsOverHttp } from 'tunnel';
 import { URL } from 'url';
-import { DisposableStore, sequentialize } from './util.js';
 
 export class AuthenticationError extends Error { }
 
@@ -58,58 +57,33 @@ export function getOctokit(): Promise<Octokit> {
 	return _octokit;
 }
 
-export class OctokitService {
-	private _octokitGraphql: graphql | undefined;
+let _octokitGraphql: Promise<graphql> | undefined;
 
-	private readonly _onDidChangeSessions = new EventEmitter<void>();
-	readonly onDidChangeSessions = this._onDidChangeSessions.event;
+export async function getOctokitGraphql(): Promise<graphql> {
+	if (!_octokitGraphql) {
+		try {
+			const session = await authentication.getSession('github', scopes, { silent: true });
 
-	private readonly _disposables = new DisposableStore();
-
-	constructor() {
-		this._disposables.add(this._onDidChangeSessions);
-		this._disposables.add(authentication.onDidChangeSessions(e => {
-			if (e.provider.id === 'github') {
-				this._octokitGraphql = undefined;
-				this._onDidChangeSessions.fire();
+			if (!session) {
+				throw new AuthenticationError('No GitHub authentication session available.');
 			}
-		}));
-	}
 
-	@sequentialize
-	public async getOctokitGraphql(): Promise<graphql> {
-		if (!this._octokitGraphql) {
-			try {
-				const session = await authentication.getSession('github', scopes, { silent: true });
+			const token = session.accessToken;
+			const { graphql } = await import('@octokit/graphql');
 
-				if (!session) {
-					throw new AuthenticationError('No GitHub authentication session available.');
+			return graphql.defaults({
+				headers: {
+					authorization: `token ${token}`
+				},
+				request: {
+					agent: getAgent()
 				}
-
-				const token = session.accessToken;
-				const { graphql } = await import('@octokit/graphql');
-
-				this._octokitGraphql = graphql.defaults({
-					headers: {
-						authorization: `token ${token}`
-					},
-					request: {
-						agent: getAgent()
-					}
-				});
-
-				return this._octokitGraphql;
-			} catch (err) {
-				this._octokitGraphql = undefined;
-				throw new AuthenticationError(err.message);
-			}
+			});
+		} catch (err) {
+			_octokitGraphql = undefined;
+			throw err;
 		}
-
-		return this._octokitGraphql;
 	}
 
-	dispose(): void {
-		this._octokitGraphql = undefined;
-		this._disposables.dispose();
-	}
+	return _octokitGraphql;
 }

@@ -32,7 +32,7 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 	private _lineNumbersWidth!: number;
 	private _lastCursorModelPosition: Position;
 	private _renderResult: string[] | null;
-	private _activeModelLineNumber: number;
+	private _activeLineNumber: number;
 
 	constructor(context: ViewContext) {
 		super();
@@ -42,7 +42,7 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 
 		this._lastCursorModelPosition = new Position(1, 1);
 		this._renderResult = null;
-		this._activeModelLineNumber = 1;
+		this._activeLineNumber = 1;
 		this._context.addEventHandler(this);
 	}
 
@@ -75,8 +75,8 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 		this._lastCursorModelPosition = this._context.viewModel.coordinatesConverter.convertViewPositionToModelPosition(primaryViewPosition);
 
 		let shouldRender = false;
-		if (this._activeModelLineNumber !== this._lastCursorModelPosition.lineNumber) {
-			this._activeModelLineNumber = this._lastCursorModelPosition.lineNumber;
+		if (this._activeLineNumber !== primaryViewPosition.lineNumber) {
+			this._activeLineNumber = primaryViewPosition.lineNumber;
 			shouldRender = true;
 		}
 		if (this._renderLineNumbers === RenderLineNumbersType.Relative || this._renderLineNumbers === RenderLineNumbersType.Interval) {
@@ -162,7 +162,6 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 		const output: string[] = [];
 		for (let lineNumber = visibleStartLineNumber; lineNumber <= visibleEndLineNumber; lineNumber++) {
 			const lineIndex = lineNumber - visibleStartLineNumber;
-			const modelLineNumber: number = this._context.viewModel.coordinatesConverter.convertViewPositionToModelPosition(new Position(lineNumber, 1)).lineNumber;
 
 			let renderLineNumber = this._getLineRenderLineNumber(lineNumber);
 			let extraClassNames = '';
@@ -192,7 +191,7 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 					extraClassNames += ' dimmed-line-number';
 				}
 			}
-			if (modelLineNumber === this._activeModelLineNumber) {
+			if (lineNumber === this._activeLineNumber) {
 				extraClassNames += ' active-line-number';
 			}
 

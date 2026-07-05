@@ -11,7 +11,6 @@ export const untitled = 'untitled';
 export const git = 'git';
 export const github = 'github';
 export const azurerepos = 'azurerepos';
-export const chatEditingTextModel = 'chat-editing-text-model';
 
 /** Live share scheme */
 export const vsls = 'vsls';
@@ -51,7 +50,6 @@ export const disabledSchemes = new Set([
 	vsls,
 	github,
 	azurerepos,
-	chatEditingTextModel,
 ]);
 
 export function isOfScheme(uri: vscode.Uri, ...schemes: string[]): boolean {

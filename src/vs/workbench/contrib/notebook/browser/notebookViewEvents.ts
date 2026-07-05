@@ -13,7 +13,6 @@ export interface NotebookLayoutInfo {
 	scrollHeight: number;
 	fontInfo: FontInfo;
 	stickyHeight: number;
-	listViewOffsetTop: number;
 }
 
 export interface CellViewModelStateChangeEvent {

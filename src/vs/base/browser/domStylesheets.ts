@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DisposableStore, toDisposable, IDisposable } from '../common/lifecycle.js';
-import { autorun, IObservable } from '../common/observable.js';
 import { getWindows, sharedMutationObserver } from './dom.js';
 import { mainWindow } from './window.js';
 
@@ -32,9 +31,9 @@ class WrappedStyleElement {
 		this._currentCssStyle = cssStyle;
 
 		if (!this._styleSheet) {
-			this._styleSheet = createStyleSheet(mainWindow.document.head, (s) => s.textContent = cssStyle);
+			this._styleSheet = createStyleSheet(mainWindow.document.head, (s) => s.innerText = cssStyle);
 		} else {
-			this._styleSheet.textContent = cssStyle;
+			this._styleSheet.innerText = cssStyle;
 		}
 	}
 
@@ -166,13 +165,4 @@ export function removeCSSRulesContainingSelector(ruleName: string, style = getSh
 
 function isCSSStyleRule(rule: CSSRule): rule is CSSStyleRule {
 	return typeof (rule as CSSStyleRule).selectorText === 'string';
-}
-
-export function createStyleSheetFromObservable(css: IObservable<string>): IDisposable {
-	const store = new DisposableStore();
-	const w = store.add(createStyleSheet2());
-	store.add(autorun(reader => {
-		w.setStyle(css.read(reader));
-	}));
-	return store;
 }

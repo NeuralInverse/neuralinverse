@@ -694,7 +694,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			});
 
 			await assertEvent(model.onDidSuggest, () => {
-				editor.runCommand(CoreEditingCommands.DeleteLeft, null);
+				CoreEditingCommands.DeleteLeft.runEditorCommand(null, editor, null);
 
 			}, event => {
 				assert.strictEqual(event.triggerOptions.auto, true);

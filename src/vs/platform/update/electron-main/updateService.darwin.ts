@@ -91,15 +91,8 @@ export class DarwinUpdateService extends AbstractUpdateService implements IRelau
 		return url;
 	}
 
-	protected doCheckForUpdates(explicit: boolean): void {
-		if (!this.url) {
-			return;
-		}
-
-		this.setState(State.CheckingForUpdates(explicit));
-
-		const url = explicit ? this.url : `${this.url}?bg=true`;
-		electron.autoUpdater.setFeedURL({ url });
+	protected doCheckForUpdates(context: any): void {
+		this.setState(State.CheckingForUpdates(context));
 		electron.autoUpdater.checkForUpdates();
 	}
 

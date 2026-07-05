@@ -21,7 +21,7 @@ import { CellKind, NotebookSetting } from '../../../common/notebookCommon.js';
 import { ICellExecutionStateChangedEvent, IExecutionStateChangedEvent, INotebookCellExecution, INotebookExecutionStateService, NotebookExecutionType } from '../../../common/notebookExecutionStateService.js';
 import { setupInstantiationService, TestNotebookExecutionStateService, withTestNotebook } from '../testNotebookEditor.js';
 import { nullExtensionDescription } from '../../../../../services/extensions/common/extensions.js';
-import { ChatAgentLocation, ChatModeKind } from '../../../../chat/common/constants.js';
+import { ChatAgentLocation } from '../../../../chat/common/constants.js';
 
 
 suite('notebookCellDiagnostics', () => {
@@ -68,13 +68,11 @@ suite('notebookCellDiagnostics', () => {
 
 		const agentData = {
 			extensionId: nullExtensionDescription.identifier,
-			extensionVersion: undefined,
 			extensionDisplayName: '',
 			extensionPublisherId: '',
 			name: 'testEditorAgent',
 			isDefault: true,
 			locations: [ChatAgentLocation.Notebook],
-			modes: [ChatModeKind.Ask],
 			metadata: {},
 			slashCommands: [],
 			disambiguation: [],
@@ -159,12 +157,12 @@ suite('notebookCellDiagnostics', () => {
 			testExecutionService.fireExecutionChanged(editor.textModel.uri, cell2.handle);
 
 			await new Promise<void>(resolve => Event.once(markerService.onMarkersUpdated)(resolve));
+			cell.model.internalMetadata.error = undefined;
 
-			const clearMarkers = new Promise<void>(resolve => Event.once(markerService.onMarkersUpdated)(resolve));
 			// on NotebookCellExecution value will make it look like its currently running
 			testExecutionService.fireExecutionChanged(editor.textModel.uri, cell.handle, {} as INotebookCellExecution);
 
-			await clearMarkers;
+			await new Promise<void>(resolve => Event.once(markerService.onMarkersUpdated)(resolve));
 
 			assert.strictEqual(cell?.executionErrorDiagnostic.get(), undefined);
 			assert.strictEqual(cell2?.executionErrorDiagnostic.get()?.message, 'another bad thing happened', 'cell that was not executed should still have an error');

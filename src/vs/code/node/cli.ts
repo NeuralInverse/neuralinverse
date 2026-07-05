@@ -15,7 +15,7 @@ import { whenDeleted, writeFileSync } from '../../base/node/pfs.js';
 import { findFreePort } from '../../base/node/ports.js';
 import { watchFileContents } from '../../platform/files/node/watcher/nodejs/nodejsWatcherLib.js';
 import { NativeParsedArgs } from '../../platform/environment/common/argv.js';
-import { buildHelpMessage, buildStdinMessage, buildVersionMessage, NATIVE_CLI_COMMANDS, OPTIONS } from '../../platform/environment/node/argv.js';
+import { buildHelpMessage, buildVersionMessage, NATIVE_CLI_COMMANDS, OPTIONS } from '../../platform/environment/node/argv.js';
 import { addArg, parseCLIProcessArgv } from '../../platform/environment/node/argvHelper.js';
 import { getStdinFilePath, hasStdinWithoutTty, readFromStdin, stdinDataListener } from '../../platform/environment/node/stdin.js';
 import { createWaitMarkerFileSync } from '../../platform/environment/node/wait.js';
@@ -88,16 +88,10 @@ export async function main(argv: string[]): Promise<any> {
 		}
 	}
 
-	// Help (general)
+	// Help
 	if (args.help) {
 		const executable = `${product.applicationName}${isWindows ? '.exe' : ''}`;
 		console.log(buildHelpMessage(product.nameLong, executable, product.version, OPTIONS));
-	}
-
-	// Help (chat)
-	else if (args.chat?.help) {
-		const executable = `${product.applicationName}${isWindows ? '.exe' : ''}`;
-		console.log(buildHelpMessage(product.nameLong, executable, product.version, OPTIONS.chat.options, { isChat: true }));
 	}
 
 	// Version Info
@@ -242,19 +236,7 @@ export async function main(argv: string[]): Promise<any> {
 			});
 		}
 
-		// Handle --transient option
-		if (args['transient']) {
-			const tempParentDir = randomPath(tmpdir(), 'vscode');
-			const tempUserDataDir = join(tempParentDir, 'data');
-			const tempExtensionsDir = join(tempParentDir, 'extensions');
-
-			addArg(argv, '--user-data-dir', tempUserDataDir);
-			addArg(argv, '--extensions-dir', tempExtensionsDir);
-
-			console.log(`State is temporarily stored. Relaunch this state with: ${product.applicationName} --user-data-dir "${tempUserDataDir}" --extensions-dir "${tempExtensionsDir}"`);
-		}
-
-		const hasReadStdinArg = args._.some(arg => arg === '-') || args.chat?._.some(arg => arg === '-');
+		const hasReadStdinArg = args._.some(arg => arg === '-');
 		if (hasReadStdinArg) {
 			// remove the "-" argument when we read from stdin
 			args._ = args._.filter(a => a !== '-');
@@ -293,15 +275,9 @@ export async function main(argv: string[]): Promise<any> {
 						processCallbacks.push(() => readFromStdinDone.p);
 					}
 
-					if (args.chat) {
-						// Make sure to add tmp file as context to chat
-						addArg(argv, '--add-file', stdinFilePath);
-					} else {
-						// Make sure to open tmp file as editor but ignore
-						// it in the "recently open" list
-						addArg(argv, stdinFilePath);
-						addArg(argv, '--skip-add-to-recently-opened');
-					}
+					// Make sure to open tmp file as editor but ignore it in the "recently open" list
+					addArg(argv, stdinFilePath);
+					addArg(argv, '--skip-add-to-recently-opened');
 
 					console.log(`Reading from stdin via: ${stdinFilePath}`);
 				} catch (e) {
@@ -314,7 +290,11 @@ export async function main(argv: string[]): Promise<any> {
 				// if we detect that data flows into via stdin after a certain timeout.
 				processCallbacks.push(_ => stdinDataListener(1000).then(dataReceived => {
 					if (dataReceived) {
-						console.log(buildStdinMessage(product.applicationName, !!args.chat));
+						if (isWindows) {
+							console.log(`Run with '${product.applicationName} -' to read output from another program (e.g. 'echo Hello World | ${product.applicationName} -').`);
+						} else {
+							console.log(`Run with '${product.applicationName} -' to read from stdin (e.g. 'ps aux | grep code | ${product.applicationName} -').`);
+						}
 					}
 				}));
 			}

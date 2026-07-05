@@ -18,7 +18,6 @@ import { nulToken } from '../../utils/cancellation';
 
 const NoopTelemetryReporter = new class implements TelemetryReporter {
 	logTelemetry(): void { /* noop */ }
-	logTraceEvent(): void { /* noop */ }
 	dispose(): void { /* noop */ }
 };
 

@@ -99,7 +99,7 @@ export class SnippetsResource implements IProfileResource {
 export class SnippetsResourceTreeItem implements IProfileResourceTreeItem {
 
 	readonly type = ProfileResourceType.Snippets;
-	readonly handle: string;
+	readonly handle = this.profile.snippetsHome.toString();
 	readonly label = { label: localize('snippets', "Snippets") };
 	readonly collapsibleState = TreeItemCollapsibleState.Collapsed;
 	checkbox: ITreeItemCheckboxState | undefined;
@@ -110,9 +110,7 @@ export class SnippetsResourceTreeItem implements IProfileResourceTreeItem {
 		private readonly profile: IUserDataProfile,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
-	) {
-		this.handle = this.profile.snippetsHome.toString();
-	}
+	) { }
 
 	async getChildren(): Promise<IProfileResourceChildTreeItem[] | undefined> {
 		const snippetsResources = await this.instantiationService.createInstance(SnippetsResource).getSnippetsResources(this.profile);

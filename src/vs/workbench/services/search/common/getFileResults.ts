@@ -30,16 +30,16 @@ export const getFileResults = (
 
 	const results: ITextSearchResult[] = [];
 
-	const patternIndices: { matchStartIndex: number; matchedText: string }[] = [];
+	const patternIndecies: { matchStartIndex: number; matchedText: string }[] = [];
 
 	let patternMatch: RegExpExecArray | null = null;
 	let remainingResultQuota = options.remainingResultQuota;
 	while (remainingResultQuota >= 0 && (patternMatch = pattern.exec(text))) {
-		patternIndices.push({ matchStartIndex: patternMatch.index, matchedText: patternMatch[0] });
+		patternIndecies.push({ matchStartIndex: patternMatch.index, matchedText: patternMatch[0] });
 		remainingResultQuota--;
 	}
 
-	if (patternIndices.length) {
+	if (patternIndecies.length) {
 		const contextLinesNeeded = new Set<number>();
 		const resultLines = new Set<number>();
 
@@ -56,7 +56,7 @@ export const getFileResults = (
 		if (prevLineEnd < text.length) { lineRanges.push({ start: prevLineEnd, end: text.length }); }
 
 		let startLine = 0;
-		for (const { matchStartIndex, matchedText } of patternIndices) {
+		for (const { matchStartIndex, matchedText } of patternIndecies) {
 			if (remainingResultQuota < 0) {
 				break;
 			}

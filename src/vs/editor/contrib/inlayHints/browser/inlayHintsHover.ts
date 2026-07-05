@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AsyncIterableProducer } from '../../../../base/common/async.js';
+import { AsyncIterableObject } from '../../../../base/common/async.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { IMarkdownString, isEmptyMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
 import { ICodeEditor, IEditorMouseEvent, MouseTargetType } from '../../../browser/editorBrowser.js';
@@ -77,12 +77,12 @@ export class InlayHintsHover extends MarkdownHoverParticipant implements IEditor
 		return [];
 	}
 
-	override computeAsync(anchor: HoverAnchor, _lineDecorations: IModelDecoration[], source: HoverStartSource, token: CancellationToken): AsyncIterableProducer<MarkdownHover> {
+	override computeAsync(anchor: HoverAnchor, _lineDecorations: IModelDecoration[], source: HoverStartSource, token: CancellationToken): AsyncIterableObject<MarkdownHover> {
 		if (!(anchor instanceof InlayHintsHoverAnchor)) {
-			return AsyncIterableProducer.EMPTY;
+			return AsyncIterableObject.EMPTY;
 		}
 
-		return new AsyncIterableProducer<MarkdownHover>(async executor => {
+		return new AsyncIterableObject<MarkdownHover>(async executor => {
 
 			const { part } = anchor;
 			await part.item.resolve(token);
@@ -143,31 +143,27 @@ export class InlayHintsHover extends MarkdownHoverParticipant implements IEditor
 
 
 			// (3) Inlay Label Part Location tooltip
-			const iterable = this._resolveInlayHintLabelPartHover(part, token);
+			const iterable = await this._resolveInlayHintLabelPartHover(part, token);
 			for await (const item of iterable) {
 				executor.emitOne(item);
 			}
 		});
 	}
 
-	private async *_resolveInlayHintLabelPartHover(part: RenderedInlayHintLabelPart, token: CancellationToken): AsyncIterable<MarkdownHover> {
+	private async _resolveInlayHintLabelPartHover(part: RenderedInlayHintLabelPart, token: CancellationToken): Promise<AsyncIterableObject<MarkdownHover>> {
 		if (!part.part.location) {
-			return;
+			return AsyncIterableObject.EMPTY;
 		}
-
 		const { uri, range } = part.part.location;
 		const ref = await this._resolverService.createModelReference(uri);
 		try {
 			const model = ref.object.textEditorModel;
 			if (!this._languageFeaturesService.hoverProvider.has(model)) {
-				return;
+				return AsyncIterableObject.EMPTY;
 			}
-
-			for await (const item of getHoverProviderResultsAsAsyncIterable(this._languageFeaturesService.hoverProvider, model, new Position(range.startLineNumber, range.startColumn), token)) {
-				if (!isEmptyMarkdownString(item.hover.contents)) {
-					yield new MarkdownHover(this, part.item.anchor.range, item.hover.contents, false, 2 + item.ordinal);
-				}
-			}
+			return getHoverProviderResultsAsAsyncIterable(this._languageFeaturesService.hoverProvider, model, new Position(range.startLineNumber, range.startColumn), token)
+				.filter(item => !isEmptyMarkdownString(item.hover.contents))
+				.map(item => new MarkdownHover(this, part.item.anchor.range, item.hover.contents, false, 2 + item.ordinal));
 		} finally {
 			ref.dispose();
 		}

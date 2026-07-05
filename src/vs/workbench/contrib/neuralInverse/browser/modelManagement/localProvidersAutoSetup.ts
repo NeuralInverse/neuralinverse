@@ -74,8 +74,8 @@ const PROVIDER_SETUP_INFO: IProviderSetupInfo[] = [
 export class LocalProvidersAutoSetupContribution extends Disposable implements IWorkbenchContribution {
 	static readonly ID = 'workbench.contrib.localProvidersAutoSetup';
 
-	private pollIntervals: Map<ProviderName, ReturnType<typeof setInterval>> = new Map();
-	private pollTimeouts: Map<ProviderName, ReturnType<typeof setTimeout>> = new Map();
+	private pollIntervals: Map<ProviderName, NodeJS.Timeout> = new Map();
+	private pollTimeouts: Map<ProviderName, NodeJS.Timeout> = new Map();
 
 	constructor(
 		@IModelManagementService private readonly modelManagementService: IModelManagementService,

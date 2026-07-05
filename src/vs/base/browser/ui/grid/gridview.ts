@@ -145,7 +145,7 @@ export interface IViewDeserializer<T extends ISerializableView> {
 
 export interface ISerializedLeafNode {
 	type: 'leaf';
-	data: unknown;
+	data: any;
 	size: number;
 	visible?: boolean;
 	maximized?: boolean;

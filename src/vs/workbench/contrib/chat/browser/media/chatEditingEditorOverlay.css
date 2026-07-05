@@ -7,7 +7,7 @@
 	padding: 0px;
 	color: var(--vscode-button-foreground);
 	background-color: var(--vscode-button-background);
-	border-radius: 2px;
+	border-radius: 5px;
 	border: 1px solid var(--vscode-contrastBorder);
 	display: flex;
 	align-items: center;
@@ -35,22 +35,40 @@
 .chat-editor-overlay-widget .chat-editor-overlay-progress {
 	align-items: center;
 	display: none;
-	padding: 5px 0 5px 5px;
+	padding: 0px 5px;
 	font-size: 12px;
+	font-variant-numeric: tabular-nums;
 	overflow: hidden;
-	gap: 6px;
+	white-space: nowrap;
 }
 
 .chat-editor-overlay-widget.busy .chat-editor-overlay-progress {
 	display: inline-flex;
 }
 
-.chat-editor-overlay-widget .chat-editor-overlay-progress .progress-message {
-	white-space: nowrap;
-	max-width: 13em;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	padding-right: 8px;
+
+@keyframes ellipsis {
+	0% {
+		content: "";
+	}
+	25% {
+		content: ".";
+	}
+	50% {
+		content: "..";
+	}
+	75% {
+		content: "...";
+	}
+	100% {
+		content: "";
+	}
+}
+
+.chat-editor-overlay-widget.busy.paused .chat-editor-overlay-progress {
+	.codicon-loading {
+		display: none;
+	}
 }
 
 .chat-editor-overlay-widget .action-item > .action-label {
@@ -58,6 +76,14 @@
 	font-size: 12px;
 }
 
+.chat-editor-overlay-widget.busy .action-item > .action-label.busy::after {
+	content: "";
+	display: inline-flex;
+	white-space: nowrap;
+	overflow: hidden;
+	width: 3ch;
+	animation: ellipsis steps(4, end) 1s infinite;
+}
 
 .chat-editor-overlay-widget .action-item:first-child > .action-label {
 	padding-left: 7px;
@@ -79,10 +105,8 @@
 	> .action-label.codicon,
 	> .action-label,
 	> .action-label:hover {
-		color: var(--vscode-button-separator);
-		opacity: 1;
-		height: 18px;
-		margin: 0px 4px !important;
+		color: var(--vscode-button-foreground);
+		opacity: 0.7;
 	}
 }
 

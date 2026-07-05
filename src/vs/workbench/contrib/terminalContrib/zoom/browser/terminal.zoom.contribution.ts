@@ -57,10 +57,6 @@ class TerminalMouseWheelZoomContribution extends Disposable implements ITerminal
 		return this._configurationService.getValue(TerminalSettingId.FontSize);
 	}
 
-	private _clampFontSize(fontSize: number): number {
-		return clampTerminalFontSize(fontSize);
-	}
-
 	private _setupMouseWheelZoomListener(raw: RawXtermTerminal) {
 		// This is essentially a copy of what we do in the editor, just we modify font size directly
 		// as there is no separate zoom level concept in the terminal
@@ -76,8 +72,7 @@ class TerminalMouseWheelZoomContribution extends Disposable implements ITerminal
 			if (classifier.isPhysicalMouseWheel()) {
 				if (this._hasMouseWheelZoomModifiers(browserEvent)) {
 					const delta = browserEvent.deltaY > 0 ? -1 : 1;
-					const newFontSize = this._clampFontSize(this._getConfigFontSize() + delta);
-					this._configurationService.updateValue(TerminalSettingId.FontSize, newFontSize);
+					this._configurationService.updateValue(TerminalSettingId.FontSize, this._getConfigFontSize() + delta);
 					// EditorZoom.setZoomLevel(zoomLevel + delta);
 					browserEvent.preventDefault();
 					browserEvent.stopPropagation();
@@ -101,8 +96,7 @@ class TerminalMouseWheelZoomContribution extends Disposable implements ITerminal
 					const deltaAbs = Math.ceil(Math.abs(gestureAccumulatedDelta / 5));
 					const deltaDirection = gestureAccumulatedDelta > 0 ? -1 : 1;
 					const delta = deltaAbs * deltaDirection;
-					const newFontSize = this._clampFontSize(gestureStartFontSize + delta);
-					this._configurationService.updateValue(TerminalSettingId.FontSize, newFontSize);
+					this._configurationService.updateValue(TerminalSettingId.FontSize, gestureStartFontSize + delta);
 					gestureAccumulatedDelta += browserEvent.deltaY;
 					browserEvent.preventDefault();
 					browserEvent.stopPropagation();
@@ -134,8 +128,7 @@ registerTerminalAction({
 		const configurationService = accessor.get(IConfigurationService);
 		const value = configurationService.getValue(TerminalSettingId.FontSize);
 		if (isNumber(value)) {
-			const newFontSize = clampTerminalFontSize(value + 1);
-			await configurationService.updateValue(TerminalSettingId.FontSize, newFontSize);
+			await configurationService.updateValue(TerminalSettingId.FontSize, value + 1);
 		}
 	}
 });
@@ -147,8 +140,7 @@ registerTerminalAction({
 		const configurationService = accessor.get(IConfigurationService);
 		const value = configurationService.getValue(TerminalSettingId.FontSize);
 		if (isNumber(value)) {
-			const newFontSize = clampTerminalFontSize(value - 1);
-			await configurationService.updateValue(TerminalSettingId.FontSize, newFontSize);
+			await configurationService.updateValue(TerminalSettingId.FontSize, value - 1);
 		}
 	}
 });
@@ -161,7 +153,3 @@ registerTerminalAction({
 		await configurationService.updateValue(TerminalSettingId.FontSize, defaultTerminalFontSize);
 	}
 });
-
-export function clampTerminalFontSize(fontSize: number): number {
-	return Math.max(6, Math.min(100, fontSize));
-}

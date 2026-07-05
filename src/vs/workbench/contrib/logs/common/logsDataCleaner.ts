@@ -22,7 +22,7 @@ export class LogsDataCleaner extends Disposable {
 	}
 
 	private cleanUpOldLogsSoon(): void {
-		let handle: Timeout | undefined = setTimeout(async () => {
+		let handle: any = setTimeout(async () => {
 			handle = undefined;
 			const stat = await this.fileService.resolve(dirname(this.environmentService.logsHome));
 			if (stat.children) {

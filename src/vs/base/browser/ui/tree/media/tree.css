@@ -30,11 +30,10 @@
 	box-sizing: border-box;
 	height: 100%;
 	border-left: 1px solid transparent;
-	opacity: 0;
 }
 
 .monaco-workbench:not(.reduce-motion) .monaco-tl-indent > .indent-guide {
-	transition: opacity 0.1s linear;
+	transition: border-color 0.1s linear;
 }
 
 .monaco-tl-twistie,

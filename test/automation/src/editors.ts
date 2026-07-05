@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { Quality } from './application';
 import { Code } from './code';
 
 export class Editors {
@@ -10,9 +11,11 @@ export class Editors {
 	constructor(private code: Code) { }
 
 	async saveOpenedFile(): Promise<any> {
-		await this.code.dispatchKeybinding(process.platform === 'darwin' ? 'cmd+s' : 'ctrl+s', async () => {
-			await this.code.waitForElements('.tab.active.dirty', false, results => results.length === 0);
-		});
+		if (process.platform === 'darwin') {
+			await this.code.sendKeybinding('cmd+s');
+		} else {
+			await this.code.sendKeybinding('ctrl+s');
+		}
 	}
 
 	async selectTab(fileName: string): Promise<void> {
@@ -28,7 +31,7 @@ export class Editors {
 			await this.code.waitAndClick(`.tabs-container div.tab[data-resource-name$="${fileName}"]`);
 
 			try {
-				await this.waitForEditorFocus(fileName, 5 /* 5 retries * 100ms delay = 0.5s */);
+				await this.code.sendKeybinding(process.platform === 'darwin' ? 'cmd+1' : 'ctrl+1', () => this.waitForEditorFocus(fileName, 50 /* 50 retries * 100ms delay = 5s */));
 				return;
 			} catch (e) {
 				error = e;
@@ -50,7 +53,7 @@ export class Editors {
 	}
 
 	async waitForActiveEditor(fileName: string, retryCount?: number): Promise<any> {
-		const selector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] ${!this.code.editContextEnabled ? 'textarea' : '.native-edit-context'}`;
+		const selector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] ${this.code.quality === Quality.Stable ? 'textarea' : '.native-edit-context'}`;
 		return this.code.waitForActiveElement(selector, retryCount);
 	}
 
@@ -61,9 +64,9 @@ export class Editors {
 	async newUntitledFile(): Promise<void> {
 		const accept = () => this.waitForEditorFocus('Untitled-1');
 		if (process.platform === 'darwin') {
-			await this.code.dispatchKeybinding('cmd+n', accept);
+			await this.code.sendKeybinding('cmd+n', accept);
 		} else {
-			await this.code.dispatchKeybinding('ctrl+n', accept);
+			await this.code.sendKeybinding('ctrl+n', accept);
 		}
 	}
 }

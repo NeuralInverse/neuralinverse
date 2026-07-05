@@ -3,19 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { homedir } from 'os';
+import * as os from 'os';
+import * as path from 'path';
 import { NativeParsedArgs } from '../common/argv.js';
-
-// This file used to be a pure JS file and was always
-// importing `path` from node.js even though we ship
-// our own version of the library and prefer to use
-// that.
-// However, resolution of user-data-path is critical
-// and while our version of `path` is a copy of node.js
-// one, you never know. As such, preserve the use of
-// the built-in `path` lib for the time being.
-// eslint-disable-next-line local/code-import-patterns
-import { resolve, isAbsolute, join } from 'path';
 
 const cwd = process.env['VSCODE_CWD'] || process.cwd();
 
@@ -35,11 +25,11 @@ export function getUserDataPath(cliArgs: NativeParsedArgs, productName: string):
 	// node.js `path.resolve()` logic because it will
 	// not pick up our `VSCODE_CWD` environment variable
 	// (https://github.com/microsoft/vscode/issues/120269)
-	if (!isAbsolute(userDataPath)) {
+	if (!path.isAbsolute(userDataPath)) {
 		pathsToResolve.unshift(cwd);
 	}
 
-	return resolve(...pathsToResolve);
+	return path.resolve(...pathsToResolve);
 }
 
 function doGetUserDataPath(cliArgs: NativeParsedArgs, productName: string): string {
@@ -52,13 +42,13 @@ function doGetUserDataPath(cliArgs: NativeParsedArgs, productName: string): stri
 	// 1. Support portable mode
 	const portablePath = process.env['VSCODE_PORTABLE'];
 	if (portablePath) {
-		return join(portablePath, 'user-data');
+		return path.join(portablePath, 'user-data');
 	}
 
 	// 2. Support global VSCODE_APPDATA environment variable
 	let appDataPath = process.env['VSCODE_APPDATA'];
 	if (appDataPath) {
-		return join(appDataPath, productName);
+		return path.join(appDataPath, productName);
 	}
 
 	// With Electron>=13 --user-data-dir switch will be propagated to
@@ -80,18 +70,18 @@ function doGetUserDataPath(cliArgs: NativeParsedArgs, productName: string): stri
 					throw new Error('Windows: Unexpected undefined %USERPROFILE% environment variable');
 				}
 
-				appDataPath = join(userProfile, 'AppData', 'Roaming');
+				appDataPath = path.join(userProfile, 'AppData', 'Roaming');
 			}
 			break;
 		case 'darwin':
-			appDataPath = join(homedir(), 'Library', 'Application Support');
+			appDataPath = path.join(os.homedir(), 'Library', 'Application Support');
 			break;
 		case 'linux':
-			appDataPath = process.env['XDG_CONFIG_HOME'] || join(homedir(), '.config');
+			appDataPath = process.env['XDG_CONFIG_HOME'] || path.join(os.homedir(), '.config');
 			break;
 		default:
 			throw new Error('Platform not supported');
 	}
 
-	return join(appDataPath, productName);
+	return path.join(appDataPath, productName);
 }

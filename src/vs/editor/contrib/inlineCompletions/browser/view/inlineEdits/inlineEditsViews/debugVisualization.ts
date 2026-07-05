@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IDisposable } from '../../../../../../../base/common/lifecycle.js';
-import { IReader, derived } from '../../../../../../../base/common/observable.js';
-import { Rect } from '../../../../../../common/core/2d/rect.js';
+import { IReader, derivedWithStore } from '../../../../../../../base/common/observable.js';
+import { Rect } from '../../../../../../browser/rect.js';
 
 export interface IVisualizationEffect {
 	visualize(): IDisposable;
@@ -104,8 +104,8 @@ export function debugView(value: unknown, reader: IReader): void {
 }
 
 function debugReadDisposable(d: IDisposable, reader: IReader): void {
-	derived({ name: 'debugReadDisposable' }, (_reader) => {
-		_reader.store.add(d);
+	derivedWithStore((_reader, store) => {
+		store.add(d);
 		return undefined;
 	}).read(reader);
 }

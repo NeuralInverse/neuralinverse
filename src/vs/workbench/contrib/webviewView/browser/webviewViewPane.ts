@@ -30,6 +30,8 @@ import { IActivityService, NumberBadge } from '../../../services/activity/common
 import { IExtensionService } from '../../../services/extensions/common/extensions.js';
 import { IHoverService } from '../../../../platform/hover/browser/hover.js';
 
+declare const ResizeObserver: any;
+
 const storageKeys = {
 	webviewState: 'webviewState',
 } as const;
@@ -61,7 +63,7 @@ export class WebviewViewPane extends ViewPane {
 	private readonly viewState: MementoObject;
 	private readonly extensionId?: ExtensionIdentifier;
 
-	private _repositionTimeout?: Timeout;
+	private _repositionTimeout?: any;
 
 	constructor(
 		options: IViewletViewOptions,

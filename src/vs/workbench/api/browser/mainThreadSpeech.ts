@@ -98,12 +98,7 @@ export class MainThreadSpeech implements MainThreadSpeechShape {
 					onDidChange: onDidChange.event,
 					synthesize: async text => {
 						await this.proxy.$synthesizeSpeech(session, text);
-						const disposable = new DisposableStore();
-						try {
-							await raceCancellation(Event.toPromise(Event.filter(onDidChange.event, e => e.status === TextToSpeechStatus.Stopped, disposable), disposable), token);
-						} finally {
-							disposable.dispose();
-						}
+						await raceCancellation(Event.toPromise(Event.filter(onDidChange.event, e => e.status === TextToSpeechStatus.Stopped)), token);
 					}
 				};
 			},

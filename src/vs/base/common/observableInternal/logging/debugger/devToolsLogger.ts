@@ -3,21 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AutorunObserver, AutorunState } from '../../reactions/autorunImpl.js';
-import { TransactionImpl } from '../../transaction.js';
+import { AutorunObserver, AutorunState } from '../../autorun.js';
+import { BaseObservable, IObservable, IObserver, ObservableValue, TransactionImpl } from '../../base.js';
+import { Derived, DerivedState } from '../../derived.js';
 import { IChangeInformation, IObservableLogger } from '../logging.js';
 import { formatValue } from '../consoleObservableLogger.js';
 import { ObsDebuggerApi, IObsDeclaration, ObsInstanceId, ObsStateUpdate, ITransactionState, ObserverInstanceState } from './debuggerApi.js';
 import { registerDebugChannel } from './debuggerRpc.js';
-import { deepAssign, deepAssignDeleteNulls, Throttler } from './utils.js';
+import { deepAssign, deepAssignDeleteNulls, getFirstStackFrameOutsideOf, ILocation, Throttler } from './utils.js';
 import { isDefined } from '../../../types.js';
-import { FromEventObservable } from '../../observables/observableFromEvent.js';
+import { FromEventObservable } from '../../utils.js';
 import { BugIndicatingError, onUnexpectedError } from '../../../errors.js';
-import { IObservable, IObserver } from '../../base.js';
-import { BaseObservable } from '../../observables/baseObservable.js';
-import { Derived, DerivedState } from '../../observables/derivedImpl.js';
-import { ObservableValue } from '../../observables/observableValue.js';
-import { DebugLocation } from '../../debugLocation.js';
 
 interface IInstanceInfo {
 	declarationId: number;
@@ -136,25 +132,7 @@ export class DevToolsLogger implements IObservableLogger {
 					}
 
 					return undefined;
-				},
-				logValue: (instanceId) => {
-					const obs = this._aliveInstances.get(instanceId);
-					if (obs && 'get' in obs) {
-						console.log('Logged Value:', obs.get());
-					} else {
-						throw new BugIndicatingError('Observable is not supported');
-					}
-				},
-				rerun: (instanceId) => {
-					const obs = this._aliveInstances.get(instanceId);
-					if (obs instanceof Derived) {
-						obs.debugRecompute();
-					} else if (obs instanceof AutorunObserver) {
-						obs.debugRerun();
-					} else {
-						throw new BugIndicatingError('Observable is not supported');
-					}
-				},
+				}
 			}
 		};
 	});
@@ -273,9 +251,7 @@ export class DevToolsLogger implements IObservableLogger {
 		return undefined;
 	}
 
-	private constructor() {
-		DebugLocation.enable();
-	}
+	private constructor() { }
 
 	private _pendingChanges: ObsStateUpdate | null = null;
 	private readonly _changeThrottler = new Throttler();
@@ -301,29 +277,54 @@ export class DevToolsLogger implements IObservableLogger {
 		}
 	};
 
-	private _getDeclarationId(type: IObsDeclaration['type'], location: DebugLocation): number {
-		if (!location) {
-			return -1;
+	private _getDeclarationId(type: IObsDeclaration['type']): number {
+
+		let shallow = true;
+		let loc!: ILocation;
+
+		const Err = Error as any as { stackTraceLimit: number }; // For the monaco editor checks, which don't have the nodejs types.
+
+		while (true) {
+			const l = Err.stackTraceLimit;
+			Err.stackTraceLimit = shallow ? 6 : 20;
+			const stack = new Error().stack!;
+			Err.stackTraceLimit = l;
+
+			let result = getFirstStackFrameOutsideOf(stack, /[/\\]observableInternal[/\\]|\.observe|[/\\]util(s)?\./);
+
+			if (!shallow && !result) {
+				result = getFirstStackFrameOutsideOf(stack, /[/\\]observableInternal[/\\]|\.observe/)!;
+			}
+			if (result) {
+				loc = result;
+				break;
+			}
+			if (!shallow) {
+				console.error('Could not find location for declaration', new Error().stack);
+				loc = { fileName: 'unknown', line: 0, column: 0, id: 'unknown' };
+				break;
+			}
+			shallow = false;
 		}
 
-		let decInfo = this._declarations.get(location.id);
+		let decInfo = this._declarations.get(loc.id);
 		if (decInfo === undefined) {
 			decInfo = {
 				id: this._declarationId++,
 				type,
-				url: location.fileName,
-				line: location.line,
-				column: location.column,
+				url: loc.fileName,
+				line: loc.line,
+				column: loc.column,
 			};
-			this._declarations.set(location.id, decInfo);
+			this._declarations.set(loc.id, decInfo);
 
 			this._handleChange({ decls: { [decInfo.id]: decInfo } });
 		}
 		return decInfo.id;
 	}
 
-	handleObservableCreated(observable: IObservable<any>, location: DebugLocation): void {
-		const declarationId = this._getDeclarationId('observable/value', location);
+	handleObservableCreated(observable: IObservable<any>): void {
+		const declarationId = this._getDeclarationId('observable/value');
 
 		const info: IObservableInfo = {
 			declarationId,
@@ -383,8 +384,8 @@ export class DevToolsLogger implements IObservableLogger {
 		}
 	}
 
-	handleAutorunCreated(autorun: AutorunObserver, location: DebugLocation): void {
-		const declarationId = this._getDeclarationId('autorun', location);
+	handleAutorunCreated(autorun: AutorunObserver): void {
+		const declarationId = this._getDeclarationId('autorun');
 		const info: IAutorunInfo = {
 			declarationId,
 			instanceId: this._instanceId++,

@@ -22,7 +22,6 @@ import { ILogService } from '../../../../platform/log/common/log.js';
 import { IChatWidgetViewOptions } from '../../chat/browser/chat.js';
 import { IChatWidgetLocationOptions } from '../../chat/browser/chatWidget.js';
 import { isResponseVM } from '../../chat/common/chatViewModel.js';
-import { INotebookEditor } from '../../notebook/browser/notebookBrowser.js';
 import { ACTION_REGENERATE_RESPONSE, ACTION_REPORT_ISSUE, ACTION_TOGGLE_DIFF, CTX_INLINE_CHAT_OUTER_CURSOR_POSITION, MENU_INLINE_CHAT_SIDE, MENU_INLINE_CHAT_WIDGET_SECONDARY, MENU_INLINE_CHAT_WIDGET_STATUS } from '../common/inlineChat.js';
 import { EditorBasedInlineChatWidget } from './inlineChatWidget.js';
 
@@ -46,18 +45,16 @@ export class InlineChatZoneWidget extends ZoneWidget {
 	private readonly _scrollUp = this._disposables.add(new ScrollUpState(this.editor));
 	private readonly _ctxCursorPosition: IContextKey<'above' | 'below' | ''>;
 	private _dimension?: Dimension;
-	private notebookEditor?: INotebookEditor;
 
 	constructor(
 		location: IChatWidgetLocationOptions,
 		options: IChatWidgetViewOptions | undefined,
-		editors: { editor: ICodeEditor; notebookEditor?: INotebookEditor },
+		editor: ICodeEditor,
 		@IInstantiationService private readonly _instaService: IInstantiationService,
 		@ILogService private _logService: ILogService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
-		super(editors.editor, InlineChatZoneWidget._options);
-		this.notebookEditor = editors.notebookEditor;
+		super(editor, InlineChatZoneWidget._options);
 
 		this._ctxCursorPosition = CTX_INLINE_CHAT_OUTER_CURSOR_POSITION.bindTo(contextKeyService);
 
@@ -90,7 +87,7 @@ export class InlineChatZoneWidget extends ZoneWidget {
 				rendererOptions: {
 					renderTextEditsAsSummary: (uri) => {
 						// render when dealing with the current file in the editor
-						return isEqual(uri, editors.editor.getModel()?.uri);
+						return isEqual(uri, editor.getModel()?.uri);
 					},
 					renderDetectedCommandsWithRequest: true,
 					...options?.rendererOptions
@@ -168,7 +165,7 @@ export class InlineChatZoneWidget extends ZoneWidget {
 
 	private _computeHeight(): { linesValue: number; pixelsValue: number } {
 		const chatContentHeight = this.widget.contentHeight;
-		const editorHeight = this.notebookEditor?.getLayoutInfo().height ?? this.editor.getLayoutInfo().height;
+		const editorHeight = this.editor.getLayoutInfo().height;
 
 		const contentHeight = this._decoratingElementsHeight() + Math.min(chatContentHeight, Math.max(this.widget.minHeight, editorHeight * 0.42));
 		const heightInLines = contentHeight / this.editor.getOption(EditorOption.lineHeight);

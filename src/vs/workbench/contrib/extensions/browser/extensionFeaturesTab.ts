@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, DisposableStore, IDisposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
-import { $, append, clearNode, addDisposableListener, EventType } from '../../../../base/browser/dom.js';
+import { Disposable, DisposableStore, IDisposable, MutableDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
+import { $, append, clearNode } from '../../../../base/browser/dom.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { ExtensionIdentifier, IExtensionManifest } from '../../../../platform/extensions/common/extensions.js';
 import { Orientation, Sizing, SplitView } from '../../../../base/browser/ui/splitview/splitview.js';
@@ -152,15 +152,19 @@ class RuntimeStatusMarkdownRenderer extends Disposable implements IExtensionFeat
 	}
 
 	private renderMarkdown(markdown: IMarkdownString, container: HTMLElement, disposables: DisposableStore): void {
-		const { element } = disposables.add(renderMarkdown(
+		const { element, dispose } = renderMarkdown(
 			{
 				value: markdown.value,
 				isTrusted: markdown.isTrusted,
 				supportThemeIcons: true
 			},
 			{
-				actionHandler: (content) => this.openerService.open(content, { allowCommands: !!markdown.isTrusted }).catch(onUnexpectedError),
-			}));
+				actionHandler: {
+					callback: (content) => this.openerService.open(content, { allowCommands: !!markdown.isTrusted }).catch(onUnexpectedError),
+					disposables
+				},
+			});
+		disposables.add(toDisposable(dispose));
 		append(container, element);
 	}
 
@@ -300,13 +304,15 @@ class RuntimeStatusMarkdownRenderer extends Disposable implements IExtensionFeat
 				hoverDisposable.value = undefined;
 			}
 		};
-		disposables.add(addDisposableListener(svg, EventType.MOUSE_MOVE, mouseMoveListener));
+		svg.addEventListener('mousemove', mouseMoveListener);
+		disposables.add(toDisposable(() => svg.removeEventListener('mousemove', mouseMoveListener)));
 
 		const mouseLeaveListener = () => {
 			highlightCircle.style.display = 'none';
 			hoverDisposable.value = undefined;
 		};
-		disposables.add(addDisposableListener(svg, EventType.MOUSE_LEAVE, mouseLeaveListener));
+		svg.addEventListener('mouseleave', mouseLeaveListener);
+		disposables.add(toDisposable(() => svg.removeEventListener('mouseleave', mouseLeaveListener)));
 	}
 }
 
@@ -528,7 +534,7 @@ class ExtensionFeatureItemRenderer implements IListRenderer<IExtensionFeatureDes
 		}));
 	}
 
-	disposeElement(element: IExtensionFeatureDescriptor, index: number, templateData: IExtensionFeatureItemTemplateData): void {
+	disposeElement(element: IExtensionFeatureDescriptor, index: number, templateData: IExtensionFeatureItemTemplateData, height: number | undefined): void {
 		templateData.disposables.dispose();
 	}
 
@@ -702,15 +708,19 @@ class ExtensionFeatureView extends Disposable {
 	}
 
 	private renderMarkdown(markdown: IMarkdownString, container: HTMLElement): void {
-		const { element } = this._register(renderMarkdown(
+		const { element, dispose } = renderMarkdown(
 			{
 				value: markdown.value,
 				isTrusted: markdown.isTrusted,
 				supportThemeIcons: true
 			},
 			{
-				actionHandler: (content) => this.openerService.open(content, { allowCommands: !!markdown.isTrusted }).catch(onUnexpectedError),
-			}));
+				actionHandler: {
+					callback: (content) => this.openerService.open(content, { allowCommands: !!markdown.isTrusted }).catch(onUnexpectedError),
+					disposables: this._store
+				},
+			});
+		this._register(toDisposable(dispose));
 		append(container, element);
 	}
 
@@ -728,7 +738,7 @@ class ExtensionFeatureView extends Disposable {
 	}
 
 	private renderElementData(container: HTMLElement, renderer: IExtensionFeatureElementRenderer): void {
-		const elementData = this._register(renderer.render(this.manifest));
+		const elementData = renderer.render(this.manifest);
 		if (elementData.onDidChange) {
 			this._register(elementData.onDidChange(data => {
 				clearNode(container);

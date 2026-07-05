@@ -9,7 +9,7 @@ import { IActiveCodeEditor, ICodeEditor } from '../../../browser/editorBrowser.j
 import { IModelDecoration } from '../../../common/model.js';
 import { HoverStartSource, IHoverComputer } from './hoverOperation.js';
 import { HoverAnchor, HoverAnchorType, IEditorHoverParticipant, IHoverPart } from './hoverTypes.js';
-import { AsyncIterableProducer } from '../../../../base/common/async.js';
+import { AsyncIterableObject } from '../../../../base/common/async.js';
 
 export interface ContentHoverComputerOptions {
 	shouldFocus: boolean;
@@ -64,19 +64,19 @@ export class ContentHoverComputer implements IHoverComputer<ContentHoverComputer
 		});
 	}
 
-	public computeAsync(options: ContentHoverComputerOptions, token: CancellationToken): AsyncIterableProducer<IHoverPart> {
+	public computeAsync(options: ContentHoverComputerOptions, token: CancellationToken): AsyncIterableObject<IHoverPart> {
 		const anchor = options.anchor;
 
 		if (!this._editor.hasModel() || !anchor) {
-			return AsyncIterableProducer.EMPTY;
+			return AsyncIterableObject.EMPTY;
 		}
 
 		const lineDecorations = ContentHoverComputer._getLineDecorations(this._editor, anchor);
 
-		return AsyncIterableProducer.merge(
+		return AsyncIterableObject.merge(
 			this._participants.map((participant) => {
 				if (!participant.computeAsync) {
-					return AsyncIterableProducer.EMPTY;
+					return AsyncIterableObject.EMPTY;
 				}
 				return participant.computeAsync(anchor, lineDecorations, options.source, token);
 			})

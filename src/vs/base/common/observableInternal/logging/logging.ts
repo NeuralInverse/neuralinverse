@@ -3,11 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AutorunObserver } from '../reactions/autorunImpl.js';
-import { IObservable } from '../base.js';
-import { TransactionImpl } from '../transaction.js';
-import type { Derived } from '../observables/derivedImpl.js';
-import { DebugLocation } from '../debugLocation.js';
+import { AutorunObserver } from '../autorun.js';
+import { IObservable, TransactionImpl } from '../base.js';
+import type { Derived } from '../derived.js';
 
 let globalObservableLogger: IObservableLogger | undefined;
 
@@ -45,19 +43,19 @@ export interface IChangeInformation {
 }
 
 export interface IObservableLogger {
-	handleObservableCreated(observable: IObservable<any>, location: DebugLocation): void;
+	handleObservableCreated(observable: IObservable<any>): void;
 	handleOnListenerCountChanged(observable: IObservable<any>, newCount: number): void;
 
 	handleObservableUpdated(observable: IObservable<any>, info: IChangeInformation): void;
 
-	handleAutorunCreated(autorun: AutorunObserver, location: DebugLocation): void;
+	handleAutorunCreated(autorun: AutorunObserver): void;
 	handleAutorunDisposed(autorun: AutorunObserver): void;
 	handleAutorunDependencyChanged(autorun: AutorunObserver, observable: IObservable<any>, change: unknown): void;
 	handleAutorunStarted(autorun: AutorunObserver): void;
 	handleAutorunFinished(autorun: AutorunObserver): void;
 
-	handleDerivedDependencyChanged(derived: Derived<any, any, any>, observable: IObservable<any>, change: unknown): void;
-	handleDerivedCleared(observable: Derived<any, any, any>): void;
+	handleDerivedDependencyChanged(derived: Derived<any>, observable: IObservable<any>, change: unknown): void;
+	handleDerivedCleared(observable: Derived<any>): void;
 
 	handleBeginTransaction(transaction: TransactionImpl): void;
 	handleEndTransaction(transaction: TransactionImpl): void;
@@ -68,9 +66,9 @@ class ComposedLogger implements IObservableLogger {
 		public readonly loggers: IObservableLogger[],
 	) { }
 
-	handleObservableCreated(observable: IObservable<any>, location: DebugLocation): void {
+	handleObservableCreated(observable: IObservable<any>): void {
 		for (const logger of this.loggers) {
-			logger.handleObservableCreated(observable, location);
+			logger.handleObservableCreated(observable);
 		}
 	}
 	handleOnListenerCountChanged(observable: IObservable<any>, newCount: number): void {
@@ -83,9 +81,9 @@ class ComposedLogger implements IObservableLogger {
 			logger.handleObservableUpdated(observable, info);
 		}
 	}
-	handleAutorunCreated(autorun: AutorunObserver, location: DebugLocation): void {
+	handleAutorunCreated(autorun: AutorunObserver): void {
 		for (const logger of this.loggers) {
-			logger.handleAutorunCreated(autorun, location);
+			logger.handleAutorunCreated(autorun);
 		}
 	}
 	handleAutorunDisposed(autorun: AutorunObserver): void {

@@ -227,13 +227,7 @@
 			"windows": {
 				"command": ".\\scripts\\code-server.bat"
 			},
-			"args": [
-				"--no-launch",
-				"--connection-token",
-				"dev-token",
-				"--port",
-				"8080"
-			],
+			"args": ["--no-launch", "--connection-token", "dev-token", "--port", "8080"],
 			"label": "Run code server",
 			"isBackground": true,
 			"problemMatcher": {
@@ -255,12 +249,7 @@
 			"windows": {
 				"command": ".\\scripts\\code-web.bat"
 			},
-			"args": [
-				"--port",
-				"8080",
-				"--browser",
-				"none"
-			],
+			"args": ["--port", "8080", "--browser", "none"],
 			"label": "Run code web",
 			"isBackground": true,
 			"problemMatcher": {
@@ -308,6 +297,7 @@
 			"detail": "node_modules/tsec/bin/tsec -p src/tsconfig.json --noEmit"
 		},
 		{
+			// Used for monaco editor playground launch config
 			"label": "Launch Http Server",
 			"type": "shell",
 			"command": "node_modules/.bin/ts-node -T ./scripts/playground-server",
@@ -324,15 +314,6 @@
 			},
 			"dependsOn": [
 				"Core - Build"
-			]
-		},
-		{
-			"label": "Launch MCP Server",
-			"type": "shell",
-			"command": "cd test/mcp && npm run compile && npm run start-http",
-			"isBackground": true,
-			"problemMatcher": [
-				"$tsc"
 			]
 		}
 	]

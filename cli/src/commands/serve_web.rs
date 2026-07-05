@@ -88,16 +88,8 @@ pub async fn serve_web(ctx: CommandContext, mut args: ServeWebArgs) -> Result<i3
 
 	let cm: Arc<ConnectionManager> = ConnectionManager::new(&ctx, platform, args.clone());
 	let update_check_interval = 3600;
-	if args.commit_id.is_none() {
-		cm.clone()
-			.start_update_checker(Duration::from_secs(update_check_interval));
-	} else {
-		// If a commit was provided, invoke get_latest_release() once to ensure we're using that exact version;
-		// get_latest_release() will short-circuit to args.commit_id.
-		if let Err(e) = cm.get_latest_release().await {
-			warning!(cm.log, "error getting latest version: {}", e);
-		}
-	}
+	cm.clone()
+		.start_update_checker(Duration::from_secs(update_check_interval));
 
 	let key = get_server_key_half(&ctx.paths);
 	let make_svc = move || {
@@ -133,9 +125,7 @@ pub async fn serve_web(ctx: CommandContext, mut args: ServeWebArgs) -> Result<i3
 		};
 		let builder = Server::try_bind(&addr).map_err(CodeError::CouldNotListenOnInterface)?;
 
-		// Get the actual bound address (important when port 0 is used for random port assignment)
-		let bound_addr = builder.local_addr();
-		let mut listening = format!("Web UI available at http://{bound_addr}");
+		let mut listening = format!("Web UI available at http://{addr}");
 		if let Some(base) = args.server_base_path {
 			if !base.starts_with('/') {
 				listening.push('/');
@@ -638,22 +628,6 @@ impl ConnectionManager {
 			.and_then(|q| {
 				Quality::try_from(q).map_err(|_| CodeError::UpdatesNotConfigured("unknown quality"))
 			})?;
-
-		if let Some(commit) = &self.args.commit_id {
-			let release = Release {
-				name: commit.to_string(),
-				commit: commit.to_string(),
-				platform: self.platform,
-				target: target_kind,
-				quality,
-			};
-			debug!(
-				self.log,
-				"using provided commit instead of latest release: {}", release
-			);
-			*latest = Some((now, release.clone()));
-			return Ok(release);
-		}
 
 		let release = self
 			.update_service

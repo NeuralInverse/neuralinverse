@@ -10,7 +10,6 @@ import '../../common/services/languageFeatureDebounce.js';
 import '../../common/services/semanticTokensStylingService.js';
 import '../../common/services/languageFeaturesService.js';
 import '../../browser/services/hoverService/hoverService.js';
-import '../../browser/services/inlineCompletionsService.js';
 
 import * as strings from '../../../base/common/strings.js';
 import * as dom from '../../../base/browser/dom.js';
@@ -43,7 +42,7 @@ import { IKeybindingItem, KeybindingsRegistry } from '../../../platform/keybindi
 import { ResolvedKeybindingItem } from '../../../platform/keybinding/common/resolvedKeybindingItem.js';
 import { USLayoutResolvedKeybinding } from '../../../platform/keybinding/common/usLayoutResolvedKeybinding.js';
 import { ILabelService, ResourceLabelFormatter, IFormatterChangeEvent, Verbosity } from '../../../platform/label/common/label.js';
-import { INotification, INotificationHandle, INotificationService, IPromptChoice, IPromptOptions, NoOpNotification, IStatusMessageOptions, INotificationSource, INotificationSourceFilter, NotificationsFilter, IStatusHandle } from '../../../platform/notification/common/notification.js';
+import { INotification, INotificationHandle, INotificationService, IPromptChoice, IPromptOptions, NoOpNotification, IStatusMessageOptions, INotificationSource, INotificationSourceFilter, NotificationsFilter } from '../../../platform/notification/common/notification.js';
 import { IProgressRunner, IEditorProgressService, IProgressService, IProgress, IProgressCompositeOptions, IProgressDialogOptions, IProgressNotificationOptions, IProgressOptions, IProgressStep, IProgressWindowOptions } from '../../../platform/progress/common/progress.js';
 import { ITelemetryService, TelemetryLevel } from '../../../platform/telemetry/common/telemetry.js';
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, IWorkspace, IWorkspaceContextService, IWorkspaceFolder, IWorkspaceFoldersChangeEvent, IWorkspaceFoldersWillChangeEvent, WorkbenchState, WorkspaceFolder, STANDALONE_EDITOR_WORKSPACE_ID } from '../../../platform/workspace/common/workspace.js';
@@ -51,7 +50,7 @@ import { ILayoutService } from '../../../platform/layout/browser/layoutService.j
 import { StandaloneServicesNLS } from '../../common/standaloneStrings.js';
 import { basename } from '../../../base/common/resources.js';
 import { ICodeEditorService } from '../../browser/services/codeEditorService.js';
-import { ConsoleLogger, ILoggerService, ILogService, NullLoggerService } from '../../../platform/log/common/log.js';
+import { ConsoleLogger, ILogService } from '../../../platform/log/common/log.js';
 import { IWorkspaceTrustManagementService, IWorkspaceTrustTransitionParticipant, IWorkspaceTrustUriInfo } from '../../../platform/workspace/common/workspaceTrust.js';
 import { EditorOption } from '../../common/config/editorOptions.js';
 import { ICodeEditor, IDiffEditor } from '../../browser/editorBrowser.js';
@@ -97,10 +96,9 @@ import { onUnexpectedError } from '../../../base/common/errors.js';
 import { ExtensionKind, IEnvironmentService, IExtensionHostDebugParams } from '../../../platform/environment/common/environment.js';
 import { mainWindow } from '../../../base/browser/window.js';
 import { ResourceMap } from '../../../base/common/map.js';
+import { ITreeSitterParserService } from '../../common/services/treeSitterParserService.js';
+import { StandaloneTreeSitterParserService } from './standaloneTreeSitterService.js';
 import { IWebWorkerDescriptor } from '../../../base/browser/webWorkerFactory.js';
-import { ITreeSitterLibraryService } from '../../common/services/treeSitter/treeSitterLibraryService.js';
-import { StandaloneTreeSitterLibraryService } from './standaloneTreeSitterLibraryService.js';
-import { IDataChannelService, NullDataChannelService } from '../../../platform/dataChannel/common/dataChannel.js';
 
 class SimpleModel implements IResolvedTextEditorModel {
 
@@ -230,7 +228,6 @@ class StandaloneEnvironmentService implements IEnvironmentService {
 	readonly debugExtensionHost: IExtensionHostDebugParams = { port: null, break: false };
 	readonly isExtensionDevelopment: boolean = false;
 	readonly disableExtensions: boolean | string[] = false;
-	readonly disableExperiments: boolean = false;
 	readonly enableExtensions?: readonly string[] | undefined = undefined;
 	readonly extensionDevelopmentLocationURI?: URI[] | undefined = undefined;
 	readonly extensionDevelopmentKind?: ExtensionKind[] | undefined = undefined;
@@ -243,7 +240,6 @@ class StandaloneEnvironmentService implements IEnvironmentService {
 	readonly disableTelemetry: boolean = false;
 	readonly serviceMachineIdResource: URI = URI.from({ scheme: 'monaco', authority: 'serviceMachineIdResource' });
 	readonly policyFile?: URI | undefined = undefined;
-	readonly isSimulation: boolean | undefined = undefined;
 }
 
 class StandaloneDialogService implements IDialogService {
@@ -312,6 +308,10 @@ class StandaloneDialogService implements IDialogService {
 
 export class StandaloneNotificationService implements INotificationService {
 
+	readonly onDidAddNotification: Event<INotification> = Event.None;
+
+	readonly onDidRemoveNotification: Event<INotification> = Event.None;
+
 	readonly onDidChangeFilter: Event<void> = Event.None;
 
 	public _serviceBrand: undefined;
@@ -350,9 +350,10 @@ export class StandaloneNotificationService implements INotificationService {
 		return StandaloneNotificationService.NO_OP;
 	}
 
-	public status(message: string | Error, options?: IStatusMessageOptions): IStatusHandle {
-		return { close: () => { } };
+	public status(message: string | Error, options?: IStatusMessageOptions): IDisposable {
+		return Disposable.None;
 	}
+
 
 	public setFilter(filter: NotificationsFilter | INotificationSourceFilter): void { }
 
@@ -595,8 +596,8 @@ export class StandaloneKeybindingService extends AbstractKeybindingService {
 		return '';
 	}
 
-	public registerSchemaContribution(contribution: KeybindingsSchemaContribution): IDisposable {
-		return Disposable.None;
+	public registerSchemaContribution(contribution: KeybindingsSchemaContribution): void {
+		// noop
 	}
 
 	/**
@@ -1132,7 +1133,6 @@ export interface IEditorOverrideServices {
 	[index: string]: any;
 }
 
-
 registerSingleton(ILogService, StandaloneLogService, InstantiationType.Eager);
 registerSingleton(IConfigurationService, StandaloneConfigurationService, InstantiationType.Eager);
 registerSingleton(ITextResourceConfigurationService, StandaloneResourceConfigurationService, InstantiationType.Eager);
@@ -1167,9 +1167,7 @@ registerSingleton(IClipboardService, BrowserClipboardService, InstantiationType.
 registerSingleton(IContextMenuService, StandaloneContextMenuService, InstantiationType.Eager);
 registerSingleton(IMenuService, MenuService, InstantiationType.Eager);
 registerSingleton(IAccessibilitySignalService, StandaloneAccessbilitySignalService, InstantiationType.Eager);
-registerSingleton(ITreeSitterLibraryService, StandaloneTreeSitterLibraryService, InstantiationType.Eager);
-registerSingleton(ILoggerService, NullLoggerService, InstantiationType.Eager);
-registerSingleton(IDataChannelService, NullDataChannelService, InstantiationType.Eager);
+registerSingleton(ITreeSitterParserService, StandaloneTreeSitterParserService, InstantiationType.Eager);
 
 /**
  * We don't want to eagerly instantiate services because embedders get a one time chance

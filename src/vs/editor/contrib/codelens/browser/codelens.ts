@@ -16,8 +16,8 @@ import { LanguageFeatureRegistry } from '../../../common/languageFeatureRegistry
 import { ILanguageFeaturesService } from '../../../common/services/languageFeatures.js';
 
 export interface CodeLensItem {
-	readonly symbol: CodeLens;
-	readonly provider: CodeLensProvider;
+	symbol: CodeLens;
+	provider: CodeLensProvider;
 }
 
 export class CodeLensModel {

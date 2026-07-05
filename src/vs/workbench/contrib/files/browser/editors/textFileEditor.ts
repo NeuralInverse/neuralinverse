@@ -5,7 +5,7 @@
 
 import { localize } from '../../../../../nls.js';
 import { mark } from '../../../../../base/common/performance.js';
-import { assertReturnsDefined } from '../../../../../base/common/types.js';
+import { assertIsDefined } from '../../../../../base/common/types.js';
 import { IPathService } from '../../../../services/path/common/pathService.js';
 import { IAction, toAction } from '../../../../../base/common/actions.js';
 import { VIEWLET_ID, TEXT_FILE_EDITOR_ID, BINARY_TEXT_FILE_MODE } from '../../common/files.js';
@@ -125,7 +125,7 @@ export class TextFileEditor extends AbstractTextCodeEditor<ICodeEditorViewState>
 			const textFileModel = resolvedModel;
 
 			// Editor
-			const control = assertReturnsDefined(this.editorControl);
+			const control = assertIsDefined(this.editorControl);
 			control.setModel(textFileModel.textEditorModel);
 
 			// Restore view state (unless provided by options)

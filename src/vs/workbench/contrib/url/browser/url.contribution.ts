@@ -22,11 +22,8 @@ import { ConfigurationScope, Extensions as ConfigurationExtensions, IConfigurati
 import { workbenchConfigurationNodeBase } from '../../../common/configuration.js';
 import { ITrustedDomainService, TrustedDomainService } from './trustedDomainService.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
-import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 
 class OpenUrlAction extends Action2 {
-
-	static readonly STORAGE_KEY = 'workbench.action.url.openUrl.lastInput';
 
 	constructor() {
 		super({
@@ -40,15 +37,11 @@ class OpenUrlAction extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const quickInputService = accessor.get(IQuickInputService);
 		const urlService = accessor.get(IURLService);
-		const storageService = accessor.get(IStorageService);
 
-		const value = storageService.get(OpenUrlAction.STORAGE_KEY, StorageScope.WORKSPACE, '');
-
-		return quickInputService.input({ prompt: localize('urlToOpen', "URL to open"), value }).then(input => {
+		return quickInputService.input({ prompt: localize('urlToOpen', "URL to open") }).then(input => {
 			if (input) {
 				const uri = URI.parse(input);
 				urlService.open(uri, { originalUrl: input });
-				storageService.store(OpenUrlAction.STORAGE_KEY, input, StorageScope.WORKSPACE, StorageTarget.MACHINE);
 			}
 		});
 	}

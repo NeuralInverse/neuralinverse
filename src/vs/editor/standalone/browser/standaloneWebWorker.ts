@@ -38,7 +38,7 @@ export interface IInternalWebWorkerOptions {
 	/**
 	 * The worker.
 	 */
-	worker: Worker | Promise<Worker>;
+	worker: Worker;
 	/**
 	 * An object that can be used by the web worker to make calls back to the main thread.
 	 */
@@ -61,10 +61,6 @@ class MonacoWebWorkerImpl<T extends object> extends EditorWorkerClient implement
 		this._foreignProxy = this._getProxy().then(proxy => {
 			return new Proxy({}, {
 				get(target, prop, receiver) {
-					if (prop === 'then') {
-						// Don't forward the call when the proxy is returned in an async function and the runtime tries to .then it.
-						return undefined;
-					}
 					if (typeof prop !== 'string') {
 						throw new Error(`Not supported`);
 					}

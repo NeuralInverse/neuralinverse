@@ -3,32 +3,35 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import assert from 'assert';
-import { DisposableStore } from '../../../../../base/common/lifecycle.js';
-import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../base/test/common/utils.js';
+import { IDisposable, DisposableStore } from '../../../../../base/common/lifecycle.js';
 import { CommandsRegistry } from '../../../../../platform/commands/common/commands.js';
+import { CommandService } from '../../common/commandService.js';
+import { NullExtensionService } from '../../../extensions/common/extensions.js';
 import { InstantiationService } from '../../../../../platform/instantiation/common/instantiationService.js';
 import { NullLogService } from '../../../../../platform/log/common/log.js';
-import { NullExtensionService } from '../../../extensions/common/extensions.js';
-import { CommandService } from '../../common/commandService.js';
 
 suite('CommandService', function () {
 
-	const store = ensureNoDisposablesAreLeakedInTestSuite();
+	let commandRegistration: IDisposable;
 
 	setup(function () {
-		store.add(CommandsRegistry.registerCommand('foo', function () { }));
+		commandRegistration = CommandsRegistry.registerCommand('foo', function () { });
+	});
+
+	teardown(function () {
+		commandRegistration.dispose();
 	});
 
 	test('activateOnCommand', () => {
 
 		let lastEvent: string;
 
-		const service = store.add(new CommandService(new InstantiationService(), new class extends NullExtensionService {
+		const service = new CommandService(new InstantiationService(), new class extends NullExtensionService {
 			override activateByEvent(activationEvent: string): Promise<void> {
 				lastEvent = activationEvent;
 				return super.activateByEvent(activationEvent);
 			}
-		}, new NullLogService()));
+		}, new NullLogService());
 
 		return service.executeCommand('foo').then(() => {
 			assert.ok(lastEvent, 'onCommand:foo');
@@ -48,7 +51,7 @@ suite('CommandService', function () {
 			}
 		};
 
-		const service = store.add(new CommandService(new InstantiationService(), extensionService, new NullLogService()));
+		const service = new CommandService(new InstantiationService(), extensionService, new NullLogService());
 
 		await extensionService.whenInstalledExtensionsRegistered();
 
@@ -62,11 +65,11 @@ suite('CommandService', function () {
 		let callCounter = 0;
 		const reg = CommandsRegistry.registerCommand('bar', () => callCounter += 1);
 
-		const service = store.add(new CommandService(new InstantiationService(), new class extends NullExtensionService {
+		const service = new CommandService(new InstantiationService(), new class extends NullExtensionService {
 			override whenInstalledExtensionsRegistered() {
 				return new Promise<boolean>(_resolve => { /*ignore*/ });
 			}
-		}, new NullLogService()));
+		}, new NullLogService());
 
 		service.executeCommand('bar');
 		assert.strictEqual(callCounter, 1);
@@ -79,11 +82,11 @@ suite('CommandService', function () {
 		let resolveFunc: Function;
 		const whenInstalledExtensionsRegistered = new Promise<boolean>(_resolve => { resolveFunc = _resolve; });
 
-		const service = store.add(new CommandService(new InstantiationService(), new class extends NullExtensionService {
+		const service = new CommandService(new InstantiationService(), new class extends NullExtensionService {
 			override whenInstalledExtensionsRegistered() {
 				return whenInstalledExtensionsRegistered;
 			}
-		}, new NullLogService()));
+		}, new NullLogService());
 
 		const r = service.executeCommand('bar');
 		assert.strictEqual(callCounter, 0);
@@ -102,7 +105,7 @@ suite('CommandService', function () {
 		let callCounter = 0;
 		const disposable = new DisposableStore();
 		const events: string[] = [];
-		const service = store.add(new CommandService(new InstantiationService(), new class extends NullExtensionService {
+		const service = new CommandService(new InstantiationService(), new class extends NullExtensionService {
 
 			override activateByEvent(event: string): Promise<void> {
 				events.push(event);
@@ -123,7 +126,7 @@ suite('CommandService', function () {
 				return Promise.resolve();
 			}
 
-		}, new NullLogService()));
+		}, new NullLogService());
 
 		return service.executeCommand('farboo').then(() => {
 			assert.strictEqual(callCounter, 1);
@@ -137,7 +140,7 @@ suite('CommandService', function () {
 		const expectedOrder: string[] = ['registering command', 'resolving activation event', 'executing command'];
 		const actualOrder: string[] = [];
 		const disposables = new DisposableStore();
-		const service = store.add(new CommandService(new InstantiationService(), new class extends NullExtensionService {
+		const service = new CommandService(new InstantiationService(), new class extends NullExtensionService {
 
 			override activateByEvent(event: string): Promise<void> {
 				if (event === '*') {
@@ -164,7 +167,7 @@ suite('CommandService', function () {
 				return Promise.resolve();
 			}
 
-		}, new NullLogService()));
+		}, new NullLogService());
 
 		return service.executeCommand('farboo2').then(() => {
 			assert.deepStrictEqual(actualOrder, expectedOrder);
@@ -185,7 +188,7 @@ suite('CommandService', function () {
 				return true;
 			}
 		};
-		const service = store.add(new CommandService(new InstantiationService(), extensionService, new NullLogService()));
+		const service = new CommandService(new InstantiationService(), extensionService, new NullLogService());
 
 		await extensionService.whenInstalledExtensionsRegistered();
 

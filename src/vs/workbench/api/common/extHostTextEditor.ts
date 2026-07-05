@@ -456,9 +456,6 @@ export class ExtHostTextEditor {
 				if (!Array.isArray(value) || value.some(a => !(a instanceof Selection))) {
 					throw illegalArgument('selections');
 				}
-				if (value.length === 0) {
-					value = [new Selection(0, 0, 0, 0)];
-				}
 				that._selections = value;
 				that._trySetSelection();
 			},

@@ -63,8 +63,3 @@ export const generateUuid = (function (): () => string {
 		return result;
 	};
 })();
-
-/** Namespace should be 3 letter. */
-export function prefixedUuid(namespace: string): string {
-	return `${namespace}-${generateUuid()}`;
-}

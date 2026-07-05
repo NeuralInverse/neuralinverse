@@ -13,7 +13,6 @@ import { ILogService } from '../../log/common/log.js';
 import { ITelemetryService } from '../../telemetry/common/telemetry.js';
 import { WindowUtilityProcess } from '../../utilityProcess/electron-main/utilityProcess.js';
 import { IWindowsMainService } from '../../windows/electron-main/windows.js';
-import { IConfigurationService } from '../../configuration/common/configuration.js';
 
 export class ExtensionHostStarter extends Disposable implements IDisposable, IExtensionHostStarter {
 
@@ -29,7 +28,6 @@ export class ExtensionHostStarter extends Disposable implements IDisposable, IEx
 		@ILifecycleMainService private readonly _lifecycleMainService: ILifecycleMainService,
 		@IWindowsMainService private readonly _windowsMainService: IWindowsMainService,
 		@ITelemetryService private readonly _telemetryService: ITelemetryService,
-		@IConfigurationService private readonly _configurationService: IConfigurationService,
 	) {
 		super();
 
@@ -107,16 +105,11 @@ export class ExtensionHostStarter extends Disposable implements IDisposable, IEx
 			throw canceled();
 		}
 		const extHost = this._getExtHost(id);
-		const args = ['--skipWorkspaceStorageLock'];
-		if (this._configurationService.getValue<boolean>('extensions.supportNodeGlobalNavigator')) {
-			args.push('--supportGlobalNavigator');
-		}
 		extHost.start({
 			...opts,
 			type: 'extensionHost',
-			name: 'extension-host',
 			entryPoint: 'vs/workbench/api/node/extensionHostProcess',
-			args,
+			args: ['--skipWorkspaceStorageLock'],
 			execArgv: opts.execArgv,
 			allowLoadingUnsignedLibraries: true,
 			respondToAuthRequestsFromMainProcess: true,

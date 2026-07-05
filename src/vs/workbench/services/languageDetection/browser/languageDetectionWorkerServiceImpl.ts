@@ -212,7 +212,7 @@ export class LanguageDetectionWorkerClient extends Disposable {
 				$getModelJsonUri: async () => this.getModelJsonUri(),
 				$getWeightsUri: async () => this.getWeightsUri(),
 			});
-			const workerTextModelSyncClient = this._register(WorkerTextModelSyncClient.create(workerClient, this._modelService));
+			const workerTextModelSyncClient = WorkerTextModelSyncClient.create(workerClient, this._modelService);
 			this.worker = { workerClient, workerTextModelSyncClient };
 		}
 		return this.worker;
@@ -272,7 +272,7 @@ export class LanguageDetectionWorkerClient extends Disposable {
 		}
 
 		const { workerClient, workerTextModelSyncClient } = this._getOrCreateLanguageDetectionWorker();
-		workerTextModelSyncClient.ensureSyncedResources([resource]);
+		await workerTextModelSyncClient.ensureSyncedResources([resource]);
 		const modelId = await workerClient.proxy.$detectLanguage(resource.toString(), langBiases, preferHistory, supportedLangs);
 		const languageId = this.getLanguageId(modelId);
 

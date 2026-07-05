@@ -50,7 +50,7 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 	// a chance to register so that the complete set of commands shows up as result
 	// We do not want to delay functionality beyond that time though to keep the commands
 	// functional.
-	private readonly extensionRegistrationRace: Promise<boolean | undefined>;
+	private readonly extensionRegistrationRace = raceTimeout(this.extensionService.whenInstalledExtensionsRegistered(), 800);
 
 	private useAiRelatedInfo = false;
 
@@ -67,7 +67,7 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
 		@IMenuService private readonly menuService: IMenuService,
-		@IExtensionService extensionService: IExtensionService,
+		@IExtensionService private readonly extensionService: IExtensionService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@ICommandService commandService: ICommandService,
@@ -88,7 +88,6 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 			}),
 		}, instantiationService, keybindingService, commandService, telemetryService, dialogService);
 
-		this.extensionRegistrationRace = raceTimeout(extensionService.whenInstalledExtensionsRegistered(), 800);
 		this._register(configurationService.onDidChangeConfiguration((e) => this.updateOptions(e)));
 		this.updateOptions();
 	}

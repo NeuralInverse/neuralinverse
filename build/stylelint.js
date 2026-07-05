@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-// @ts-check
 
 const es = require('event-stream');
 const vfs = require('vinyl-fs');
@@ -11,16 +10,11 @@ const { getVariableNameValidator } = require('./lib/stylelint/validateVariableNa
 
 module.exports = gulpstylelint;
 
-/**
- * use regex on lines
- *
- * @param {function(string, boolean):void} reporter
- */
+/** use regex on lines */
 function gulpstylelint(reporter) {
 	const variableValidator = getVariableNameValidator();
 	let errorCount = 0;
 	return es.through(function (file) {
-		/** @type {string[]} */
 		const lines = file.__lines || file.contents.toString('utf8').split(/\r\n|\r|\n/);
 		file.__lines = lines;
 

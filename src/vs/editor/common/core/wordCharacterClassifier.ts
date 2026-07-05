@@ -5,7 +5,6 @@
 
 import { CharCode } from '../../../base/common/charCode.js';
 import { safeIntl } from '../../../base/common/date.js';
-import { Lazy } from '../../../base/common/lazy.js';
 import { LRUCache } from '../../../base/common/map.js';
 import { CharacterClassifier } from './characterClassifier.js';
 
@@ -18,7 +17,7 @@ export const enum WordCharacterClass {
 export class WordCharacterClassifier extends CharacterClassifier<WordCharacterClass> {
 
 	public readonly intlSegmenterLocales: Intl.UnicodeBCP47LocaleIdentifier[];
-	private readonly _segmenter: Lazy<Intl.Segmenter> | null = null;
+	private readonly _segmenter: Intl.Segmenter | null = null;
 	private _cachedLine: string | null = null;
 	private _cachedSegments: IntlWordSegmentData[] = [];
 
@@ -72,7 +71,7 @@ export class WordCharacterClassifier extends CharacterClassifier<WordCharacterCl
 
 		// Update the cache with the new line
 		this._cachedLine = line;
-		this._cachedSegments = this._filterWordSegments(this._segmenter.value.segment(line));
+		this._cachedSegments = this._filterWordSegments(this._segmenter.segment(line));
 
 		return this._cachedSegments;
 	}

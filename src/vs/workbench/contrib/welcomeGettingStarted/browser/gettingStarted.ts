@@ -21,9 +21,9 @@ import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle
 import { ILink, LinkedText } from '../../../../base/common/linkedText.js';
 import { parse } from '../../../../base/common/marshalling.js';
 import { Schemas, matchesScheme } from '../../../../base/common/network.js';
-import { OS } from '../../../../base/common/platform.js';
+import { isMacintosh, OS } from '../../../../base/common/platform.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
-import { assertReturnsDefined } from '../../../../base/common/types.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
 import { URI } from '../../../../base/common/uri.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
 import './media/gettingStarted.css';
@@ -45,7 +45,7 @@ import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
 import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from '../../../../platform/storage/common/storage.js';
-import { firstSessionDateStorageKey, ITelemetryService, TelemetryLevel } from '../../../../platform/telemetry/common/telemetry.js';
+import { ITelemetryService, TelemetryLevel, firstSessionDateStorageKey } from '../../../../platform/telemetry/common/telemetry.js';
 import { getTelemetryLevel } from '../../../../platform/telemetry/common/telemetryUtils.js';
 import { defaultButtonStyles, defaultKeybindingLabelStyles, defaultToggleStyles } from '../../../../platform/theme/browser/defaultStyles.js';
 import { IWindowOpenable } from '../../../../platform/window/common/window.js';
@@ -60,7 +60,7 @@ import { IWebviewElement, IWebviewService } from '../../webview/browser/webview.
 import './gettingStartedColors.js';
 import { GettingStartedDetailsRenderer } from './gettingStartedDetailsRenderer.js';
 import { gettingStartedCheckedCodicon, gettingStartedUncheckedCodicon } from './gettingStartedIcons.js';
-import { GettingStartedEditorOptions, GettingStartedInput } from './gettingStartedInput.js';
+import { GettingStartedInput } from './gettingStartedInput.js';
 import { IResolvedWalkthrough, IResolvedWalkthroughStep, IWalkthroughsService, hiddenEntriesConfigurationKey, parseDescription } from './gettingStartedService.js';
 import { RestoreWalkthroughsConfigurationValue, restoreWalkthroughsConfigurationKey } from './startupPage.js';
 import { startEntries } from '../common/gettingStartedContent.js';
@@ -148,6 +148,7 @@ export class GettingStartedPage extends EditorPane {
 
 	private contextService: IContextKeyService;
 
+	private hasScrolledToFirstCategory = false;
 	private recentlyOpenedList?: GettingStartedIndexList<RecentEntry>;
 	private startList?: GettingStartedIndexList<IWelcomePageStartEntry>;
 	private gettingStartedList?: GettingStartedIndexList<IResolvedWalkthrough>;
@@ -189,7 +190,7 @@ export class GettingStartedPage extends EditorPane {
 		@IHostService private readonly hostService: IHostService,
 		@IWebviewService private readonly webviewService: IWebviewService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-		@IAccessibilityService private readonly accessibilityService: IAccessibilityService,
+		@IAccessibilityService private readonly accessibilityService: IAccessibilityService
 	) {
 
 		super(GettingStartedPage.ID, group, telemetryService, themeService, storageService);
@@ -252,7 +253,7 @@ export class GettingStartedPage extends EditorPane {
 		}));
 
 		this._register(this.gettingStartedService.onDidProgressStep(step => {
-			const category = this.gettingStartedCategories.find(c => c.id === step.category);
+			const category = this.gettingStartedCategories.find(category => category.id === step.category);
 			if (!category) { throw Error('Could not find category with ID: ' + step.category); }
 			const ourStep = category.steps.find(_step => _step.id === step.id);
 			if (!ourStep) {
@@ -272,7 +273,7 @@ export class GettingStartedPage extends EditorPane {
 			ourStep.done = step.done;
 
 			if (category.id === this.currentWalkthrough?.id) {
-				const badgeelements = assertReturnsDefined(this.window.document.querySelectorAll(`[data-done-step-id="${step.id}"]`));
+				const badgeelements = assertIsDefined(this.window.document.querySelectorAll(`[data-done-step-id="${step.id}"]`));
 				badgeelements.forEach(badgeelement => {
 					if (step.done) {
 						badgeelement.setAttribute('aria-checked', 'true');
@@ -342,7 +343,6 @@ export class GettingStartedPage extends EditorPane {
 	override async setInput(newInput: GettingStartedInput, options: IEditorOptions | undefined, context: IEditorOpenContext, token: CancellationToken) {
 		this.container.classList.remove('animatable');
 		this.editorInput = newInput;
-		this.editorInput.showTelemetryNotice = (options as GettingStartedEditorOptions)?.showTelemetryNotice ?? true;
 		await super.setInput(newInput, options, context, token);
 		await this.buildCategoriesSlide();
 		if (this.shouldAnimate()) {
@@ -408,7 +408,7 @@ export class GettingStartedPage extends EditorPane {
 				if (this.contextService.contextMatchesRules(ContextKeyExpr.and(WorkbenchStateContext.isEqualTo('workspace')))) {
 					this.commandService.executeCommand(OpenFolderViaWorkspaceAction.ID);
 				} else {
-					this.commandService.executeCommand('workbench.action.files.openFolder');
+					this.commandService.executeCommand(isMacintosh ? 'workbench.action.files.openFileFolder' : 'workbench.action.files.openFolder');
 				}
 				break;
 			}
@@ -486,7 +486,7 @@ export class GettingStartedPage extends EditorPane {
 	}
 
 	private toggleStepCompletion(argument: string) {
-		const stepToggle = assertReturnsDefined(this.currentWalkthrough?.steps.find(step => step.id === argument));
+		const stepToggle = assertIsDefined(this.currentWalkthrough?.steps.find(step => step.id === argument));
 		if (stepToggle.done) {
 			this.gettingStartedService.deprogressStep(argument);
 		} else {
@@ -526,7 +526,7 @@ export class GettingStartedPage extends EditorPane {
 		if (!this.currentWalkthrough) {
 			throw Error('no walkthrough selected');
 		}
-		const stepToExpand = assertReturnsDefined(this.currentWalkthrough.steps.find(step => step.id === stepId));
+		const stepToExpand = assertIsDefined(this.currentWalkthrough.steps.find(step => step.id === stepId));
 
 		if (!forceRebuild && this.currentMediaComponent === stepId) { return; }
 		this.currentMediaComponent = stepId;
@@ -770,7 +770,7 @@ export class GettingStartedPage extends EditorPane {
 					// No steps around... just ignore.
 					return;
 				}
-				id = assertReturnsDefined(stepElement.getAttribute('data-step-id'));
+				id = assertIsDefined(stepElement.getAttribute('data-step-id'));
 			}
 			stepElement.parentElement?.querySelectorAll<HTMLElement>('.expanded').forEach(node => {
 				if (node.getAttribute('data-step-id') !== id) {
@@ -937,11 +937,12 @@ export class GettingStartedPage extends EditorPane {
 			}
 		}
 
+		const someStepsComplete = this.gettingStartedCategories.some(category => category.steps.find(s => s.done));
 		if (this.editorInput.showTelemetryNotice && this.productService.openToWelcomeMainPage) {
 			const telemetryNotice = $('p.telemetry-notice');
 			this.buildTelemetryFooter(telemetryNotice);
 			footer.appendChild(telemetryNotice);
-		} else if (!this.productService.openToWelcomeMainPage && this.showFeaturedWalkthrough && this.storageService.isNew(StorageScope.APPLICATION)) {
+		} else if (!this.productService.openToWelcomeMainPage && !someStepsComplete && !this.hasScrolledToFirstCategory && this.showFeaturedWalkthrough) {
 			const firstSessionDateString = this.storageService.get(firstSessionDateStorageKey, StorageScope.APPLICATION) || new Date().toUTCString();
 			const daysSinceFirstSession = ((+new Date()) - (+new Date(firstSessionDateString))) / 1000 / 60 / 60 / 24;
 			const fistContentBehaviour = daysSinceFirstSession < 1 ? 'openToFirstCategory' : 'index';
@@ -949,6 +950,7 @@ export class GettingStartedPage extends EditorPane {
 			if (fistContentBehaviour === 'openToFirstCategory') {
 				const first = this.gettingStartedCategories.filter(c => !c.when || this.contextService.contextMatchesRules(c.when))[0];
 				if (first) {
+					this.hasScrolledToFirstCategory = true;
 					this.currentWalkthrough = first;
 					this.editorInput.selectedCategory = this.currentWalkthrough?.id;
 					this.editorInput.walkthroughPageTitle = this.currentWalkthrough.walkthroughPageTitle;
@@ -1188,12 +1190,12 @@ export class GettingStartedPage extends EditorPane {
 	private updateCategoryProgress() {
 		this.window.document.querySelectorAll('.category-progress').forEach(element => {
 			const categoryID = element.getAttribute('x-data-category-id');
-			const category = this.gettingStartedCategories.find(c => c.id === categoryID);
+			const category = this.gettingStartedCategories.find(category => category.id === categoryID);
 			if (!category) { throw Error('Could not find category with ID ' + categoryID); }
 
 			const stats = this.getWalkthroughCompletionStats(category);
 
-			const bar = assertReturnsDefined(element.querySelector('.progress-bar-inner')) as HTMLDivElement;
+			const bar = assertIsDefined(element.querySelector('.progress-bar-inner')) as HTMLDivElement;
 			bar.setAttribute('aria-valuemin', '0');
 			bar.setAttribute('aria-valuenow', '' + stats.stepsComplete);
 			bar.setAttribute('aria-valuemax', '' + stats.stepsTotal);
@@ -1241,7 +1243,7 @@ export class GettingStartedPage extends EditorPane {
 
 	private focusSideEditorGroup() {
 		const fullSize = this.groupsService.getPart(this.group).contentDimension;
-		if (!fullSize || fullSize.width <= 700 || this.container.classList.contains('width-constrained') || this.container.classList.contains('width-semi-constrained')) { return; }
+		if (!fullSize || fullSize.width <= 700) { return; }
 		if (this.groupsService.count === 1) {
 			const sideGroup = this.groupsService.addGroup(this.groupsService.groups[0], GroupDirection.RIGHT);
 			this.groupsService.activateGroup(sideGroup);
@@ -1249,7 +1251,7 @@ export class GettingStartedPage extends EditorPane {
 			const gettingStartedSize = Math.floor(fullSize.width / 2);
 
 			const gettingStartedGroup = this.groupsService.getGroups(GroupsOrder.MOST_RECENTLY_ACTIVE).find(group => (group.activeEditor instanceof GettingStartedInput));
-			this.groupsService.setSize(assertReturnsDefined(gettingStartedGroup), { width: gettingStartedSize, height: fullSize.height });
+			this.groupsService.setSize(assertIsDefined(gettingStartedGroup), { width: gettingStartedSize, height: fullSize.height });
 		}
 
 		const nonGettingStartedGroup = this.groupsService.getGroups(GroupsOrder.MOST_RECENTLY_ACTIVE).find(group => !(group.activeEditor instanceof GettingStartedInput));
@@ -1371,7 +1373,7 @@ export class GettingStartedPage extends EditorPane {
 						const labelWithIcon = renderLabelWithIcons(node);
 						for (const element of labelWithIcon) {
 							if (typeof element === 'string') {
-								p.appendChild(renderFormattedText(element, { renderCodeSegments: true }, $('span')));
+								p.appendChild(renderFormattedText(element, { inline: true, renderCodeSegments: true }));
 							} else {
 								p.appendChild(element);
 							}
@@ -1555,8 +1557,7 @@ export class GettingStartedPage extends EditorPane {
 		const text = localize({ key: 'footer', comment: ['fist substitution is "vs code", second is "privacy statement", third is "opt out".'] },
 			"{0} collects usage data. Read our {1} and learn how to {2}.", this.productService.nameShort, privacyStatementButton, optOutButton);
 
-		const renderedContents = this.detailsPageDisposables.add(mdRenderer.render({ value: text, isTrusted: true }));
-		parent.append(renderedContents.element);
+		parent.append(mdRenderer.render({ value: text, isTrusted: true }).element);
 	}
 
 	private getKeybindingLabel(command: string) {
@@ -1612,7 +1613,7 @@ export class GettingStartedPage extends EditorPane {
 	}
 
 	private setSlide(toEnable: 'details' | 'categories', firstLaunch: boolean = false) {
-		const slideManager = assertReturnsDefined(this.container.querySelector('.gettingStarted'));
+		const slideManager = assertIsDefined(this.container.querySelector('.gettingStarted'));
 		if (toEnable === 'categories') {
 			slideManager.classList.remove('showDetails');
 			slideManager.classList.add('showCategories');
@@ -1625,6 +1626,7 @@ export class GettingStartedPage extends EditorPane {
 			slideManager.classList.remove('showCategories');
 			const prevButton = this.container.querySelector<HTMLButtonElement>('.prev-button.button-link');
 			prevButton!.style.display = this.editorInput.showWelcome || this.prevWalkthrough ? 'block' : 'none';
+
 			const moreTextElement = prevButton!.querySelector('.moreText');
 			moreTextElement!.textContent = firstLaunch ? localize('welcome', "Welcome") : localize('goBack', "Go Back");
 

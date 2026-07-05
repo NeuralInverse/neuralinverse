@@ -13,18 +13,11 @@ export class GitEditSessionIdentityProvider implements vscode.EditSessionIdentit
 	private providerRegistration: vscode.Disposable;
 
 	constructor(private model: Model) {
-		this.providerRegistration = vscode.Disposable.from(
-			vscode.workspace.registerEditSessionIdentityProvider('file', this),
-			vscode.workspace.onWillCreateEditSessionIdentity((e) => {
-				e.waitUntil(
-					this._onWillCreateEditSessionIdentity(e.workspaceFolder).catch(err => {
-						if (err instanceof vscode.CancellationError) {
-							throw err;
-						}
-					})
-				);
-			})
-		);
+		this.providerRegistration = vscode.workspace.registerEditSessionIdentityProvider('file', this);
+
+		vscode.workspace.onWillCreateEditSessionIdentity((e) => {
+			e.waitUntil(this._onWillCreateEditSessionIdentity(e.workspaceFolder));
+		});
 	}
 
 	dispose() {
@@ -88,23 +81,9 @@ export class GitEditSessionIdentityProvider implements vscode.EditSessionIdentit
 
 		await repository.status();
 
-		if (!repository.HEAD?.commit) {
-			// Handle publishing empty repository with no commits
-
-			const yes = vscode.l10n.t('Yes');
-			const selection = await vscode.window.showInformationMessage(
-				vscode.l10n.t('Would you like to publish this repository to continue working on it elsewhere?'),
-				{ modal: true },
-				yes
-			);
-			if (selection !== yes) {
-				throw new vscode.CancellationError();
-			}
-			await repository.commit('Initial commit', { all: true });
-			await vscode.commands.executeCommand('git.publish');
-		} else if (!repository.HEAD?.upstream && repository.HEAD?.type === RefType.Head) {
-			// If this branch hasn't been published to the remote yet,
-			// ensure that it is published before Continue On is invoked
+		// If this branch hasn't been published to the remote yet,
+		// ensure that it is published before Continue On is invoked
+		if (!repository.HEAD?.upstream && repository.HEAD?.type === RefType.Head) {
 
 			const publishBranch = vscode.l10n.t('Publish Branch');
 			const selection = await vscode.window.showInformationMessage(

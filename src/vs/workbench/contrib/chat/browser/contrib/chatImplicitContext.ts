@@ -8,9 +8,9 @@ import { Emitter, Event } from '../../../../../base/common/event.js';
 import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
 import { Schemas } from '../../../../../base/common/network.js';
 import { autorun } from '../../../../../base/common/observable.js';
-import { basename, isEqual } from '../../../../../base/common/resources.js';
+import { basename } from '../../../../../base/common/resources.js';
 import { URI } from '../../../../../base/common/uri.js';
-import { getCodeEditor, ICodeEditor } from '../../../../../editor/browser/editorBrowser.js';
+import { ICodeEditor, isCodeEditor, isDiffEditor } from '../../../../../editor/browser/editorBrowser.js';
 import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
 import { Location } from '../../../../../editor/common/languages.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
@@ -19,19 +19,18 @@ import { EditorsOrder } from '../../../../common/editor.js';
 import { IEditorService } from '../../../../services/editor/common/editorService.js';
 import { getNotebookEditorFromEditorPane, INotebookEditor } from '../../../notebook/browser/notebookBrowser.js';
 import { IChatEditingService } from '../../common/chatEditingService.js';
-import { IChatRequestImplicitVariableEntry, IChatRequestVariableEntry } from '../../common/chatVariableEntries.js';
+import { IBaseChatRequestVariableEntry, IChatRequestImplicitVariableEntry } from '../../common/chatModel.js';
 import { IChatService } from '../../common/chatService.js';
 import { ChatAgentLocation } from '../../common/constants.js';
 import { ILanguageModelIgnoredFilesService } from '../../common/ignoredFiles.js';
-import { getPromptsTypeForLanguageId } from '../../common/promptSyntax/promptTypes.js';
 import { IChatWidget, IChatWidgetService } from '../chat.js';
 
 export class ChatImplicitContextContribution extends Disposable implements IWorkbenchContribution {
 	static readonly ID = 'chat.implicitContext';
 
-	private readonly _currentCancelTokenSource: MutableDisposable<CancellationTokenSource>;
+	private readonly _currentCancelTokenSource = this._register(new MutableDisposable<CancellationTokenSource>());
 
-	private _implicitContextEnablement: { [mode: string]: string };
+	private _implicitContextEnablement = this.configurationService.getValue<{ [mode: string]: string }>('chat.implicitContext.enabled');
 
 	constructor(
 		@ICodeEditorService private readonly codeEditorService: ICodeEditorService,
@@ -43,8 +42,6 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 		@ILanguageModelIgnoredFilesService private readonly ignoredFilesService: ILanguageModelIgnoredFilesService,
 	) {
 		super();
-		this._currentCancelTokenSource = this._register(new MutableDisposable<CancellationTokenSource>());
-		this._implicitContextEnablement = this.configurationService.getValue<{ [mode: string]: string }>('chat.implicitContext.enabled');
 
 		const activeEditorDisposables = this._register(new DisposableStore());
 
@@ -57,7 +54,6 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 					activeEditorDisposables.add(Event.debounce(
 						Event.any(
 							codeEditor.onDidChangeModel,
-							codeEditor.onDidChangeModelLanguage,
 							codeEditor.onDidChangeCursorSelection,
 							codeEditor.onDidScrollChange),
 						() => undefined,
@@ -66,21 +62,6 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 
 				const notebookEditor = this.findActiveNotebookEditor();
 				if (notebookEditor) {
-					const activeCellDisposables = activeEditorDisposables.add(new DisposableStore());
-					activeEditorDisposables.add(notebookEditor.onDidChangeActiveCell(() => {
-						activeCellDisposables.clear();
-						const codeEditor = this.codeEditorService.getActiveCodeEditor();
-						if (codeEditor && codeEditor.getModel()?.uri.scheme === Schemas.vscodeNotebookCell) {
-							activeCellDisposables.add(Event.debounce(
-								Event.any(
-									codeEditor.onDidChangeModel,
-									codeEditor.onDidChangeCursorSelection,
-									codeEditor.onDidScrollChange),
-								() => undefined,
-								500)(() => this.updateImplicitContext()));
-						}
-					}));
-
 					activeEditorDisposables.add(Event.debounce(
 						Event.any(
 							notebookEditor.onDidChangeModel,
@@ -108,7 +89,7 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 				return;
 			}
 			if (this._implicitContextEnablement[widget.location] === 'first' && widget.viewModel?.getItems().length !== 0) {
-				widget.input.implicitContext.setValue(undefined, false, undefined);
+				widget.input.implicitContext.setValue(undefined, false);
 			}
 		}));
 		this._register(this.chatWidgetService.onDidAddWidget(async (widget) => {
@@ -129,8 +110,12 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 			}
 		}
 		for (const codeOrDiffEditor of this.editorService.getVisibleTextEditorControls(EditorsOrder.MOST_RECENTLY_ACTIVE)) {
-			const codeEditor = getCodeEditor(codeOrDiffEditor);
-			if (!codeEditor) {
+			let codeEditor: ICodeEditor;
+			if (isDiffEditor(codeOrDiffEditor)) {
+				codeEditor = codeOrDiffEditor.getModifiedEditor();
+			} else if (isCodeEditor(codeOrDiffEditor)) {
+				codeEditor = codeOrDiffEditor;
+			} else {
 				continue;
 			}
 
@@ -153,29 +138,22 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 		const selection = codeEditor?.getSelection();
 		let newValue: Location | URI | undefined;
 		let isSelection = false;
-
-		let languageId: string | undefined;
 		if (model) {
-			languageId = model.getLanguageId();
 			if (selection && !selection.isEmpty()) {
 				newValue = { uri: model.uri, range: selection } satisfies Location;
 				isSelection = true;
 			} else {
-				if (this.configurationService.getValue('chat.implicitContext.suggestedContext')) {
-					newValue = model.uri;
+				const visibleRanges = codeEditor?.getVisibleRanges();
+				if (visibleRanges && visibleRanges.length > 0) {
+					// Merge visible ranges. Maybe the reference value could actually be an array of Locations?
+					// Something like a Location with an array of Ranges?
+					let range = visibleRanges[0];
+					visibleRanges.slice(1).forEach(r => {
+						range = range.plusRange(r);
+					});
+					newValue = { uri: model.uri, range } satisfies Location;
 				} else {
-					const visibleRanges = codeEditor?.getVisibleRanges();
-					if (visibleRanges && visibleRanges.length > 0) {
-						// Merge visible ranges. Maybe the reference value could actually be an array of Locations?
-						// Something like a Location with an array of Ranges?
-						let range = visibleRanges[0];
-						visibleRanges.slice(1).forEach(r => {
-							range = range.plusRange(r);
-						});
-						newValue = { uri: model.uri, range } satisfies Location;
-					} else {
-						newValue = model.uri;
-					}
+					newValue = model.uri;
 				}
 			}
 		}
@@ -184,34 +162,14 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 		if (notebookEditor) {
 			const activeCell = notebookEditor.getActiveCell();
 			if (activeCell) {
-				const codeEditor = this.codeEditorService.getActiveCodeEditor();
-				const selection = codeEditor?.getSelection();
-				const visibleRanges = codeEditor?.getVisibleRanges() || [];
 				newValue = activeCell.uri;
-				if (isEqual(codeEditor?.getModel()?.uri, activeCell.uri)) {
-					if (selection && !selection.isEmpty()) {
-						newValue = { uri: activeCell.uri, range: selection } satisfies Location;
-						isSelection = true;
-					} else if (visibleRanges.length > 0) {
-						// Merge visible ranges. Maybe the reference value could actually be an array of Locations?
-						// Something like a Location with an array of Ranges?
-						let range = visibleRanges[0];
-						visibleRanges.slice(1).forEach(r => {
-							range = range.plusRange(r);
-						});
-						newValue = { uri: activeCell.uri, range } satisfies Location;
-					}
-				}
 			} else {
 				newValue = notebookEditor.textModel?.uri;
 			}
 		}
 
 		const uri = newValue instanceof URI ? newValue : newValue?.uri;
-		if (uri && (
-			await this.ignoredFilesService.fileIsIgnored(uri, cancelTokenSource.token) ||
-			uri.path.endsWith('.copilotmd'))
-		) {
+		if (uri && await this.ignoredFilesService.fileIsIgnored(uri, cancelTokenSource.token)) {
 			newValue = undefined;
 		}
 
@@ -219,26 +177,25 @@ export class ChatImplicitContextContribution extends Disposable implements IWork
 			return;
 		}
 
-		const isPromptFile = languageId && getPromptsTypeForLanguageId(languageId) !== undefined;
-
-		const widgets = updateWidget ? [updateWidget] : [...this.chatWidgetService.getWidgetsByLocations(ChatAgentLocation.Panel), ...this.chatWidgetService.getWidgetsByLocations(ChatAgentLocation.Editor)];
+		const widgets = updateWidget ? [updateWidget] : [...this.chatWidgetService.getWidgetsByLocations(ChatAgentLocation.Panel), ...this.chatWidgetService.getWidgetsByLocations(ChatAgentLocation.EditingSession), ...this.chatWidgetService.getWidgetsByLocations(ChatAgentLocation.Editor)];
 		for (const widget of widgets) {
 			if (!widget.input.implicitContext) {
 				continue;
 			}
 			const setting = this._implicitContextEnablement[widget.location];
 			const isFirstInteraction = widget.viewModel?.getItems().length === 0;
-			if ((setting === 'always' || setting === 'first' && isFirstInteraction) && !isPromptFile) { // disable implicit context for prompt files
-				widget.input.implicitContext.setValue(newValue, isSelection, languageId);
-			} else {
-				widget.input.implicitContext.setValue(undefined, false, undefined);
+			if (setting === 'first' && !isFirstInteraction) {
+				widget.input.implicitContext.setValue(undefined, false);
+			} else if (setting === 'always' || setting === 'first' && isFirstInteraction) {
+				widget.input.implicitContext.setValue(newValue, isSelection);
+			} else if (setting === 'never') {
+				widget.input.implicitContext.setValue(undefined, false);
 			}
 		}
 	}
 }
 
 export class ChatImplicitContext extends Disposable implements IChatRequestImplicitVariableEntry {
-
 	get id() {
 		if (URI.isUri(this.value)) {
 			return 'vscode.implicit.file';
@@ -282,7 +239,7 @@ export class ChatImplicitContext extends Disposable implements IChatRequestImpli
 		return this._isSelection;
 	}
 
-	private _onDidChangeValue = this._register(new Emitter<void>());
+	private _onDidChangeValue = new Emitter<void>();
 	readonly onDidChangeValue = this._onDidChangeValue.event;
 
 	private _value: Location | URI | undefined;
@@ -300,20 +257,24 @@ export class ChatImplicitContext extends Disposable implements IChatRequestImpli
 		this._onDidChangeValue.fire();
 	}
 
-	setValue(value: Location | URI | undefined, isSelection: boolean, languageId?: string): void {
+	constructor(value?: Location | URI) {
+		super();
+		this._value = value;
+	}
+
+	setValue(value: Location | URI | undefined, isSelection: boolean) {
 		this._value = value;
 		this._isSelection = isSelection;
 		this._onDidChangeValue.fire();
 	}
 
-	public toBaseEntries(): IChatRequestVariableEntry[] {
-		return [{
-			kind: 'file',
+	toBaseEntry(): IBaseChatRequestVariableEntry {
+		return {
 			id: this.id,
 			name: this.name,
 			value: this.value,
-			modelDescription: this.modelDescription,
-		}];
+			isFile: true,
+			modelDescription: this.modelDescription
+		};
 	}
-
 }

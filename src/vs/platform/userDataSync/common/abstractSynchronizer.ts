@@ -14,7 +14,7 @@ import { FormattingOptions } from '../../../base/common/jsonFormatter.js';
 import { Disposable } from '../../../base/common/lifecycle.js';
 import { IExtUri } from '../../../base/common/resources.js';
 import { uppercaseFirstLetter } from '../../../base/common/strings.js';
-import { isString, isUndefined } from '../../../base/common/types.js';
+import { isUndefined } from '../../../base/common/types.js';
 import { URI } from '../../../base/common/uri.js';
 import { IHeaders } from '../../../base/parts/request/common/request.js';
 import { localize } from '../../../nls.js';
@@ -31,9 +31,8 @@ import {
 	IUserDataSyncResourcePreview as IBaseSyncResourcePreview, IUserData, IUserDataSyncResourceInitializer, IUserDataSyncLocalStoreService,
 	IUserDataSyncConfiguration, IUserDataSynchroniser, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncStoreService,
 	IUserDataSyncUtilService, MergeState, PREVIEW_DIR_NAME, SyncResource, SyncStatus, UserDataSyncError, UserDataSyncErrorCode,
-	USER_DATA_SYNC_CONFIGURATION_SCOPE, USER_DATA_SYNC_SCHEME, getPathSegments, IUserDataSyncResourceConflicts,
-	IUserDataSyncResource, IUserDataSyncResourcePreview,
-	NON_EXISTING_RESOURCE_REF,
+	USER_DATA_SYNC_CONFIGURATION_SCOPE, USER_DATA_SYNC_SCHEME, IUserDataResourceManifest, getPathSegments, IUserDataSyncResourceConflicts,
+	IUserDataSyncResource, IUserDataSyncResourcePreview
 } from './userDataSync.js';
 import { IUserDataProfile, IUserDataProfilesService } from '../../userDataProfile/common/userDataProfile.js';
 
@@ -146,13 +145,13 @@ export abstract class AbstractSynchroniser extends Disposable implements IUserDa
 	readonly onDidChangeLocal: Event<void> = this._onDidChangeLocal.event;
 
 	protected readonly lastSyncResource: URI;
-	private readonly lastSyncUserDataStateKey: string;
+	private readonly lastSyncUserDataStateKey = `${this.collection ? `${this.collection}.` : ''}${this.syncResource.syncResource}.lastSyncUserData`;
 	private hasSyncResourceStateVersionChanged: boolean = false;
 	protected readonly syncResourceLogLabel: string;
 
 	protected syncHeaders: IHeaders = {};
 
-	readonly resource: SyncResource;
+	readonly resource = this.syncResource.syncResource;
 
 	constructor(
 		readonly syncResource: IUserDataSyncResource,
@@ -169,8 +168,6 @@ export abstract class AbstractSynchroniser extends Disposable implements IUserDa
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
 	) {
 		super();
-		this.lastSyncUserDataStateKey = `${collection ? `${collection}.` : ''}${syncResource.syncResource}.lastSyncUserData`;
-		this.resource = syncResource.syncResource;
 		this.syncResourceLogLabel = getSyncResourceLogLabel(syncResource.syncResource, syncResource.profile);
 		this.extUri = uriIdentityService.extUri;
 		this.syncFolder = this.extUri.joinPath(environmentService.userDataSyncHome, ...getPathSegments(syncResource.profile.isDefault ? undefined : syncResource.profile.id, syncResource.syncResource));
@@ -212,7 +209,7 @@ export abstract class AbstractSynchroniser extends Disposable implements IUserDa
 		}
 	}
 
-	async sync(refOrUserData: string | IUserData | null, preview: boolean = false, userDataSyncConfiguration: IUserDataSyncConfiguration = this.getUserDataSyncConfiguration(), headers: IHeaders = {}): Promise<IUserDataSyncResourcePreview | null> {
+	async sync(manifest: IUserDataResourceManifest | null, preview: boolean = false, userDataSyncConfiguration: IUserDataSyncConfiguration = this.getUserDataSyncConfiguration(), headers: IHeaders = {}): Promise<IUserDataSyncResourcePreview | null> {
 		try {
 			this.syncHeaders = { ...headers };
 
@@ -232,7 +229,7 @@ export abstract class AbstractSynchroniser extends Disposable implements IUserDa
 			let status: SyncStatus = SyncStatus.Idle;
 			try {
 				const lastSyncUserData = await this.getLastSyncUserData();
-				const remoteUserData = await this.getLatestRemoteUserData(refOrUserData, lastSyncUserData);
+				const remoteUserData = await this.getLatestRemoteUserData(manifest, lastSyncUserData);
 				status = await this.performSync(remoteUserData, lastSyncUserData, preview ? SyncStrategy.Preview : SyncStrategy.Merge, userDataSyncConfiguration);
 				if (status === SyncStatus.HasConflicts) {
 					this.logService.info(`${this.syncResourceLogLabel}: Detected conflicts while synchronizing ${this.resource.toLowerCase()}.`);
@@ -302,20 +299,21 @@ export abstract class AbstractSynchroniser extends Disposable implements IUserDa
 		return !!remoteUserData.syncData?.machineId && remoteUserData.syncData.machineId === machineId;
 	}
 
-	protected async getLatestRemoteUserData(refOrLatestData: string | IUserData | null, lastSyncUserData: IRemoteUserData | null): Promise<IRemoteUserData> {
-		if (refOrLatestData === null) {
-			return { ref: NON_EXISTING_RESOURCE_REF, syncData: null };
-		}
+	protected async getLatestRemoteUserData(manifest: IUserDataResourceManifest | null, lastSyncUserData: IRemoteUserData | null): Promise<IRemoteUserData> {
+		if (lastSyncUserData) {
 
-		if (!isString(refOrLatestData)) {
-			return this.toRemoteUserData(refOrLatestData);
-		}
+			const latestRef = manifest ? manifest[this.resource] : undefined;
 
-		// Last time synced resource and latest resource on server are same
-		if (lastSyncUserData?.ref === refOrLatestData) {
-			return lastSyncUserData;
-		}
+			// Last time synced resource and latest resource on server are same
+			if (lastSyncUserData.ref === latestRef) {
+				return lastSyncUserData;
+			}
 
+			// There is no resource on server and last time it was synced with no resource
+			if (latestRef === undefined && lastSyncUserData.syncData === null) {
+				return lastSyncUserData;
+			}
+		}
 		return this.getRemoteUserData(lastSyncUserData);
 	}
 
@@ -699,11 +697,7 @@ export abstract class AbstractSynchroniser extends Disposable implements IUserDa
 	}
 
 	async getRemoteUserData(lastSyncData: IRemoteUserData | null): Promise<IRemoteUserData> {
-		const userData = await this.getUserData(lastSyncData);
-		return this.toRemoteUserData(userData);
-	}
-
-	private toRemoteUserData({ ref, content }: IUserData): IRemoteUserData {
+		const { ref, content } = await this.getUserData(lastSyncData);
 		let syncData: ISyncData | null = null;
 		if (content !== null) {
 			syncData = this.parseSyncData(content);

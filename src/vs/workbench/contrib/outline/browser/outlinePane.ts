@@ -180,7 +180,7 @@ export class OutlinePane extends ViewPane implements IOutlinePane {
 	private _showMessage(message: string) {
 		this._domNode.classList.add('message');
 		this._progressBar.stop().hide();
-		this._message.textContent = message;
+		this._message.innerText = message;
 	}
 
 	private _captureViewState(uri?: URI): boolean {

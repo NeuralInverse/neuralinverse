@@ -22,8 +22,6 @@ import { TEST_DATA_SCHEME, TestUriType, parseTestUri } from './testingUri.js';
  * in the inline peek view.
  */
 export class TestingContentProvider implements IWorkbenchContribution, ITextModelContentProvider {
-	public static readonly ID = 'workbench.contrib.testing.contentProvider';
-
 	constructor(
 		@ITextModelService textModelResolverService: ITextModelService,
 		@ILanguageService private readonly languageService: ILanguageService,

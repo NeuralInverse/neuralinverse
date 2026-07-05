@@ -66,6 +66,7 @@ export interface IRemoteDiagnosticError {
 export interface IDiagnosticInfoOptions {
 	includeProcesses?: boolean;
 	folders?: UriComponents[];
+	includeExtensions?: boolean;
 }
 
 export interface WorkspaceStatItem {
@@ -93,9 +94,8 @@ export interface IWorkspaceInformation extends IWorkspace {
 	rendererSessionId: string;
 }
 
-export function isRemoteDiagnosticError(x: unknown): x is IRemoteDiagnosticError {
-	const candidate = x as IRemoteDiagnosticError | undefined;
-	return !!candidate?.hostName && !!candidate?.errorMessage;
+export function isRemoteDiagnosticError(x: any): x is IRemoteDiagnosticError {
+	return !!x.hostName && !!x.errorMessage;
 }
 
 export class NullDiagnosticsService implements IDiagnosticsService {

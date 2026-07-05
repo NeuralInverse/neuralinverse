@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { $, Dimension, append, clearNode } from '../../../../base/browser/dom.js';
+import { $, Dimension, addDisposableListener, append, clearNode } from '../../../../base/browser/dom.js';
 import { ActionBar } from '../../../../base/browser/ui/actionbar/actionbar.js';
 import { getDefaultHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
 import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
@@ -38,13 +38,12 @@ import { IEditorGroup } from '../../../services/editor/common/editorGroupsServic
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
 import { Extensions, IExtensionFeaturesManagementService, IExtensionFeaturesRegistry } from '../../../services/extensionManagement/common/extensionFeatures.js';
-import { EnablementState } from '../../../services/extensionManagement/common/extensionManagement.js';
+import { DefaultIconPath, EnablementState } from '../../../services/extensionManagement/common/extensionManagement.js';
 import { LocalWebWorkerRunningLocation } from '../../../services/extensions/common/extensionRunningLocation.js';
 import { IExtensionHostProfile, IExtensionService, IExtensionsStatus } from '../../../services/extensions/common/extensions.js';
 import { IExtension, IExtensionsWorkbenchService } from '../common/extensions.js';
 import { RuntimeExtensionsInput } from '../common/runtimeExtensionsInput.js';
 import { errorIcon, warningIcon } from './extensionsIcons.js';
-import { ExtensionIconWidget } from './extensionsWidgets.js';
 import './media/runtimeExtensionsEditor.css';
 
 interface IExtensionProfileInformation {
@@ -222,6 +221,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 		interface IRuntimeExtensionTemplateData {
 			root: HTMLElement;
 			element: HTMLElement;
+			icon: HTMLImageElement;
 			name: HTMLElement;
 			version: HTMLElement;
 			msgContainer: HTMLElement;
@@ -230,7 +230,6 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 			profileTime: HTMLElement;
 			disposables: IDisposable[];
 			elementDisposables: IDisposable[];
-			extension: IExtension | undefined;
 		}
 
 		const renderer: IListRenderer<IRuntimeExtension, IRuntimeExtensionTemplateData> = {
@@ -238,7 +237,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 			renderTemplate: (root: HTMLElement): IRuntimeExtensionTemplateData => {
 				const element = append(root, $('.extension'));
 				const iconContainer = append(element, $('.icon-container'));
-				const extensionIconWidget = this._instantiationService.createInstance(ExtensionIconWidget, iconContainer);
+				const icon = append(iconContainer, $<HTMLImageElement>('img.icon'));
 
 				const desc = append(element, $('div.desc'));
 				const headerContainer = append(desc, $('.header-container'));
@@ -249,26 +248,24 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 				const msgContainer = append(desc, $('div.msg'));
 
 				const actionbar = new ActionBar(desc);
-				const listener = actionbar.onDidRun(({ error }) => error && this._notificationService.error(error));
+				actionbar.onDidRun(({ error }) => error && this._notificationService.error(error));
 
 				const timeContainer = append(element, $('.time'));
 				const activationTime = append(timeContainer, $('div.activation-time'));
 				const profileTime = append(timeContainer, $('div.profile-time'));
 
-				const disposables = [extensionIconWidget, actionbar, listener];
+				const disposables = [actionbar];
 
 				return {
 					root,
 					element,
+					icon,
 					name,
 					version,
 					actionbar,
 					activationTime,
 					profileTime,
 					msgContainer,
-					set extension(extension: IExtension | undefined) {
-						extensionIconWidget.extension = extension || null;
-					},
 					disposables,
 					elementDisposables: [],
 				};
@@ -277,10 +274,18 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 			renderElement: (element: IRuntimeExtension, index: number, data: IRuntimeExtensionTemplateData): void => {
 
 				data.elementDisposables = dispose(data.elementDisposables);
-				data.extension = element.marketplaceInfo;
 
 				data.root.classList.toggle('odd', index % 2 === 1);
 
+				data.elementDisposables.push(addDisposableListener(data.icon, 'error', () => data.icon.src = element.marketplaceInfo?.iconUrlFallback || DefaultIconPath, { once: true }));
+				data.icon.src = element.marketplaceInfo?.iconUrl || DefaultIconPath;
+
+				if (!data.icon.complete) {
+					data.icon.style.visibility = 'hidden';
+					data.icon.onload = () => data.icon.style.visibility = 'inherit';
+				} else {
+					data.icon.style.visibility = 'inherit';
+				}
 				data.name.textContent = (element.marketplaceInfo?.displayName || element.description.identifier.value).substr(0, 50);
 				data.version.textContent = element.description.version;
 
@@ -463,7 +468,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 
 		this._list.splice(0, this._list.length, this._elements || undefined);
 
-		this._register(this._list.onContextMenu((e) => {
+		this._list.onContextMenu((e) => {
 			if (!e.element) {
 				return;
 			}
@@ -499,7 +504,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 				getAnchor: () => e.anchor,
 				getActions: () => actions
 			});
-		}));
+		});
 	}
 
 	public layout(dimension: Dimension): void {

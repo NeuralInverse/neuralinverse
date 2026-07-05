@@ -48,8 +48,6 @@ export const enum SearchCommandIds {
 	SearchWithAIActionId = 'search.action.searchWithAI',
 	ToggleQueryDetailsActionId = 'workbench.action.search.toggleQueryDetails',
 	ExcludeFolderFromSearchId = 'search.action.excludeFromSearch',
-	ExcludeFileTypeFromSearchId = 'search.action.excludeFileTypeFromSearch',
-	IncludeFileTypeInSearchId = 'search.action.includeFileTypeInSearch',
 	FocusNextInputActionId = 'search.focus.nextInputBox',
 	FocusPreviousInputActionId = 'search.focus.previousInputBox',
 	RestrictSearchToFolderId = 'search.action.restrictSearchToFolder',

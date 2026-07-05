@@ -101,7 +101,7 @@ export class MarkdownItEngine implements IMdParser {
 	private _md?: Promise<MarkdownIt>;
 
 	private _slugCount = new Map<string, number>();
-	private readonly _tokenCache = new TokenCache();
+	private _tokenCache = new TokenCache();
 
 	public readonly slugifier: Slugifier;
 
@@ -433,7 +433,7 @@ async function getMarkdownOptions(md: () => MarkdownIt): Promise<MarkdownIt.Opti
 }
 
 function normalizeHighlightLang(lang: string | undefined) {
-	switch (lang?.toLowerCase()) {
+	switch (lang && lang.toLowerCase()) {
 		case 'shell':
 			return 'sh';
 

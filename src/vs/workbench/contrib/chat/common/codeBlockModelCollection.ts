@@ -156,8 +156,7 @@ export class CodeBlockModelCollection extends Disposable {
 		}
 
 		const textModel = await entry.model;
-		if (!textModel || textModel.isDisposed()) {
-			// Somehow we get an undefined textModel sometimes - #237782
+		if (textModel.isDisposed()) {
 			return entry;
 		}
 
@@ -251,8 +250,7 @@ export class CodeBlockModelCollection extends Disposable {
 
 function fixCodeText(text: string, languageId: string | undefined): string {
 	if (languageId === 'php') {
-		// <?php or short tag version <?
-		if (!text.trim().startsWith('<?')) {
+		if (!text.trim().startsWith('<')) {
 			return `<?php\n${text}`;
 		}
 	}

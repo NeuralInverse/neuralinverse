@@ -2,11 +2,11 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-//@ts-check
+// @ts-check
+
 /// <reference lib="webworker" />
 
-/** @type {ServiceWorkerGlobalScope} */
-const sw = /** @type {any} */ (self);
+const sw = /** @type {ServiceWorkerGlobalScope} */ (/** @type {any} */ (self));
 
 const VERSION = 4;
 
@@ -18,52 +18,37 @@ const searchParams = new URL(location.toString()).searchParams;
 
 const remoteAuthority = searchParams.get('remoteAuthority');
 
-/** @type {MessagePort|undefined} */
-let outerIframeMessagePort;
+const ID = searchParams.get('id');
 
 /**
  * Origin used for resources
  */
 const resourceBaseAuthority = searchParams.get('vscode-resource-base-authority');
 
-/**
- * @param {string} name
- * @param {Record<string, string>} [options]
- */
-const perfMark = (name, options = {}) => {
-	performance.mark(`webview/service-worker/${name}`, {
-		detail: {
-			...options
-		}
-	});
-}
-
-perfMark('scriptStart');
-
-/** @type {number} */
 const resolveTimeout = 30_000;
 
+/**
+ * @template T
+ * @typedef {{ status: 'ok'; value: T } | { status: 'timeout' }} RequestStoreResult
+ */
 
 /**
  * @template T
- * @typedef {{ status: 'ok', value: T } | { status: 'timeout' }} RequestStoreResult
+ * @typedef {{
+ *     resolve: (x: RequestStoreResult<T>) => void,
+ *     promise: Promise<RequestStoreResult<T>>
+ * }} RequestStoreEntry
  */
 
-
 /**
- * @template T
- * @typedef {{ resolve: (x: RequestStoreResult<T>) => void, promise: Promise<RequestStoreResult<T>> }} RequestStoreEntry
- */
-
-
-/**
+ * Caches
  * @template T
  */
 class RequestStore {
 	constructor() {
 		/** @type {Map<number, RequestStoreEntry<T>>} */
 		this.map = new Map();
-		/** @type {number} */
+
 		this.requestPool = 0;
 	}
 
@@ -73,12 +58,15 @@ class RequestStore {
 	create() {
 		const requestId = ++this.requestPool;
 
-		/** @type {(x: RequestStoreResult<T>) => void} */
+		/** @type {undefined | ((x: RequestStoreResult<T>) => void)} */
 		let resolve;
+
+		/** @type {Promise<RequestStoreResult<T>>} */
 		const promise = new Promise(r => resolve = r);
 
 		/** @type {RequestStoreEntry<T>} */
-		const entry = { resolve, promise };
+		const entry = { resolve: /** @type {(x: RequestStoreResult<T>) => void} */ (resolve), promise };
+
 		this.map.set(requestId, entry);
 
 		const dispose = () => {
@@ -87,6 +75,7 @@ class RequestStore {
 			if (existingEntry === entry) {
 				existingEntry.resolve({ status: 'timeout' });
 				this.map.delete(requestId);
+				return;
 			}
 		};
 		const timeout = setTimeout(dispose, resolveTimeout);
@@ -96,7 +85,7 @@ class RequestStore {
 	/**
 	 * @param {number} requestId
 	 * @param {T} result
-	 * @returns {boolean}
+	 * @return {boolean}
 	 */
 	resolve(requestId, result) {
 		const entry = this.map.get(requestId);
@@ -110,15 +99,24 @@ class RequestStore {
 }
 
 /**
- * Map of requested paths to responses.
+ * @typedef {{ readonly status: 200; id: number; path: string; mime: string; data: Uint8Array; etag: string | undefined; mtime: number | undefined; }
+ * 		| { readonly status: 304; id: number; path: string; mime: string; mtime: number | undefined }
+ *		| { readonly status: 401; id: number; path: string }
+ *		| { readonly status: 404; id: number; path: string }} ResourceResponse
  */
-/** @type {RequestStore<ResourceResponse>} */
+
+/**
+ * Map of requested paths to responses.
+ *
+ * @type {RequestStore<ResourceResponse>}
+ */
 const resourceRequestStore = new RequestStore();
 
 /**
  * Map of requested localhost origins to optional redirects.
+ *
+ * @type {RequestStore<string | undefined>}
  */
-/** @type {RequestStore<string|undefined>} */
 const localhostRequestStore = new RequestStore();
 
 const unauthorized = () =>
@@ -134,18 +132,10 @@ const requestTimeout = () =>
 	new Response('Request Timeout', { status: 408, });
 
 sw.addEventListener('message', async (event) => {
-	if (!event.source) {
-		return;
-	}
-
-	/** @type {Client} */
-	const source = event.source;
 	switch (event.data.channel) {
 		case 'version': {
-			perfMark('version/request');
-			outerIframeMessagePort = event.ports[0];
+			const source = /** @type {Client} */ (event.source);
 			sw.clients.get(source.id).then(client => {
-				perfMark('version/reply');
 				if (client) {
 					client.postMessage({
 						channel: 'version',
@@ -234,42 +224,31 @@ sw.addEventListener('activate', (event) => {
 	event.waitUntil(sw.clients.claim()); // Become available to all pages
 });
 
-
-/**
- * @typedef {Object} ResourceRequestUrlComponents
- * @property {string} scheme
- * @property {string} authority
- * @property {string} path
- * @property {string} query
- */
-
 /**
  * @param {FetchEvent} event
- * @param {ResourceRequestUrlComponents} requestUrlComponents
- * @returns {Promise<Response>}
+ * @param {{
+ * 		scheme: string;
+ * 		authority: string;
+ * 		path: string;
+ * 		query: string;
+ * }} requestUrlComponents
  */
-async function processResourceRequest(
-	event,
-	requestUrlComponents
-) {
-	let client = await sw.clients.get(event.clientId);
+async function processResourceRequest(event, requestUrlComponents) {
+	const client = await sw.clients.get(event.clientId);
+	let webviewId;
 	if (!client) {
-		client = await getWorkerClientForId(event.clientId);
-		if (!client) {
+		const workerClient = await getWorkerClientForId(event.clientId);
+		if (!workerClient) {
 			console.error('Could not find inner client for request');
 			return notFound();
+		} else {
+			webviewId = getWebviewIdForClient(workerClient);
 		}
+	} else {
+		webviewId = getWebviewIdForClient(client);
 	}
 
-	const webviewId = getWebviewIdForClient(client);
-
-	// Refs https://github.com/microsoft/vscode/issues/244143
-	// With PlzDedicatedWorker, worker subresources and blob wokers
-	// will use clients different from the window client.
-	// Since we cannot different a worker main resource from a worker subresource
-	// we will use message channel to the outer iframe provided at the time
-	// of service worker controller version initialization.
-	if (!webviewId && client.type !== 'worker' && client.type !== 'sharedworker') {
+	if (!webviewId) {
 		console.error('Could not resolve webview id');
 		return notFound();
 	}
@@ -278,8 +257,7 @@ async function processResourceRequest(
 
 	/**
 	 * @param {RequestStoreResult<ResourceResponse>} result
-	 * @param {Response|undefined} cachedResponse
-	 * @returns {Response}
+	 * @param {Response | undefined} cachedResponse
 	 */
 	const resolveResourceEntry = (result, cachedResponse) => {
 		if (result.status === 'timeout') {
@@ -378,7 +356,13 @@ async function processResourceRequest(
 		return response.clone();
 	};
 
-	/** @type {Response|undefined} */
+	const parentClients = await getOuterIframeClient(webviewId);
+	if (!parentClients.length) {
+		console.log('Could not find parent client for request');
+		return notFound();
+	}
+
+	/** @type {Response | undefined} */
 	let cached;
 	if (shouldTryCaching) {
 		const cache = await caches.open(resourceCacheName);
@@ -387,26 +371,8 @@ async function processResourceRequest(
 
 	const { requestId, promise } = resourceRequestStore.create();
 
-	if (webviewId) {
-		const parentClients = await getOuterIframeClient(webviewId);
-		if (!parentClients.length) {
-			console.log('Could not find parent client for request');
-			return notFound();
-		}
-
-		for (const parentClient of parentClients) {
-			parentClient.postMessage({
-				channel: 'load-resource',
-				id: requestId,
-				scheme: requestUrlComponents.scheme,
-				authority: requestUrlComponents.authority,
-				path: requestUrlComponents.path,
-				query: requestUrlComponents.query,
-				ifNoneMatch: cached?.headers.get('ETag'),
-			});
-		}
-	} else if (client.type === 'worker' || client.type === 'sharedworker') {
-		outerIframeMessagePort?.postMessage({
+	for (const parentClient of parentClients) {
+		parentClient.postMessage({
 			channel: 'load-resource',
 			id: requestId,
 			scheme: requestUrlComponents.scheme,
@@ -423,12 +389,9 @@ async function processResourceRequest(
 /**
  * @param {FetchEvent} event
  * @param {URL} requestUrl
- * @returns {Promise<Response>}
+ * @return {Promise<Response>}
  */
-async function processLocalhostRequest(
-	event,
-	requestUrl
-) {
+async function processLocalhostRequest(event, requestUrl) {
 	const client = await sw.clients.get(event.clientId);
 	if (!client) {
 		// This is expected when requesting resources on other localhost ports
@@ -436,13 +399,7 @@ async function processLocalhostRequest(
 		return fetch(event.request);
 	}
 	const webviewId = getWebviewIdForClient(client);
-	// Refs https://github.com/microsoft/vscode/issues/244143
-	// With PlzDedicatedWorker, worker subresources and blob wokers
-	// will use clients different from the window client.
-	// Since we cannot different a worker main resource from a worker subresource
-	// we will use message channel to the outer iframe provided at the time
-	// of service worker controller version initialization.
-	if (!webviewId && client.type !== 'worker' && client.type !== 'sharedworker') {
+	if (!webviewId) {
 		console.error('Could not resolve webview id');
 		return fetch(event.request);
 	}
@@ -450,10 +407,10 @@ async function processLocalhostRequest(
 	const origin = requestUrl.origin;
 
 	/**
-	 * @param {RequestStoreResult<string|undefined>} result
-	 * @returns {Promise<Response>}
+	 * @param {RequestStoreResult<string | undefined>} result
+	 * @return {Promise<Response>}
 	 */
-	const resolveRedirect = async function (result) {
+	const resolveRedirect = async (result) => {
 		if (result.status !== 'ok' || !result.value) {
 			return fetch(event.request);
 		}
@@ -468,22 +425,15 @@ async function processLocalhostRequest(
 		});
 	};
 
+	const parentClients = await getOuterIframeClient(webviewId);
+	if (!parentClients.length) {
+		console.log('Could not find parent client for request');
+		return notFound();
+	}
+
 	const { requestId, promise } = localhostRequestStore.create();
-	if (webviewId) {
-		const parentClients = await getOuterIframeClient(webviewId);
-		if (!parentClients.length) {
-			console.log('Could not find parent client for request');
-			return notFound();
-		}
-		for (const parentClient of parentClients) {
-			parentClient.postMessage({
-				channel: 'load-localhost',
-				origin: origin,
-				id: requestId,
-			});
-		}
-	} else if (client.type === 'worker' || client.type === 'sharedworker') {
-		outerIframeMessagePort?.postMessage({
+	for (const parentClient of parentClients) {
+		parentClient.postMessage({
 			channel: 'load-localhost',
 			origin: origin,
 			id: requestId,
@@ -495,9 +445,18 @@ async function processLocalhostRequest(
 
 /**
  * @param {Client} client
- * @returns {string|null}
+ * @returns {string | null}
  */
 function getWebviewIdForClient(client) {
+	// Refs https://github.com/microsoft/vscode/issues/244143
+	// With PlzDedicatedWorker, worker subresources and blob wokers
+	// will use clients different from the window client.
+	// Since we cannot different a worker main resource from a worker subresource
+	// we will use the global webview ID passed in at the time of
+	// service worker registration.
+	if (client.type === 'worker' || client.type === 'sharedworker') {
+		return ID;
+	}
 	const requesterClientUrl = new URL(client.url);
 	return requesterClientUrl.searchParams.get('id');
 }
@@ -527,13 +486,3 @@ async function getWorkerClientForId(clientId) {
 		return client.id === clientId;
 	});
 }
-
-
-/**
- * @typedef {(
- *   | { readonly status: 200, id: number, path: string, mime: string, data: Uint8Array, etag: string|undefined, mtime: number|undefined }
- *   | { readonly status: 304, id: number, path: string, mime: string, mtime: number|undefined }
- *   | { readonly status: 401, id: number, path: string }
- *   | { readonly status: 404, id: number, path: string }
- * )} ResourceResponse
- */

@@ -52,7 +52,6 @@ const dirs = [
 	'test/integration/browser',
 	'test/monaco',
 	'test/smoke',
-	'test/mcp',
 	'.vscode/extensions/vscode-selfhost-import-aid',
 	'.vscode/extensions/vscode-selfhost-test-provider',
 	'extensions/open-remote-ssh', // Void added this

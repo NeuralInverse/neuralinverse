@@ -7,10 +7,10 @@ import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.j
 import { autorun } from '../../../../base/common/observable.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
-import { mcpAccessConfig, McpAccessValue } from '../../../../platform/mcp/common/mcpManagement.js';
 import { observableConfigValue } from '../../../../platform/observable/common/platformObservableUtils.js';
 import { IWorkbenchContribution } from '../../../common/contributions.js';
 import { mcpDiscoveryRegistry } from '../common/discovery/mcpDiscovery.js';
+import { mcpEnabledSection } from '../common/mcpConfiguration.js';
 
 export class McpDiscovery extends Disposable implements IWorkbenchContribution {
 	public static readonly ID = 'workbench.contrib.mcp.discovery';
@@ -21,23 +21,17 @@ export class McpDiscovery extends Disposable implements IWorkbenchContribution {
 	) {
 		super();
 
-		const mcpAccessValue = observableConfigValue(mcpAccessConfig, McpAccessValue.All, configurationService);
+		const enabled = observableConfigValue(mcpEnabledSection, true, configurationService);
 		const store = this._register(new DisposableStore());
 
 		this._register(autorun(reader => {
-			store.clear();
-			const value = mcpAccessValue.read(reader);
-			if (value === McpAccessValue.None) {
-				return;
-			}
-			for (const descriptor of mcpDiscoveryRegistry.getAll()) {
-				const mcpDiscovery = instantiationService.createInstance(descriptor);
-				if (value === McpAccessValue.Registry && !mcpDiscovery.fromGallery) {
-					mcpDiscovery.dispose();
-					continue;
+			if (enabled.read(reader)) {
+				for (const discovery of mcpDiscoveryRegistry.getAll()) {
+					const inst = store.add(instantiationService.createInstance(discovery));
+					inst.start();
 				}
-				store.add(mcpDiscovery);
-				mcpDiscovery.start();
+			} else {
+				store.clear();
 			}
 		}));
 	}

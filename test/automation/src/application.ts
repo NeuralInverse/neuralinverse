@@ -18,6 +18,7 @@ export const enum Quality {
 
 export interface ApplicationOptions extends LaunchOptions {
 	quality: Quality;
+	readonly workspacePath: string;
 }
 
 export class Application {
@@ -54,12 +55,12 @@ export class Application {
 		return this._workspacePathOrFolder;
 	}
 
-	get extensionsPath(): string | undefined {
+	get extensionsPath(): string {
 		return this.options.extensionsPath;
 	}
 
-	private _userDataPath: string | undefined;
-	get userDataPath(): string | undefined {
+	private _userDataPath: string;
+	get userDataPath(): string {
 		return this._userDataPath;
 	}
 
@@ -69,6 +70,7 @@ export class Application {
 
 	async start(): Promise<void> {
 		await this._start();
+		await this.code.waitForElement('.explorer-folders-view');
 	}
 
 	async restart(options?: { workspaceOrFolder?: string; extraArgs?: string[] }): Promise<void> {

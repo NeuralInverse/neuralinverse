@@ -103,7 +103,7 @@ function createCodeCellFromNotebookCell(cell: NotebookCellData, preferredLanguag
 		// & in that case execution summary could contain the data, but metadata will not.
 		// In such cases we do not want to re-set the metadata with the value from execution summary (remember, user reverted that).
 		execution_count: cellMetadata.execution_count ?? null,
-		source: splitCellSourceIntoMultilineString(cell.value),
+		source: splitMultilineString(cell.value.replace(/\r\n/g, '\n')),
 		outputs: (cell.outputs || []).map(translateCellDisplayOutput),
 		metadata: cellMetadata.metadata
 	};
@@ -117,7 +117,7 @@ function createRawCellFromNotebookCell(cell: NotebookCellData): nbformat.IRawCel
 	const cellMetadata = getCellMetadata({ cell });
 	const rawCell: any = {
 		cell_type: 'raw',
-		source: splitCellSourceIntoMultilineString(cell.value),
+		source: splitMultilineString(cell.value.replace(/\r\n/g, '\n')),
 		metadata: cellMetadata?.metadata || {} // This cannot be empty.
 	};
 	if (cellMetadata?.attachments) {
@@ -127,15 +127,6 @@ function createRawCellFromNotebookCell(cell: NotebookCellData): nbformat.IRawCel
 		rawCell.id = cellMetadata.id;
 	}
 	return rawCell;
-}
-
-/**
- * Splits the source of a cell into an array of strings, each representing a line.
- * Also normalizes line endings to use LF (`\n`) instead of CRLF (`\r\n`).
- * Same is done in deserializer as well.
- */
-function splitCellSourceIntoMultilineString(source: string): string[] {
-	return splitMultilineString(source.replace(/\r\n/g, '\n'));
 }
 
 function splitMultilineString(source: nbformat.MultilineString): string[] {
@@ -377,7 +368,7 @@ export function createMarkdownCellFromNotebookCell(cell: NotebookCellData): nbfo
 	const cellMetadata = getCellMetadata({ cell });
 	const markdownCell: any = {
 		cell_type: 'markdown',
-		source: splitCellSourceIntoMultilineString(cell.value),
+		source: splitMultilineString(cell.value.replace(/\r\n/g, '\n')),
 		metadata: cellMetadata?.metadata || {} // This cannot be empty.
 	};
 	if (cellMetadata?.attachments) {

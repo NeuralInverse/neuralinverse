@@ -80,7 +80,7 @@ async function main() {
 
 	startServer(serverArgs);
 	if (openSystemBrowser) {
-		open.default(`http://${HOST}:${PORT}/`);
+		open(`http://${HOST}:${PORT}/`);
 	}
 }
 

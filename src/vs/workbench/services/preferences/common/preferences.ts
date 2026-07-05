@@ -157,7 +157,6 @@ export interface ISettingMatch {
 	matchType: SettingMatchType;
 	keyMatchScore: number;
 	score: number;
-	providerName?: string;
 }
 
 export interface IScoredResults {
@@ -262,8 +261,6 @@ export interface IPreferencesService {
 	getDefaultSettingsContent(uri: URI): string | undefined;
 	hasDefaultSettingsContent(uri: URI): boolean;
 	createSettings2EditorModel(): Settings2EditorModel; // TODO
-
-	openPreferences(): Promise<void>;
 
 	openRawDefaultSettings(): Promise<IEditorPane | undefined>;
 	openSettings(options?: IOpenSettingsOptions): Promise<IEditorPane | undefined>;

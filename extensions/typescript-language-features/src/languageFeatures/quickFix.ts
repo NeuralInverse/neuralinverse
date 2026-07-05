@@ -12,13 +12,13 @@ import type * as Proto from '../tsServer/protocol/protocol';
 import * as typeConverters from '../typeConverters';
 import { ClientCapability, ITypeScriptServiceClient } from '../typescriptService';
 import { nulToken } from '../utils/cancellation';
-import { Lazy } from '../utils/lazy';
+import { memoize } from '../utils/memoize';
 import { equals } from '../utils/objects';
 import { DiagnosticsManager } from './diagnostics';
 import FileConfigurationManager from './fileConfigurationManager';
 import { applyCodeActionCommands, getEditForCodeAction } from './util/codeAction';
-import { CompositeCommand, EditorChatFollowUp, EditorChatFollowUp_Args, Expand } from './util/copilot';
 import { conditionalRegistration, requireSomeCapability } from './util/dependentRegistration';
+import { Expand, EditorChatFollowUp_Args, CompositeCommand, EditorChatFollowUp } from './util/copilot';
 
 type ApplyCodeActionCommand_args = {
 	readonly document: vscode.TextDocument;
@@ -199,16 +199,17 @@ class SupportedCodeActionProvider {
 	) { }
 
 	public async getFixableDiagnosticsForContext(diagnostics: readonly vscode.Diagnostic[]): Promise<DiagnosticsSet> {
-		const fixableCodes = await this.fixableDiagnosticCodes.value;
+		const fixableCodes = await this.fixableDiagnosticCodes;
 		return DiagnosticsSet.from(
 			diagnostics.filter(diagnostic => typeof diagnostic.code !== 'undefined' && fixableCodes.has(diagnostic.code + '')));
 	}
 
-	private readonly fixableDiagnosticCodes = new Lazy<Thenable<Set<string>>>(() => {
+	@memoize
+	private get fixableDiagnosticCodes(): Thenable<Set<string>> {
 		return this.client.execute('getSupportedCodeFixes', null, nulToken)
 			.then(response => response.type === 'response' ? response.body || [] : [])
 			.then(codes => new Set(codes));
-	});
+	}
 }
 
 class TypeScriptQuickFixProvider implements vscode.CodeActionProvider<VsCodeCodeAction> {
@@ -449,7 +450,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider<VsCodeCode
 			return results;
 		}
 
-		// Make sure there are multiple different diagnostics of the same type in the file
+		// Make sure there are multiple diagnostics of the same type in the file
 		if (!this.diagnosticsManager.getDiagnostics(resource).some(x => {
 			if (x === diagnostic) {
 				return false;
@@ -478,7 +479,7 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider<VsCodeCode
 	}
 }
 
-// Some fix all actions can actually fix multiple different diagnostics. Make sure we still show the fix all action
+// Some fix all actions can actually fix multiple differnt diagnostics. Make sure we still show the fix all action
 // in such cases
 const fixAllErrorCodes = new Map<number, number>([
 	// Missing async

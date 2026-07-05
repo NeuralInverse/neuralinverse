@@ -244,6 +244,7 @@ export class NotebookInlineVariablesController extends Disposable implements INo
 				return;
 			}
 
+			const inlineDecorations: IModelDeltaDecoration[] = [];
 			const processedVars = new Set<string>();
 
 			// Get both function ranges and comment ranges
@@ -322,11 +323,11 @@ export class NotebookInlineVariablesController extends Disposable implements INo
 					}
 				}
 			});
-		}
 
-		if (inlineDecorations.length > 0) {
-			this.updateCellInlineDecorations(cell, inlineDecorations);
-			this.initCellContentListener(cell);
+			if (inlineDecorations.length > 0) {
+				this.updateCellInlineDecorations(cell, inlineDecorations);
+				this.initCellContentListener(cell);
+			}
 		}
 	}
 

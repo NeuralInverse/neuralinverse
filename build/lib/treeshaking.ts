@@ -9,7 +9,7 @@ import type * as ts from 'typescript';
 
 const TYPESCRIPT_LIB_FOLDER = path.dirname(require.resolve('typescript/lib/lib.d.ts'));
 
-enum ShakeLevel {
+export const enum ShakeLevel {
 	Files = 0,
 	InnerFile = 1,
 	ClassMembers = 2

@@ -37,11 +37,13 @@ suite('UserDataProfilesManifestSync', () => {
 	test('when profiles does not exist', async () => {
 		await runWithFakedTimers<void>({}, async () => {
 			assert.deepStrictEqual(await testObject.getLastSyncUserData(), null);
-			let manifest = await testClient.getLatestRef(SyncResource.Profiles);
+			let manifest = await testClient.getResourceManifest();
 			server.reset();
 			await testObject.sync(manifest);
 
-			assert.deepStrictEqual(server.requests, []);
+			assert.deepStrictEqual(server.requests, [
+				{ type: 'GET', url: `${server.url}/v1/resource/${testObject.resource}/latest`, headers: {} },
+			]);
 
 			const lastSyncUserData = await testObject.getLastSyncUserData();
 			const remoteUserData = await testObject.getRemoteUserData(null);
@@ -49,12 +51,12 @@ suite('UserDataProfilesManifestSync', () => {
 			assert.deepStrictEqual(lastSyncUserData!.syncData, remoteUserData.syncData);
 			assert.strictEqual(lastSyncUserData!.syncData, null);
 
-			manifest = await testClient.getLatestRef(SyncResource.Profiles);
+			manifest = await testClient.getResourceManifest();
 			server.reset();
 			await testObject.sync(manifest);
 			assert.deepStrictEqual(server.requests, []);
 
-			manifest = await testClient.getLatestRef(SyncResource.Profiles);
+			manifest = await testClient.getResourceManifest();
 			server.reset();
 			await testObject.sync(manifest);
 			assert.deepStrictEqual(server.requests, []);
@@ -63,11 +65,11 @@ suite('UserDataProfilesManifestSync', () => {
 
 	test('when profile is created after first sync', async () => {
 		await runWithFakedTimers<void>({}, async () => {
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('1', '1');
 
 			let lastSyncUserData = await testObject.getLastSyncUserData();
-			const manifest = await testClient.getLatestRef(SyncResource.Profiles);
+			const manifest = await testClient.getResourceManifest();
 			server.reset();
 			await testObject.sync(manifest);
 
@@ -88,7 +90,7 @@ suite('UserDataProfilesManifestSync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('1', '1');
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 
@@ -103,7 +105,7 @@ suite('UserDataProfilesManifestSync', () => {
 			await client2.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1');
 			await client2.sync();
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 
@@ -118,7 +120,7 @@ suite('UserDataProfilesManifestSync', () => {
 			await client2.sync();
 
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('2', 'name 2');
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 
@@ -138,7 +140,7 @@ suite('UserDataProfilesManifestSync', () => {
 			await client2.sync();
 
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 2');
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
@@ -156,11 +158,11 @@ suite('UserDataProfilesManifestSync', () => {
 	test('sync adding a profile', async () => {
 		await runWithFakedTimers<void>({}, async () => {
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1');
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			await client2.sync();
 
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('2', 'name 2');
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 			assert.deepStrictEqual(getLocalProfiles(testClient), [{ id: '1', name: 'name 1', useDefaultFlags: undefined }, { id: '2', name: 'name 2', useDefaultFlags: undefined }]);
@@ -178,11 +180,11 @@ suite('UserDataProfilesManifestSync', () => {
 	test('sync updating a profile', async () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const profile = await testClient.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1');
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			await client2.sync();
 
 			await testClient.instantiationService.get(IUserDataProfilesService).updateProfile(profile, { name: 'name 2' });
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 			assert.deepStrictEqual(getLocalProfiles(testClient), [{ id: '1', name: 'name 2', useDefaultFlags: undefined }]);
@@ -201,11 +203,11 @@ suite('UserDataProfilesManifestSync', () => {
 		await runWithFakedTimers<void>({}, async () => {
 			const profile = await testClient.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1');
 			await testClient.instantiationService.get(IUserDataProfilesService).createProfile('2', 'name 2');
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			await client2.sync();
 
 			testClient.instantiationService.get(IUserDataProfilesService).removeProfile(profile);
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 			assert.deepStrictEqual(getLocalProfiles(testClient), [{ id: '2', name: 'name 2', useDefaultFlags: undefined }]);
@@ -225,7 +227,7 @@ suite('UserDataProfilesManifestSync', () => {
 			await client2.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1', { useDefaultFlags: { keybindings: true } });
 			await client2.sync();
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 
@@ -243,12 +245,12 @@ suite('UserDataProfilesManifestSync', () => {
 			await client2.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1');
 			await client2.sync();
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 
 			const profile = testClient.instantiationService.get(IUserDataProfilesService).profiles.find(p => p.id === '1')!;
 			testClient.instantiationService.get(IUserDataProfilesService).updateProfile(profile, { useDefaultFlags: { keybindings: true } });
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 
@@ -265,12 +267,12 @@ suite('UserDataProfilesManifestSync', () => {
 			const profile = await client2.instantiationService.get(IUserDataProfilesService).createProfile('1', 'name 1');
 			await client2.sync();
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 
 			client2.instantiationService.get(IUserDataProfilesService).updateProfile(profile, { useDefaultFlags: { keybindings: true } });
 			await client2.sync();
 
-			await testObject.sync(await testClient.getLatestRef(SyncResource.Profiles));
+			await testObject.sync(await testClient.getResourceManifest());
 			assert.strictEqual(testObject.status, SyncStatus.Idle);
 			assert.deepStrictEqual(testObject.conflicts.conflicts, []);
 

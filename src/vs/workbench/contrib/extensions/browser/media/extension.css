@@ -26,12 +26,20 @@
 	align-items: center;
 }
 
+.extension-list-item > .icon-container > .icon {
+	width: 42px;
+	height: 42px;
+	padding-right: 14px;
+	flex-shrink: 0;
+	object-fit: contain;
+}
+
 .extension-list-item > .icon-container .extension-badge {
 	position: absolute;
 	bottom: 5px;
 }
 
-.extension-list-item > .icon-container .extension-badge.extension-icon-badge {
+.extension-list-item > .icon-container .extension-badge.extension-remote-badge {
 	width: 22px;
 	height: 22px;
 	line-height: 22px;
@@ -42,7 +50,7 @@
 	justify-content: center;
 }
 
-.extension-list-item > .icon-container .extension-icon-badge .codicon {
+.extension-list-item > .icon-container .extension-remote-badge .codicon {
 	color: currentColor;
 }
 
@@ -92,7 +100,7 @@
 
 .extension-list-item > .details > .header-container > .header .extension-kind-indicator {
 	font-size: 80%;
-	margin-left: 4px;
+	margin-left: 2px;
 }
 
 .extension-list-item > .details > .header-container > .header > .install-count:not(:empty) {
@@ -120,11 +128,16 @@
 	text-align: right;
 }
 
-.extension-list-item > .details > .header-container > .header .extension-icon-badge .codicon {
+.extension-list-item > .details > .header-container > .header > .extension-remote-badge-container {
+	margin-left: 6px;
+	display: none;
+}
+
+.extension-list-item > .details > .header-container > .header .extension-remote-badge .codicon {
 	margin-right: 0;
 }
 
-.extension-list-item > .details > .header-container > .header .extension-icon-badge {
+.extension-list-item > .details > .header-container > .header .extension-remote-badge {
 	width: 14px;
 	height: 14px;
 	line-height: 14px;
@@ -135,7 +148,7 @@
 	justify-content: center;
 }
 
-.extension-list-item > .details > .header-container > .header .extension-icon-badge > .codicon {
+.extension-list-item > .details > .header-container > .header .extension-remote-badge > .codicon {
 	font-size: 12px;
 	color: currentColor;
 }

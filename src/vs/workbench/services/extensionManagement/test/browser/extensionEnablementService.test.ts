@@ -154,7 +154,7 @@ suite('ExtensionEnablementService Test', () => {
 				getInstalled: () => Promise.resolve(installed),
 				async getExtensionsControlManifest(): Promise<IExtensionsControlManifest> {
 					return {
-						malicious: malicious.map(e => ({ extensionOrPublisher: e })),
+						malicious,
 						deprecated: {},
 						search: []
 					};

@@ -8,7 +8,6 @@ import { SyncDescriptor0 } from '../../../../../platform/instantiation/common/de
 
 
 export interface IMcpDiscovery extends IDisposable {
-	readonly fromGallery: boolean;
 	start(): void;
 }
 

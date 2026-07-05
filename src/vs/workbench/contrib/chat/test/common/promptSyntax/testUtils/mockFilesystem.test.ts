@@ -46,11 +46,11 @@ interface IExpectedFolder extends IExpectedFilesystemNode {
 /**
  * Validates that file at {@link filePath} has expected attributes.
  */
-async function validateFile(
+const validateFile = async (
 	filePath: string,
 	expectedFile: IExpectedFile,
 	fileService: IFileService,
-) {
+) => {
 	let readFile: IFileStat | undefined;
 	try {
 		readFile = await fileService.resolve(URI.file(filePath));
@@ -100,16 +100,16 @@ async function validateFile(
 		expectedFile.contents,
 		`File '${expectedFile.resource.fsPath}' must have correct contents.`,
 	);
-}
+};
 
 /**
  * Validates that folder at {@link folderPath} has expected attributes.
  */
-async function validateFolder(
+const validateFolder = async (
 	folderPath: string,
 	expectedFolder: IExpectedFolder,
 	fileService: IFileService,
-): Promise<void> {
+) => {
 	let readFolder: IFileStat | undefined;
 	try {
 		readFolder = await fileService.resolve(URI.file(folderPath));
@@ -177,26 +177,26 @@ async function validateFolder(
 			fileService,
 		);
 	}
-}
+};
 
 suite('MockFilesystem', () => {
 	const disposables = ensureNoDisposablesAreLeakedInTestSuite();
 
-	let instantiationService: TestInstantiationService;
+	let initService: TestInstantiationService;
 	let fileService: IFileService;
 	setup(async () => {
-		instantiationService = disposables.add(new TestInstantiationService());
-		instantiationService.stub(ILogService, new NullLogService());
+		initService = disposables.add(new TestInstantiationService());
+		initService.stub(ILogService, new NullLogService());
 
-		fileService = disposables.add(instantiationService.createInstance(FileService));
+		fileService = disposables.add(initService.createInstance(FileService));
 		const fileSystemProvider = disposables.add(new InMemoryFileSystemProvider());
 		disposables.add(fileService.registerProvider(Schemas.file, fileSystemProvider));
 
-		instantiationService.stub(IFileService, fileService);
+		initService.stub(IFileService, fileService);
 	});
 
-	test('mocks file structure', async () => {
-		const mockFilesystem = instantiationService.createInstance(MockFilesystem, [
+	test('• mocks file structure', async () => {
+		const mockFilesystem = initService.createInstance(MockFilesystem, [
 			{
 				name: '/root/folder',
 				children: [

@@ -6,15 +6,17 @@
 import fs from 'fs';
 import path from 'path';
 import tseslint from 'typescript-eslint';
+import { fileURLToPath } from 'url';
 
 import stylisticTs from '@stylistic/eslint-plugin-ts';
-import * as pluginLocal from './.eslint-plugin-local/index.js';
+import pluginLocal from 'eslint-plugin-local';
 import pluginJsdoc from 'eslint-plugin-jsdoc';
 
 import pluginHeader from 'eslint-plugin-header';
 pluginHeader.rules.header.meta.schema = false;
 
-const ignores = fs.readFileSync(path.join(import.meta.dirname, '.eslint-ignore'), 'utf8')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ignores = fs.readFileSync(path.join(__dirname, '.eslint-ignore'), 'utf8')
 	.toString()
 	.split(/\r\n|\n/)
 	.filter(line => line && !line.startsWith('#'));
@@ -86,7 +88,6 @@ export default tseslint.config(
 			'local/code-no-unexternalized-strings': 'warn',
 			'local/code-must-use-super-dispose': 'warn',
 			'local/code-declare-service-brand': 'warn',
-			'local/code-no-deep-import-of-internal': ['error', { '.*Internal': true, 'searchExtTypesInternal': false }],
 			'local/code-layering': [
 				'warn',
 				{
@@ -97,7 +98,7 @@ export default tseslint.config(
 					'browser': [
 						'common'
 					],
-					'electron-browser': [
+					'electron-sandbox': [
 						'common',
 						'browser'
 					],
@@ -222,7 +223,20 @@ export default tseslint.config(
 				{
 					// Files should (only) be removed from the list they adopt the leak detector
 					'exclude': [
+						'src/vs/platform/configuration/test/common/configuration.test.ts',
+						'src/vs/platform/opener/test/common/opener.test.ts',
+						'src/vs/platform/registry/test/common/platform.test.ts',
+						'src/vs/platform/workspace/test/common/workspace.test.ts',
+						'src/vs/platform/workspaces/test/electron-main/workspaces.test.ts',
+						'src/vs/workbench/contrib/bulkEdit/test/browser/bulkCellEdits.test.ts',
+						'src/vs/workbench/contrib/chat/test/common/chatWordCounter.test.ts',
+						'src/vs/workbench/contrib/extensions/test/common/extensionQuery.test.ts',
+						'src/vs/workbench/contrib/notebook/test/browser/notebookExecutionService.test.ts',
+						'src/vs/workbench/contrib/notebook/test/browser/notebookExecutionStateService.test.ts',
+						'src/vs/workbench/contrib/tasks/test/common/problemMatcher.test.ts',
+						'src/vs/workbench/services/commands/test/common/commandService.test.ts',
 						'src/vs/workbench/services/userActivity/test/browser/domActivityTracker.test.ts',
+						'src/vs/workbench/test/browser/quickAccess.test.ts'
 					]
 				}
 			]
@@ -405,10 +419,10 @@ export default tseslint.config(
 			]
 		}
 	},
-	// browser/electron-browser layer
+	// browser/electron-sandbox layer
 	{
 		files: [
-			'src/**/{browser,electron-browser}/**/*.ts'
+			'src/**/{browser,electron-sandbox}/**/*.ts'
 		],
 		languageOptions: {
 			parser: tseslint.parser,
@@ -420,10 +434,6 @@ export default tseslint.config(
 			'local/code-no-global-document-listener': 'warn',
 			'no-restricted-syntax': [
 				'warn',
-				{
-					'selector': `NewExpression[callee.object.name='Intl']`,
-					'message': 'Use safeIntl helper instead for safe and lazy use of potentially expensive Intl methods.'
-				},
 				{
 					'selector': `BinaryExpression[operator='instanceof'][right.name='MouseEvent']`,
 					'message': 'Use DOM.isMouseEvent() to support multi-window scenarios.'
@@ -769,7 +779,7 @@ export default tseslint.config(
 				{
 					// imports that are allowed in all files of layers:
 					// - browser
-					// - electron-browser
+					// - electron-sandbox
 					'when': 'hasBrowser',
 					'allow': []
 				},
@@ -807,7 +817,7 @@ export default tseslint.config(
 						'net',
 						'node-pty',
 						'os',
-						// 'path', NOT allowed: use src/vs/base/common/path.ts instead
+						'path',
 						'perf_hooks',
 						'readline',
 						'stream',
@@ -867,18 +877,18 @@ export default tseslint.config(
 				//  - src/vs/base/common
 				//  - src/vs/base/worker
 				//  - src/vs/base/browser
-				//  - src/vs/base/electron-browser
+				//  - src/vs/base/electron-sandbox
 				//  - src/vs/base/node
 				//  - src/vs/base/electron-main
 				//  - src/vs/base/test/common
 				//  - src/vs/base/test/worker
 				//  - src/vs/base/test/browser
-				//  - src/vs/base/test/electron-browser
+				//  - src/vs/base/test/electron-sandbox
 				//  - src/vs/base/test/node
 				//  - src/vs/base/test/electron-main
 				//
 				// When /~ is used in the restrictions, it will be replaced with the correct
-				// layers that can be used e.g. 'src/vs/base/electron-browser' will be able
+				// layers that can be used e.g. 'src/vs/base/electron-sandbox' will be able
 				// to import '{common,browser,electron-sanbox}', etc.
 				//
 				// It is possible to use /~ in the restrictions property even without using it in
@@ -993,6 +1003,7 @@ export default tseslint.config(
 				{
 					'target': 'src/vs/workbench/api/~',
 					'restrictions': [
+						'@c4312/eventsource-umd',
 						'vscode',
 						'vs/base/~',
 						'vs/base/parts/*/~',
@@ -1204,7 +1215,7 @@ export default tseslint.config(
 				},
 				{
 					'target': 'src/vs/workbench/workbench.desktop.main.ts',
-					'layer': 'electron-browser',
+					'layer': 'electron-sandbox',
 					'restrictions': [
 						'vs/base/*/~',
 						'vs/base/parts/*/~',
@@ -1231,6 +1242,10 @@ export default tseslint.config(
 				},
 				{
 					'target': 'src/vscode-dts/**',
+					'restrictions': []
+				},
+				{
+					'target': 'src/bootstrap-window.ts',
 					'restrictions': []
 				},
 				{
@@ -1304,18 +1319,6 @@ export default tseslint.config(
 						'@vscode/*',
 						'@parcel/*',
 						'@playwright/*',
-						'*' // node modules
-					]
-				},
-				{
-					'target': 'test/mcp/**',
-					'restrictions': [
-						'test/automation',
-						'test/mcp/**',
-						'@vscode/*',
-						'@parcel/*',
-						'@playwright/*',
-						'@modelcontextprotocol/sdk/**/*',
 						'*' // node modules
 					]
 				}
@@ -1409,33 +1412,17 @@ export default tseslint.config(
 			]
 		}
 	},
-	// Additional extension strictness rules
+	// typescript-language-features
 	{
 		files: [
-			'extensions/markdown-language-features/**/*.ts',
-			'extensions/media-preview/**/*.ts',
-			'extensions/simple-browser/**/*.ts',
 			'extensions/typescript-language-features/**/*.ts',
 		],
 		languageOptions: {
 			parser: tseslint.parser,
 			parserOptions: {
 				project: [
-					// Markdown
-					'extensions/markdown-language-features/tsconfig.json',
-					'extensions/markdown-language-features/notebook/tsconfig.json',
-					'extensions/markdown-language-features/preview-src/tsconfig.json',
-
-					// Media preview
-					'extensions/media-preview/tsconfig.json',
-
-					// Media preview
-					'extensions/simple-browser/tsconfig.json',
-					'extensions/simple-browser/preview-src/tsconfig.json',
-
-					// TypeScript
 					'extensions/typescript-language-features/tsconfig.json',
-					'extensions/typescript-language-features/web/tsconfig.json',
+					'extensions/typescript-language-features/web/tsconfig.json'
 				],
 			}
 		},
@@ -1445,7 +1432,6 @@ export default tseslint.config(
 		rules: {
 			'@typescript-eslint/prefer-optional-chain': 'warn',
 			'@typescript-eslint/prefer-readonly': 'warn',
-			'@typescript-eslint/consistent-generic-constructors': ['warn', 'constructor'],
 		}
-	},
+	}
 );

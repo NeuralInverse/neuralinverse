@@ -1,4 +1,8 @@
 "use strict";
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -38,10 +42,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CancellationToken = void 0;
 exports.createTypeScriptBuilder = createTypeScriptBuilder;
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -63,7 +63,7 @@ function createTypeScriptBuilder(config, projectFile, cmd) {
     const _log = config.logFn;
     const host = new LanguageServiceHost(cmd, projectFile, _log);
     const outHost = new LanguageServiceHost({ ...cmd, options: { ...cmd.options, sourceRoot: cmd.options.outDir } }, cmd.options.outDir ?? '', _log);
-    const toBeCheckedForCycles = [];
+    let lastCycleCheckVersion;
     const service = typescript_1.default.createLanguageService(host, typescript_1.default.createDocumentRegistry());
     const lastBuildVersion = Object.create(null);
     const lastDtsHash = Object.create(null);
@@ -294,7 +294,6 @@ function createTypeScriptBuilder(config, projectFile, cmd) {
                         const jsValue = value.files.find(candidate => candidate.basename.endsWith('.js'));
                         if (jsValue) {
                             outHost.addScriptSnapshot(jsValue.path, new ScriptSnapshot(String(jsValue.contents), new Date()));
-                            toBeCheckedForCycles.push(normalize(jsValue.path));
                         }
                     }).catch(e => {
                         // can't just skip this or make a result up..
@@ -388,21 +387,24 @@ function createTypeScriptBuilder(config, projectFile, cmd) {
             workOnNext();
         }).then(() => {
             // check for cyclic dependencies
-            const cycles = outHost.getCyclicDependencies(toBeCheckedForCycles);
-            toBeCheckedForCycles.length = 0;
-            for (const [filename, error] of cycles) {
-                const cyclicDepErrors = [];
-                if (error) {
-                    cyclicDepErrors.push({
-                        category: typescript_1.default.DiagnosticCategory.Error,
-                        code: 1,
-                        file: undefined,
-                        start: undefined,
-                        length: undefined,
-                        messageText: `CYCLIC dependency: ${error}`
-                    });
-                }
-                newErrors[filename] = cyclicDepErrors;
+            const thisCycleCheckVersion = outHost.getProjectVersion();
+            if (thisCycleCheckVersion === lastCycleCheckVersion) {
+                return;
+            }
+            const oneCycle = outHost.hasCyclicDependency();
+            lastCycleCheckVersion = thisCycleCheckVersion;
+            delete oldErrors[projectFile];
+            if (oneCycle) {
+                const cycleError = {
+                    category: typescript_1.default.DiagnosticCategory.Error,
+                    code: 1,
+                    file: undefined,
+                    start: undefined,
+                    length: undefined,
+                    messageText: `CYCLIC dependency between ${oneCycle}`
+                };
+                onError(cycleError);
+                newErrors[projectFile] = [cycleError];
             }
         }).then(() => {
             // store the build versions to not rebuilt the next time
@@ -418,7 +420,7 @@ function createTypeScriptBuilder(config, projectFile, cmd) {
             // print stats
             const headNow = process.memoryUsage().heapUsed;
             const MB = 1024 * 1024;
-            _log('[tsb]', `time:  ${ansi_colors_1.default.yellow((Date.now() - t1) + 'ms')} + \nmem:  ${ansi_colors_1.default.cyan(Math.ceil(headNow / MB) + 'MB')} ${ansi_colors_1.default.bgCyan('delta: ' + Math.ceil((headNow - headUsed) / MB))}`);
+            _log('[tsb]', `time:  ${ansi_colors_1.default.yellow((Date.now() - t1) + 'ms')} + \nmem:  ${ansi_colors_1.default.cyan(Math.ceil(headNow / MB) + 'MB')} ${ansi_colors_1.default.bgcyan('delta: ' + Math.ceil((headNow - headUsed) / MB))}`);
             headUsed = headNow;
         });
     }
@@ -556,11 +558,10 @@ class LanguageServiceHost {
         return old;
     }
     removeScriptSnapshot(filename) {
-        filename = normalize(filename);
-        this._log('removeScriptSnapshot', filename);
         this._filesInProject.delete(filename);
         this._filesAdded.delete(filename);
         this._projectVersion++;
+        filename = normalize(filename);
         delete this._fileNameToDeclaredModule[filename];
         return delete this._snapshots[filename];
     }
@@ -586,17 +587,15 @@ class LanguageServiceHost {
             node.incoming.forEach(entry => target.push(entry.data));
         }
     }
-    getCyclicDependencies(filenames) {
+    hasCyclicDependency() {
         // Ensure dependencies are up to date
         while (this._dependenciesRecomputeList.length) {
             this._processFile(this._dependenciesRecomputeList.pop());
         }
-        const cycles = this._dependencies.findCycles(filenames.sort((a, b) => a.localeCompare(b)));
-        const result = new Map();
-        for (const [key, value] of cycles) {
-            result.set(key, value?.join(' -> '));
-        }
-        return result;
+        const cycle = this._dependencies.findCycle();
+        return cycle
+            ? cycle.join(' -> ')
+            : undefined;
     }
     _processFile(filename) {
         if (filename.match(/.*\.d\.ts$/)) {
@@ -621,9 +620,6 @@ class LanguageServiceHost {
         info.importedFiles.forEach(ref => {
             if (!ref.fileName.startsWith('.')) {
                 // node module?
-                return;
-            }
-            if (ref.fileName.endsWith('.css')) {
                 return;
             }
             const stopDirname = normalize(this.getCurrentDirectory());

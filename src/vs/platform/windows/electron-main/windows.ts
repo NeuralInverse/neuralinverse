@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import electron, { Display, Rectangle } from 'electron';
+import electron from 'electron';
 import { Color } from '../../../base/common/color.js';
 import { Event } from '../../../base/common/event.js';
 import { join } from '../../../base/common/path.js';
@@ -122,7 +122,6 @@ export interface IOpenEmptyConfiguration extends IBaseOpenConfiguration { }
 export interface IDefaultBrowserWindowOptionsOverrides {
 	forceNativeTitlebar?: boolean;
 	disableFullscreen?: boolean;
-	alwaysOnTop?: boolean;
 }
 
 export function defaultBrowserWindowOptions(accessor: ServicesAccessor, windowState: IWindowState, overrides?: IDefaultBrowserWindowOptionsOverrides, webPreferences?: electron.WebPreferences): electron.BrowserWindowConstructorOptions & { experimentalDarkMode: boolean } {
@@ -133,7 +132,7 @@ export function defaultBrowserWindowOptions(accessor: ServicesAccessor, windowSt
 
 	const windowSettings = configurationService.getValue<IWindowSettings | undefined>('window');
 
-	const options: electron.BrowserWindowConstructorOptions & { experimentalDarkMode: boolean; accentColor?: boolean | string } = {
+	const options: electron.BrowserWindowConstructorOptions & { experimentalDarkMode: boolean } = {
 		backgroundColor: themeMainService.getBackgroundColor(),
 		minWidth: WindowMinimumSize.WIDTH,
 		minHeight: WindowMinimumSize.HEIGHT,
@@ -159,20 +158,6 @@ export function defaultBrowserWindowOptions(accessor: ServicesAccessor, windowSt
 		},
 		experimentalDarkMode: true
 	};
-
-	if (isWindows) {
-		let borderSetting = windowSettings?.border || 'default';
-		if (borderSetting === 'system') {
-			borderSetting = 'default';
-		}
-		if (borderSetting !== 'default') {
-			if (borderSetting === 'off') {
-				options.accentColor = false;
-			} else if (typeof borderSetting === 'string') {
-				options.accentColor = borderSetting;
-			}
-		}
-	}
 
 	if (isLinux) {
 		options.icon = join(environmentMainService.appRoot, 'resources/linux/code.png'); // always on Linux
@@ -225,10 +210,6 @@ export function defaultBrowserWindowOptions(accessor: ServicesAccessor, windowSt
 				};
 			}
 		}
-	}
-
-	if (overrides?.alwaysOnTop) {
-		options.alwaysOnTop = true;
 	}
 
 	return options;
@@ -364,34 +345,20 @@ export namespace WindowStateValidator {
 			logService.error('window#validateWindowState: error finding display for window state', error);
 		}
 
-		if (display && validateWindowStateOnDisplay(state, display)) {
+		if (
+			display &&														// we have a display matching the desired bounds
+			displayWorkingArea &&											// we have valid working area bounds
+			state.x + state.width > displayWorkingArea.x &&					// prevent window from falling out of the screen to the left
+			state.y + state.height > displayWorkingArea.y &&				// prevent window from falling out of the screen to the top
+			state.x < displayWorkingArea.x + displayWorkingArea.width &&	// prevent window from falling out of the screen to the right
+			state.y < displayWorkingArea.y + displayWorkingArea.height		// prevent window from falling out of the screen to the bottom
+		) {
 			return state;
 		}
 
 		logService.trace('window#validateWindowState: state is outside of the multi-monitor working area');
 
 		return undefined;
-	}
-
-	export function validateWindowStateOnDisplay(state: IWindowState, display: Display): state is Rectangle {
-		if (
-			typeof state.x !== 'number' ||
-			typeof state.y !== 'number' ||
-			typeof state.width !== 'number' ||
-			typeof state.height !== 'number' ||
-			state.width <= 0 || state.height <= 0
-		) {
-			return false;
-		}
-
-		const displayWorkingArea = getWorkingArea(display);
-		return Boolean(
-			displayWorkingArea &&											// we have valid working area bounds
-			state.x + state.width > displayWorkingArea.x &&					// prevent window from falling out of the screen to the left
-			state.y + state.height > displayWorkingArea.y &&				// prevent window from falling out of the screen to the top
-			state.x < displayWorkingArea.x + displayWorkingArea.width &&	// prevent window from falling out of the screen to the right
-			state.y < displayWorkingArea.y + displayWorkingArea.height		// prevent window from falling out of the screen to the bottom
-		);
 	}
 
 	function getWorkingArea(display: electron.Display): electron.Rectangle | undefined {

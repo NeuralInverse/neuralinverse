@@ -10,6 +10,7 @@ import { TelemetryReporter } from '../logging/telemetry';
 import Tracer from '../logging/tracer';
 import { OngoingRequestCancellerFactory } from '../tsServer/cancellation';
 import { ClientCapabilities, ClientCapability, ServerType } from '../typescriptService';
+import { memoize } from '../utils/memoize';
 import { isWeb, isWebAndHasSharedArrayBuffers } from '../utils/platform';
 import { API } from './api';
 import { ILogDirectoryProvider } from './logDirectoryProvider';
@@ -19,7 +20,6 @@ import { GetErrRoutingTsServer, ITypeScriptServer, SingleTsServer, SyntaxRouting
 import { TypeScriptVersionManager } from './versionManager';
 import { ITypeScriptVersionProvider, TypeScriptVersion } from './versionProvider';
 import { NodeVersionManager } from './nodeManager';
-import { Lazy } from '../utils/lazy';
 
 const enum CompositeServerType {
 	/** Run a single server that handles all commands  */
@@ -37,9 +37,10 @@ const enum CompositeServerType {
 
 export class TypeScriptServerSpawner {
 
-	public static readonly tsServerLogOutputChannel = new Lazy<vscode.OutputChannel>(() => {
+	@memoize
+	public static get tsServerLogOutputChannel(): vscode.OutputChannel {
 		return vscode.window.createOutputChannel(vscode.l10n.t("TypeScript Server Log"));
-	});
+	}
 
 	public constructor(
 		private readonly _versionProvider: ITypeScriptVersionProvider,
@@ -222,7 +223,7 @@ export class TypeScriptServerSpawner {
 		if (TypeScriptServerSpawner.isLoggingEnabled(configuration)) {
 			if (isWeb()) {
 				args.push('--logVerbosity', TsServerLogLevel.toString(configuration.tsServerLogLevel));
-				tsServerLog = { type: 'output', output: TypeScriptServerSpawner.tsServerLogOutputChannel.value };
+				tsServerLog = { type: 'output', output: TypeScriptServerSpawner.tsServerLogOutputChannel };
 			} else {
 				const logDir = this._logDirectoryProvider.getNewLogDirectory();
 				if (logDir) {

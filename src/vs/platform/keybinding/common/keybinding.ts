@@ -7,7 +7,6 @@ import { Event } from '../../../base/common/event.js';
 import { IJSONSchema } from '../../../base/common/jsonSchema.js';
 import { KeyCode } from '../../../base/common/keyCodes.js';
 import { ResolvedKeybinding, Keybinding } from '../../../base/common/keybindings.js';
-import { IDisposable } from '../../../base/common/lifecycle.js';
 import { IContextKeyService, IContextKeyServiceTarget } from '../../contextkey/common/contextkey.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 import { ResolutionResult } from './keybindingResolver.js';
@@ -102,7 +101,7 @@ export interface IKeybindingService {
 	 */
 	mightProducePrintableCharacter(event: IKeyboardEvent): boolean;
 
-	registerSchemaContribution(contribution: KeybindingsSchemaContribution): IDisposable;
+	registerSchemaContribution(contribution: KeybindingsSchemaContribution): void;
 
 	toggleLogging(): boolean;
 

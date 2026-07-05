@@ -52,12 +52,13 @@ export async function loadLocalResource(
 	logService: ILogService,
 	token: CancellationToken,
 ): Promise<WebviewResourceResponse.StreamResponse> {
+	logService.debug(`loadLocalResource - begin. requestUri=${requestUri}`);
+
 	const resourceToLoad = getResourceToLoad(requestUri, options.roots);
 
-	logService.trace(`Webview.loadLocalResource - trying to load resource. requestUri=${requestUri}, resourceToLoad=${resourceToLoad}`);
+	logService.debug(`loadLocalResource - found resource to load. requestUri=${requestUri}, resourceToLoad=${resourceToLoad}`);
 
 	if (!resourceToLoad) {
-		logService.trace(`Webview.loadLocalResource - access denied. requestUri=${requestUri}, resourceToLoad=${resourceToLoad}`);
 		return WebviewResourceResponse.AccessDenied;
 	}
 
@@ -65,7 +66,6 @@ export async function loadLocalResource(
 
 	try {
 		const result = await fileService.readFileStream(resourceToLoad, { etag: options.ifNoneMatch }, token);
-		logService.trace(`Webview.loadLocalResource - Loaded. requestUri=${requestUri}, resourceToLoad=${resourceToLoad}`);
 		return new WebviewResourceResponse.StreamSuccess(result.value, result.etag, result.mtime, mime);
 	} catch (err) {
 		if (err instanceof FileOperationError) {
@@ -73,13 +73,14 @@ export async function loadLocalResource(
 
 			// NotModified status is expected and can be handled gracefully
 			if (result === FileOperationResult.FILE_NOT_MODIFIED_SINCE) {
-				logService.trace(`Webview.loadLocalResource - not modified. requestUri=${requestUri}, resourceToLoad=${resourceToLoad}`);
 				return new WebviewResourceResponse.NotModified(mime, (err.options as IWriteFileOptions | undefined)?.mtime);
 			}
 		}
 
 		// Otherwise the error is unexpected.
-		logService.error(`Webview.loadLocalResource - Error using fileReader. requestUri=${requestUri}, resourceToLoad=${resourceToLoad}`);
+		logService.debug(`loadLocalResource - Error using fileReader. requestUri=${requestUri}`);
+		console.log(err);
+
 		return WebviewResourceResponse.Failed;
 	}
 }

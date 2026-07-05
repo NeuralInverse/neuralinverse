@@ -680,8 +680,8 @@ export class SideBySideDiffElementViewModel extends DiffElementCellViewModelBase
 		return this.mainDocumentTextModel;
 	}
 
-	declare readonly original: DiffNestedCellViewModel;
-	declare readonly modified: DiffNestedCellViewModel;
+	override readonly original!: DiffNestedCellViewModel;
+	override readonly modified!: DiffNestedCellViewModel;
 	override readonly type: 'unchanged' | 'modified';
 
 	/**

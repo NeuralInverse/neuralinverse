@@ -18,12 +18,10 @@
           value: "nullExtensionDescription",
           _lower: "nullextensiondescription"
         },
-        extensionVersion: undefined,
         publisherDisplayName: "",
         extensionDisplayName: "",
         extensionPublisherId: "",
         locations: [ "panel" ],
-        modes: [ "ask" ],
         metadata: {  },
         slashCommands: [
           {

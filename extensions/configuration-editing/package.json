@@ -131,10 +131,6 @@
         "url": "vscode://schemas/snippets"
       },
       {
-        "fileMatch": "%APP_SETTINGS_HOME%/prompts/*.toolsets.jsonc",
-        "url": "vscode://schemas/toolsets"
-      },
-      {
         "fileMatch": "%APP_SETTINGS_HOME%/profiles/*/snippets/.json",
         "url": "vscode://schemas/snippets"
       },
@@ -173,7 +169,7 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "22.x"
+    "@types/node": "20.x"
   },
   "repository": {
     "type": "git",

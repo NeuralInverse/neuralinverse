@@ -56,8 +56,7 @@ export class DiskFileSystemProviderClient extends Disposable implements
 				FileSystemProviderCapabilities.FileAtomicRead |
 				FileSystemProviderCapabilities.FileAtomicWrite |
 				FileSystemProviderCapabilities.FileAtomicDelete |
-				FileSystemProviderCapabilities.FileClone |
-				FileSystemProviderCapabilities.FileRealpath;
+				FileSystemProviderCapabilities.FileClone;
 
 			if (this.extraCapabilities.pathCaseSensitive) {
 				this._capabilities |= FileSystemProviderCapabilities.PathCaseSensitive;
@@ -77,10 +76,6 @@ export class DiskFileSystemProviderClient extends Disposable implements
 
 	stat(resource: URI): Promise<IStat> {
 		return this.channel.call('stat', [resource]);
-	}
-
-	realpath(resource: URI): Promise<string> {
-		return this.channel.call('realpath', [resource]);
 	}
 
 	readdir(resource: URI): Promise<[string, FileType][]> {

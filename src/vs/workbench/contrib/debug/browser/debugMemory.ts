@@ -235,12 +235,11 @@ class MemoryRegionView extends Disposable implements IMemoryRegion {
 
 	public readonly onDidInvalidate = this.invalidateEmitter.event;
 	public readonly writable: boolean;
-	private readonly width: number;
+	private readonly width = this.range.toOffset - this.range.fromOffset;
 
 	constructor(private readonly parent: IMemoryRegion, public readonly range: { fromOffset: number; toOffset: number }) {
 		super();
 		this.writable = parent.writable;
-		this.width = range.toOffset - range.fromOffset;
 
 		this._register(parent);
 		this._register(parent.onDidInvalidate(e => {

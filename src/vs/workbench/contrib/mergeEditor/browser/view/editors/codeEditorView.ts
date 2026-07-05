@@ -25,31 +25,76 @@ import { observableConfigValue } from '../../../../../../platform/observable/com
 import { MergeEditorViewModel } from '../viewModel.js';
 
 export abstract class CodeEditorView extends Disposable {
-	readonly model;
+	readonly model = this.viewModel.map(m => /** @description model */ m?.model);
 
-	protected readonly htmlElements;
+	protected readonly htmlElements = h('div.code-view', [
+		h('div.header@header', [
+			h('span.title@title'),
+			h('span.description@description'),
+			h('span.detail@detail'),
+			h('span.toolbar@toolbar'),
+		]),
+		h('div.container', [
+			h('div.gutter@gutterDiv'),
+			h('div@editor'),
+		]),
+	]);
 
-	private readonly _onDidViewChange;
+	private readonly _onDidViewChange = new Emitter<IViewSize | undefined>();
 
-	public readonly view: IView;
+	public readonly view: IView = {
+		element: this.htmlElements.root,
+		minimumWidth: DEFAULT_EDITOR_MIN_DIMENSIONS.width,
+		maximumWidth: DEFAULT_EDITOR_MAX_DIMENSIONS.width,
+		minimumHeight: DEFAULT_EDITOR_MIN_DIMENSIONS.height,
+		maximumHeight: DEFAULT_EDITOR_MAX_DIMENSIONS.height,
+		onDidChange: this._onDidViewChange.event,
+		layout: (width: number, height: number, top: number, left: number) => {
+			setStyle(this.htmlElements.root, { width, height, top, left });
+			this.editor.layout({
+				width: width - this.htmlElements.gutterDiv.clientWidth,
+				height: height - this.htmlElements.header.clientHeight,
+			});
+		}
+		// preferredWidth?: number | undefined;
+		// preferredHeight?: number | undefined;
+		// priority?: LayoutPriority | undefined;
+		// snap?: boolean | undefined;
+	};
 
-	protected readonly checkboxesVisible;
-	protected readonly showDeletionMarkers;
-	protected readonly useSimplifiedDecorations;
+	protected readonly checkboxesVisible = observableConfigValue<boolean>('mergeEditor.showCheckboxes', false, this.configurationService);
+	protected readonly showDeletionMarkers = observableConfigValue<boolean>('mergeEditor.showDeletionMarkers', true, this.configurationService);
+	protected readonly useSimplifiedDecorations = observableConfigValue<boolean>('mergeEditor.useSimplifiedDecorations', false, this.configurationService);
 
-	public readonly editor;
+	public readonly editor = this.instantiationService.createInstance(
+		CodeEditorWidget,
+		this.htmlElements.editor,
+		{},
+		{
+			contributions: this.getEditorContributions(),
+		}
+	);
 
 	public updateOptions(newOptions: Readonly<IEditorOptions>): void {
 		this.editor.updateOptions(newOptions);
 	}
 
-	public readonly isFocused;
+	public readonly isFocused = observableFromEvent(this,
+		Event.any(this.editor.onDidBlurEditorWidget, this.editor.onDidFocusEditorWidget),
+		() => /** @description editor.hasWidgetFocus */ this.editor.hasWidgetFocus()
+	);
 
-	public readonly cursorPosition;
+	public readonly cursorPosition = observableFromEvent(this,
+		this.editor.onDidChangeCursorPosition,
+		() => /** @description editor.getPosition */ this.editor.getPosition()
+	);
 
-	public readonly selection;
+	public readonly selection = observableFromEvent(this,
+		this.editor.onDidChangeCursorSelection,
+		() => /** @description editor.getSelections */ this.editor.getSelections()
+	);
 
-	public readonly cursorLineNumber;
+	public readonly cursorLineNumber = this.cursorPosition.map(p => /** @description cursorPosition.lineNumber */ p?.lineNumber);
 
 	constructor(
 		private readonly instantiationService: IInstantiationService,
@@ -57,63 +102,6 @@ export abstract class CodeEditorView extends Disposable {
 		private readonly configurationService: IConfigurationService,
 	) {
 		super();
-		this.model = this.viewModel.map(m => /** @description model */ m?.model);
-		this.htmlElements = h('div.code-view', [
-			h('div.header@header', [
-				h('span.title@title'),
-				h('span.description@description'),
-				h('span.detail@detail'),
-				h('span.toolbar@toolbar'),
-			]),
-			h('div.container', [
-				h('div.gutter@gutterDiv'),
-				h('div@editor'),
-			]),
-		]);
-		this._onDidViewChange = new Emitter<IViewSize | undefined>();
-		this.view = {
-			element: this.htmlElements.root,
-			minimumWidth: DEFAULT_EDITOR_MIN_DIMENSIONS.width,
-			maximumWidth: DEFAULT_EDITOR_MAX_DIMENSIONS.width,
-			minimumHeight: DEFAULT_EDITOR_MIN_DIMENSIONS.height,
-			maximumHeight: DEFAULT_EDITOR_MAX_DIMENSIONS.height,
-			onDidChange: this._onDidViewChange.event,
-			layout: (width: number, height: number, top: number, left: number) => {
-				setStyle(this.htmlElements.root, { width, height, top, left });
-				this.editor.layout({
-					width: width - this.htmlElements.gutterDiv.clientWidth,
-					height: height - this.htmlElements.header.clientHeight,
-				});
-			}
-			// preferredWidth?: number | undefined;
-			// preferredHeight?: number | undefined;
-			// priority?: LayoutPriority | undefined;
-			// snap?: boolean | undefined;
-		};
-		this.checkboxesVisible = observableConfigValue<boolean>('mergeEditor.showCheckboxes', false, this.configurationService);
-		this.showDeletionMarkers = observableConfigValue<boolean>('mergeEditor.showDeletionMarkers', true, this.configurationService);
-		this.useSimplifiedDecorations = observableConfigValue<boolean>('mergeEditor.useSimplifiedDecorations', false, this.configurationService);
-		this.editor = this.instantiationService.createInstance(
-			CodeEditorWidget,
-			this.htmlElements.editor,
-			{},
-			{
-				contributions: this.getEditorContributions(),
-			}
-		);
-		this.isFocused = observableFromEvent(this,
-			Event.any(this.editor.onDidBlurEditorWidget, this.editor.onDidFocusEditorWidget),
-			() => /** @description editor.hasWidgetFocus */ this.editor.hasWidgetFocus()
-		);
-		this.cursorPosition = observableFromEvent(this,
-			this.editor.onDidChangeCursorPosition,
-			() => /** @description editor.getPosition */ this.editor.getPosition()
-		);
-		this.selection = observableFromEvent(this,
-			this.editor.onDidChangeCursorSelection,
-			() => /** @description editor.getSelections */ this.editor.getSelections()
-		);
-		this.cursorLineNumber = this.cursorPosition.map(p => /** @description cursorPosition.lineNumber */ p?.lineNumber);
 
 	}
 

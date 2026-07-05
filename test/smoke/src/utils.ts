@@ -110,22 +110,22 @@ export function createApp(options: ApplicationOptions, optionsTransform?: (opts:
 		options = optionsTransform({ ...options });
 	}
 
-	const config = options.userDataDir
-		? { ...options, userDataDir: getRandomUserDataDir(options.userDataDir) }
-		: options;
-	const app = new Application(config);
+	const app = new Application({
+		...options,
+		userDataDir: getRandomUserDataDir(options)
+	});
 
 	return app;
 }
 
-export function getRandomUserDataDir(baseUserDataDir: string): string {
+export function getRandomUserDataDir(options: ApplicationOptions): string {
 
 	// Pick a random user data dir suffix that is not
 	// too long to not run into max path length issues
 	// https://github.com/microsoft/vscode/issues/34988
 	const userDataPathSuffix = [...Array(8)].map(() => Math.random().toString(36)[3]).join('');
 
-	return baseUserDataDir.concat(`-${userDataPathSuffix}`);
+	return options.userDataDir.concat(`-${userDataPathSuffix}`);
 }
 
 export function timeout(i: number) {

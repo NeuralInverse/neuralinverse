@@ -196,6 +196,14 @@ export class ContextMenuController implements IEditorContribution {
 			return;
 		}
 
+		// Disable hover
+		const oldHoverSetting = this._editor.getOption(EditorOption.hover);
+		this._editor.updateOptions({
+			hover: {
+				enabled: false
+			}
+		});
+
 		let anchor: IMouseEvent | IAnchor | null = event;
 		if (!anchor) {
 			// Ensure selection is visible
@@ -243,6 +251,9 @@ export class ContextMenuController implements IEditorContribution {
 
 			onHide: (wasCancelled: boolean) => {
 				this._contextMenuIsBeingShownCount--;
+				this._editor.updateOptions({
+					hover: oldHoverSetting
+				});
 			}
 		});
 	}

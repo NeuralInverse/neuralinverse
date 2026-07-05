@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Emitter, Event, EventMultiplexer } from '../../../../base/common/event.js';
+import './media/extensionManagement.css';
 import {
 	ILocalExtension, IGalleryExtension, IExtensionIdentifier, IExtensionsControlManifest, IExtensionGalleryService, InstallOptions, UninstallOptions, InstallExtensionResult, ExtensionManagementError, ExtensionManagementErrorCode, Metadata, InstallOperation, EXTENSION_INSTALL_SOURCE_CONTEXT, InstallExtensionInfo,
 	IProductVersion,
@@ -48,7 +49,6 @@ import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlCon
 import { verifiedPublisherIcon } from './extensionsIcons.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { IStringDictionary } from '../../../../base/common/collections.js';
-import { CommontExtensionManagementService } from '../../../../platform/extensionManagement/common/abstractExtensionManagementService.js';
 
 const TrustedPublishersStorageKey = 'extensions.trustedPublishers';
 
@@ -56,7 +56,7 @@ function isGalleryExtension(extension: IResourceExtension | IGalleryExtension): 
 	return extension.type === 'gallery';
 }
 
-export class ExtensionManagementService extends CommontExtensionManagementService implements IWorkbenchExtensionManagementService {
+export class ExtensionManagementService extends Disposable implements IWorkbenchExtensionManagementService {
 
 	declare readonly _serviceBrand: undefined;
 
@@ -98,7 +98,7 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		@IUserDataProfileService private readonly userDataProfileService: IUserDataProfileService,
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@IConfigurationService protected readonly configurationService: IConfigurationService,
-		@IProductService productService: IProductService,
+		@IProductService protected readonly productService: IProductService,
 		@IDownloadService protected readonly downloadService: IDownloadService,
 		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
 		@IDialogService private readonly dialogService: IDialogService,
@@ -108,11 +108,11 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		@ILogService private readonly logService: ILogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IExtensionsScannerService private readonly extensionsScannerService: IExtensionsScannerService,
-		@IAllowedExtensionsService allowedExtensionsService: IAllowedExtensionsService,
+		@IAllowedExtensionsService private readonly allowedExtensionsService: IAllowedExtensionsService,
 		@IStorageService private readonly storageService: IStorageService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
-		super(productService, allowedExtensionsService);
+		super();
 
 		this.defaultTrustedPublishers = productService.trustedExtensionPublishers ?? [];
 		this.workspaceExtensionManagementService = this._register(this.instantiationService.createInstance(WorkspaceExtensionsManagementService));
@@ -382,7 +382,7 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		return Promise.reject('No Servers');
 	}
 
-	override async canInstall(extension: IGalleryExtension | IResourceExtension): Promise<true | IMarkdownString> {
+	async canInstall(extension: IGalleryExtension | IResourceExtension): Promise<true | IMarkdownString> {
 		if (isGalleryExtension(extension)) {
 			return this.canInstallGalleryExtension(extension);
 		}
@@ -1112,10 +1112,10 @@ export class ExtensionManagementService extends CommontExtensionManagementServic
 		await Promise.allSettled(this.servers.map(server => server.extensionManagementService.cleanUp()));
 	}
 
-	toggleApplicationScope(extension: ILocalExtension, fromProfileLocation: URI): Promise<ILocalExtension> {
+	toggleAppliationScope(extension: ILocalExtension, fromProfileLocation: URI): Promise<ILocalExtension> {
 		const server = this.getServer(extension);
 		if (server) {
-			return server.extensionManagementService.toggleApplicationScope(extension, fromProfileLocation);
+			return server.extensionManagementService.toggleAppliationScope(extension, fromProfileLocation);
 		}
 		throw new Error('Not Supported');
 	}

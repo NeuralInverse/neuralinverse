@@ -51,7 +51,7 @@ suite('Editor ViewLayout - EditorLayoutProvider', () => {
 		options._write(EditorOption.padding, { top: 0, bottom: 0 });
 		const minimapOptions: EditorMinimapOptions = {
 			enabled: input.minimap,
-			autohide: 'none',
+			autohide: false,
 			size: input.minimapSize || 'proportional',
 			side: input.minimapSide,
 			renderCharacters: input.minimapRenderCharacters,

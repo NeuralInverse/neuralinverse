@@ -9,8 +9,6 @@ import { BaseWatcher } from '../baseWatcher.js';
 import { isLinux } from '../../../../../base/common/platform.js';
 import { INonRecursiveWatchRequest, INonRecursiveWatcher, IRecursiveWatcherWithSubscribe } from '../../../common/watcher.js';
 import { NodeJSFileWatcherLibrary } from './nodejsWatcherLib.js';
-import { ThrottledWorker } from '../../../../../base/common/async.js';
-import { MutableDisposable } from '../../../../../base/common/lifecycle.js';
 
 export interface INodeJSWatcherInstance {
 
@@ -31,8 +29,6 @@ export class NodeJSWatcher extends BaseWatcher implements INonRecursiveWatcher {
 
 	private readonly _watchers = new Map<string /* path */ | number /* correlation ID */, INodeJSWatcherInstance>();
 	get watchers() { return this._watchers.values(); }
-
-	private readonly worker = this._register(new MutableDisposable<ThrottledWorker<INonRecursiveWatchRequest>>());
 
 	constructor(protected readonly recursiveWatcher: IRecursiveWatcherWithSubscribe | undefined) {
 		super();
@@ -65,36 +61,15 @@ export class NodeJSWatcher extends BaseWatcher implements INonRecursiveWatcher {
 			this.trace(`Request to stop watching: ${Array.from(watchersToStop).map(watcher => this.requestToString(watcher.request)).join(',')}`);
 		}
 
-		// Stop the worker
-		this.worker.clear();
-
 		// Stop watching as instructed
 		for (const watcher of watchersToStop) {
 			this.stopWatching(watcher);
 		}
 
 		// Start watching as instructed
-		this.createWatchWorker().work(requestsToStart);
-	}
-
-	private createWatchWorker(): ThrottledWorker<INonRecursiveWatchRequest> {
-
-		// We see very large amount of non-recursive file watcher requests
-		// in large workspaces. To prevent the overhead of starting thousands
-		// of watchers at once, we use a throttled worker to distribute this
-		// work over time.
-
-		this.worker.value = new ThrottledWorker<INonRecursiveWatchRequest>({
-			maxWorkChunkSize: 100,				// only start 100 watchers at once before...
-			throttleDelay: 100,	  				// ...resting for 100ms until we start watchers again...
-			maxBufferedWork: Number.MAX_VALUE 	// ...and never refuse any work.
-		}, requests => {
-			for (const request of requests) {
-				this.startWatching(request);
-			}
-		});
-
-		return this.worker.value;
+		for (const request of requestsToStart) {
+			this.startWatching(request);
+		}
 	}
 
 	private requestToWatcherKey(request: INonRecursiveWatchRequest): string | number {

@@ -7,7 +7,6 @@ import assert from 'assert';
 import { renderFormattedText, renderText } from '../../browser/formattedTextRenderer.js';
 import { DisposableStore } from '../../common/lifecycle.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../common/utils.js';
-import { $ } from '../../browser/dom.js';
 
 suite('FormattedTextRenderer', () => {
 	const store = new DisposableStore();
@@ -28,11 +27,11 @@ suite('FormattedTextRenderer', () => {
 		assert.strictEqual(result.tagName, 'DIV');
 	});
 
-	test('render element with target', () => {
-		const target = $('div.testClass');
-		const result = renderText('testing', {}, target);
+	test('render element with class', () => {
+		const result: HTMLElement = renderText('testing', {
+			className: 'testClass'
+		});
 		assert.strictEqual(result.nodeType, document.ELEMENT_NODE);
-		assert.strictEqual(result, target);
 		assert.strictEqual(result.className, 'testClass');
 	});
 

@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { findLastIdx } from '../../../../base/common/arraysFind.js';
 import { MarkdownString } from '../../../../base/common/htmlContent.js';
 import { basename } from '../../../../base/common/resources.js';
 import { URI } from '../../../../base/common/uri.js';
@@ -17,8 +16,8 @@ export function annotateSpecialMarkdownContent(response: Iterable<IChatProgressR
 
 	const result: IChatProgressRenderableResponseContent[] = [];
 	for (const item of response) {
-		const previousItemIndex = findLastIdx(result, p => p.kind !== 'textEditGroup' && p.kind !== 'undoStop');
-		const previousItem = result[previousItemIndex];
+		const previousItem = result.filter(p => p.kind !== 'textEditGroup').at(-1);
+		const previousItemIndex = result.findIndex(p => p === previousItem);
 		if (item.kind === 'inlineReference') {
 			let label: string | undefined = item.name;
 			if (!label) {
@@ -61,9 +60,7 @@ export function annotateSpecialMarkdownContent(response: Iterable<IChatProgressR
 				const isEditText = item.isEdit ? ` isEdit` : '';
 				const markdownText = `<vscode_codeblock_uri${isEditText}>${item.uri.toString()}</vscode_codeblock_uri>`;
 				const merged = appendMarkdownString(previousItem.content, new MarkdownString(markdownText));
-				// delete the previous and append to ensure that we don't reorder the edit before the undo stop containing it
-				result.splice(previousItemIndex, 1);
-				result.push({ ...previousItem, content: merged });
+				result[previousItemIndex] = { ...previousItem, content: merged };
 			}
 		} else {
 			result.push(item);

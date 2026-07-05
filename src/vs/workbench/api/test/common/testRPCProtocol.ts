@@ -146,7 +146,9 @@ export class TestRPCProtocol implements IExtHostContext, IExtHostRpcService {
 		});
 	}
 
-	public dispose() { }
+	public dispose() {
+		throw new Error('Not implemented!');
+	}
 
 	public assertRegistered(identifiers: ProxyIdentifier<any>[]): void {
 		throw new Error('Not implemented!');

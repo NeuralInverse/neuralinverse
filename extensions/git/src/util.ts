@@ -291,8 +291,8 @@ export function detectUnicodeEncoding(buffer: Buffer): Encoding | null {
 	return null;
 }
 
-export function truncate(value: string, maxLength = 20, ellipsis = true): string {
-	return value.length <= maxLength ? value : `${value.substring(0, maxLength)}${ellipsis ? '\u2026' : ''}`;
+export function truncate(value: string, maxLength = 20): string {
+	return value.length <= maxLength ? value : `${value.substring(0, maxLength)}\u2026`;
 }
 
 function normalizePath(path: string): string {
@@ -328,10 +328,6 @@ export function pathEquals(a: string, b: string): boolean {
  * casing which is why we attempt to use substring() before relative().
  */
 export function relativePath(from: string, to: string): string {
-	return relativePathWithNoFallback(from, to) ?? relative(from, to);
-}
-
-export function relativePathWithNoFallback(from: string, to: string): string | undefined {
 	// There are cases in which the `from` path may contain a trailing separator at
 	// the end (ex: "C:\", "\\server\folder\" (Windows) or "/" (Linux/macOS)) which
 	// is by design as documented in https://github.com/nodejs/node/issues/1765. If
@@ -344,7 +340,8 @@ export function relativePathWithNoFallback(from: string, to: string): string | u
 		return to.substring(from.length);
 	}
 
-	return undefined;
+	// Fallback to `path.relative`
+	return relative(from, to);
 }
 
 export function* splitInChunks(array: string[], maxChunkLength: number): IterableIterator<string[]> {
@@ -789,36 +786,4 @@ export function toDiagnosticSeverity(value: DiagnosticSeverityConfig): Diagnosti
 			: value === 'information'
 				? DiagnosticSeverity.Information
 				: DiagnosticSeverity.Hint;
-}
-
-export function extractFilePathFromArgs(argv: string[], startIndex: number): string {
-	// Argument doesn't start with a quote
-	const firstArg = argv[startIndex];
-	if (!firstArg.match(/^["']/)) {
-		return firstArg.replace(/^["']+|["':]+$/g, '');
-	}
-
-	// If it starts with a quote, we need to find the matching closing
-	// quote which might be in a later argument if the path contains
-	// spaces
-	const quote = firstArg[0];
-
-	// If the first argument ends with the same quote, it's complete
-	if (firstArg.endsWith(quote) && firstArg.length > 1) {
-		return firstArg.slice(1, -1);
-	}
-
-	// Concatenate arguments until we find the closing quote
-	let path = firstArg;
-	for (let i = startIndex + 1; i < argv.length; i++) {
-		path = `${path} ${argv[i]}`;
-		if (argv[i].endsWith(quote)) {
-			// Found the matching quote
-			return path.slice(1, -1);
-		}
-	}
-
-	// If no closing quote was found, remove
-	// leading quote and return the path as-is
-	return path.slice(1);
 }

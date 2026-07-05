@@ -222,7 +222,7 @@ export class SuggestInlineCompletions extends Disposable implements InlineComple
 		item.completion.resolve(CancellationToken.None);
 	}
 
-	disposeInlineCompletions(result: InlineCompletionResults): void {
+	freeInlineCompletions(result: InlineCompletionResults): void {
 		result.release();
 	}
 

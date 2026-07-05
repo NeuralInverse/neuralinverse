@@ -64,7 +64,7 @@ import { getSimpleEditorOptions } from '../../codeEditor/browser/simpleEditorOpt
 import { IMarkdownVulnerability } from '../common/annotations.js';
 import { ChatContextKeys } from '../common/chatContextKeys.js';
 import { IChatResponseModel, IChatTextEditGroup } from '../common/chatModel.js';
-import { IChatResponseViewModel, isRequestVM, isResponseVM } from '../common/chatViewModel.js';
+import { IChatResponseViewModel, isResponseVM } from '../common/chatViewModel.js';
 import { ChatTreeItem } from './chat.js';
 import { IChatRendererDelegate } from './chatListRenderer.js';
 import { ChatEditorOptions } from './chatOptions.js';
@@ -89,8 +89,6 @@ export interface ICodeBlockData {
 
 	readonly parentContextKeyService?: IContextKeyService;
 	readonly renderOptions?: ICodeBlockRenderOptions;
-
-	readonly chatSessionId: string;
 }
 
 /**
@@ -132,13 +130,11 @@ export function parseLocalFileData(text: string) {
 }
 
 export interface ICodeBlockActionContext {
-	readonly code: string;
-	readonly codemapperUri?: URI;
-	readonly languageId?: string;
-	readonly codeBlockIndex: number;
-	readonly element: unknown;
-
-	readonly chatSessionId: string | undefined;
+	code: string;
+	codemapperUri?: URI;
+	languageId?: string;
+	codeBlockIndex: number;
+	element: unknown;
 }
 
 export interface ICodeBlockRenderOptions {
@@ -179,7 +175,6 @@ export class CodeBlockPart extends Disposable {
 		readonly menuId: MenuId,
 		delegate: IChatRendererDelegate,
 		overflowWidgetsDomNode: HTMLElement | undefined,
-		private readonly isSimpleWidget: boolean = false,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IModelService protected readonly modelService: IModelService,
@@ -216,7 +211,6 @@ export class CodeBlockPart extends Disposable {
 			},
 			ariaLabel: localize('chat.codeBlockHelp', 'Code block'),
 			overflowWidgetsDomNode,
-			tabFocusMode: true,
 			...this.getEditorOptionsFromConfig(),
 		});
 
@@ -287,14 +281,6 @@ export class CodeBlockPart extends Disposable {
 			this.element.classList.add('focused');
 			WordHighlighterContribution.get(this.editor)?.restoreViewState(true);
 		}));
-		this._register(Event.any(
-			this.editor.onDidChangeModel,
-			this.editor.onDidChangeModelContent
-		)(() => {
-			if (this.currentCodeBlockData) {
-				this.updateContexts(this.currentCodeBlockData);
-			}
-		}));
 
 		// Parent list scrolled
 		if (delegate.onDidScroll) {
@@ -315,7 +301,7 @@ export class CodeBlockPart extends Disposable {
 
 	private createEditor(instantiationService: IInstantiationService, parent: HTMLElement, options: Readonly<IEditorConstructionOptions>): CodeEditorWidget {
 		return this._register(instantiationService.createInstance(CodeEditorWidget, parent, options, {
-			isSimpleWidget: this.isSimpleWidget,
+			isSimpleWidget: false,
 			contributions: EditorExtensionsRegistry.getSomeEditorContributions([
 				MenuPreventer.ID,
 				SelectionClipboardContributionID,
@@ -358,6 +344,7 @@ export class CodeBlockPart extends Disposable {
 		const toolbarElt = this.toolbar.getElement();
 		if (this.accessibilityService.isScreenReaderOptimized()) {
 			toolbarElt.style.display = 'block';
+			toolbarElt.ariaLabel = this.configurationService.getValue(AccessibilityVerbositySettingId.Chat) ? localize('chat.codeBlock.toolbarVerbose', 'Toolbar for code block which can be reached via tab') : localize('chat.codeBlock.toolbar', 'Code block toolbar');
 		} else {
 			toolbarElt.style.display = '';
 		}
@@ -388,7 +375,7 @@ export class CodeBlockPart extends Disposable {
 
 		const editorBorder = 2;
 		width = width - editorBorder - (this.currentCodeBlockData?.renderOptions?.reserveWidth ?? 0);
-		this.editor.layout({ width: isRequestVM(this.currentCodeBlockData?.element) ? width * 0.9 : width, height });
+		this.editor.layout({ width, height });
 		this.updatePaddingForLayout();
 	}
 
@@ -413,20 +400,15 @@ export class CodeBlockPart extends Disposable {
 			this.layout(width);
 		}
 
-		const didUpdate = await this.updateEditor(data);
-		if (!didUpdate || this.isDisposed || this.currentCodeBlockData !== data) {
+		await this.updateEditor(data);
+		if (this.isDisposed) {
 			return;
 		}
 
 		this.editor.updateOptions({
 			...this.getEditorOptionsFromConfig(),
+			ariaLabel: localize('chat.codeBlockLabel', "Code block {0}", data.codeBlockIndex + 1),
 		});
-		if (!this.editor.getOption(EditorOption.ariaLabel)) {
-			// Don't override the ariaLabel if it was set by the editor options
-			this.editor.updateOptions({
-				ariaLabel: localize('chat.codeBlockLabel', "Code block {0}", data.codeBlockIndex + 1),
-			});
-		}
 		this.layout(width);
 		this.toolbar.setAriaLabel(localize('chat.codeBlockToolbarLabel', "Code block {0}", data.codeBlockIndex + 1));
 		if (data.renderOptions?.hideToolbar) {
@@ -448,7 +430,6 @@ export class CodeBlockPart extends Disposable {
 
 	reset() {
 		this.clearWidgets();
-		this.currentCodeBlockData = undefined;
 	}
 
 	private clearWidgets() {
@@ -456,21 +437,22 @@ export class CodeBlockPart extends Disposable {
 		GlyphHoverController.get(this.editor)?.hideGlyphHover();
 	}
 
-	private async updateEditor(data: ICodeBlockData): Promise<boolean> {
+	private async updateEditor(data: ICodeBlockData): Promise<void> {
 		const textModel = await data.textModel;
-		if (this.isDisposed || this.currentCodeBlockData !== data || textModel.isDisposed()) {
-			return false;
-		}
-
 		this.editor.setModel(textModel);
 		if (data.range) {
 			this.editor.setSelection(data.range);
 			this.editor.revealRangeInCenter(data.range, ScrollType.Immediate);
 		}
 
-		this.updateContexts(data);
-
-		return true;
+		this.toolbar.context = {
+			code: textModel.getTextBuffer().getValueInRange(data.range ?? textModel.getFullModelRange(), EndOfLinePreference.TextDefined),
+			codeBlockIndex: data.codeBlockIndex,
+			element: data.element,
+			languageId: textModel.getLanguageId(),
+			codemapperUri: data.codemapperUri,
+		} satisfies ICodeBlockActionContext;
+		this.resourceContextKey.set(textModel.uri);
 	}
 
 	private getVulnerabilitiesLabel(): string {
@@ -483,23 +465,6 @@ export class CodeBlockPart extends Disposable {
 			localize('vulnerabilitiesSingular', "{0} vulnerability", 1);
 		const icon = (element: IChatResponseViewModel) => element.vulnerabilitiesListExpanded ? Codicon.chevronDown : Codicon.chevronRight;
 		return `${referencesLabel} $(${icon(this.currentCodeBlockData.element as IChatResponseViewModel).id})`;
-	}
-
-	private updateContexts(data: ICodeBlockData) {
-		const textModel = this.editor.getModel();
-		if (!textModel) {
-			return;
-		}
-
-		this.toolbar.context = {
-			code: textModel.getTextBuffer().getValueInRange(data.range ?? textModel.getFullModelRange(), EndOfLinePreference.TextDefined),
-			codeBlockIndex: data.codeBlockIndex,
-			element: data.element,
-			languageId: textModel.getLanguageId(),
-			codemapperUri: data.codemapperUri,
-			chatSessionId: data.chatSessionId
-		} satisfies ICodeBlockActionContext;
-		this.resourceContextKey.set(textModel.uri);
 	}
 }
 
@@ -568,7 +533,6 @@ export class CodeCompareBlockPart extends Disposable {
 		readonly menuId: MenuId,
 		delegate: IChatRendererDelegate,
 		overflowWidgetsDomNode: HTMLElement | undefined,
-		private readonly isSimpleWidget: boolean = false,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IModelService protected readonly modelService: IModelService,
@@ -680,7 +644,7 @@ export class CodeCompareBlockPart extends Disposable {
 
 	private createDiffEditor(instantiationService: IInstantiationService, parent: HTMLElement, options: Readonly<IEditorConstructionOptions>): DiffEditorWidget {
 		const widgetOptions: ICodeEditorWidgetOptions = {
-			isSimpleWidget: this.isSimpleWidget,
+			isSimpleWidget: false,
 			contributions: EditorExtensionsRegistry.getSomeEditorContributions([
 				MenuPreventer.ID,
 				SelectionClipboardContributionID,
@@ -740,7 +704,7 @@ export class CodeCompareBlockPart extends Disposable {
 		const toolbarElt = this.toolbar.getElement();
 		if (this.accessibilityService.isScreenReaderOptimized()) {
 			toolbarElt.style.display = 'block';
-			toolbarElt.ariaLabel = localize('chat.codeBlock.toolbar', 'Code block toolbar');
+			toolbarElt.ariaLabel = this.configurationService.getValue(AccessibilityVerbositySettingId.Chat) ? localize('chat.codeBlock.toolbarVerbose', 'Toolbar for code block which can be reached via tab') : localize('chat.codeBlock.toolbar', 'Code block toolbar');
 		} else {
 			toolbarElt.style.display = '';
 		}

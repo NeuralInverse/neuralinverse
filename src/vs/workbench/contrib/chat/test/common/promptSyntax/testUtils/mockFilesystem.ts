@@ -6,7 +6,6 @@
 import { URI } from '../../../../../../../base/common/uri.js';
 import { assert } from '../../../../../../../base/common/assert.js';
 import { VSBuffer } from '../../../../../../../base/common/buffer.js';
-import { timeout } from '../../../../../../../base/common/async.js';
 import { IFileService } from '../../../../../../../platform/files/common/files.js';
 
 /**
@@ -20,7 +19,7 @@ interface IMockFilesystemNode {
  * Represents a `file` node.
  */
 export interface IMockFile extends IMockFilesystemNode {
-	contents: string | readonly string[];
+	contents: string;
 }
 
 /**
@@ -48,19 +47,12 @@ export class MockFilesystem {
 	 * Starts the mock process.
 	 */
 	public async mock(): Promise<TWithURI<IMockFolder>[]> {
-		const result = await Promise.all(
+		return await Promise.all(
 			this.folders
 				.map((folder) => {
 					return this.mockFolder(folder);
 				}),
 		);
-
-		// wait for the filesystem event to settle before proceeding
-		// this is temporary workaround and should be fixed once we
-		// improve behavior of the `settled()` / `allSettled()` methods
-		await timeout(25);
-
-		return result;
 	}
 
 	/**
@@ -98,11 +90,7 @@ export class MockFilesystem {
 					`File '${folderUri.path}' already exists.`,
 				);
 
-				const contents: string = (typeof child.contents === 'string')
-					? child.contents
-					: child.contents.join('\n');
-
-				await this.fileService.writeFile(childUri, VSBuffer.fromString(contents));
+				await this.fileService.writeFile(childUri, VSBuffer.fromString(child.contents));
 
 				resolvedChildren.push({
 					...child,

@@ -118,9 +118,6 @@ class EmbedderTerminalProcess extends Disposable implements ITerminalChildProces
 	input(): void {
 		// not supported
 	}
-	sendSignal(): void {
-		// not supported
-	}
 	async processBinary(): Promise<void> {
 		// not supported
 	}

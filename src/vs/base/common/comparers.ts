@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { safeIntl } from './date.js';
 import { Lazy } from './lazy.js';
 import { sep } from './path.js';
 
@@ -13,7 +12,7 @@ import { sep } from './path.js';
 
 // A collator with numeric sorting enabled, and no sensitivity to case, accents or diacritics.
 const intlFileNameCollatorBaseNumeric: Lazy<{ collator: Intl.Collator; collatorIsNumeric: boolean }> = new Lazy(() => {
-	const collator = safeIntl.Collator(undefined, { numeric: true, sensitivity: 'base' }).value;
+	const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 	return {
 		collator,
 		collatorIsNumeric: collator.resolvedOptions().numeric
@@ -22,7 +21,7 @@ const intlFileNameCollatorBaseNumeric: Lazy<{ collator: Intl.Collator; collatorI
 
 // A collator with numeric sorting enabled.
 const intlFileNameCollatorNumeric: Lazy<{ collator: Intl.Collator }> = new Lazy(() => {
-	const collator = safeIntl.Collator(undefined, { numeric: true }).value;
+	const collator = new Intl.Collator(undefined, { numeric: true });
 	return {
 		collator
 	};
@@ -30,7 +29,7 @@ const intlFileNameCollatorNumeric: Lazy<{ collator: Intl.Collator }> = new Lazy(
 
 // A collator with numeric sorting enabled, and sensitivity to accents and diacritics but not case.
 const intlFileNameCollatorNumericCaseInsensitive: Lazy<{ collator: Intl.Collator }> = new Lazy(() => {
-	const collator = safeIntl.Collator(undefined, { numeric: true, sensitivity: 'accent' }).value;
+	const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'accent' });
 	return {
 		collator
 	};

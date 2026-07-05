@@ -15,10 +15,6 @@ export const cleanOutput = (output: string) =>
 		.replace(/\n+$/, ''); // strips new lines from end of output
 
 export const executeCommandTimeout = async (
-	fallbacks: {
-		cwd: string;
-		env: Record<string, string | undefined>;
-	},
 	input: Fig.ExecuteCommandInput,
 	timeout = osIsWindows() ? 20000 : 5000,
 ): Promise<Fig.ExecuteCommandOutput> => {
@@ -28,8 +24,8 @@ export const executeCommandTimeout = async (
 		const result = await withTimeout(
 			Math.max(timeout, input.timeout ?? 0),
 			spawnHelper2(input.command, input.args, {
-				env: input.env ?? fallbacks.env,
-				cwd: input.cwd ?? fallbacks.cwd,
+				env: input.env,
+				cwd: input.cwd,
 				timeout: input.timeout,
 			})
 		);
@@ -54,13 +50,8 @@ export const executeCommandTimeout = async (
 };
 
 
-export const executeCommand: (
-	fallbacks: {
-		cwd: string;
-		env: Record<string, string | undefined>;
-	},
-	args: Fig.ExecuteCommandInput
-) => Promise<Fig.ExecuteCommandOutput> = (fallbacks, args) => executeCommandTimeout(fallbacks, args);
+export const executeCommand: Fig.ExecuteCommandFunction = (args) =>
+	executeCommandTimeout(args);
 
 export interface IFigExecuteExternals {
 	executeCommand: Fig.ExecuteCommandFunction;

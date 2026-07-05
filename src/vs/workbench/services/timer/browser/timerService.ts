@@ -64,7 +64,6 @@ export interface IMemoryInfo {
 		"timers.ellapsedExtensions" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
 		"timers.ellapsedExtensionsReady" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
 		"timers.ellapsedViewletRestore" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-		"timers.ellapsedAuxiliaryViewletRestore" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
 		"timers.ellapsedPanelRestore" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
 		"timers.ellapsedEditorRestore" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
 		"timers.ellapsedWorkbenchContributions" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
@@ -123,11 +122,6 @@ export interface IStartupMetrics {
 	 * The active viewlet id or `undedined`
 	 */
 	readonly viewletId?: string;
-
-	/**
-	 * The active auxiliary viewlet id or `undedined`
-	 */
-	readonly auxiliaryViewletId?: string;
 
 	/**
 	 * The active panel id or `undefined`
@@ -344,7 +338,7 @@ export interface IStartupMetrics {
 		readonly ellapsedExtensionsReady: number;
 
 		/**
-		 * The time it took to restore the primary sidebar viewlet.
+		 * The time it took to restore the viewlet.
 		 *
 		 * * Happens in the renderer-process
 		 * * Measured with the `willRestoreViewlet` and `didRestoreViewlet` performance marks.
@@ -352,16 +346,6 @@ export interface IStartupMetrics {
 		 * * Happens in parallel to other things, depends on async timing
 		 */
 		readonly ellapsedViewletRestore: number;
-
-		/**
-		 * The time it took to restore the auxiliary bar viewlet.
-		 *
-		 * * Happens in the renderer-process
-		 * * Measured with the `willRestoreAuxiliaryBar` and `didRestoreAuxiliaryBar` performance marks.
-		 * * This should be looked at per viewlet-type/id.
-		 * * Happens in parallel to other things, depends on async timing
-		 */
-		readonly ellapsedAuxiliaryViewletRestore: number;
 
 		/**
 		 * The time it took to restore the panel.
@@ -692,7 +676,6 @@ export abstract class AbstractTimerService implements ITimerService {
 		}
 
 		const activeViewlet = this._paneCompositeService.getActivePaneComposite(ViewContainerLocation.Sidebar);
-		const activeAuxiliaryViewlet = this._paneCompositeService.getActivePaneComposite(ViewContainerLocation.AuxiliaryBar);
 		const activePanel = this._paneCompositeService.getActivePaneComposite(ViewContainerLocation.Panel);
 		const info: Writeable<IStartupMetrics> = {
 
@@ -704,7 +687,6 @@ export abstract class AbstractTimerService implements ITimerService {
 			windowKind: this._lifecycleService.startupKind,
 			windowCount: await this._getWindowCount(),
 			viewletId: activeViewlet?.getId(),
-			auxiliaryViewletId: activeAuxiliaryViewlet?.getId(),
 			editorIds: this._editorService.visibleEditors.map(input => input.typeId),
 			panelId: activePanel ? activePanel.getId() : undefined,
 
@@ -732,7 +714,6 @@ export abstract class AbstractTimerService implements ITimerService {
 				ellapsedExtensions: this._marks.getDuration('code/willLoadExtensions', 'code/didLoadExtensions'),
 				ellapsedEditorRestore: this._marks.getDuration('code/willRestoreEditors', 'code/didRestoreEditors'),
 				ellapsedViewletRestore: this._marks.getDuration('code/willRestoreViewlet', 'code/didRestoreViewlet'),
-				ellapsedAuxiliaryViewletRestore: this._marks.getDuration('code/willRestoreAuxiliaryBar', 'code/didRestoreAuxiliaryBar'),
 				ellapsedPanelRestore: this._marks.getDuration('code/willRestorePanel', 'code/didRestorePanel'),
 				ellapsedWorkbenchContributions: this._marks.getDuration('code/willCreateWorkbenchContributions/1', 'code/didCreateWorkbenchContributions/2'),
 				ellapsedWorkbench: this._marks.getDuration('code/willStartWorkbench', 'code/didStartWorkbench'),

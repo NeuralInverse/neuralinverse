@@ -15,7 +15,7 @@ namespace CustomDataChangedNotification {
 export type LanguageClientConstructor = (name: string, description: string, clientOptions: LanguageClientOptions) => BaseLanguageClient;
 
 export interface Runtime {
-	TextDecoder: typeof TextDecoder;
+	TextDecoder: { new(encoding?: string): { decode(buffer: ArrayBuffer): string } };
 	fs?: RequestService;
 }
 

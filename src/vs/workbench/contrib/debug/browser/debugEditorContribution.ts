@@ -673,9 +673,7 @@ export class DebugEditorContribution implements IDebugEditorContribution {
 			// Check if there are more characters on a line after a "configurations": [, if yes enter a newline
 			if (model.getLineLastNonWhitespaceColumn(position.lineNumber) > position.column) {
 				this.editor.setPosition(position);
-				this.instantiationService.invokeFunction((accessor) => {
-					CoreEditingCommands.LineBreakInsert.runEditorCommand(accessor, this.editor, null);
-				});
+				CoreEditingCommands.LineBreakInsert.runEditorCommand(null, this.editor, null);
 			}
 			this.editor.setPosition(position);
 			return this.commandService.executeCommand('editor.action.insertLineAfter');

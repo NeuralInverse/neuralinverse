@@ -7,7 +7,7 @@ import { createDecorator } from '../../../../../../platform/instantiation/common
 import { ITextModel } from '../../../../../../editor/common/model.js';
 import { Position } from '../../../../../../editor/common/core/position.js';
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
-import { ITreeSitterLibraryService } from '../../../../../../editor/common/services/treeSitter/treeSitterLibraryService.js';
+import { ITreeSitterParserService } from '../../../../../../editor/common/services/treeSitterParserService.js';
 import type * as Parser from '@vscode/tree-sitter-wasm';
 
 export const IASTContextService = createDecorator<IASTContextService>('neuralInverseASTContextService');
@@ -36,7 +36,7 @@ export class ASTContextService extends Disposable implements IASTContextService 
     _serviceBrand: undefined;
 
     constructor(
-        @ITreeSitterLibraryService private readonly treeSitterService: ITreeSitterLibraryService
+        @ITreeSitterParserService private readonly treeSitterService: ITreeSitterParserService
     ) {
         super();
     }
@@ -86,21 +86,17 @@ export class ASTContextService extends Disposable implements IASTContextService 
         const language = model.getLanguageId();
         const fileName = model.uri.path.split('/').pop() ?? model.uri.path;
 
-        const lang = this.treeSitterService.getLanguage(language, undefined);
-        if (!lang) {
-            console.warn('[ASTContextService] TreeSitter language not available for:', language);
+        const treeSitterModel = await this.treeSitterService.getTextModelTreeSitter(model, true);
+        if (!treeSitterModel) {
+            console.warn('[ASTContextService] TreeSitter model not available for language:', language);
             return undefined;
         }
 
-        const ParserClass = await this.treeSitterService.getParserClass();
-        const parser = new ParserClass();
-        parser.setLanguage(lang);
-        const tree = parser.parse(model.getValue());
-        if (!tree) {
+        const parseResult = treeSitterModel.parseResult;
+        if (!parseResult?.tree) {
             console.warn('[ASTContextService] Parse result or tree missing.');
             return undefined;
         }
-        const parseResult = { tree };
 
         const targetPoint: Parser.Point = {
             row: position.lineNumber - 1,

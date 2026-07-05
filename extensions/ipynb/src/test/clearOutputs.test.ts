@@ -25,7 +25,7 @@ suite(`ipynb Clear Outputs`, () => {
 		await vscode.commands.executeCommand('workbench.action.closeAllEditors');
 	});
 
-	test.skip('Clear outputs after opening Notebook', async () => {
+	test('Clear outputs after opening Notebook', async () => {
 		const cells: nbformat.ICell[] = [
 			{
 				cell_type: 'code',
@@ -48,14 +48,8 @@ suite(`ipynb Clear Outputs`, () => {
 		];
 		const notebook = jupyterNotebookModelToNotebookData({ cells }, 'python');
 
-		const notebookDocumentPromise = vscode.workspace.openNotebookDocument('jupyter-notebook', notebook);
-		await raceTimeout(notebookDocumentPromise, 5000, () => {
-			throw new Error('Timeout waiting for notebook to open');
-		});
-		const notebookDocument = await notebookDocumentPromise;
-		await raceTimeout(vscode.window.showNotebookDocument(notebookDocument), 20000, () => {
-			throw new Error('Timeout waiting for notebook to open');
-		});
+		const notebookDocument = await vscode.workspace.openNotebookDocument('jupyter-notebook', notebook);
+		await vscode.window.showNotebookDocument(notebookDocument);
 
 		assert.strictEqual(notebookDocument.cellCount, 3);
 		assert.strictEqual(notebookDocument.cellAt(0).metadata.execution_count, 10);
@@ -63,9 +57,7 @@ suite(`ipynb Clear Outputs`, () => {
 		assert.strictEqual(notebookDocument.cellAt(2).metadata.execution_count, undefined);
 
 		// Clear all outputs
-		await raceTimeout(vscode.commands.executeCommand('notebook.clearAllCellsOutputs'), 5000, () => {
-			throw new Error('Timeout waiting for notebook to clear outputs');
-		});
+		await vscode.commands.executeCommand('notebook.clearAllCellsOutputs');
 
 		// Wait for all changes to be applied, could take a few ms.
 		const verifyMetadataChanges = () => {
@@ -742,26 +734,3 @@ suite(`ipynb Clear Outputs`, () => {
 	// 	});
 	// });
 });
-
-function raceTimeout<T>(promise: Thenable<T>, timeout: number, onTimeout?: () => void): Promise<T | undefined> {
-	let promiseResolve: ((value: T | undefined) => void) | undefined = undefined;
-
-	const timer = setTimeout(() => {
-		promiseResolve?.(undefined);
-		onTimeout?.();
-	}, timeout);
-
-	return Promise.race([
-		Promise.resolve(promise).then(
-			result => {
-				clearTimeout(timer);
-				return result;
-			},
-			err => {
-				clearTimeout(timer);
-				throw err;
-			}
-		),
-		new Promise<T | undefined>(resolve => promiseResolve = resolve)
-	]);
-}

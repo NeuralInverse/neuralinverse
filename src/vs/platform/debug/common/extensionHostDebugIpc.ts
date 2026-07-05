@@ -89,8 +89,4 @@ export class ExtensionHostDebugChannelClient extends Disposable implements IExte
 	openExtensionDevelopmentHostWindow(args: string[], debugRenderer: boolean): Promise<IOpenExtensionWindowResult> {
 		return this.channel.call('openExtensionDevelopmentHostWindow', [args, debugRenderer]);
 	}
-
-	attachToCurrentWindowRenderer(windowId: number): Promise<IOpenExtensionWindowResult> {
-		return this.channel.call('attachToCurrentWindowRenderer', [windowId]);
-	}
 }

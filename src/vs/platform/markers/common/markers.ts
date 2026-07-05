@@ -10,14 +10,6 @@ import { URI } from '../../../base/common/uri.js';
 import { localize } from '../../../nls.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 
-export interface IMarkerReadOptions {
-	owner?: string;
-	resource?: URI;
-	severities?: number;
-	take?: number;
-	ignoreResourceFilters?: boolean;
-}
-
 export interface IMarkerService {
 	readonly _serviceBrand: undefined;
 
@@ -29,7 +21,7 @@ export interface IMarkerService {
 
 	remove(owner: string, resources: URI[]): void;
 
-	read(filter?: IMarkerReadOptions): IMarker[];
+	read(filter?: { owner?: string; resource?: URI; severities?: number; take?: number }): IMarker[];
 
 	installResourceFilter(resource: URI, reason: string): IDisposable;
 
@@ -118,7 +110,6 @@ export interface IMarkerData {
 	modelVersionId?: number;
 	relatedInformation?: IRelatedInformation[];
 	tags?: MarkerTag[];
-	origin?: string | undefined;
 }
 
 export interface IResourceMarker {
@@ -140,7 +131,6 @@ export interface IMarker {
 	modelVersionId?: number;
 	relatedInformation?: IRelatedInformation[];
 	tags?: MarkerTag[];
-	origin?: string | undefined;
 }
 
 export interface MarkerStatistics {

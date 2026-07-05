@@ -357,7 +357,7 @@ export async function preparePathForShell(resource: string | URI, executable: st
 		// Update Windows uriPath to be executed in WSL.
 		if (shellType !== undefined) {
 			if (shellType === WindowsShellType.GitBash) {
-				return escapeNonWindowsPath(originalPath.replace(/\\/g, '/'), shellType);
+				return escapeNonWindowsPath(originalPath.replace(/\\/g, '/'));
 			}
 			else if (shellType === WindowsShellType.Wsl) {
 				return backend?.getWslPath(originalPath, 'win-to-unix') || originalPath;
@@ -376,7 +376,7 @@ export async function preparePathForShell(resource: string | URI, executable: st
 		return originalPath;
 	}
 
-	return escapeNonWindowsPath(originalPath, shellType);
+	return escapeNonWindowsPath(originalPath);
 }
 
 export function getWorkspaceForTerminal(cwd: URI | string | undefined, workspaceContextService: IWorkspaceContextService, historyService: IHistoryService): IWorkspaceFolder | undefined {

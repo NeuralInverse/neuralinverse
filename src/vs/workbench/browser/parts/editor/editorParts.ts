@@ -7,7 +7,7 @@ import { localize } from '../../../../nls.js';
 import { EditorGroupLayout, GroupDirection, GroupLocation, GroupOrientation, GroupsArrangement, GroupsOrder, IAuxiliaryEditorPart, IEditorGroupContextKeyProvider, IEditorDropTargetDelegate, IEditorGroupsService, IEditorSideGroup, IEditorWorkingSet, IFindGroupScope, IMergeGroupOptions, IEditorWorkingSetOptions, IEditorPart } from '../../../services/editor/common/editorGroupsService.js';
 import { Emitter } from '../../../../base/common/event.js';
 import { DisposableMap, DisposableStore, IDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
-import { GroupIdentifier, IEditorPartOptions } from '../../../common/editor.js';
+import { GroupIdentifier } from '../../../common/editor.js';
 import { EditorPart, IEditorPartUIState, MainEditorPart } from './editorPart.js';
 import { IEditorGroupView, IEditorPartsView } from './editor.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
@@ -24,9 +24,6 @@ import { ContextKeyValue, IContextKey, IContextKeyService, RawContextKey } from 
 import { isHTMLElement } from '../../../../base/browser/dom.js';
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
-import { DeepPartial } from '../../../../base/common/types.js';
-import { IStatusbarService } from '../../../services/statusbar/browser/statusbar.js';
-import { mainWindow } from '../../../../base/browser/window.js';
 
 interface IEditorPartsUIState {
 	readonly auxiliary: IAuxiliaryEditorPartState[];
@@ -60,15 +57,6 @@ export class EditorParts extends MultiWindowParts<EditorPart> implements IEditor
 	) {
 		super('workbench.editorParts', themeService, storageService);
 
-		this.editorWorkingSets = (() => {
-			const workingSetsRaw = this.storageService.get(EditorParts.EDITOR_WORKING_SETS_STORAGE_KEY, StorageScope.WORKSPACE);
-			if (workingSetsRaw) {
-				return JSON.parse(workingSetsRaw);
-			}
-
-			return [];
-		})();
-
 		this.mainPart = this._register(this.createMainEditorPart());
 		this._register(this.registerPart(this.mainPart));
 
@@ -95,12 +83,10 @@ export class EditorParts extends MultiWindowParts<EditorPart> implements IEditor
 		if (part === this.mainPart) {
 			if (!this.mapPartToInstantiationService.has(part.windowId)) {
 				this.instantiationService.invokeFunction(accessor => {
-					const editorService = accessor.get(IEditorService);
-					const statusbarService = accessor.get(IStatusbarService);
+					const editorService = accessor.get(IEditorService); // using `invokeFunction` to get hold of `IEditorService` lazily
 
-					this.mapPartToInstantiationService.set(part.windowId, this._register(this.mainPart.scopedInstantiationService.createChild(new ServiceCollection(
-						[IEditorService, editorService.createScoped(this.mainPart, this._store)],
-						[IStatusbarService, statusbarService.createScoped(statusbarService, this._store)]
+					this.mapPartToInstantiationService.set(part.windowId, this._register(this.instantiationService.createChild(new ServiceCollection(
+						[IEditorService, editorService.createScoped('main', this._store)]
 					))));
 				});
 			}
@@ -164,22 +150,10 @@ export class EditorParts extends MultiWindowParts<EditorPart> implements IEditor
 			this.doUpdateMostRecentActive(part, true);
 
 			if (this._parts.size > 1) {
-				// Either main or auxiliary editor part got focus
-				// which we have to treat as a group change event.
-				this._onDidActiveGroupChange.fire(this.activeGroup);
+				this._onDidActiveGroupChange.fire(this.activeGroup); // this can only happen when we have more than 1 editor part
 			}
 		}));
-		disposables.add(toDisposable(() => {
-			this.doUpdateMostRecentActive(part);
-
-			if (part.windowId !== mainWindow.vscodeWindowId) {
-				// An auxiliary editor part is closing which we have
-				// to treat as group change event for the next editor
-				// part that becomes active.
-				// Refs: https://github.com/microsoft/vscode/issues/257058
-				this._onDidActiveGroupChange.fire(this.activeGroup);
-			}
-		}));
+		disposables.add(toDisposable(() => this.doUpdateMostRecentActive(part)));
 
 		disposables.add(part.onDidChangeActiveGroup(group => this._onDidActiveGroupChange.fire(group)));
 		disposables.add(part.onDidAddGroup(group => this._onDidAddGroup.fire(group)));
@@ -392,7 +366,14 @@ export class EditorParts extends MultiWindowParts<EditorPart> implements IEditor
 
 	private static readonly EDITOR_WORKING_SETS_STORAGE_KEY = 'editor.workingSets';
 
-	private editorWorkingSets: IEditorWorkingSetState[];
+	private editorWorkingSets: IEditorWorkingSetState[] = (() => {
+		const workingSetsRaw = this.storageService.get(EditorParts.EDITOR_WORKING_SETS_STORAGE_KEY, StorageScope.WORKSPACE);
+		if (workingSetsRaw) {
+			return JSON.parse(workingSetsRaw);
+		}
+
+		return [];
+	})();
 
 	saveWorkingSet(name: string): IEditorWorkingSet {
 		const workingSet: IEditorWorkingSetState = {
@@ -829,10 +810,6 @@ export class EditorParts extends MultiWindowParts<EditorPart> implements IEditor
 
 	get partOptions() { return this.mainPart.partOptions; }
 	get onDidChangeEditorPartOptions() { return this.mainPart.onDidChangeEditorPartOptions; }
-
-	enforcePartOptions(options: DeepPartial<IEditorPartOptions>): IDisposable {
-		return this.mainPart.enforcePartOptions(options);
-	}
 
 	//#endregion
 }

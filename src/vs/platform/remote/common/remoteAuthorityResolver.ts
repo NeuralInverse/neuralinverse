@@ -120,11 +120,11 @@ export class RemoteAuthorityResolverError extends ErrorNoTelemetry {
 
 	public readonly _message: string | undefined;
 	public readonly _code: RemoteAuthorityResolverErrorCode;
-	public readonly _detail: unknown;
+	public readonly _detail: any;
 
 	public isHandled: boolean;
 
-	constructor(message?: string, code: RemoteAuthorityResolverErrorCode = RemoteAuthorityResolverErrorCode.Unknown, detail?: unknown) {
+	constructor(message?: string, code: RemoteAuthorityResolverErrorCode = RemoteAuthorityResolverErrorCode.Unknown, detail?: any) {
 		super(message);
 
 		this._message = message;

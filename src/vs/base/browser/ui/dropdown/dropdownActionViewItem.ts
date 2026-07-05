@@ -47,7 +47,7 @@ export class DropdownMenuActionViewItem extends BaseActionViewItem {
 	private actionItem: HTMLElement | null = null;
 
 	private _onDidChangeVisibility = this._register(new Emitter<boolean>());
-	get onDidChangeVisibility() { return this._onDidChangeVisibility.event; }
+	readonly onDidChangeVisibility = this._onDidChangeVisibility.event;
 
 	protected override readonly options: IDropdownMenuActionViewItemOptions;
 

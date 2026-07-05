@@ -4,10 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { exec } from 'child_process';
-import { totalmem } from 'os';
 import { FileAccess } from '../common/network.js';
 import { ProcessItem } from '../common/processes.js';
-import { isWindows } from '../common/platform.js';
 
 export function listProcesses(rootPid: number): Promise<ProcessItem> {
 
@@ -15,7 +13,7 @@ export function listProcesses(rootPid: number): Promise<ProcessItem> {
 
 		let rootItem: ProcessItem | undefined;
 		const map = new Map<number, ProcessItem>();
-		const totalMemory = totalmem();
+
 
 		function addToTree(pid: number, ppid: number, cmd: string, load: number, mem: number) {
 
@@ -28,7 +26,7 @@ export function listProcesses(rootPid: number): Promise<ProcessItem> {
 					pid,
 					ppid,
 					load,
-					mem: isWindows ? mem : (totalMemory * (mem / 100))
+					mem
 				};
 				map.set(pid, item);
 

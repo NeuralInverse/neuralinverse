@@ -126,7 +126,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		const startTime = Date.now();
 		this._emit('reading-pdf', 0, 0);
 
-		let buffer: Uint8Array;
+		let buffer: ArrayBufferLike;
 		try {
 			const fileUri = URI.file(filePath);
 			const content = await this._fileService.readFile(fileUri);
@@ -650,7 +650,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	 * This is always in plain text in the PDF cross-reference/catalog, never compressed.
 	 * Fast: reads just the raw bytes without decompression.
 	 */
-	private _extractPdfPageCount(buffer: Uint8Array): number {
+	private _extractPdfPageCount(buffer: ArrayBufferLike): number {
 		try {
 			const raw = new TextDecoder('latin1').decode(buffer);
 			// PDF spec: /Pages object contains /Count <N>
@@ -661,8 +661,8 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		} catch { return 0; }
 	}
 
-	private async _extractPagesFromPDFBytes(buffer: Uint8Array, targetPageCount = 0): Promise<Array<{ pageNumber: number; text: string }>> {
-		const bytes = buffer;
+	private async _extractPagesFromPDFBytes(buffer: ArrayBufferLike, targetPageCount = 0): Promise<Array<{ pageNumber: number; text: string }>> {
+		const bytes = new Uint8Array(buffer);
 		const blocks: string[] = [];
 
 		// ── Pass 1: decompress FlateDecode streams ──────────────────
@@ -781,7 +781,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 				const ds = new DecompressionStream(fmt);
 				const writer = ds.writable.getWriter();
 				const reader = ds.readable.getReader();
-				writer.write(data as Uint8Array<ArrayBuffer>);
+				writer.write(data);
 				writer.close();
 				const chunks: Uint8Array[] = [];
 				while (true) {

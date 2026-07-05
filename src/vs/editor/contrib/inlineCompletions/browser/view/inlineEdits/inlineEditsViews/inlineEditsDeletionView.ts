@@ -11,10 +11,10 @@ import { editorBackground } from '../../../../../../../platform/theme/common/col
 import { asCssVariable } from '../../../../../../../platform/theme/common/colorUtils.js';
 import { ICodeEditor } from '../../../../../../browser/editorBrowser.js';
 import { ObservableCodeEditor, observableCodeEditor } from '../../../../../../browser/observableCodeEditor.js';
-import { Rect } from '../../../../../../common/core/2d/rect.js';
+import { Rect } from '../../../../../../browser/rect.js';
 import { EditorOption } from '../../../../../../common/config/editorOptions.js';
-import { LineRange } from '../../../../../../common/core/ranges/lineRange.js';
-import { OffsetRange } from '../../../../../../common/core/ranges/offsetRange.js';
+import { LineRange } from '../../../../../../common/core/lineRange.js';
+import { OffsetRange } from '../../../../../../common/core/offsetRange.js';
 import { Position } from '../../../../../../common/core/position.js';
 import { Range } from '../../../../../../common/core/range.js';
 import { IInlineEditsView, InlineEditTabAction } from '../inlineEditsViewInterface.js';
@@ -26,7 +26,6 @@ const HORIZONTAL_PADDING = 0;
 const VERTICAL_PADDING = 0;
 const BORDER_WIDTH = 1;
 const WIDGET_SEPARATOR_WIDTH = 1;
-const WIDGET_SEPARATOR_DIFF_EDITOR_WIDTH = 3;
 const BORDER_RADIUS = 4;
 
 export class InlineEditsDeletionView extends Disposable implements IInlineEditsView {
@@ -47,7 +46,6 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 		private readonly _uiState: IObservable<{
 			originalRange: LineRange;
 			deletions: Range[];
-			inDiffEditor: boolean;
 		} | undefined>,
 		private readonly _tabAction: IObservable<InlineEditTabAction>,
 	) {
@@ -73,7 +71,7 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 			domNode: this._nonOverflowView.element,
 			position: constObservable(null),
 			allowEditorOverflow: false,
-			minContentWidthInPx: derived(this, reader => {
+			minContentWidthInPx: derived(reader => {
 				const info = this._editorLayoutInfo.read(reader);
 				if (info === null) { return 0; }
 				return info.codeRect.width;
@@ -98,7 +96,7 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 		});
 	}).map((v, r) => v.read(r));
 
-	private readonly _maxPrefixTrim = derived(this, reader => {
+	private readonly _maxPrefixTrim = derived(reader => {
 		const state = this._uiState.read(reader);
 		if (!state) {
 			return { prefixTrim: 0, prefixLeftOffset: 0 };
@@ -142,7 +140,7 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 
 	private readonly _originalOverlay = n.div({
 		style: { pointerEvents: 'none', }
-	}, derived(this, reader => {
+	}, derived(reader => {
 		const layoutInfoObs = mapOutFalsy(this._editorLayoutInfo).read(reader);
 		if (!layoutInfoObs) { return undefined; }
 
@@ -155,14 +153,13 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 			layoutInfo.codeRect.bottom
 		));
 
-		const overlayRect = derived(this, reader => {
+		const overlayRect = derived(reader => {
 			const rect = layoutInfoObs.read(reader).codeRect;
 			const overlayHider = overlayhider.read(reader);
 			return rect.intersectHorizontal(new OffsetRange(overlayHider.left, Number.MAX_SAFE_INTEGER));
 		});
 
-		const separatorWidth = this._uiState.map(s => s?.inDiffEditor ? WIDGET_SEPARATOR_DIFF_EDITOR_WIDTH : WIDGET_SEPARATOR_WIDTH).read(reader);
-		const separatorRect = overlayRect.map(rect => rect.withMargin(separatorWidth, separatorWidth));
+		const separatorRect = overlayRect.map(rect => rect.withMargin(WIDGET_SEPARATOR_WIDTH, WIDGET_SEPARATOR_WIDTH));
 
 		return [
 			n.div({
@@ -170,7 +167,7 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 				style: {
 					...separatorRect.read(reader).toStyles(),
 					borderRadius: `${BORDER_RADIUS}px`,
-					border: `${BORDER_WIDTH + separatorWidth}px solid ${asCssVariable(editorBackground)}`,
+					border: `${BORDER_WIDTH + WIDGET_SEPARATOR_WIDTH}px solid ${asCssVariable(editorBackground)}`,
 					boxSizing: 'border-box',
 				}
 			}),
@@ -201,6 +198,7 @@ export class InlineEditsDeletionView extends Disposable implements IInlineEditsV
 			overflow: 'visible',
 			top: '0px',
 			left: '0px',
+			zIndex: '0',
 			display: this._display,
 		},
 	}, [

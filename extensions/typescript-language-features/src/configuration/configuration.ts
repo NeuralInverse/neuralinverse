@@ -12,7 +12,6 @@ export enum TsServerLogLevel {
 	Normal,
 	Terse,
 	Verbose,
-	RequestTime
 }
 
 export namespace TsServerLogLevel {
@@ -24,8 +23,6 @@ export namespace TsServerLogLevel {
 				return TsServerLogLevel.Terse;
 			case 'verbose':
 				return TsServerLogLevel.Verbose;
-			case 'requestTime':
-				return TsServerLogLevel.RequestTime;
 			case 'off':
 			default:
 				return TsServerLogLevel.Off;
@@ -40,8 +37,6 @@ export namespace TsServerLogLevel {
 				return 'terse';
 			case TsServerLogLevel.Verbose:
 				return 'verbose';
-			case TsServerLogLevel.RequestTime:
-				return 'requestTime';
 			case TsServerLogLevel.Off:
 			default:
 				return 'off';
@@ -64,7 +59,6 @@ export class ImplicitProjectConfiguration {
 	public readonly experimentalDecorators: boolean;
 	public readonly strictNullChecks: boolean;
 	public readonly strictFunctionTypes: boolean;
-	public readonly strict: boolean;
 
 	constructor(configuration: vscode.WorkspaceConfiguration) {
 		this.target = ImplicitProjectConfiguration.readTarget(configuration);
@@ -73,7 +67,6 @@ export class ImplicitProjectConfiguration {
 		this.experimentalDecorators = ImplicitProjectConfiguration.readExperimentalDecorators(configuration);
 		this.strictNullChecks = ImplicitProjectConfiguration.readImplicitStrictNullChecks(configuration);
 		this.strictFunctionTypes = ImplicitProjectConfiguration.readImplicitStrictFunctionTypes(configuration);
-		this.strict = ImplicitProjectConfiguration.readImplicitStrict(configuration);
 	}
 
 	public isEqualTo(other: ImplicitProjectConfiguration): boolean {
@@ -89,11 +82,13 @@ export class ImplicitProjectConfiguration {
 	}
 
 	private static readCheckJs(configuration: vscode.WorkspaceConfiguration): boolean {
-		return configuration.get<boolean>('js/ts.implicitProjectConfig.checkJs', false);
+		return configuration.get<boolean>('js/ts.implicitProjectConfig.checkJs')
+			?? configuration.get<boolean>('javascript.implicitProjectConfig.checkJs', false);
 	}
 
 	private static readExperimentalDecorators(configuration: vscode.WorkspaceConfiguration): boolean {
-		return configuration.get<boolean>('js/ts.implicitProjectConfig.experimentalDecorators', false);
+		return configuration.get<boolean>('js/ts.implicitProjectConfig.experimentalDecorators')
+			?? configuration.get<boolean>('javascript.implicitProjectConfig.experimentalDecorators', false);
 	}
 
 	private static readImplicitStrictNullChecks(configuration: vscode.WorkspaceConfiguration): boolean {
@@ -102,10 +97,6 @@ export class ImplicitProjectConfiguration {
 
 	private static readImplicitStrictFunctionTypes(configuration: vscode.WorkspaceConfiguration): boolean {
 		return configuration.get<boolean>('js/ts.implicitProjectConfig.strictFunctionTypes', true);
-	}
-
-	private static readImplicitStrict(configuration: vscode.WorkspaceConfiguration): boolean {
-		return configuration.get<boolean>('js/ts.implicitProjectConfig.strict', true);
 	}
 }
 

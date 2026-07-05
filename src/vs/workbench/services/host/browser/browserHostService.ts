@@ -41,8 +41,6 @@ import { mainWindow, isAuxiliaryWindow } from '../../../../base/browser/window.j
 import { isIOS, isMacintosh } from '../../../../base/common/platform.js';
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
 import { URI } from '../../../../base/common/uri.js';
-import { VSBuffer } from '../../../../base/common/buffer.js';
-import { MarkdownString } from '../../../../base/common/htmlContent.js';
 
 enum HostShutdownReason {
 
@@ -81,7 +79,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 		@ILogService private readonly logService: ILogService,
 		@IDialogService private readonly dialogService: IDialogService,
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
-		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService
+		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 	) {
 		super();
 
@@ -97,7 +95,6 @@ export class BrowserHostService extends Disposable implements IHostService {
 
 		this.registerListeners();
 	}
-
 
 	private registerListeners(): void {
 
@@ -157,7 +154,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 				Event.map(focusTracker.onDidBlur, () => this.hasFocus, disposables),
 				Event.map(visibilityTracker.event, () => this.hasFocus, disposables),
 				Event.map(this.onDidChangeActiveWindow, () => this.hasFocus, disposables),
-			)(focus => emitter.fire(focus), undefined, disposables);
+			)(focus => emitter.fire(focus));
 		}, { window: mainWindow, disposables: this._store }));
 
 		return Event.latch(emitter.event, undefined, this._store);
@@ -390,13 +387,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 					(async () => {
 
 						// Wait for the resources to be closed in the text editor...
-						const filesToWaitFor: URI[] = [];
-						if (options.mergeMode) {
-							filesToWaitFor.push(fileOpenables[3].fileUri /* [3] is the resulting merge file */);
-						} else {
-							filesToWaitFor.push(...fileOpenables.map(fileOpenable => fileOpenable.fileUri));
-						}
-						await this.instantiationService.invokeFunction(accessor => whenEditorClosed(accessor, filesToWaitFor));
+						await this.instantiationService.invokeFunction(accessor => whenEditorClosed(accessor, fileOpenables.map(fileOpenable => fileOpenable.fileUri)));
 
 						// ...before deleting the wait marker file
 						await this.fileService.del(waitMarkerFileURI);
@@ -498,22 +489,14 @@ export class BrowserHostService extends Disposable implements IHostService {
 
 		const opened = await this.workspaceProvider.open(workspace, options);
 		if (!opened) {
-			await this.dialogService.prompt({
+			const { confirmed } = await this.dialogService.confirm({
 				type: Severity.Warning,
-				message: workspace ?
-					localize('unableToOpenExternalWorkspace', "The browser blocked opening a new tab or window for '{0}'. Press 'Retry' to try again.", this.getRecentLabel(workspace)) :
-					localize('unableToOpenExternal', "The browser blocked opening a new tab or window. Press 'Retry' to try again."),
-				custom: {
-					markdownDetails: [{ markdown: new MarkdownString(localize('unableToOpenWindowDetail', "Please allow pop-ups for this website in your [browser settings]({0}).", 'https://aka.ms/allow-vscode-popup'), true) }]
-				},
-				buttons: [
-					{
-						label: localize({ key: 'retry', comment: ['&& denotes a mnemonic'] }, "&&Retry"),
-						run: () => this.workspaceProvider.open(workspace, options)
-					}
-				],
-				cancelButton: true
+				message: localize('unableToOpenExternal', "The browser interrupted the opening of a new tab or window. Press 'Open' to open it anyway."),
+				primaryButton: localize({ key: 'open', comment: ['&& denotes a mnemonic'] }, "&&Open")
 			});
+			if (confirmed) {
+				await this.workspaceProvider.open(workspace, options);
+			}
 		}
 	}
 
@@ -604,7 +587,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 
 	//#region Screenshots
 
-	async getScreenshot(): Promise<VSBuffer | undefined> {
+	async getScreenshot(): Promise<ArrayBufferLike | undefined> {
 		// Gets a screenshot from the browser. This gets the screenshot via the browser's display
 		// media API which will typically offer a picker of all available screens and windows for
 		// the user to select. Using the video stream provided by the display media API, this will
@@ -650,8 +633,8 @@ export class BrowserHostService extends Disposable implements IHostService {
 				throw new Error('Failed to create blob from canvas');
 			}
 
-			const buf = await blob.bytes();
-			return VSBuffer.wrap(buf);
+			// Convert the Blob to an ArrayBuffer
+			return blob.arrayBuffer();
 
 		} catch (error) {
 			console.error('Error taking screenshot:', error);
@@ -664,10 +647,6 @@ export class BrowserHostService extends Disposable implements IHostService {
 				}
 			}
 		}
-	}
-
-	async getBrowserId(): Promise<string | undefined> {
-		return undefined;
 	}
 
 	//#endregion

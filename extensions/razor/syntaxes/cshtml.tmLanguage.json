@@ -34,7 +34,7 @@
 			"include": "#razor-control-structures"
 		},
 		{
-			"include": "text.html.derivative"
+			"include": "text.html.basic"
 		}
 	],
 	"repository": {
@@ -155,7 +155,7 @@
 							"include": "#razor-control-structures"
 						},
 						{
-							"include": "text.html.derivative"
+							"include": "text.html.basic"
 						}
 					]
 				}
@@ -239,7 +239,7 @@
 			},
 			"patterns": [
 				{
-					"include": "text.html.derivative"
+					"include": "text.html.basic#attribute"
 				}
 			],
 			"end": "/?>",
@@ -286,7 +286,7 @@
 							"include": "#razor-control-structures"
 						},
 						{
-							"include": "text.html.derivative"
+							"include": "text.html.basic#attribute"
 						}
 					]
 				},

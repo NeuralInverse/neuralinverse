@@ -25,7 +25,7 @@ import { combineTextEditInfos } from './combineTextEditInfos.js';
 import { ClosingBracketKind, OpeningBracketKind } from '../../../languages/supports/languageBracketsConfiguration.js';
 
 export class BracketPairsTree extends Disposable {
-	private readonly didChangeEmitter;
+	private readonly didChangeEmitter = new Emitter<void>();
 
 	/*
 		There are two trees:
@@ -39,28 +39,22 @@ export class BracketPairsTree extends Disposable {
 	private initialAstWithoutTokens: AstNode | undefined;
 	private astWithTokens: AstNode | undefined;
 
-	private readonly denseKeyProvider;
-	private readonly brackets;
+	private readonly denseKeyProvider = new DenseKeyProvider<string>();
+	private readonly brackets = new LanguageAgnosticBracketTokens(this.denseKeyProvider, this.getLanguageConfiguration);
 
 	public didLanguageChange(languageId: string): boolean {
 		return this.brackets.didLanguageChange(languageId);
 	}
 
-	public readonly onDidChange;
-	private queuedTextEditsForInitialAstWithoutTokens: TextEditInfo[];
-	private queuedTextEdits: TextEditInfo[];
+	public readonly onDidChange = this.didChangeEmitter.event;
+	private queuedTextEditsForInitialAstWithoutTokens: TextEditInfo[] = [];
+	private queuedTextEdits: TextEditInfo[] = [];
 
 	public constructor(
 		private readonly textModel: TextModel,
 		private readonly getLanguageConfiguration: (languageId: string) => ResolvedLanguageConfiguration
 	) {
 		super();
-		this.didChangeEmitter = new Emitter<void>();
-		this.denseKeyProvider = new DenseKeyProvider<string>();
-		this.brackets = new LanguageAgnosticBracketTokens(this.denseKeyProvider, this.getLanguageConfiguration);
-		this.onDidChange = this.didChangeEmitter.event;
-		this.queuedTextEditsForInitialAstWithoutTokens = [];
-		this.queuedTextEdits = [];
 
 		if (!textModel.tokenization.hasTokens) {
 			const brackets = this.brackets.getSingleLanguageBracketTokens(this.textModel.getLanguageId());

@@ -6,7 +6,7 @@
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
-import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
 
 import { IChatThreadService } from './chatThreadServiceInterface.js';
@@ -28,8 +28,22 @@ import {
 
 // ======================== Service Interface ========================
 
-import { INeuralInverseSubAgentService } from '../common/neuralInverseSubAgentServiceInterface.js';
-export { INeuralInverseSubAgentService } from '../common/neuralInverseSubAgentServiceInterface.js';
+export interface INeuralInverseSubAgentService {
+	readonly _serviceBrand: undefined;
+	readonly subAgents: ReadonlyMap<string, SubAgentTask>;
+	readonly onDidChangeSubAgent: Event<{ subAgentId: string, status: SubAgentStatus }>;
+	readonly runningCount: number;
+
+	setParentContext(context: SubAgentParentContext | null): void;
+	getParentContext(): SubAgentParentContext | null;
+	spawn(request: SubAgentSpawnRequest): SubAgentTask | null;
+	cancel(subAgentId: string): void;
+	cancelAll(): void;
+	getAllowedToolNames(role: SubAgentRole): string[];
+	getResult(subAgentId: string): string | undefined;
+}
+
+export const INeuralInverseSubAgentService = createDecorator<INeuralInverseSubAgentService>('neuralInverseSubAgentService');
 
 
 // ======================== Implementation ========================

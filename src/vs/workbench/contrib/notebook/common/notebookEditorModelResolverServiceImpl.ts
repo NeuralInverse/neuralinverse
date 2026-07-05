@@ -17,13 +17,12 @@ import { ResourceMap } from '../../../../base/common/map.js';
 import { FileWorkingCopyManager, IFileWorkingCopyManager } from '../../../services/workingCopy/common/fileWorkingCopyManager.js';
 import { Schemas } from '../../../../base/common/network.js';
 import { NotebookProviderInfo } from './notebookProvider.js';
-import { assertReturnsDefined } from '../../../../base/common/types.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IFileReadLimits } from '../../../../platform/files/common/files.js';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { INotebookLoggingService } from './notebookLoggingService.js';
-import { parse } from '../../../services/notebook/common/notebookDocumentService.js';
 
 class NotebookModelReferenceCollection extends ReferenceCollection<Promise<IResolvedNotebookEditorModel>> {
 
@@ -188,7 +187,7 @@ export class NotebookModelResolverServiceImpl implements INotebookEditorModelRes
 	}
 
 	private createUntitledUri(notebookType: string) {
-		const info = this._notebookService.getContributedNotebookType(assertReturnsDefined(notebookType));
+		const info = this._notebookService.getContributedNotebookType(assertIsDefined(notebookType));
 		if (!info) {
 			throw new Error('UNKNOWN notebook type: ' + notebookType);
 		}
@@ -208,11 +207,7 @@ export class NotebookModelResolverServiceImpl implements INotebookEditorModelRes
 		}
 
 		if (uri?.scheme === CellUri.scheme) {
-			const originalUri = uri;
-			uri = parse(uri)?.notebook;
-			if (!uri) {
-				throw new Error(`CANNOT open a cell-uri as notebook. Tried with ${originalUri.toString()}`);
-			}
+			throw new Error(`CANNOT open a cell-uri as notebook. Tried with ${uri.toString()}`);
 		}
 
 		const resource = this._uriIdentService.asCanonicalUri(uri ?? this.createUntitledUri(viewType!));

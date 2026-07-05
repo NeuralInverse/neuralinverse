@@ -17,10 +17,6 @@
     "ui",
     "workspace"
   ],
-  "enabledApiProposals": [
-    "authIssuers",
-    "authProviderSpecific"
-  ],
   "activationEvents": [],
   "capabilities": {
     "virtualWorkspaces": true,
@@ -35,17 +31,11 @@
     "authentication": [
       {
         "label": "GitHub",
-        "id": "github",
-        "authorizationServerGlobs": [
-          "https://github.com/login/oauth"
-        ]
+        "id": "github"
       },
       {
         "label": "GitHub Enterprise Server",
-        "id": "github-enterprise",
-        "authorizationServerGlobs": [
-          "*"
-        ]
+        "id": "github-enterprise"
       }
     ],
     "configuration": [{
@@ -55,12 +45,6 @@
           "type": "string",
           "markdownDescription": "%config.github-enterprise.uri.description%",
           "pattern": "^(?:$|(https?)://(?!github\\.com).*)"
-        },
-        "github-authentication.useElectronFetch": {
-          "type": "boolean",
-          "default": true,
-          "scope": "application",
-          "markdownDescription": "%config.github-authentication.useElectronFetch.description%"
         }
       }
     }
@@ -83,7 +67,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
-    "@types/node": "22.x",
+    "@types/node": "20.x",
     "@types/node-fetch": "^2.5.7"
   },
   "repository": {

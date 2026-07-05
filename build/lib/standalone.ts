@@ -118,8 +118,7 @@ export function extractEditor(options: tss.ITreeShakingOptions & { destRoot: str
 	writeOutputFile('tsconfig.json', JSON.stringify(tsConfig, null, '\t'));
 
 	[
-		'vs/loader.js',
-		'typings/css.d.ts'
+		'vs/loader.js'
 	].forEach(copyFile);
 }
 

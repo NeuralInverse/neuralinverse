@@ -6,7 +6,7 @@
 import './media/menubarControl.css';
 import { localize, localize2 } from '../../../../nls.js';
 import { IMenuService, MenuId, IMenu, SubmenuItemAction, registerAction2, Action2, MenuItemAction, MenuRegistry } from '../../../../platform/actions/common/actions.js';
-import { MenuBarVisibility, IWindowOpenable, getMenuBarVisibility, MenuSettings, hasNativeMenu } from '../../../../platform/window/common/window.js';
+import { MenuBarVisibility, IWindowOpenable, getMenuBarVisibility, hasNativeTitlebar, TitleBarSetting } from '../../../../platform/window/common/window.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IAction, Action, SubmenuAction, Separator, IActionRunner, ActionRunner, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification, toAction } from '../../../../base/common/actions.js';
 import { addDisposableListener, Dimension, EventType } from '../../../../base/browser/dom.js';
@@ -129,7 +129,7 @@ MenuRegistry.appendMenuItem(MenuId.MenubarMainMenu, {
 export abstract class MenubarControl extends Disposable {
 
 	protected keys = [
-		MenuSettings.MenuBarVisibility,
+		'window.menuBarVisibility',
 		'window.enableMenuBarMnemonics',
 		'window.customMenuBarAltFocus',
 		'workbench.sideBar.location',
@@ -287,7 +287,7 @@ export abstract class MenubarControl extends Disposable {
 
 		// Since we try not update when hidden, we should
 		// try to update the recently opened list on visibility changes
-		if (event.affectsConfiguration(MenuSettings.MenuBarVisibility)) {
+		if (event.affectsConfiguration('window.menuBarVisibility')) {
 			this.onDidChangeRecentlyOpened();
 		}
 	}
@@ -352,18 +352,18 @@ export abstract class MenubarControl extends Disposable {
 		}
 
 		const hasBeenNotified = this.storageService.getBoolean('menubar/accessibleMenubarNotified', StorageScope.APPLICATION, false);
-		const usingCustomMenubar = !hasNativeMenu(this.configurationService);
+		const usingCustomMenubar = !hasNativeTitlebar(this.configurationService);
 
 		if (hasBeenNotified || usingCustomMenubar || !this.accessibilityService.isScreenReaderOptimized()) {
 			return;
 		}
 
-		const message = localize('menubar.customTitlebarAccessibilityNotification', "Accessibility support is enabled for you. For the most accessible experience, we recommend the custom menu style.");
+		const message = localize('menubar.customTitlebarAccessibilityNotification', "Accessibility support is enabled for you. For the most accessible experience, we recommend the custom title bar style.");
 		this.notificationService.prompt(Severity.Info, message, [
 			{
 				label: localize('goToSetting', "Open Settings"),
 				run: () => {
-					return this.preferencesService.openUserSettings({ query: MenuSettings.MenuStyle });
+					return this.preferencesService.openUserSettings({ query: TitleBarSetting.TITLE_BAR_STYLE });
 				}
 			}
 		]);

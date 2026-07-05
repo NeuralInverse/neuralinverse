@@ -240,9 +240,6 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 	get disableTelemetry(): boolean { return false; }
 
 	@memoize
-	get disableExperiments(): boolean { return false; }
-
-	@memoize
 	get verbose(): boolean { return this.payload?.get('verbose') === 'true'; }
 
 	@memoize

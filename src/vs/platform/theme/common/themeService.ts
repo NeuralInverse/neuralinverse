@@ -134,14 +134,13 @@ export interface IThemingRegistry {
 	readonly onThemingParticipantAdded: Event<IThemingParticipant>;
 }
 
-class ThemingRegistry extends Disposable implements IThemingRegistry {
+class ThemingRegistry implements IThemingRegistry {
 	private themingParticipants: IThemingParticipant[] = [];
 	private readonly onThemingParticipantAddedEmitter: Emitter<IThemingParticipant>;
 
 	constructor() {
-		super();
 		this.themingParticipants = [];
-		this.onThemingParticipantAddedEmitter = this._register(new Emitter<IThemingParticipant>());
+		this.onThemingParticipantAddedEmitter = new Emitter<IThemingParticipant>();
 	}
 
 	public onColorThemeChange(participant: IThemingParticipant): IDisposable {
@@ -231,9 +230,15 @@ export interface IPartsSplash {
 		titleBarHeight: number;
 		activityBarWidth: number;
 		sideBarWidth: number;
-		auxiliaryBarWidth: number;
+		auxiliarySideBarWidth: number;
 		statusBarHeight: number;
 		windowBorder: boolean;
 		windowBorderRadius: string | undefined;
 	} | undefined;
+}
+
+export interface IPartsSplashWorkspaceOverride {
+	layoutInfo: {
+		auxiliarySideBarWidth: [number, string[] /* workspace identifier the override applies to */];
+	};
 }

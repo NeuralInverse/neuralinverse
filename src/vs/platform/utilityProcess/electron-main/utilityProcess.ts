@@ -27,11 +27,6 @@ export interface IUtilityProcessConfiguration {
 	readonly type: string;
 
 	/**
-	 * A human-readable name for the utility process.
-	 */
-	readonly name: string;
-
-	/**
 	 * The entry point to load in the utility process.
 	 */
 	readonly entryPoint: string;
@@ -311,7 +306,7 @@ export class UtilityProcess extends Disposable {
 			this.processPid = process.pid;
 
 			if (typeof process.pid === 'number') {
-				UtilityProcess.all.set(process.pid, { pid: process.pid, name: isWindowUtilityProcessConfiguration(configuration) ? `${configuration.name} [${configuration.responseWindowId}]` : configuration.name });
+				UtilityProcess.all.set(process.pid, { pid: process.pid, name: isWindowUtilityProcessConfiguration(configuration) ? `${configuration.type} [${configuration.responseWindowId}]` : configuration.type });
 			}
 
 			this.log('successfully created', Severity.Info);

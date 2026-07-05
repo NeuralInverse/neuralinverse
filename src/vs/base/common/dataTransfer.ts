@@ -19,7 +19,7 @@ export interface IDataTransferItem {
 	id?: string;
 	asString(): Thenable<string>;
 	asFile(): IDataTransferFile | undefined;
-	value: unknown;
+	value: any;
 }
 
 export function createStringDataTransferItem(stringOrPromise: string | Promise<string>, id?: string): IDataTransferItem {

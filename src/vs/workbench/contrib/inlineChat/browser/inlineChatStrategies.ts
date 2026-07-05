@@ -12,13 +12,14 @@ import { ICodeEditor, IViewZone, IViewZoneChangeAccessor } from '../../../../edi
 import { StableEditorScrollState } from '../../../../editor/browser/stableEditorScroll.js';
 import { LineSource, RenderOptions, renderLines } from '../../../../editor/browser/widget/diffEditor/components/diffEditorViewZones/renderLines.js';
 import { ISingleEditOperation } from '../../../../editor/common/core/editOperation.js';
-import { LineRange } from '../../../../editor/common/core/ranges/lineRange.js';
+import { LineRange } from '../../../../editor/common/core/lineRange.js';
 import { Position } from '../../../../editor/common/core/position.js';
 import { Range } from '../../../../editor/common/core/range.js';
 import { IEditorDecorationsCollection } from '../../../../editor/common/editorCommon.js';
 import { IModelDecorationsChangeAccessor, IModelDeltaDecoration, IValidEditOperation, MinimapPosition, OverviewRulerLane, TrackedRangeStickiness } from '../../../../editor/common/model.js';
 import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
 import { IEditorWorkerService } from '../../../../editor/common/services/editorWorker.js';
+import { InlineDecoration, InlineDecorationType } from '../../../../editor/common/viewModel.js';
 import { IContextKey, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { Progress } from '../../../../platform/progress/common/progress.js';
 import { SaveReason } from '../../../common/editor.js';
@@ -40,9 +41,6 @@ import { Iterable } from '../../../../base/common/iterator.js';
 import { ConflictActionsFactory, IContentWidgetAction } from '../../mergeEditor/browser/view/conflictActions.js';
 import { observableValue } from '../../../../base/common/observable.js';
 import { IMenuService, MenuItemAction } from '../../../../platform/actions/common/actions.js';
-import { InlineDecoration, InlineDecorationType } from '../../../../editor/common/viewModel/inlineDecorations.js';
-import { EditSources } from '../../../../editor/common/textModelEditSource.js';
-import { VersionedExtensionId } from '../../../../editor/common/languages.js';
 
 export interface IEditObserver {
 	start(): void;
@@ -143,11 +141,11 @@ export class LiveStrategy {
 		return this._session.hunkData.discardAll();
 	}
 
-	async makeChanges(edits: ISingleEditOperation[], obs: IEditObserver, undoStopBefore: boolean, metadata: IInlineChatMetadata): Promise<void> {
-		return this._makeChanges(edits, obs, undefined, undefined, undoStopBefore, metadata);
+	async makeChanges(edits: ISingleEditOperation[], obs: IEditObserver, undoStopBefore: boolean): Promise<void> {
+		return this._makeChanges(edits, obs, undefined, undefined, undoStopBefore);
 	}
 
-	async makeProgressiveChanges(edits: ISingleEditOperation[], obs: IEditObserver, opts: ProgressingEditsOptions, undoStopBefore: boolean, metadata: IInlineChatMetadata): Promise<void> {
+	async makeProgressiveChanges(edits: ISingleEditOperation[], obs: IEditObserver, opts: ProgressingEditsOptions, undoStopBefore: boolean): Promise<void> {
 
 		// add decorations once per line that got edited
 		const progress = new Progress<IValidEditOperation[]>(edits => {
@@ -167,10 +165,10 @@ export class LiveStrategy {
 
 			this._progressiveEditingDecorations.append(newDecorations);
 		});
-		return this._makeChanges(edits, obs, opts, progress, undoStopBefore, metadata);
+		return this._makeChanges(edits, obs, opts, progress, undoStopBefore);
 	}
 
-	private async _makeChanges(edits: ISingleEditOperation[], obs: IEditObserver, opts: ProgressingEditsOptions | undefined, progress: Progress<IValidEditOperation[]> | undefined, undoStopBefore: boolean, metadata: IInlineChatMetadata): Promise<void> {
+	private async _makeChanges(edits: ISingleEditOperation[], obs: IEditObserver, opts: ProgressingEditsOptions | undefined, progress: Progress<IValidEditOperation[]> | undefined, undoStopBefore: boolean): Promise<void> {
 
 		// push undo stop before first edit
 		if (undoStopBefore) {
@@ -178,12 +176,6 @@ export class LiveStrategy {
 		}
 
 		this._editCount++;
-		const editSource = EditSources.inlineChatApplyEdit({
-			modelId: metadata.modelId,
-			extensionId: metadata.extensionId,
-			requestId: metadata.requestId,
-			languageId: this._session.textModelN.getLanguageId(),
-		});
 
 		if (opts) {
 			// ASYNC
@@ -193,7 +185,7 @@ export class LiveStrategy {
 				const speed = wordCount / durationInSec;
 				// console.log({ durationInSec, wordCount, speed: wordCount / durationInSec });
 				const asyncEdit = asProgressiveEdit(new WindowIntervalTimer(this._zone.domNode), edit, speed, opts.token);
-				await performAsyncTextEdit(this._session.textModelN, asyncEdit, progress, obs, editSource);
+				await performAsyncTextEdit(this._session.textModelN, asyncEdit, progress, obs);
 			}
 
 		} else {
@@ -202,7 +194,7 @@ export class LiveStrategy {
 			this._session.textModelN.pushEditOperations(null, edits, (undoEdits) => {
 				progress?.report(undoEdits);
 				return null;
-			}, undefined, editSource);
+			});
 			obs.stop();
 		}
 	}
@@ -583,10 +575,4 @@ function changeDecorationsAndViewZones(editor: ICodeEditor, callback: (accessor:
 			callback(decorationsAccessor, viewZoneAccessor);
 		});
 	});
-}
-
-export interface IInlineChatMetadata {
-	modelId: string | undefined;
-	extensionId: VersionedExtensionId | undefined;
-	requestId: string | undefined;
 }

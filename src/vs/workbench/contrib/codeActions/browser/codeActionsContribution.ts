@@ -132,10 +132,10 @@ export class CodeActionsContribution extends Disposable implements IWorkbenchCon
 					this._onDidChangeSchemaContributions.fire();
 				}));
 
-		this._register(keybindingService.registerSchemaContribution({
+		keybindingService.registerSchemaContribution({
 			getSchemaAdditions: () => this.getKeybindingSchemaAdditions(),
 			onDidChange: this._onDidChangeSchemaContributions.event,
-		}));
+		});
 	}
 
 	private getAllProvidedCodeActionKinds(): Array<HierarchicalKind> {

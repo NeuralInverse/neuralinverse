@@ -415,8 +415,7 @@ export class GlyphMarginWidgets extends ViewPart {
 		// Render decorations, reusing previous dom nodes as possible
 		for (let i = 0; i < this._decorationGlyphsToRender.length; i++) {
 			const dec = this._decorationGlyphsToRender[i];
-			const decLineNumber = dec.lineNumber;
-			const top = ctx.viewportData.relativeVerticalOffset[decLineNumber - ctx.viewportData.startLineNumber];
+			const top = ctx.viewportData.relativeVerticalOffset[dec.lineNumber - ctx.viewportData.startLineNumber];
 			const left = this._glyphMarginLeft + dec.laneIndex * this._lineHeight;
 
 			let domNode: FastDomNode<HTMLElement>;
@@ -427,14 +426,13 @@ export class GlyphMarginWidgets extends ViewPart {
 				this._managedDomNodes.push(domNode);
 				this.domNode.appendChild(domNode);
 			}
-			const lineHeight = this._context.viewLayout.getLineHeightForLineNumber(decLineNumber);
 
 			domNode.setClassName(`cgmr codicon ` + dec.combinedClassName);
 			domNode.setPosition(`absolute`);
 			domNode.setTop(top);
 			domNode.setLeft(left);
 			domNode.setWidth(width);
-			domNode.setHeight(lineHeight);
+			domNode.setHeight(this._lineHeight);
 		}
 
 		// remove extra dom nodes

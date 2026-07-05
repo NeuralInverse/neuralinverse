@@ -84,8 +84,7 @@ export async function showRunRecentQuickPick(
 				.replace(/\s\s\s+/g, '\u22EF');
 		}
 		if (commands && commands.length > 0) {
-			for (let i = commands.length - 1; i >= 0; i--) {
-				const entry = commands[i];
+			for (const entry of commands) {
 				// Trim off any whitespace and/or line endings, replace new lines with the
 				// Downwards Arrow with Corner Leftwards symbol
 				const label = entry.command.trim();
@@ -121,6 +120,7 @@ export async function showRunRecentQuickPick(
 				});
 				commandMap.add(label);
 			}
+			items = items.reverse();
 		}
 		if (executingCommand) {
 			items.unshift({

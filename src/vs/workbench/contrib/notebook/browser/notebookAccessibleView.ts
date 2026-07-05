@@ -24,6 +24,7 @@ export class NotebookAccessibleView implements IAccessibleViewImplementation {
 	}
 }
 
+
 export function getAccessibleOutputProvider(editorService: IEditorService) {
 	const activePane = editorService.activeEditorPane;
 	const notebookEditor = getNotebookEditorFromEditorPane(activePane);

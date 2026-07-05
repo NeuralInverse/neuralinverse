@@ -75,7 +75,7 @@ registerTerminalAction({
 		}
 		const data = await quickInputService.input({
 			value: '',
-			placeHolder: 'Enter data (supports \\n, \\r, \\xAB)',
+			placeHolder: 'Enter data, use \\x to escape',
 			prompt: localize('workbench.action.terminal.writeDataToTerminal.prompt', "Enter data to write directly to the terminal, bypassing the pty"),
 		});
 		if (!data) {

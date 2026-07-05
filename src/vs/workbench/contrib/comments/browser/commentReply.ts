@@ -9,7 +9,7 @@ import { MOUSE_CURSOR_TEXT_CSS_CLASS_NAME } from '../../../../base/browser/ui/mo
 import { IAction } from '../../../../base/common/actions.js';
 import { Disposable, IDisposable, dispose } from '../../../../base/common/lifecycle.js';
 import { MarshalledId } from '../../../../base/common/marshallingIds.js';
-import { FileAccess, Schemas } from '../../../../base/common/network.js';
+import { Schemas } from '../../../../base/common/network.js';
 import { URI } from '../../../../base/common/uri.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
 import { ICodeEditor } from '../../../../editor/browser/editorBrowser.js';
@@ -38,10 +38,8 @@ export const COMMENTEDITOR_DECORATION_KEY = 'commenteditordecoration';
 
 export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 	commentEditor: ICodeEditor;
-	private _container: HTMLElement;
-	private _form: HTMLElement;
+	form: HTMLElement;
 	commentEditorIsEmpty: IContextKey<boolean>;
-	private avatar!: HTMLElement;
 	private _error!: HTMLElement;
 	private _formActions!: HTMLElement;
 	private _editorActions!: HTMLElement;
@@ -72,18 +70,16 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 		@ITextModelService private readonly textModelService: ITextModelService
 	) {
 		super();
-		this._container = dom.append(container, dom.$('.comment-form-container'));
-		this._form = dom.append(this._container, dom.$('.comment-form'));
-		this.commentEditor = this._register(this._scopedInstatiationService.createInstance(SimpleCommentEditor, this._form, SimpleCommentEditor.getEditorOptions(configurationService), _contextKeyService, this._parentThread));
+
+		this.form = dom.append(container, dom.$('.comment-form'));
+		this.commentEditor = this._register(this._scopedInstatiationService.createInstance(SimpleCommentEditor, this.form, SimpleCommentEditor.getEditorOptions(configurationService), _contextKeyService, this._parentThread));
 		this.commentEditorIsEmpty = CommentContextKeys.commentIsEmpty.bindTo(this._contextKeyService);
 		this.commentEditorIsEmpty.set(!this._pendingComment);
 
 		this.initialize(focus);
 	}
 
-	private async initialize(focus: boolean) {
-		this.avatar = dom.append(this._form, dom.$('.avatar-container'));
-		this.updateAuthorInfo();
+	async initialize(focus: boolean) {
 		const hasExistingComments = this._commentThread.comments && this._commentThread.comments.length > 0;
 		const modeId = generateUuid() + '-' + (hasExistingComments ? this._commentThread.threadId : ++INMEM_MODEL_ID);
 		const params = JSON.stringify({
@@ -119,7 +115,7 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 			}
 		}));
 
-		this.createTextModelListener(this.commentEditor, this._form);
+		this.createTextModelListener(this.commentEditor, this.form);
 
 		this.setCommentEditorDecorations();
 
@@ -127,12 +123,12 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 		if (this._pendingComment) {
 			this.expandReplyArea();
 		} else if (hasExistingComments) {
-			this.createReplyButton(this.commentEditor, this._form);
-		} else if (this._commentThread.comments && this._commentThread.comments.length === 0) {
-			this.expandReplyArea(focus);
+			this.createReplyButton(this.commentEditor, this.form);
+		} else if (focus && (this._commentThread.comments && this._commentThread.comments.length === 0)) {
+			this.expandReplyArea();
 		}
-		this._error = dom.append(this._container, dom.$('.validation-error.hidden'));
-		const formActions = dom.append(this._container, dom.$('.form-actions'));
+		this._error = dom.append(this.form, dom.$('.validation-error.hidden'));
+		const formActions = dom.append(this.form, dom.$('.form-actions'));
 		this._formActions = dom.append(formActions, dom.$('.other-actions'));
 		this.createCommentWidgetFormActions(this._formActions, model.object.textEditorModel);
 		this._editorActions = dom.append(formActions, dom.$('.editor-actions'));
@@ -153,7 +149,7 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 		const oldAndNewBothEmpty = !this._commentThread.comments?.length && !commentThread.comments?.length;
 
 		if (!this._reviewThreadReplyButton) {
-			this.createReplyButton(this.commentEditor, this._form);
+			this.createReplyButton(this.commentEditor, this.form);
 		}
 
 		if (this._commentThread.comments && this._commentThread.comments.length === 0 && !oldAndNewBothEmpty) {
@@ -207,23 +203,11 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 		return this.commentEditor.hasWidgetFocus();
 	}
 
-	private updateAuthorInfo() {
-		this.avatar.textContent = '';
-		if (typeof this._commentThread.canReply !== 'boolean' && this._commentThread.canReply.iconPath) {
-			this.avatar.style.display = 'block';
-			const img = dom.append(this.avatar, dom.$('img.avatar')) as HTMLImageElement;
-			img.src = FileAccess.uriToBrowserUri(URI.revive(this._commentThread.canReply.iconPath)).toString(true);
-		} else {
-			this.avatar.style.display = 'none';
-		}
-	}
-
 	public updateCanReply() {
-		this.updateAuthorInfo();
 		if (!this._commentThread.canReply) {
-			this._container.style.display = 'none';
+			this.form.style.display = 'none';
 		} else {
-			this._container.style.display = 'block';
+			this.form.style.display = 'block';
 		}
 	}
 
@@ -336,15 +320,13 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 	}
 
 	private get isReplyExpanded(): boolean {
-		return this._container.classList.contains('expand');
+		return this.form.classList.contains('expand');
 	}
 
-	private expandReplyArea(focus: boolean = true) {
+	private expandReplyArea() {
 		if (!this.isReplyExpanded) {
-			this._container.classList.add('expand');
-			if (focus) {
-				this.commentEditor.focus();
-			}
+			this.form.classList.add('expand');
+			this.commentEditor.focus();
 			this.commentEditor.layout();
 		}
 	}
@@ -363,7 +345,7 @@ export class CommentReply<T extends IRange | ICellRange> extends Disposable {
 		}
 		this.commentEditor.setValue('');
 		this._pendingComment = { body: '', cursor: new Position(1, 1) };
-		this._container.classList.remove('expand');
+		this.form.classList.remove('expand');
 		this._error.textContent = '';
 		this._error.classList.add('hidden');
 	}

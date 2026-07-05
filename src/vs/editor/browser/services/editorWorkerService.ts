@@ -27,14 +27,12 @@ import { IChange } from '../../common/diff/legacyLinesDiffComputer.js';
 import { IDocumentDiff, IDocumentDiffProviderOptions } from '../../common/diff/documentDiffProvider.js';
 import { ILinesDiffComputerOptions, MovedText } from '../../common/diff/linesDiffComputer.js';
 import { DetailedLineRangeMapping, RangeMapping, LineRangeMapping } from '../../common/diff/rangeMapping.js';
-import { LineRange } from '../../common/core/ranges/lineRange.js';
+import { LineRange } from '../../common/core/lineRange.js';
 import { SectionHeader, FindSectionHeaderOptions } from '../../common/services/findSectionHeaders.js';
 import { mainWindow } from '../../../base/browser/window.js';
 import { WindowIntervalTimer } from '../../../base/browser/dom.js';
 import { WorkerTextModelSyncClient } from '../../common/services/textModelSync/textModelSync.impl.js';
 import { EditorWorkerHost } from '../../common/services/editorWorkerHost.js';
-import { StringEdit } from '../../common/core/edits/stringEdit.js';
-import { OffsetRange } from '../../common/core/ranges/offsetRange.js';
 
 /**
  * Stop the worker if it was not needed for 5 min.
@@ -84,7 +82,7 @@ export abstract class EditorWorkerService extends Disposable implements IEditorW
 				return links && { links };
 			}
 		}));
-		this._register(languageFeaturesService.completionProvider.register('*', new WordBasedCompletionItemProvider(this._workerManager, configurationService, this._modelService, this._languageConfigurationService, this._logService)));
+		this._register(languageFeaturesService.completionProvider.register('*', new WordBasedCompletionItemProvider(this._workerManager, configurationService, this._modelService, this._languageConfigurationService)));
 	}
 
 	public override dispose(): void {
@@ -182,17 +180,6 @@ export abstract class EditorWorkerService extends Disposable implements IEditorW
 		}
 	}
 
-	public async computeStringEditFromDiff(original: string, modified: string, options: { maxComputationTimeMs: number }, algorithm: DiffAlgorithmName): Promise<StringEdit> {
-		try {
-			const worker = await this._workerWithResources([]);
-			const edit = await worker.$computeStringDiff(original, modified, options, algorithm);
-			return StringEdit.fromJson(edit);
-		} catch (e) {
-			onUnexpectedError(e);
-			return StringEdit.replace(OffsetRange.ofLength(original.length), modified); // approximation
-		}
-	}
-
 	public canNavigateValueSet(resource: URI): boolean {
 		return (canSyncModel(this._modelService, resource));
 	}
@@ -253,8 +240,7 @@ class WordBasedCompletionItemProvider implements languages.CompletionItemProvide
 		workerManager: WorkerManager,
 		configurationService: ITextResourceConfigurationService,
 		modelService: IModelService,
-		private readonly languageConfigurationService: ILanguageConfigurationService,
-		private readonly logService: ILogService
+		private readonly languageConfigurationService: ILanguageConfigurationService
 	) {
 		this._workerManager = workerManager;
 		this._configurationService = configurationService;
@@ -299,9 +285,6 @@ class WordBasedCompletionItemProvider implements languages.CompletionItemProvide
 		const word = model.getWordAtPosition(position);
 		const replace = !word ? Range.fromPositions(position) : new Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
 		const insert = replace.setEndPosition(position.lineNumber, position.column);
-
-		// Trace logging about the word and replace/insert ranges
-		this.logService.trace('[WordBasedCompletionItemProvider]', `word: "${word?.word || ''}", wordDef: "${wordDefRegExp}", replace: [${replace.toString()}], insert: [${insert.toString()}]`);
 
 		const client = await this._workerManager.withWorker();
 		const data = await client.textualSuggest(models, word?.word, wordDefRegExp);
@@ -427,7 +410,7 @@ export class EditorWorkerClient extends Disposable implements IEditorWorkerClien
 	private _disposed = false;
 
 	constructor(
-		private readonly _workerDescriptorOrWorker: IWebWorkerDescriptor | Worker | Promise<Worker>,
+		private readonly _workerDescriptorOrWorker: IWebWorkerDescriptor | Worker,
 		keepIdleModels: boolean,
 		@IModelService modelService: IModelService,
 	) {

@@ -92,12 +92,6 @@ export class ViewOverlayWidgets extends ViewPart {
 
 	// ---- end view event handlers
 
-	private _widgetCanOverflow(widget: IOverlayWidget): boolean {
-		const options = this._context.configuration.options;
-		const allowOverflow = options.get(EditorOption.allowOverflow);
-		return (widget.allowEditorOverflow || false) && allowOverflow;
-	}
-
 	public addWidget(widget: IOverlayWidget): void {
 		const domNode = createFastDomNode(widget.getDomNode());
 
@@ -111,7 +105,7 @@ export class ViewOverlayWidgets extends ViewPart {
 		domNode.setPosition('absolute');
 		domNode.setAttribute('widgetId', widget.getId());
 
-		if (this._widgetCanOverflow(widget)) {
+		if (widget.allowEditorOverflow) {
 			this.overflowingOverlayWidgetsDomNode.appendChild(domNode);
 		} else {
 			this._domNode.appendChild(domNode);
@@ -199,7 +193,7 @@ export class ViewOverlayWidgets extends ViewPart {
 		} else {
 			const { top, left } = widgetData.preference;
 			const fixedOverflowWidgets = this._context.configuration.options.get(EditorOption.fixedOverflowWidgets);
-			if (fixedOverflowWidgets && this._widgetCanOverflow(widgetData.widget)) {
+			if (fixedOverflowWidgets && widgetData.widget.allowEditorOverflow) {
 				// top, left are computed relative to the editor and we need them relative to the page
 				const editorBoundingBox = this._viewDomNodeRect;
 				domNode.setTop(top + editorBoundingBox.top);

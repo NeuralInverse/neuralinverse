@@ -56,7 +56,7 @@ export class SearchEditorInput extends EditorInput {
 	}
 
 	override get capabilities(): EditorInputCapabilities {
-		let capabilities = EditorInputCapabilities.None;
+		let capabilities = EditorInputCapabilities.Singleton;
 		if (!this.backingUri) {
 			capabilities |= EditorInputCapabilities.Untitled;
 		}
@@ -316,25 +316,13 @@ export class SearchEditorInput extends EditorInput {
 			}
 		};
 	}
-
-	override copy(): EditorInput {
-		// Generate a new modelUri for the split editor
-		const newModelUri = URI.from({ scheme: SearchEditorScheme, fragment: `${Math.random()}` });
-		const config = this._cachedConfigurationModel?.config ?? {};
-		const results = this._cachedResultsModel?.getValue() ?? '';
-		// Use the 'rawData' variant and pass modelUri
-		return this.instantiationService.invokeFunction(
-			getOrMakeSearchEditorInput,
-			{ from: 'rawData', config, resultsContents: results, modelUri: newModelUri } as any // modelUri is not in the type, but we handle it below
-		);
-	}
 }
 
 export const getOrMakeSearchEditorInput = (
 	accessor: ServicesAccessor,
 	existingData: (
 		| { from: 'model'; config?: Partial<SearchConfiguration>; modelUri: URI; backupOf?: URI }
-		| { from: 'rawData'; resultsContents: string | undefined; config: Partial<SearchConfiguration>; modelUri?: URI }
+		| { from: 'rawData'; resultsContents: string | undefined; config: Partial<SearchConfiguration> }
 		| { from: 'existingFile'; fileUri: URI })
 ): SearchEditorInput => {
 
@@ -342,14 +330,7 @@ export const getOrMakeSearchEditorInput = (
 	const configurationService = accessor.get(IConfigurationService);
 
 	const instantiationService = accessor.get(IInstantiationService);
-	let modelUri: URI;
-	if (existingData.from === 'model') {
-		modelUri = existingData.modelUri;
-	} else if (existingData.from === 'rawData' && existingData.modelUri) {
-		modelUri = existingData.modelUri;
-	} else {
-		modelUri = URI.from({ scheme: SearchEditorScheme, fragment: `${Math.random()}` });
-	}
+	const modelUri = existingData.from === 'model' ? existingData.modelUri : URI.from({ scheme: SearchEditorScheme, fragment: `${Math.random()}` });
 
 	if (!searchEditorModelFactory.models.has(modelUri)) {
 		if (existingData.from === 'existingFile') {

@@ -10,7 +10,7 @@ const completionSpec: Fig.Spec = {
 		{
 			name: ["-m", "--mode"],
 			description: "Set file mode (as in chmod), not a=rwx - umask",
-			args: { name: "mode" },
+			args: { name: "MODE" },
 		},
 		{
 			name: ["-p", "--parents"],
@@ -22,8 +22,9 @@ const completionSpec: Fig.Spec = {
 		},
 		{
 			name: ["-Z", "--context"],
-			description: "Set the SELinux security context of each created directory",
-			args: { name: "context" },
+			description:
+				"Set the SELinux security context of each created directory to CTX",
+			args: { name: "CTX" },
 		},
 		{ name: "--help", description: "Display this help and exit" },
 		{

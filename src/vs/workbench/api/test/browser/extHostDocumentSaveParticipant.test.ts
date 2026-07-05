@@ -303,9 +303,6 @@ suite('ExtHostDocumentSaveParticipant', () => {
 				versionId: 2,
 				isRedoing: false,
 				isUndoing: false,
-				detailedReason: undefined,
-				isFlush: false,
-				isEolChange: false,
 			}, true);
 
 			e.waitUntil(Promise.resolve([TextEdit.insert(new Position(0, 0), 'bar')]));
@@ -340,9 +337,6 @@ suite('ExtHostDocumentSaveParticipant', () => {
 						versionId: documents.getDocumentData(uri)!.version + 1,
 						isRedoing: false,
 						isUndoing: false,
-						detailedReason: undefined,
-						isFlush: false,
-						isEolChange: false,
 					}, true);
 					// }
 				}

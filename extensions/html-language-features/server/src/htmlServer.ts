@@ -7,12 +7,11 @@ import {
 	Connection, TextDocuments, InitializeParams, InitializeResult, RequestType,
 	DocumentRangeFormattingRequest, Disposable, ServerCapabilities,
 	ConfigurationRequest, ConfigurationParams, DidChangeWorkspaceFoldersNotification,
-	DocumentColorRequest, ColorPresentationRequest, TextDocumentSyncKind, NotificationType, RequestType0, DocumentFormattingRequest, FormattingOptions, TextEdit,
-	TextDocumentContentRequest
+	DocumentColorRequest, ColorPresentationRequest, TextDocumentSyncKind, NotificationType, RequestType0, DocumentFormattingRequest, FormattingOptions, TextEdit
 } from 'vscode-languageserver';
 import {
 	getLanguageModes, LanguageModes, Settings, TextDocument, Position, Diagnostic, WorkspaceFolder, ColorInformation,
-	Range, DocumentLink, SymbolInformation, TextDocumentIdentifier, isCompletionItemData, FILE_PROTOCOL
+	Range, DocumentLink, SymbolInformation, TextDocumentIdentifier, isCompletionItemData
 } from './modes/languageModes';
 
 import { format } from './modes/formatting';
@@ -214,9 +213,6 @@ export function startServer(connection: Connection, runtime: RuntimeEnvironment)
 				documentSelector: null,
 				interFileDependencies: false,
 				workspaceDiagnostics: false
-			},
-			workspace: {
-				textDocumentContent: { schemes: [FILE_PROTOCOL] }
 			}
 		};
 		return { capabilities };
@@ -586,18 +582,6 @@ export function startServer(connection: Connection, runtime: RuntimeEnvironment)
 		fetchHTMLDataProviders(dataPaths, customDataRequestService).then(dataProviders => {
 			languageModes.updateDataProviders(dataProviders);
 		});
-	});
-
-	connection.onRequest(TextDocumentContentRequest.type, (params, token) => {
-		return runSafe(runtime, async () => {
-			for (const languageMode of languageModes.getAllModes()) {
-				const content = await languageMode.getTextDocumentContent?.(params.uri);
-				if (content) {
-					return { text: content };
-				}
-			}
-			return null;
-		}, null, `Error while computing text document content for ${params.uri}`, token);
 	});
 
 	// Listen on the connection

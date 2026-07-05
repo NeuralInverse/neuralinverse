@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as DOM from '../../../../../../base/browser/dom.js';
-import * as domSanitize from '../../../../../../base/browser/domSanitize.js';
 import { renderIcon } from '../../../../../../base/browser/ui/iconLabel/iconLabels.js';
 import { disposableTimeout, raceCancellation } from '../../../../../../base/common/async.js';
 import { CancellationTokenSource } from '../../../../../../base/common/cancellation.js';
@@ -28,7 +27,7 @@ import { IKeybindingService } from '../../../../../../platform/keybinding/common
 import { CellEditState, CellFocusMode, CellFoldingState, EXPAND_CELL_INPUT_COMMAND_ID, IActiveNotebookEditorDelegate, ICellViewModel } from '../../notebookBrowser.js';
 import { collapsedIcon, expandedIcon } from '../../notebookIcons.js';
 import { CellEditorOptions } from './cellEditorOptions.js';
-import { collapsedCellTTPolicy, MarkdownCellRenderTemplate } from '../notebookRenderingCommon.js';
+import { MarkdownCellRenderTemplate } from '../notebookRenderingCommon.js';
 import { MarkupCellViewModel } from '../../viewModel/markupCellViewModel.js';
 import { WordHighlighterContribution } from '../../../../../../editor/contrib/wordHighlighter/browser/wordHighlighter.js';
 
@@ -262,8 +261,7 @@ export class MarkupCell extends Disposable {
 		const element = DOM.$('div');
 		element.classList.add('cell-collapse-preview');
 		const richEditorText = this.getRichText(this.viewCell.textBuffer, this.viewCell.language);
-		element.innerText = richEditorText;
-		element.innerHTML = (collapsedCellTTPolicy?.createHTML(richEditorText) ?? richEditorText) as string;
+		DOM.safeInnerHtml(element, richEditorText);
 		this.templateData.cellInputCollapsedContainer.appendChild(element);
 
 		const expandIcon = DOM.append(element, DOM.$('span.expandInputIcon'));
@@ -280,7 +278,6 @@ export class MarkupCell extends Disposable {
 		this.viewCell.renderedMarkdownHeight = 0;
 		this.viewCell.layoutChange({});
 	}
-
 
 	private getRichText(buffer: IReadonlyTextBuffer, language: string) {
 		return tokenizeToStringSync(this.languageService, buffer.getLineContent(1), language);
@@ -334,7 +331,6 @@ export class MarkupCell extends Disposable {
 					width: width,
 					height: editorHeight
 				},
-				allowVariableLineHeights: false,
 				// overflowWidgetsDomNode: this.notebookEditor.getOverflowContainerDomNode()
 			}, {
 				contributions: this.notebookEditor.creationOptions.cellEditorContributions
@@ -406,7 +402,7 @@ export class MarkupCell extends Disposable {
 		this.markdownAccessibilityContainer.innerText = '';
 		if (this.viewCell.renderedHtml) {
 			if (this.accessibilityService.isScreenReaderOptimized()) {
-				domSanitize.safeSetInnerHtml(this.markdownAccessibilityContainer, this.viewCell.renderedHtml);
+				DOM.safeInnerHtml(this.markdownAccessibilityContainer, this.viewCell.renderedHtml);
 			} else {
 				DOM.clearNode(this.markdownAccessibilityContainer);
 			}

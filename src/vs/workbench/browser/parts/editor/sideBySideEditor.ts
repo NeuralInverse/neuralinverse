@@ -5,8 +5,7 @@
 
 import './media/sidebysideeditor.css';
 import { localize } from '../../../../nls.js';
-import { Dimension, $, clearNode } from '../../../../base/browser/dom.js';
-import { multibyteAwareBtoa } from '../../../../base/common/strings.js';
+import { Dimension, $, clearNode, multibyteAwareBtoa } from '../../../../base/browser/dom.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { IEditorControl, IEditorPane, IEditorOpenContext, EditorExtensions, SIDE_BY_SIDE_EDITOR_ID, SideBySideEditor as Side, IEditorPaneSelection, IEditorPaneWithSelection, IEditorPaneSelectionChangeEvent, isEditorPaneWithSelection, EditorPaneSelectionCompareResult } from '../../../common/editor.js';
 import { SideBySideEditorInput } from '../../../common/editor/sideBySideEditorInput.js';
@@ -21,7 +20,7 @@ import { IEditorGroup, IEditorGroupsService } from '../../../services/editor/com
 import { SplitView, Sizing, Orientation } from '../../../../base/browser/ui/splitview/splitview.js';
 import { Event, Relay, Emitter } from '../../../../base/common/event.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
-import { assertReturnsDefined } from '../../../../base/common/types.js';
+import { assertIsDefined } from '../../../../base/common/types.js';
 import { IEditorOptions } from '../../../../platform/editor/common/editor.js';
 import { IConfigurationChangeEvent, IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { DEFAULT_EDITOR_MIN_DIMENSIONS } from './editor.js';
@@ -158,7 +157,7 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 	}
 
 	private recreateSplitview(): void {
-		const container = assertReturnsDefined(this.getContainer());
+		const container = assertIsDefined(this.getContainer());
 
 		// Clear old (if any) but remember ratio
 		const ratio = this.getSplitViewRatio();
@@ -229,7 +228,7 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 		}
 
 		// Secondary (left)
-		const secondaryEditorContainer = assertReturnsDefined(this.secondaryEditorContainer);
+		const secondaryEditorContainer = assertIsDefined(this.secondaryEditorContainer);
 		this.splitview.addView({
 			element: secondaryEditorContainer,
 			layout: size => this.layoutPane(this.secondaryEditorPane, size),
@@ -239,7 +238,7 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 		}, leftSizing);
 
 		// Primary (right)
-		const primaryEditorContainer = assertReturnsDefined(this.primaryEditorContainer);
+		const primaryEditorContainer = assertIsDefined(this.primaryEditorContainer);
 		this.splitview.addView({
 			element: primaryEditorContainer,
 			layout: size => this.layoutPane(this.primaryEditorPane, size),
@@ -329,8 +328,8 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 	private createEditors(newInput: SideBySideEditorInput): void {
 
 		// Create editors
-		this.secondaryEditorPane = this.doCreateEditor(newInput.secondary, assertReturnsDefined(this.secondaryEditorContainer));
-		this.primaryEditorPane = this.doCreateEditor(newInput.primary, assertReturnsDefined(this.primaryEditorContainer));
+		this.secondaryEditorPane = this.doCreateEditor(newInput.secondary, assertIsDefined(this.secondaryEditorContainer));
+		this.primaryEditorPane = this.doCreateEditor(newInput.primary, assertIsDefined(this.primaryEditorContainer));
 
 		// Layout
 		this.layout(this.dimension);
@@ -438,7 +437,7 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 	layout(dimension: Dimension): void {
 		this.dimension = dimension;
 
-		const splitview = assertReturnsDefined(this.splitview);
+		const splitview = assertIsDefined(this.splitview);
 		splitview.layout(this.orientation === Orientation.HORIZONTAL ? dimension.width : dimension.height);
 	}
 

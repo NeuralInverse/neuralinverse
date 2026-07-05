@@ -3,15 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-enum LazyValueState {
-	Uninitialized,
-	Running,
-	Completed,
-}
-
 export class Lazy<T> {
 
-	private _state = LazyValueState.Uninitialized;
+	private _didRun: boolean = false;
 	private _value?: T;
 	private _error: Error | undefined;
 
@@ -22,7 +16,7 @@ export class Lazy<T> {
 	/**
 	 * True if the lazy value has been resolved.
 	 */
-	get hasValue(): boolean { return this._state === LazyValueState.Completed; }
+	get hasValue() { return this._didRun; }
 
 	/**
 	 * Get the wrapped value.
@@ -31,19 +25,15 @@ export class Lazy<T> {
 	 * resolved once. `getValue` will re-throw exceptions that are hit while resolving the value
 	 */
 	get value(): T {
-		if (this._state === LazyValueState.Uninitialized) {
-			this._state = LazyValueState.Running;
+		if (!this._didRun) {
 			try {
 				this._value = this.executor();
 			} catch (err) {
 				this._error = err;
 			} finally {
-				this._state = LazyValueState.Completed;
+				this._didRun = true;
 			}
-		} else if (this._state === LazyValueState.Running) {
-			throw new Error('Cannot read the value of a lazy that is being initialized');
 		}
-
 		if (this._error) {
 			throw this._error;
 		}

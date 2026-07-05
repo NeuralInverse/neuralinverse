@@ -6,7 +6,7 @@
 import { IWebWorkerServerRequestHandler, IWebWorkerServerRequestHandlerFactory, WebWorkerServer } from './webWorker.js';
 
 type MessageEvent = {
-	data: unknown;
+	data: any;
 };
 
 declare const globalThis: {

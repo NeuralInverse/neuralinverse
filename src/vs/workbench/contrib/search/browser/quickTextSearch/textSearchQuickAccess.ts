@@ -114,7 +114,11 @@ export class TextSearchQuickAccess extends PickerQuickAccessProvider<ITextSearch
 		}];
 		this.editorViewState.reset();
 		disposables.add(picker.onDidTriggerButton(async () => {
-			await this.moveToSearchViewlet(undefined);
+			if (this.searchModel.searchResult.count() > 0) {
+				await this.moveToSearchViewlet(undefined);
+			} else {
+				this._viewsService.openView(VIEW_ID, true);
+			}
 			picker.hide();
 		}));
 

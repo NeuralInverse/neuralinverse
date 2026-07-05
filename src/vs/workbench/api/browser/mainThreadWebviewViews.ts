@@ -5,7 +5,7 @@
 
 import { CancellationToken } from '../../../base/common/cancellation.js';
 import { onUnexpectedError } from '../../../base/common/errors.js';
-import { Disposable, DisposableMap, DisposableStore } from '../../../base/common/lifecycle.js';
+import { Disposable, DisposableMap } from '../../../base/common/lifecycle.js';
 import { generateUuid } from '../../../base/common/uuid.js';
 import { MainThreadWebviews, reviveWebviewExtension } from './mainThreadWebviews.js';
 import * as extHostProtocol from '../common/extHost.protocol.js';
@@ -86,16 +86,14 @@ export class MainThreadWebviewsViews extends Disposable implements extHostProtoc
 					webviewView.webview.options = options;
 				}
 
-				const subscriptions = new DisposableStore();
-				subscriptions.add(webviewView.onDidChangeVisibility(visible => {
+				webviewView.onDidChangeVisibility(visible => {
 					this._proxy.$onDidChangeWebviewViewVisibility(handle, visible);
-				}));
+				});
 
-				subscriptions.add(webviewView.onDispose(() => {
+				webviewView.onDispose(() => {
 					this._proxy.$disposeWebviewView(handle);
 					this._webviewViews.deleteAndDispose(handle);
-					subscriptions.dispose();
-				}));
+				});
 
 				type CreateWebviewViewTelemetry = {
 					extensionId: string;

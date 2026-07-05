@@ -25,8 +25,7 @@ export class DynamicEditorConfigurations extends Disposable implements IWorkbenc
 		'terminalEditor',
 		'mainThreadWebview-simpleBrowser.view',
 		'mainThreadWebview-browserPreview',
-		'workbench.editor.chatSession',
-		'workbench.editor.processExplorer'
+		'workbench.editor.chatSession'
 	]);
 
 	private static readonly AUTO_LOCK_EXTRA_EDITORS: RegisteredEditorInfo[] = [

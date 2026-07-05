@@ -6,7 +6,7 @@
 import { DataTransfers, IDragAndDropData } from '../../../../base/browser/dnd.js';
 import * as DOM from '../../../../base/browser/dom.js';
 import * as cssJs from '../../../../base/browser/cssValue.js';
-import { renderAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
+import { renderMarkdownAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
 import { ActionBar, IActionViewItemProvider } from '../../../../base/browser/ui/actionbar/actionbar.js';
 import { ActionViewItem } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
 import { IHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate.js';
@@ -63,7 +63,7 @@ import { IActivityService, NumberBadge } from '../../../services/activity/common
 import { IExtensionService } from '../../../services/extensions/common/extensions.js';
 import { IHoverService, WorkbenchHoverDelegate } from '../../../../platform/hover/browser/hover.js';
 import { CodeDataTransfers, LocalSelectionTransfer } from '../../../../platform/dnd/browser/dnd.js';
-import { toExternalVSDataTransfer } from '../../../../editor/browser/dataTransfer.js';
+import { toExternalVSDataTransfer } from '../../../../editor/browser/dnd.js';
 import { CheckboxStateHandler, TreeItemCheckbox } from './checkbox.js';
 import { setTimeout0 } from '../../../../base/common/platform.js';
 import { AriaRole } from '../../../../base/browser/ui/aria/aria.js';
@@ -198,7 +198,7 @@ function isTreeCommandEnabled(treeCommand: TreeCommand | Command, contextKeyServ
 interface RenderedMessage { element: HTMLElement; disposables: DisposableStore }
 
 function isRenderedMessageValue(messageValue: string | RenderedMessage | undefined): messageValue is RenderedMessage {
-	return !!messageValue && typeof messageValue !== 'string' && !!messageValue.element && !!messageValue.disposables;
+	return !!messageValue && typeof messageValue !== 'string' && 'element' in messageValue && 'disposables' in messageValue;
 }
 
 const noDataProviderMessage = localize('no-dataprovider', "There is no data provider registered that can provide view data.");
@@ -239,31 +239,31 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 	private lastActive: ITreeItem;
 
 	private readonly _onDidExpandItem: Emitter<ITreeItem> = this._register(new Emitter<ITreeItem>());
-	get onDidExpandItem(): Event<ITreeItem> { return this._onDidExpandItem.event; }
+	readonly onDidExpandItem: Event<ITreeItem> = this._onDidExpandItem.event;
 
 	private readonly _onDidCollapseItem: Emitter<ITreeItem> = this._register(new Emitter<ITreeItem>());
-	get onDidCollapseItem(): Event<ITreeItem> { return this._onDidCollapseItem.event; }
+	readonly onDidCollapseItem: Event<ITreeItem> = this._onDidCollapseItem.event;
 
 	private _onDidChangeSelectionAndFocus: Emitter<{ selection: readonly ITreeItem[]; focus: ITreeItem }> = this._register(new Emitter<{ selection: readonly ITreeItem[]; focus: ITreeItem }>());
-	get onDidChangeSelectionAndFocus(): Event<{ selection: readonly ITreeItem[]; focus: ITreeItem }> { return this._onDidChangeSelectionAndFocus.event; }
+	readonly onDidChangeSelectionAndFocus: Event<{ selection: readonly ITreeItem[]; focus: ITreeItem }> = this._onDidChangeSelectionAndFocus.event;
 
 	private readonly _onDidChangeVisibility: Emitter<boolean> = this._register(new Emitter<boolean>());
-	get onDidChangeVisibility(): Event<boolean> { return this._onDidChangeVisibility.event; }
+	readonly onDidChangeVisibility: Event<boolean> = this._onDidChangeVisibility.event;
 
 	private readonly _onDidChangeActions: Emitter<void> = this._register(new Emitter<void>());
-	get onDidChangeActions(): Event<void> { return this._onDidChangeActions.event; }
+	readonly onDidChangeActions: Event<void> = this._onDidChangeActions.event;
 
 	private readonly _onDidChangeWelcomeState: Emitter<void> = this._register(new Emitter<void>());
-	get onDidChangeWelcomeState(): Event<void> { return this._onDidChangeWelcomeState.event; }
+	readonly onDidChangeWelcomeState: Event<void> = this._onDidChangeWelcomeState.event;
 
 	private readonly _onDidChangeTitle: Emitter<string> = this._register(new Emitter<string>());
-	get onDidChangeTitle(): Event<string> { return this._onDidChangeTitle.event; }
+	readonly onDidChangeTitle: Event<string> = this._onDidChangeTitle.event;
 
 	private readonly _onDidChangeDescription: Emitter<string | undefined> = this._register(new Emitter<string | undefined>());
-	get onDidChangeDescription(): Event<string | undefined> { return this._onDidChangeDescription.event; }
+	readonly onDidChangeDescription: Event<string | undefined> = this._onDidChangeDescription.event;
 
 	private readonly _onDidChangeCheckboxState: Emitter<readonly ITreeItem[]> = this._register(new Emitter<readonly ITreeItem[]>());
-	get onDidChangeCheckboxState(): Event<readonly ITreeItem[]> { return this._onDidChangeCheckboxState.event; }
+	readonly onDidChangeCheckboxState: Event<readonly ITreeItem[]> = this._onDidChangeCheckboxState.event;
 
 	private readonly _onDidCompleteRefresh: Emitter<void> = this._register(new Emitter<void>());
 
@@ -460,9 +460,6 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 
 	set title(name: string) {
 		this._title = name;
-		if (this.tree) {
-			this.tree.ariaLabel = this._title;
-		}
 		this._onDidChangeTitle.fire(this._title);
 	}
 
@@ -832,7 +829,6 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 		}
 		return command;
 	}
-
 
 	private onContextMenu(treeMenus: TreeMenus, treeEvent: ITreeContextMenuEvent<ITreeItem>, actionRunner: MultipleSelectionActionRunner): void {
 		this.hoverService.hideHover();
@@ -1306,7 +1302,7 @@ class TreeRenderer extends Disposable implements ITreeRenderer<ITreeItem, FuzzyS
 			} else if (node.tooltip === undefined) {
 				return label;
 			} else if (!isString(node.tooltip)) {
-				return { markdown: node.tooltip, markdownNotSupportedFallback: resource ? undefined : renderAsPlaintext(node.tooltip) }; // Passing undefined as the fallback for a resource falls back to the old native hover
+				return { markdown: node.tooltip, markdownNotSupportedFallback: resource ? undefined : renderMarkdownAsPlaintext(node.tooltip) }; // Passing undefined as the fallback for a resource falls back to the old native hover
 			} else if (node.tooltip !== '') {
 				return node.tooltip;
 			} else {
@@ -1503,12 +1499,10 @@ class TreeRenderer extends Disposable implements ITreeRenderer<ITreeItem, FuzzyS
 	}
 
 	private onDidChangeContext(e: IContextKeyChangeEvent) {
-		const affectsEntireMenuContexts = e.affectsSome(this.menus.getEntireMenuContexts());
-
 		const items: ITreeItem[] = [];
 		for (const [_, elements] of this._renderedElements) {
 			for (const element of elements) {
-				if (affectsEntireMenuContexts || e.affectsSome(this.menus.getElementOverlayContexts(element.original.element))) {
+				if (e.affectsSome(this.menus.getElementOverlayContexts(element.original.element)) || e.affectsSome(this.menus.getEntireMenuContexts())) {
 					items.push(element.original.element);
 				}
 			}

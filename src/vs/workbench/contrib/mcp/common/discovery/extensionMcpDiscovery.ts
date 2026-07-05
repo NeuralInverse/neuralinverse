@@ -7,14 +7,13 @@ import { Disposable, DisposableMap } from '../../../../../base/common/lifecycle.
 import { observableValue } from '../../../../../base/common/observable.js';
 import { isFalsyOrWhitespace } from '../../../../../base/common/strings.js';
 import { localize } from '../../../../../nls.js';
-import { ConfigurationTarget } from '../../../../../platform/configuration/common/configuration.js';
 import { IMcpCollectionContribution } from '../../../../../platform/extensions/common/extensions.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
 import { IExtensionService } from '../../../../services/extensions/common/extensions.js';
 import * as extensionsRegistry from '../../../../services/extensions/common/extensionsRegistry.js';
 import { mcpActivationEvent, mcpContributionPoint } from '../mcpConfiguration.js';
 import { IMcpRegistry } from '../mcpRegistryTypes.js';
-import { extensionPrefixedIdentifier, McpServerDefinition, McpServerTrust } from '../mcpTypes.js';
+import { extensionPrefixedIdentifier, McpServerDefinition } from '../mcpTypes.js';
 import { IMcpDiscovery } from './mcpDiscovery.js';
 
 const cacheKey = 'mcp.extCachedServers';
@@ -25,16 +24,8 @@ interface IServerCacheEntry {
 
 const _mcpExtensionPoint = extensionsRegistry.ExtensionsRegistry.registerExtensionPoint(mcpContributionPoint);
 
-const enum PersistWhen {
-	CollectionExists,
-	Always,
-}
-
 export class ExtensionMcpDiscovery extends Disposable implements IMcpDiscovery {
-
-	readonly fromGallery = false;
-
-	private readonly _extensionCollectionIdsToPersist = new Map<string, PersistWhen>();
+	private readonly _extensionCollectionIdsToPersist = new Set<string>();
 	private readonly cachedServers: { [collcetionId: string]: IServerCacheEntry };
 
 	constructor(
@@ -47,17 +38,13 @@ export class ExtensionMcpDiscovery extends Disposable implements IMcpDiscovery {
 
 		this._register(storageService.onWillSaveState(() => {
 			let updated = false;
-			for (const [collectionId, behavior] of this._extensionCollectionIdsToPersist.entries()) {
+			for (const collectionId of this._extensionCollectionIdsToPersist) {
 				const collection = this._mcpRegistry.collections.get().find(c => c.id === collectionId);
-				let defs = collection?.serverDefinitions.get();
 				if (!collection || collection.lazy) {
-					if (behavior === PersistWhen.Always) {
-						defs = [];
-					} else {
-						continue;
-					}
+					continue;
 				}
 
+				const defs = collection.serverDefinitions.get();
 				if (defs) {
 					updated = true;
 					this.cachedServers[collectionId] = { servers: defs.map(McpServerDefinition.toSerialized) };
@@ -89,26 +76,21 @@ export class ExtensionMcpDiscovery extends Disposable implements IMcpDiscovery {
 
 				for (const coll of collections.value) {
 					const id = extensionPrefixedIdentifier(collections.description.identifier, coll.id);
-					this._extensionCollectionIdsToPersist.set(id, PersistWhen.CollectionExists);
+					this._extensionCollectionIdsToPersist.add(id);
 
 					const serverDefs = this.cachedServers.hasOwnProperty(id) ? this.cachedServers[id].servers : undefined;
 					const dispo = this._mcpRegistry.registerCollection({
 						id,
 						label: coll.label,
 						remoteAuthority: null,
-						trustBehavior: McpServerTrust.Kind.Trusted,
+						isTrustedByDefault: true,
 						scope: StorageScope.WORKSPACE,
-						configTarget: ConfigurationTarget.USER,
 						serverDefinitions: observableValue<McpServerDefinition[]>(this, serverDefs?.map(McpServerDefinition.fromSerialized) || []),
 						lazy: {
 							isCached: !!serverDefs,
-							load: () => this._activateExtensionServers(coll.id).then(() => {
-								// persist (an empty collection) in case the extension doesn't end up publishing one
-								this._extensionCollectionIdsToPersist.set(id, PersistWhen.Always);
-							}),
+							load: () => this._activateExtensionServers(coll.id),
 							removed: () => extensionCollections.deleteAndDispose(id),
-						},
-						source: collections.description.identifier
+						}
 					});
 
 					extensionCollections.set(id, dispo);
@@ -119,7 +101,7 @@ export class ExtensionMcpDiscovery extends Disposable implements IMcpDiscovery {
 
 	private async _activateExtensionServers(collectionId: string): Promise<void> {
 		await this._extensionService.activateByEvent(mcpActivationEvent(collectionId));
-		await Promise.all(this._mcpRegistry.delegates.get()
+		await Promise.all(this._mcpRegistry.delegates
 			.map(r => r.waitForInitialProviderPromises()));
 	}
 

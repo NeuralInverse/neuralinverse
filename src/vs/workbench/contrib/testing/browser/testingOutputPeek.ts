@@ -111,14 +111,16 @@ function messageItReferenceToUri({ result, test, taskIndex, messageIndex }: IMes
 type TestUriWithDocument = ParsedTestUri & { documentUri: URI };
 
 export class TestingPeekOpener extends Disposable implements ITestingPeekOpener {
-	public static readonly ID = 'workbench.contrib.testing.peekOpener';
-
 	declare _serviceBrand: undefined;
 
 	private lastUri?: TestUriWithDocument;
 
 	/** @inheritdoc */
-	public readonly historyVisible: MutableObservableValue<boolean>;
+	public readonly historyVisible = this._register(MutableObservableValue.stored(new StoredValue<boolean>({
+		key: 'testHistoryVisibleInPeek',
+		scope: StorageScope.PROFILE,
+		target: StorageTarget.USER,
+	}, this.storageService), false));
 
 	constructor(
 		@IConfigurationService private readonly configuration: IConfigurationService,
@@ -126,18 +128,13 @@ export class TestingPeekOpener extends Disposable implements ITestingPeekOpener 
 		@ICodeEditorService private readonly codeEditorService: ICodeEditorService,
 		@ITestResultService private readonly testResults: ITestResultService,
 		@ITestService private readonly testService: ITestService,
-		@IStorageService storageService: IStorageService,
+		@IStorageService private readonly storageService: IStorageService,
 		@IViewsService private readonly viewsService: IViewsService,
 		@ICommandService private readonly commandService: ICommandService,
 		@INotificationService private readonly notificationService: INotificationService,
 	) {
 		super();
 		this._register(testResults.onTestChanged(this.openPeekOnFailure, this));
-		this.historyVisible = this._register(MutableObservableValue.stored(new StoredValue<boolean>({
-			key: 'testHistoryVisibleInPeek',
-			scope: StorageScope.PROFILE,
-			target: StorageTarget.USER,
-		}, storageService), false));
 	}
 
 	/** @inheritdoc */

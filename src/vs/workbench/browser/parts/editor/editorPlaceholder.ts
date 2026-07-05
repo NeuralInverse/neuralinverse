@@ -18,7 +18,7 @@ import { Dimension, size, clearNode, $, EventHelper } from '../../../../base/bro
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { DisposableStore, IDisposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
-import { assertReturnsAllDefined } from '../../../../base/common/types.js';
+import { assertAllDefined } from '../../../../base/common/types.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { IWorkspaceContextService, isSingleFolderWorkspaceIdentifier, toWorkspaceIdentifier } from '../../../../platform/workspace/common/workspace.js';
 import { EditorOpenSource, IEditorOptions } from '../../../../platform/editor/common/editor.js';
@@ -30,7 +30,6 @@ import { FileChangeType, FileOperationError, FileOperationResult, IFileService }
 import { toErrorMessage } from '../../../../base/common/errorMessage.js';
 import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { IEditorGroup } from '../../../services/editor/common/editorGroupsService.js';
-import { showWindowLogActionId } from '../../../services/log/common/logConstants.js';
 
 export interface IEditorPlaceholderContents {
 	icon: string;
@@ -91,7 +90,7 @@ export abstract class EditorPlaceholder extends EditorPane {
 	}
 
 	private async renderInput(input: EditorInput, options: IEditorOptions | undefined): Promise<IDisposable> {
-		const [container, scrollbar] = assertReturnsAllDefined(this.container, this.scrollbar);
+		const [container, scrollbar] = assertAllDefined(this.container, this.scrollbar);
 
 		// Reset any previous contents
 		clearNode(container);
@@ -156,7 +155,7 @@ export abstract class EditorPlaceholder extends EditorPane {
 	}
 
 	layout(dimension: Dimension): void {
-		const [container, scrollbar] = assertReturnsAllDefined(this.container, this.scrollbar);
+		const [container, scrollbar] = assertAllDefined(this.container, this.scrollbar);
 
 		// Pass on to Container
 		size(container, dimension.width, dimension.height);
@@ -232,8 +231,7 @@ export class ErrorPlaceholderEditor extends EditorPlaceholder {
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IFileService private readonly fileService: IFileService,
-		@IDialogService private readonly dialogService: IDialogService,
-		@ICommandService private readonly commandService: ICommandService
+		@IDialogService private readonly dialogService: IDialogService
 	) {
 		super(ErrorPlaceholderEditor.ID, group, telemetryService, themeService, storageService);
 	}
@@ -284,10 +282,6 @@ export class ErrorPlaceholderEditor extends EditorPlaceholder {
 				{
 					label: localize('retry', "Try Again"),
 					run: () => this.group.openEditor(input, { ...options, source: EditorOpenSource.USER /* explicit user gesture */ })
-				},
-				{
-					label: localize('showLogs', "Show Logs"),
-					run: () => this.commandService.executeCommand(showWindowLogActionId)
 				}
 			];
 		}

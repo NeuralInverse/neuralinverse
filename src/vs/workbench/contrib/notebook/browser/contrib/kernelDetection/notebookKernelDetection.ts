@@ -67,7 +67,7 @@ class NotebookKernelDetection extends Disposable implements IWorkbenchContributi
 			}
 		}));
 
-		let timer: Timeout | null = null;
+		let timer: any = null;
 
 		this._localDisposableStore.add(this._extensionService.onDidChangeExtensionsStatus(() => {
 			if (timer) {

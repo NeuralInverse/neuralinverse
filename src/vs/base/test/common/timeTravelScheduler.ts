@@ -356,11 +356,8 @@ class SimplePriorityQueue<T> implements PriorityQueue<T> {
 	}
 
 	remove(value: T): void {
-		const idx = this.items.indexOf(value);
-		if (idx !== -1) {
-			this.items.splice(idx, 1);
-			this.isSorted = false;
-		}
+		this.items.splice(this.items.indexOf(value), 1);
+		this.isSorted = false;
 	}
 
 	removeMin(): T | undefined {

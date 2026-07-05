@@ -11,7 +11,9 @@ import Severity from '../../../../base/common/severity.js';
 import { Dialog, IDialogResult } from '../../../../base/browser/ui/dialog/dialog.js';
 import { DisposableStore } from '../../../../base/common/lifecycle.js';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
 import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
+import { fromNow } from '../../../../base/common/date.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { MarkdownRenderer, openLinkFromMarkdown } from '../../../../editor/browser/widget/markdownRenderer/browser/markdownRenderer.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
@@ -35,6 +37,7 @@ export class BrowserDialogHandler extends AbstractDialogHandler {
 		@ILayoutService private readonly layoutService: ILayoutService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IInstantiationService instantiationService: IInstantiationService,
+		@IProductService private readonly productService: IProductService,
 		@IClipboardService private readonly clipboardService: IClipboardService,
 		@IOpenerService private readonly openerService: IOpenerService
 	) {
@@ -73,21 +76,33 @@ export class BrowserDialogHandler extends AbstractDialogHandler {
 		return { confirmed: button === 0, checkboxChecked, values };
 	}
 
-	async about(title: string, details: string, detailsToCopy: string): Promise<void> {
+	async about(): Promise<void> {
+		const detailString = (useAgo: boolean): string => {
+			return localize('aboutDetail',
+				"Version: {0}\nCommit: {1}\nDate: {2}\nBrowser: {3}",
+				this.productService.version || 'Unknown',
+				this.productService.commit || 'Unknown',
+				this.productService.date ? `${this.productService.date}${useAgo ? ' (' + fromNow(new Date(this.productService.date), true) + ')' : ''}` : 'Unknown',
+				navigator.userAgent
+			);
+		};
+
+		const detail = detailString(true);
+		const detailToCopy = detailString(false);
 
 		const { button } = await this.doShow(
 			Severity.Info,
-			title,
+			this.productService.nameLong,
 			[
 				localize({ key: 'copy', comment: ['&& denotes a mnemonic'] }, "&&Copy"),
 				localize('ok', "OK")
 			],
-			details,
+			detail,
 			1
 		);
 
 		if (button === 0) {
-			this.clipboardService.writeText(detailsToCopy);
+			this.clipboardService.writeText(detailToCopy);
 		}
 	}
 
@@ -97,13 +112,20 @@ export class BrowserDialogHandler extends AbstractDialogHandler {
 		const renderBody = customOptions ? (parent: HTMLElement) => {
 			parent.classList.add(...(customOptions.classes || []));
 			customOptions.markdownDetails?.forEach(markdownDetail => {
-				const result = dialogDisposables.add(this.markdownRenderer.render(markdownDetail.markdown, {
-					actionHandler: markdownDetail.actionHandler || ((link, mdStr) => {
-						return openLinkFromMarkdown(this.openerService, link, mdStr.isTrusted, true /* skip URL validation to prevent another dialog from showing which is unsupported */);
-					}),
-				}));
+				const result = this.markdownRenderer.render(markdownDetail.markdown, {
+					actionHandler: {
+						callback: link => {
+							if (markdownDetail.dismissOnLinkClick) {
+								dialog.dispose();
+							}
+							return openLinkFromMarkdown(this.openerService, link, markdownDetail.markdown.isTrusted, true /* skip URL validation to prevent another dialog from showing which is unsupported */);
+						},
+						disposables: dialogDisposables
+					}
+				});
 				parent.appendChild(result.element);
 				result.element.classList.add(...(markdownDetail.classes || []));
+				dialogDisposables.add(result);
 			});
 		} : undefined;
 
@@ -118,7 +140,7 @@ export class BrowserDialogHandler extends AbstractDialogHandler {
 				renderBody,
 				icon: customOptions?.icon,
 				disableCloseAction: customOptions?.disableCloseAction,
-				buttonOptions: customOptions?.buttonDetails?.map(detail => ({ sublabel: detail })),
+				buttonDetails: customOptions?.buttonDetails,
 				checkboxLabel: checkbox?.label,
 				checkboxChecked: checkbox?.checked,
 				inputs

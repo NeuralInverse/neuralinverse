@@ -32,7 +32,7 @@ declare module 'vscode' {
 		range: Range | undefined;
 		comments: readonly Comment[];
 		collapsibleState: CommentThreadCollapsibleState;
-		canReply: boolean | CommentAuthorInformation;
+		canReply: boolean;
 		contextValue?: string;
 		label?: string;
 		dispose(): void;
