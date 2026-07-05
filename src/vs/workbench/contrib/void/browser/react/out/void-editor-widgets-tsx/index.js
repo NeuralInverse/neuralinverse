@@ -387,6 +387,8 @@ var require_react_development = __commonJS({
         this.refs = emptyObject;
         this.updater = updater || ReactNoopUpdateQueue;
       }
+      function noop() {
+      }
       function testStringCoercion(value) {
         return "" + value;
       }
@@ -435,7 +437,7 @@ var require_react_development = __commonJS({
             case REACT_PORTAL_TYPE:
               return "Portal";
             case REACT_CONTEXT_TYPE:
-              return (type.displayName || "Context") + ".Provider";
+              return type.displayName || "Context";
             case REACT_CONSUMER_TYPE:
               return (type._context.displayName || "Context") + ".Consumer";
             case REACT_FORWARD_REF_TYPE:
@@ -501,8 +503,8 @@ var require_react_development = __commonJS({
         componentName = this.props.ref;
         return void 0 !== componentName ? componentName : null;
       }
-      function ReactElement(type, key, self, source, owner, props, debugStack, debugTask) {
-        self = props.ref;
+      function ReactElement(type, key, props, owner, debugStack, debugTask) {
+        var refProp = props.ref;
         type = {
           $$typeof: REACT_ELEMENT_TYPE,
           type,
@@ -510,7 +512,7 @@ var require_react_development = __commonJS({
           props,
           _owner: owner
         };
-        null !== (void 0 !== self ? self : null) ? Object.defineProperty(type, "ref", {
+        null !== (void 0 !== refProp ? refProp : null) ? Object.defineProperty(type, "ref", {
           enumerable: false,
           get: elementRefGetterWithDeprecationWarning
         }) : Object.defineProperty(type, "ref", { enumerable: false, value: null });
@@ -546,15 +548,16 @@ var require_react_development = __commonJS({
         newKey = ReactElement(
           oldElement.type,
           newKey,
-          void 0,
-          void 0,
-          oldElement._owner,
           oldElement.props,
+          oldElement._owner,
           oldElement._debugStack,
           oldElement._debugTask
         );
         oldElement._store && (newKey._store.validated = oldElement._store.validated);
         return newKey;
+      }
+      function validateChildKeys(node) {
+        isValidElement(node) ? node._store && (node._store.validated = 1) : "object" === typeof node && null !== node && node.$$typeof === REACT_LAZY_TYPE && ("fulfilled" === node._payload.status ? isValidElement(node._payload.value) && node._payload.value._store && (node._payload.value._store.validated = 1) : node._store && (node._store.validated = 1));
       }
       function isValidElement(object) {
         return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE;
@@ -568,8 +571,6 @@ var require_react_development = __commonJS({
       function getElementKey(element, index) {
         return "object" === typeof element && null !== element && null != element.key ? (checkKeyStringCoercion(element.key), escape("" + element.key)) : index.toString(36);
       }
-      function noop$1() {
-      }
       function resolveThenable(thenable) {
         switch (thenable.status) {
           case "fulfilled":
@@ -577,7 +578,7 @@ var require_react_development = __commonJS({
           case "rejected":
             throw thenable.reason;
           default:
-            switch ("string" === typeof thenable.status ? thenable.then(noop$1, noop$1) : (thenable.status = "pending", thenable.then(
+            switch ("string" === typeof thenable.status ? thenable.then(noop, noop) : (thenable.status = "pending", thenable.then(
               function(fulfilledValue) {
                 "pending" === thenable.status && (thenable.status = "fulfilled", thenable.value = fulfilledValue);
               },
@@ -684,28 +685,46 @@ var require_react_development = __commonJS({
       }
       function lazyInitializer(payload) {
         if (-1 === payload._status) {
-          var ctor = payload._result;
-          ctor = ctor();
-          ctor.then(
+          var ioInfo = payload._ioInfo;
+          null != ioInfo && (ioInfo.start = ioInfo.end = performance.now());
+          ioInfo = payload._result;
+          var thenable = ioInfo();
+          thenable.then(
             function(moduleObject) {
-              if (0 === payload._status || -1 === payload._status)
-                payload._status = 1, payload._result = moduleObject;
+              if (0 === payload._status || -1 === payload._status) {
+                payload._status = 1;
+                payload._result = moduleObject;
+                var _ioInfo = payload._ioInfo;
+                null != _ioInfo && (_ioInfo.end = performance.now());
+                void 0 === thenable.status && (thenable.status = "fulfilled", thenable.value = moduleObject);
+              }
             },
             function(error) {
-              if (0 === payload._status || -1 === payload._status)
-                payload._status = 2, payload._result = error;
+              if (0 === payload._status || -1 === payload._status) {
+                payload._status = 2;
+                payload._result = error;
+                var _ioInfo2 = payload._ioInfo;
+                null != _ioInfo2 && (_ioInfo2.end = performance.now());
+                void 0 === thenable.status && (thenable.status = "rejected", thenable.reason = error);
+              }
             }
           );
-          -1 === payload._status && (payload._status = 0, payload._result = ctor);
+          ioInfo = payload._ioInfo;
+          if (null != ioInfo) {
+            ioInfo.value = thenable;
+            var displayName = thenable.displayName;
+            "string" === typeof displayName && (ioInfo.name = displayName);
+          }
+          -1 === payload._status && (payload._status = 0, payload._result = thenable);
         }
         if (1 === payload._status)
-          return ctor = payload._result, void 0 === ctor && console.error(
+          return ioInfo = payload._result, void 0 === ioInfo && console.error(
             "lazy: Expected the result of a dynamic import() call. Instead received: %s\n\nYour code should look like: \n  const MyComponent = lazy(() => import('./MyComponent'))\n\nDid you accidentally put curly braces around the import?",
-            ctor
-          ), "default" in ctor || console.error(
+            ioInfo
+          ), "default" in ioInfo || console.error(
             "lazy: Expected the result of a dynamic import() call. Instead received: %s\n\nYour code should look like: \n  const MyComponent = lazy(() => import('./MyComponent'))",
-            ctor
-          ), ctor.default;
+            ioInfo
+          ), ioInfo.default;
         throw payload._result;
       }
       function resolveDispatcher() {
@@ -715,7 +734,8 @@ var require_react_development = __commonJS({
         );
         return dispatcher;
       }
-      function noop() {
+      function releaseAsyncTransition() {
+        ReactSharedInternals.asyncTransitions--;
       }
       function enqueueTask(task) {
         if (null === enqueueTaskImpl)
@@ -791,8 +811,7 @@ var require_react_development = __commonJS({
         }
       }
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler");
-      var REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, didWarnStateUpdateForUnmountedComponent = {}, ReactNoopUpdateQueue = {
+      var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator, didWarnStateUpdateForUnmountedComponent = {}, ReactNoopUpdateQueue = {
         isMounted: function() {
           return false;
         },
@@ -827,7 +846,7 @@ var require_react_development = __commonJS({
           "replaceState",
           "Refactor your code to use setState instead (see https://github.com/facebook/react/issues/3236)."
         ]
-      }, fnName;
+      };
       for (fnName in deprecatedAPIs)
         deprecatedAPIs.hasOwnProperty(fnName) && defineDeprecationWarning(fnName, deprecatedAPIs[fnName]);
       ComponentDummy.prototype = Component.prototype;
@@ -840,8 +859,8 @@ var require_react_development = __commonJS({
         A: null,
         T: null,
         S: null,
-        V: null,
         actQueue: null,
+        asyncTransitions: 0,
         isBatchingLegacy: false,
         didScheduleLegacyUpdate: false,
         didUsePromise: false,
@@ -852,13 +871,16 @@ var require_react_development = __commonJS({
         return null;
       };
       deprecatedAPIs = {
-        "react-stack-bottom-frame": function(callStackForError) {
+        react_stack_bottom_frame: function(callStackForError) {
           return callStackForError();
         }
       };
       var specialPropKeyWarningShown, didWarnAboutOldJSXRuntime;
       var didWarnAboutElementRef = {};
-      var unknownOwnerDebugStack = deprecatedAPIs["react-stack-bottom-frame"].bind(deprecatedAPIs, UnknownOwner)();
+      var unknownOwnerDebugStack = deprecatedAPIs.react_stack_bottom_frame.bind(
+        deprecatedAPIs,
+        UnknownOwner
+      )();
       var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
       var didWarnAboutMaps = false, userProvidedKeyEscapeRegex = /\/+/g, reportGlobalError = "function" === typeof reportError ? reportError : function(error) {
         if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
@@ -885,7 +907,7 @@ var require_react_development = __commonJS({
           return resolveDispatcher().useMemoCache(size);
         }
       });
-      exports.Children = {
+      var fnName = {
         map: mapChildren,
         forEach: function(children, forEachFunc, forEachContext) {
           mapChildren(
@@ -916,6 +938,8 @@ var require_react_development = __commonJS({
           return children;
         }
       };
+      exports.Activity = REACT_ACTIVITY_TYPE;
+      exports.Children = fnName;
       exports.Component = Component;
       exports.Fragment = REACT_FRAGMENT_TYPE;
       exports.Profiler = REACT_PROFILER_TYPE;
@@ -1006,6 +1030,9 @@ var require_react_development = __commonJS({
           return fn.apply(null, arguments);
         };
       };
+      exports.cacheSignal = function() {
+        return null;
+      };
       exports.captureOwnerStack = function() {
         var getCurrentStack = ReactSharedInternals.getCurrentStack;
         return null === getCurrentStack ? null : getCurrentStack();
@@ -1044,15 +1071,13 @@ var require_react_development = __commonJS({
         props = ReactElement(
           element.type,
           key,
-          void 0,
-          void 0,
-          owner,
           props,
+          owner,
           element._debugStack,
           element._debugTask
         );
         for (key = 2; key < arguments.length; key++)
-          owner = arguments[key], isValidElement(owner) && owner._store && (owner._store.validated = 1);
+          validateChildKeys(arguments[key]);
         return props;
       };
       exports.createContext = function(defaultValue) {
@@ -1074,16 +1099,14 @@ var require_react_development = __commonJS({
         return defaultValue;
       };
       exports.createElement = function(type, config, children) {
-        for (var i = 2; i < arguments.length; i++) {
-          var node = arguments[i];
-          isValidElement(node) && node._store && (node._store.validated = 1);
-        }
+        for (var i = 2; i < arguments.length; i++)
+          validateChildKeys(arguments[i]);
         i = {};
-        node = null;
+        var key = null;
         if (null != config)
           for (propName in didWarnAboutOldJSXRuntime || !("__self" in config) || "key" in config || (didWarnAboutOldJSXRuntime = true, console.warn(
             "Your app (or one of its dependencies) is using an outdated JSX transform. Update to the modern JSX transform for faster performance: https://react.dev/link/new-jsx-transform"
-          )), hasValidKey(config) && (checkKeyStringCoercion(config.key), node = "" + config.key), config)
+          )), hasValidKey(config) && (checkKeyStringCoercion(config.key), key = "" + config.key), config)
             hasOwnProperty.call(config, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (i[propName] = config[propName]);
         var childrenLength = arguments.length - 2;
         if (1 === childrenLength) i.children = children;
@@ -1096,18 +1119,16 @@ var require_react_development = __commonJS({
         if (type && type.defaultProps)
           for (propName in childrenLength = type.defaultProps, childrenLength)
             void 0 === i[propName] && (i[propName] = childrenLength[propName]);
-        node && defineKeyPropWarningGetter(
+        key && defineKeyPropWarningGetter(
           i,
           "function" === typeof type ? type.displayName || type.name || "Unknown" : type
         );
         var propName = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
         return ReactElement(
           type,
-          node,
-          void 0,
-          void 0,
-          getOwner(),
+          key,
           i,
+          getOwner(),
           propName ? Error("react-stack-top-frame") : unknownOwnerDebugStack,
           propName ? createTask(getTaskName(type)) : unknownOwnerDebugTask
         );
@@ -1146,11 +1167,23 @@ var require_react_development = __commonJS({
       };
       exports.isValidElement = isValidElement;
       exports.lazy = function(ctor) {
-        return {
+        ctor = { _status: -1, _result: ctor };
+        var lazyType = {
           $$typeof: REACT_LAZY_TYPE,
-          _payload: { _status: -1, _result: ctor },
+          _payload: ctor,
           _init: lazyInitializer
+        }, ioInfo = {
+          name: "lazy",
+          start: -1,
+          end: -1,
+          value: null,
+          owner: null,
+          debugStack: Error("react-stack-top-frame"),
+          debugTask: console.createTask ? console.createTask("lazy()") : null
         };
+        ctor._ioInfo = ioInfo;
+        lazyType._debugInfo = [{ awaited: ioInfo }];
+        return lazyType;
       };
       exports.memo = function(type, compare) {
         null == type && console.error(
@@ -1178,18 +1211,20 @@ var require_react_development = __commonJS({
       };
       exports.startTransition = function(scope) {
         var prevTransition = ReactSharedInternals.T, currentTransition = {};
-        ReactSharedInternals.T = currentTransition;
         currentTransition._updatedFibers = /* @__PURE__ */ new Set();
+        ReactSharedInternals.T = currentTransition;
         try {
           var returnValue = scope(), onStartTransitionFinish = ReactSharedInternals.S;
           null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
-          "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop, reportGlobalError);
+          "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && (ReactSharedInternals.asyncTransitions++, returnValue.then(releaseAsyncTransition, releaseAsyncTransition), returnValue.then(noop, reportGlobalError));
         } catch (error) {
           reportGlobalError(error);
         } finally {
           null === prevTransition && currentTransition._updatedFibers && (scope = currentTransition._updatedFibers.size, currentTransition._updatedFibers.clear(), 10 < scope && console.warn(
             "Detected a large number of updates inside startTransition. If this is due to a subscription please re-write it to use React provided hooks. Otherwise concurrent mode guarantees are off the table."
-          )), ReactSharedInternals.T = prevTransition;
+          )), null !== prevTransition && null !== currentTransition.types && (null !== prevTransition.types && prevTransition.types !== currentTransition.types && console.error(
+            "We expected inner Transitions to have transferred the outer types set and that you cannot add to the outer Transition while inside the inner.This is a bug in React."
+          ), prevTransition.types = currentTransition.types), ReactSharedInternals.T = prevTransition;
         }
       };
       exports.unstable_useCacheRefresh = function() {
@@ -1221,16 +1256,14 @@ var require_react_development = __commonJS({
       exports.useDeferredValue = function(value, initialValue) {
         return resolveDispatcher().useDeferredValue(value, initialValue);
       };
-      exports.useEffect = function(create, createDeps, update) {
+      exports.useEffect = function(create, deps) {
         null == create && console.warn(
           "React Hook useEffect requires an effect callback. Did you forget to pass a callback to the hook?"
         );
-        var dispatcher = resolveDispatcher();
-        if ("function" === typeof update)
-          throw Error(
-            "useEffect CRUD overload is not enabled in this build of React."
-          );
-        return dispatcher.useEffect(create, createDeps);
+        return resolveDispatcher().useEffect(create, deps);
+      };
+      exports.useEffectEvent = function(callback) {
+        return resolveDispatcher().useEffectEvent(callback);
       };
       exports.useId = function() {
         return resolveDispatcher().useId();
@@ -1275,7 +1308,7 @@ var require_react_development = __commonJS({
       exports.useTransition = function() {
         return resolveDispatcher().useTransition();
       };
-      exports.version = "19.1.0";
+      exports.version = "19.2.7";
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
     })();
   }
@@ -1527,7 +1560,7 @@ var require_react_dom_development = __commonJS({
       exports.useFormStatus = function() {
         return resolveDispatcher().useHostTransitionStatus();
       };
-      exports.version = "19.1.0";
+      exports.version = "19.2.7";
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
     })();
   }
@@ -1594,8 +1627,6 @@ var require_react_dom_client_development = __commonJS({
       function shouldErrorImpl() {
         return null;
       }
-      function warnForMissingKey() {
-      }
       function warnInvalidHookAccess() {
         console.error(
           "Do not call Hooks inside useEffect(...), useMemo(...), or other built-in Hooks. You can only call Hooks at the top level of your React function. For more information, see https://react.dev/link/rules-of-hooks"
@@ -1606,7 +1637,9 @@ var require_react_dom_client_development = __commonJS({
           "Context can only be read while React is rendering. In classes, you can read it in the render method or getDerivedStateFromProps. In function components, you can read it directly in the function body, but not inside Hooks like useReducer() or useMemo()."
         );
       }
-      function noop$2() {
+      function noop() {
+      }
+      function warnForMissingKey() {
       }
       function setToSortedString(set) {
         var array = [];
@@ -1656,6 +1689,14 @@ var require_react_dom_client_development = __commonJS({
           var suspenseState = fiber.memoizedState;
           null === suspenseState && (fiber = fiber.alternate, null !== fiber && (suspenseState = fiber.memoizedState));
           if (null !== suspenseState) return suspenseState.dehydrated;
+        }
+        return null;
+      }
+      function getActivityInstanceFromFiber(fiber) {
+        if (31 === fiber.tag) {
+          var activityState = fiber.memoizedState;
+          null === activityState && (fiber = fiber.alternate, null !== fiber && (activityState = fiber.memoizedState));
+          if (null !== activityState) return activityState.dehydrated;
         }
         return null;
       }
@@ -1781,7 +1822,7 @@ var require_react_dom_client_development = __commonJS({
             case REACT_PORTAL_TYPE:
               return "Portal";
             case REACT_CONTEXT_TYPE:
-              return (type.displayName || "Context") + ".Provider";
+              return type.displayName || "Context";
             case REACT_CONSUMER_TYPE:
               return (type._context.displayName || "Context") + ".Consumer";
             case REACT_FORWARD_REF_TYPE:
@@ -1814,7 +1855,7 @@ var require_react_dom_client_development = __commonJS({
           case 9:
             return (type._context.displayName || "Context") + ".Consumer";
           case 10:
-            return (type.displayName || "Context") + ".Provider";
+            return type.displayName || "Context";
           case 18:
             return "DehydratedFragment";
           case 11:
@@ -1943,6 +1984,326 @@ var require_react_dom_client_development = __commonJS({
         contextFiberStackCursor.current === fiber && (pop(contextStackCursor, fiber), pop(contextFiberStackCursor, fiber));
         hostTransitionProviderCursor.current === fiber && (pop(hostTransitionProviderCursor, fiber), HostTransitionContext._currentValue = NotPendingTransition);
       }
+      function disabledLog() {
+      }
+      function disableLogs() {
+        if (0 === disabledDepth) {
+          prevLog = console.log;
+          prevInfo = console.info;
+          prevWarn = console.warn;
+          prevError = console.error;
+          prevGroup = console.group;
+          prevGroupCollapsed = console.groupCollapsed;
+          prevGroupEnd = console.groupEnd;
+          var props = {
+            configurable: true,
+            enumerable: true,
+            value: disabledLog,
+            writable: true
+          };
+          Object.defineProperties(console, {
+            info: props,
+            log: props,
+            warn: props,
+            error: props,
+            group: props,
+            groupCollapsed: props,
+            groupEnd: props
+          });
+        }
+        disabledDepth++;
+      }
+      function reenableLogs() {
+        disabledDepth--;
+        if (0 === disabledDepth) {
+          var props = { configurable: true, enumerable: true, writable: true };
+          Object.defineProperties(console, {
+            log: assign({}, props, { value: prevLog }),
+            info: assign({}, props, { value: prevInfo }),
+            warn: assign({}, props, { value: prevWarn }),
+            error: assign({}, props, { value: prevError }),
+            group: assign({}, props, { value: prevGroup }),
+            groupCollapsed: assign({}, props, { value: prevGroupCollapsed }),
+            groupEnd: assign({}, props, { value: prevGroupEnd })
+          });
+        }
+        0 > disabledDepth && console.error(
+          "disabledDepth fell below zero. This is a bug in React. Please file an issue."
+        );
+      }
+      function formatOwnerStack(error) {
+        var prevPrepareStackTrace = Error.prepareStackTrace;
+        Error.prepareStackTrace = void 0;
+        error = error.stack;
+        Error.prepareStackTrace = prevPrepareStackTrace;
+        error.startsWith("Error: react-stack-top-frame\n") && (error = error.slice(29));
+        prevPrepareStackTrace = error.indexOf("\n");
+        -1 !== prevPrepareStackTrace && (error = error.slice(prevPrepareStackTrace + 1));
+        prevPrepareStackTrace = error.indexOf("react_stack_bottom_frame");
+        -1 !== prevPrepareStackTrace && (prevPrepareStackTrace = error.lastIndexOf(
+          "\n",
+          prevPrepareStackTrace
+        ));
+        if (-1 !== prevPrepareStackTrace)
+          error = error.slice(0, prevPrepareStackTrace);
+        else return "";
+        return error;
+      }
+      function describeBuiltInComponentFrame(name) {
+        if (void 0 === prefix)
+          try {
+            throw Error();
+          } catch (x) {
+            var match = x.stack.trim().match(/\n( *(at )?)/);
+            prefix = match && match[1] || "";
+            suffix = -1 < x.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < x.stack.indexOf("@") ? "@unknown:0:0" : "";
+          }
+        return "\n" + prefix + name + suffix;
+      }
+      function describeNativeComponentFrame(fn, construct) {
+        if (!fn || reentry) return "";
+        var frame = componentFrameCache.get(fn);
+        if (void 0 !== frame) return frame;
+        reentry = true;
+        frame = Error.prepareStackTrace;
+        Error.prepareStackTrace = void 0;
+        var previousDispatcher2 = null;
+        previousDispatcher2 = ReactSharedInternals.H;
+        ReactSharedInternals.H = null;
+        disableLogs();
+        try {
+          var RunInRootFrame = {
+            DetermineComponentFrameRoot: function() {
+              try {
+                if (construct) {
+                  var Fake = function() {
+                    throw Error();
+                  };
+                  Object.defineProperty(Fake.prototype, "props", {
+                    set: function() {
+                      throw Error();
+                    }
+                  });
+                  if ("object" === typeof Reflect && Reflect.construct) {
+                    try {
+                      Reflect.construct(Fake, []);
+                    } catch (x) {
+                      var control = x;
+                    }
+                    Reflect.construct(fn, [], Fake);
+                  } else {
+                    try {
+                      Fake.call();
+                    } catch (x$0) {
+                      control = x$0;
+                    }
+                    fn.call(Fake.prototype);
+                  }
+                } else {
+                  try {
+                    throw Error();
+                  } catch (x$1) {
+                    control = x$1;
+                  }
+                  (Fake = fn()) && "function" === typeof Fake.catch && Fake.catch(function() {
+                  });
+                }
+              } catch (sample) {
+                if (sample && control && "string" === typeof sample.stack)
+                  return [sample.stack, control.stack];
+              }
+              return [null, null];
+            }
+          };
+          RunInRootFrame.DetermineComponentFrameRoot.displayName = "DetermineComponentFrameRoot";
+          var namePropDescriptor = Object.getOwnPropertyDescriptor(
+            RunInRootFrame.DetermineComponentFrameRoot,
+            "name"
+          );
+          namePropDescriptor && namePropDescriptor.configurable && Object.defineProperty(
+            RunInRootFrame.DetermineComponentFrameRoot,
+            "name",
+            { value: "DetermineComponentFrameRoot" }
+          );
+          var _RunInRootFrame$Deter = RunInRootFrame.DetermineComponentFrameRoot(), sampleStack = _RunInRootFrame$Deter[0], controlStack = _RunInRootFrame$Deter[1];
+          if (sampleStack && controlStack) {
+            var sampleLines = sampleStack.split("\n"), controlLines = controlStack.split("\n");
+            for (_RunInRootFrame$Deter = namePropDescriptor = 0; namePropDescriptor < sampleLines.length && !sampleLines[namePropDescriptor].includes(
+              "DetermineComponentFrameRoot"
+            ); )
+              namePropDescriptor++;
+            for (; _RunInRootFrame$Deter < controlLines.length && !controlLines[_RunInRootFrame$Deter].includes(
+              "DetermineComponentFrameRoot"
+            ); )
+              _RunInRootFrame$Deter++;
+            if (namePropDescriptor === sampleLines.length || _RunInRootFrame$Deter === controlLines.length)
+              for (namePropDescriptor = sampleLines.length - 1, _RunInRootFrame$Deter = controlLines.length - 1; 1 <= namePropDescriptor && 0 <= _RunInRootFrame$Deter && sampleLines[namePropDescriptor] !== controlLines[_RunInRootFrame$Deter]; )
+                _RunInRootFrame$Deter--;
+            for (; 1 <= namePropDescriptor && 0 <= _RunInRootFrame$Deter; namePropDescriptor--, _RunInRootFrame$Deter--)
+              if (sampleLines[namePropDescriptor] !== controlLines[_RunInRootFrame$Deter]) {
+                if (1 !== namePropDescriptor || 1 !== _RunInRootFrame$Deter) {
+                  do
+                    if (namePropDescriptor--, _RunInRootFrame$Deter--, 0 > _RunInRootFrame$Deter || sampleLines[namePropDescriptor] !== controlLines[_RunInRootFrame$Deter]) {
+                      var _frame = "\n" + sampleLines[namePropDescriptor].replace(
+                        " at new ",
+                        " at "
+                      );
+                      fn.displayName && _frame.includes("<anonymous>") && (_frame = _frame.replace("<anonymous>", fn.displayName));
+                      "function" === typeof fn && componentFrameCache.set(fn, _frame);
+                      return _frame;
+                    }
+                  while (1 <= namePropDescriptor && 0 <= _RunInRootFrame$Deter);
+                }
+                break;
+              }
+          }
+        } finally {
+          reentry = false, ReactSharedInternals.H = previousDispatcher2, reenableLogs(), Error.prepareStackTrace = frame;
+        }
+        sampleLines = (sampleLines = fn ? fn.displayName || fn.name : "") ? describeBuiltInComponentFrame(sampleLines) : "";
+        "function" === typeof fn && componentFrameCache.set(fn, sampleLines);
+        return sampleLines;
+      }
+      function describeFiber(fiber, childFiber) {
+        switch (fiber.tag) {
+          case 26:
+          case 27:
+          case 5:
+            return describeBuiltInComponentFrame(fiber.type);
+          case 16:
+            return describeBuiltInComponentFrame("Lazy");
+          case 13:
+            return fiber.child !== childFiber && null !== childFiber ? describeBuiltInComponentFrame("Suspense Fallback") : describeBuiltInComponentFrame("Suspense");
+          case 19:
+            return describeBuiltInComponentFrame("SuspenseList");
+          case 0:
+          case 15:
+            return describeNativeComponentFrame(fiber.type, false);
+          case 11:
+            return describeNativeComponentFrame(fiber.type.render, false);
+          case 1:
+            return describeNativeComponentFrame(fiber.type, true);
+          case 31:
+            return describeBuiltInComponentFrame("Activity");
+          default:
+            return "";
+        }
+      }
+      function getStackByFiberInDevAndProd(workInProgress2) {
+        try {
+          var info = "", previous = null;
+          do {
+            info += describeFiber(workInProgress2, previous);
+            var debugInfo = workInProgress2._debugInfo;
+            if (debugInfo)
+              for (var i = debugInfo.length - 1; 0 <= i; i--) {
+                var entry = debugInfo[i];
+                if ("string" === typeof entry.name) {
+                  var JSCompiler_temp_const = info;
+                  a: {
+                    var name = entry.name, env = entry.env, location = entry.debugLocation;
+                    if (null != location) {
+                      var childStack = formatOwnerStack(location), idx = childStack.lastIndexOf("\n"), lastLine = -1 === idx ? childStack : childStack.slice(idx + 1);
+                      if (-1 !== lastLine.indexOf(name)) {
+                        var JSCompiler_inline_result = "\n" + lastLine;
+                        break a;
+                      }
+                    }
+                    JSCompiler_inline_result = describeBuiltInComponentFrame(
+                      name + (env ? " [" + env + "]" : "")
+                    );
+                  }
+                  info = JSCompiler_temp_const + JSCompiler_inline_result;
+                }
+              }
+            previous = workInProgress2;
+            workInProgress2 = workInProgress2.return;
+          } while (workInProgress2);
+          return info;
+        } catch (x) {
+          return "\nError generating stack: " + x.message + "\n" + x.stack;
+        }
+      }
+      function describeFunctionComponentFrameWithoutLineNumber(fn) {
+        return (fn = fn ? fn.displayName || fn.name : "") ? describeBuiltInComponentFrame(fn) : "";
+      }
+      function getCurrentFiberOwnerNameInDevOrNull() {
+        if (null === current) return null;
+        var owner = current._debugOwner;
+        return null != owner ? getComponentNameFromOwner(owner) : null;
+      }
+      function getCurrentFiberStackInDev() {
+        if (null === current) return "";
+        var workInProgress2 = current;
+        try {
+          var info = "";
+          6 === workInProgress2.tag && (workInProgress2 = workInProgress2.return);
+          switch (workInProgress2.tag) {
+            case 26:
+            case 27:
+            case 5:
+              info += describeBuiltInComponentFrame(workInProgress2.type);
+              break;
+            case 13:
+              info += describeBuiltInComponentFrame("Suspense");
+              break;
+            case 19:
+              info += describeBuiltInComponentFrame("SuspenseList");
+              break;
+            case 31:
+              info += describeBuiltInComponentFrame("Activity");
+              break;
+            case 30:
+            case 0:
+            case 15:
+            case 1:
+              workInProgress2._debugOwner || "" !== info || (info += describeFunctionComponentFrameWithoutLineNumber(
+                workInProgress2.type
+              ));
+              break;
+            case 11:
+              workInProgress2._debugOwner || "" !== info || (info += describeFunctionComponentFrameWithoutLineNumber(
+                workInProgress2.type.render
+              ));
+          }
+          for (; workInProgress2; )
+            if ("number" === typeof workInProgress2.tag) {
+              var fiber = workInProgress2;
+              workInProgress2 = fiber._debugOwner;
+              var debugStack = fiber._debugStack;
+              if (workInProgress2 && debugStack) {
+                var formattedStack = formatOwnerStack(debugStack);
+                "" !== formattedStack && (info += "\n" + formattedStack);
+              }
+            } else if (null != workInProgress2.debugStack) {
+              var ownerStack = workInProgress2.debugStack;
+              (workInProgress2 = workInProgress2.owner) && ownerStack && (info += "\n" + formatOwnerStack(ownerStack));
+            } else break;
+          var JSCompiler_inline_result = info;
+        } catch (x) {
+          JSCompiler_inline_result = "\nError generating stack: " + x.message + "\n" + x.stack;
+        }
+        return JSCompiler_inline_result;
+      }
+      function runWithFiberInDEV(fiber, callback, arg0, arg1, arg2, arg3, arg4) {
+        var previousFiber = current;
+        setCurrentFiber(fiber);
+        try {
+          return null !== fiber && fiber._debugTask ? fiber._debugTask.run(
+            callback.bind(null, arg0, arg1, arg2, arg3, arg4)
+          ) : callback(arg0, arg1, arg2, arg3, arg4);
+        } finally {
+          setCurrentFiber(previousFiber);
+        }
+        throw Error(
+          "runWithFiberInDEV should never be called in production. This is a bug in React."
+        );
+      }
+      function setCurrentFiber(fiber) {
+        ReactSharedInternals.getCurrentStack = null === fiber ? null : getCurrentFiberStackInDev;
+        isRendering = false;
+        current = fiber;
+      }
       function typeName(value) {
         return "function" === typeof Symbol && Symbol.toStringTag && value[Symbol.toStringTag] || value.constructor.name || "Object";
       }
@@ -1990,7 +2351,7 @@ var require_react_dom_client_development = __commonJS({
         try {
           rendererID = hook.inject(internals), injectedHook = hook;
         } catch (err) {
-          console.error("React instrumentation encountered an error: %s.", err);
+          console.error("React instrumentation encountered an error: %o.", err);
         }
         return hook.checkDCE ? true : false;
       }
@@ -2001,51 +2362,14 @@ var require_react_dom_client_development = __commonJS({
             injectedHook.setStrictMode(rendererID, newIsStrictMode);
           } catch (err) {
             hasLoggedError || (hasLoggedError = true, console.error(
-              "React instrumentation encountered an error: %s",
+              "React instrumentation encountered an error: %o",
               err
             ));
           }
       }
-      function injectProfilingHooks(profilingHooks) {
-        injectedProfilingHooks = profilingHooks;
-      }
-      function markCommitStopped() {
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markCommitStopped && injectedProfilingHooks.markCommitStopped();
-      }
-      function markComponentRenderStarted(fiber) {
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentRenderStarted && injectedProfilingHooks.markComponentRenderStarted(fiber);
-      }
-      function markComponentRenderStopped() {
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentRenderStopped && injectedProfilingHooks.markComponentRenderStopped();
-      }
-      function markRenderStarted(lanes) {
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markRenderStarted && injectedProfilingHooks.markRenderStarted(lanes);
-      }
-      function markRenderStopped() {
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markRenderStopped && injectedProfilingHooks.markRenderStopped();
-      }
-      function markStateUpdateScheduled(fiber, lane) {
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markStateUpdateScheduled && injectedProfilingHooks.markStateUpdateScheduled(fiber, lane);
-      }
       function clz32Fallback(x) {
         x >>>= 0;
         return 0 === x ? 32 : 31 - (log(x) / LN2 | 0) | 0;
-      }
-      function getLabelForLane(lane) {
-        if (lane & 1) return "SyncHydrationLane";
-        if (lane & 2) return "Sync";
-        if (lane & 4) return "InputContinuousHydration";
-        if (lane & 8) return "InputContinuous";
-        if (lane & 16) return "DefaultHydration";
-        if (lane & 32) return "Default";
-        if (lane & 128) return "TransitionHydration";
-        if (lane & 4194048) return "Transition";
-        if (lane & 62914560) return "Retry";
-        if (lane & 67108864) return "SelectiveHydration";
-        if (lane & 134217728) return "IdleHydration";
-        if (lane & 268435456) return "Idle";
-        if (lane & 536870912) return "Offscreen";
-        if (lane & 1073741824) return "Deferred";
       }
       function getHighestPriorityLanes(lanes) {
         var pendingSyncLanes = lanes & 42;
@@ -2077,11 +2401,12 @@ var require_react_dom_client_development = __commonJS({
           case 32768:
           case 65536:
           case 131072:
+            return lanes & 261888;
           case 262144:
           case 524288:
           case 1048576:
           case 2097152:
-            return lanes & 4194048;
+            return lanes & 3932160;
           case 4194304:
           case 8388608:
           case 16777216:
@@ -2158,12 +2483,6 @@ var require_react_dom_client_development = __commonJS({
             ), -1;
         }
       }
-      function claimNextTransitionLane() {
-        var lane = nextTransitionLane;
-        nextTransitionLane <<= 1;
-        0 === (nextTransitionLane & 4194048) && (nextTransitionLane = 256);
-        return lane;
-      }
       function claimNextRetryLane() {
         var lane = nextRetryLane;
         nextRetryLane <<= 1;
@@ -2209,7 +2528,7 @@ var require_react_dom_client_development = __commonJS({
         root2.suspendedLanes &= ~spawnedLane;
         var spawnedLaneIndex = 31 - clz32(spawnedLane);
         root2.entangledLanes |= spawnedLane;
-        root2.entanglements[spawnedLaneIndex] = root2.entanglements[spawnedLaneIndex] | 1073741824 | entangledLanes & 4194090;
+        root2.entanglements[spawnedLaneIndex] = root2.entanglements[spawnedLaneIndex] | 1073741824 | entangledLanes & 261930;
       }
       function markRootEntangled(root2, entangledLanes) {
         var rootEntangledLanes = root2.entangledLanes |= entangledLanes;
@@ -2218,6 +2537,11 @@ var require_react_dom_client_development = __commonJS({
           lane & entangledLanes | root2[index] & entangledLanes && (root2[index] |= entangledLanes);
           rootEntangledLanes &= ~lane;
         }
+      }
+      function getBumpedLaneForHydration(root2, renderLanes2) {
+        var renderLane = renderLanes2 & -renderLanes2;
+        renderLane = 0 !== (renderLane & 42) ? 1 : getBumpedLaneForHydrationByLane(renderLane);
+        return 0 !== (renderLane & (root2.suspendedLanes | renderLanes2)) ? 0 : renderLane;
       }
       function getBumpedLaneForHydrationByLane(lane) {
         switch (lane) {
@@ -2311,10 +2635,10 @@ var require_react_dom_client_development = __commonJS({
           if (targetInst = parentNode[internalContainerInstanceKey] || parentNode[internalInstanceKey]) {
             parentNode = targetInst.alternate;
             if (null !== targetInst.child || null !== parentNode && null !== parentNode.child)
-              for (targetNode = getParentSuspenseInstance(targetNode); null !== targetNode; ) {
+              for (targetNode = getParentHydrationBoundary(targetNode); null !== targetNode; ) {
                 if (parentNode = targetNode[internalInstanceKey])
                   return parentNode;
-                targetNode = getParentSuspenseInstance(targetNode);
+                targetNode = getParentHydrationBoundary(targetNode);
               }
             return targetInst;
           }
@@ -2326,7 +2650,7 @@ var require_react_dom_client_development = __commonJS({
       function getInstanceFromNode(node) {
         if (node = node[internalInstanceKey] || node[internalContainerInstanceKey]) {
           var tag = node.tag;
-          if (5 === tag || 6 === tag || 13 === tag || 26 === tag || 27 === tag || 3 === tag)
+          if (5 === tag || 6 === tag || 13 === tag || 31 === tag || 26 === tag || 27 === tag || 3 === tag)
             return node;
         }
         return null;
@@ -2453,312 +2777,6 @@ var require_react_dom_client_development = __commonJS({
           node.setAttributeNS(namespace, name, "" + value);
         }
       }
-      function disabledLog() {
-      }
-      function disableLogs() {
-        if (0 === disabledDepth) {
-          prevLog = console.log;
-          prevInfo = console.info;
-          prevWarn = console.warn;
-          prevError = console.error;
-          prevGroup = console.group;
-          prevGroupCollapsed = console.groupCollapsed;
-          prevGroupEnd = console.groupEnd;
-          var props = {
-            configurable: true,
-            enumerable: true,
-            value: disabledLog,
-            writable: true
-          };
-          Object.defineProperties(console, {
-            info: props,
-            log: props,
-            warn: props,
-            error: props,
-            group: props,
-            groupCollapsed: props,
-            groupEnd: props
-          });
-        }
-        disabledDepth++;
-      }
-      function reenableLogs() {
-        disabledDepth--;
-        if (0 === disabledDepth) {
-          var props = { configurable: true, enumerable: true, writable: true };
-          Object.defineProperties(console, {
-            log: assign({}, props, { value: prevLog }),
-            info: assign({}, props, { value: prevInfo }),
-            warn: assign({}, props, { value: prevWarn }),
-            error: assign({}, props, { value: prevError }),
-            group: assign({}, props, { value: prevGroup }),
-            groupCollapsed: assign({}, props, { value: prevGroupCollapsed }),
-            groupEnd: assign({}, props, { value: prevGroupEnd })
-          });
-        }
-        0 > disabledDepth && console.error(
-          "disabledDepth fell below zero. This is a bug in React. Please file an issue."
-        );
-      }
-      function describeBuiltInComponentFrame(name) {
-        if (void 0 === prefix)
-          try {
-            throw Error();
-          } catch (x) {
-            var match = x.stack.trim().match(/\n( *(at )?)/);
-            prefix = match && match[1] || "";
-            suffix = -1 < x.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < x.stack.indexOf("@") ? "@unknown:0:0" : "";
-          }
-        return "\n" + prefix + name + suffix;
-      }
-      function describeNativeComponentFrame(fn, construct) {
-        if (!fn || reentry) return "";
-        var frame = componentFrameCache.get(fn);
-        if (void 0 !== frame) return frame;
-        reentry = true;
-        frame = Error.prepareStackTrace;
-        Error.prepareStackTrace = void 0;
-        var previousDispatcher2 = null;
-        previousDispatcher2 = ReactSharedInternals.H;
-        ReactSharedInternals.H = null;
-        disableLogs();
-        try {
-          var RunInRootFrame = {
-            DetermineComponentFrameRoot: function() {
-              try {
-                if (construct) {
-                  var Fake = function() {
-                    throw Error();
-                  };
-                  Object.defineProperty(Fake.prototype, "props", {
-                    set: function() {
-                      throw Error();
-                    }
-                  });
-                  if ("object" === typeof Reflect && Reflect.construct) {
-                    try {
-                      Reflect.construct(Fake, []);
-                    } catch (x) {
-                      var control = x;
-                    }
-                    Reflect.construct(fn, [], Fake);
-                  } else {
-                    try {
-                      Fake.call();
-                    } catch (x$0) {
-                      control = x$0;
-                    }
-                    fn.call(Fake.prototype);
-                  }
-                } else {
-                  try {
-                    throw Error();
-                  } catch (x$1) {
-                    control = x$1;
-                  }
-                  (Fake = fn()) && "function" === typeof Fake.catch && Fake.catch(function() {
-                  });
-                }
-              } catch (sample) {
-                if (sample && control && "string" === typeof sample.stack)
-                  return [sample.stack, control.stack];
-              }
-              return [null, null];
-            }
-          };
-          RunInRootFrame.DetermineComponentFrameRoot.displayName = "DetermineComponentFrameRoot";
-          var namePropDescriptor = Object.getOwnPropertyDescriptor(
-            RunInRootFrame.DetermineComponentFrameRoot,
-            "name"
-          );
-          namePropDescriptor && namePropDescriptor.configurable && Object.defineProperty(
-            RunInRootFrame.DetermineComponentFrameRoot,
-            "name",
-            { value: "DetermineComponentFrameRoot" }
-          );
-          var _RunInRootFrame$Deter = RunInRootFrame.DetermineComponentFrameRoot(), sampleStack = _RunInRootFrame$Deter[0], controlStack = _RunInRootFrame$Deter[1];
-          if (sampleStack && controlStack) {
-            var sampleLines = sampleStack.split("\n"), controlLines = controlStack.split("\n");
-            for (_RunInRootFrame$Deter = namePropDescriptor = 0; namePropDescriptor < sampleLines.length && !sampleLines[namePropDescriptor].includes(
-              "DetermineComponentFrameRoot"
-            ); )
-              namePropDescriptor++;
-            for (; _RunInRootFrame$Deter < controlLines.length && !controlLines[_RunInRootFrame$Deter].includes(
-              "DetermineComponentFrameRoot"
-            ); )
-              _RunInRootFrame$Deter++;
-            if (namePropDescriptor === sampleLines.length || _RunInRootFrame$Deter === controlLines.length)
-              for (namePropDescriptor = sampleLines.length - 1, _RunInRootFrame$Deter = controlLines.length - 1; 1 <= namePropDescriptor && 0 <= _RunInRootFrame$Deter && sampleLines[namePropDescriptor] !== controlLines[_RunInRootFrame$Deter]; )
-                _RunInRootFrame$Deter--;
-            for (; 1 <= namePropDescriptor && 0 <= _RunInRootFrame$Deter; namePropDescriptor--, _RunInRootFrame$Deter--)
-              if (sampleLines[namePropDescriptor] !== controlLines[_RunInRootFrame$Deter]) {
-                if (1 !== namePropDescriptor || 1 !== _RunInRootFrame$Deter) {
-                  do
-                    if (namePropDescriptor--, _RunInRootFrame$Deter--, 0 > _RunInRootFrame$Deter || sampleLines[namePropDescriptor] !== controlLines[_RunInRootFrame$Deter]) {
-                      var _frame = "\n" + sampleLines[namePropDescriptor].replace(
-                        " at new ",
-                        " at "
-                      );
-                      fn.displayName && _frame.includes("<anonymous>") && (_frame = _frame.replace("<anonymous>", fn.displayName));
-                      "function" === typeof fn && componentFrameCache.set(fn, _frame);
-                      return _frame;
-                    }
-                  while (1 <= namePropDescriptor && 0 <= _RunInRootFrame$Deter);
-                }
-                break;
-              }
-          }
-        } finally {
-          reentry = false, ReactSharedInternals.H = previousDispatcher2, reenableLogs(), Error.prepareStackTrace = frame;
-        }
-        sampleLines = (sampleLines = fn ? fn.displayName || fn.name : "") ? describeBuiltInComponentFrame(sampleLines) : "";
-        "function" === typeof fn && componentFrameCache.set(fn, sampleLines);
-        return sampleLines;
-      }
-      function formatOwnerStack(error) {
-        var prevPrepareStackTrace = Error.prepareStackTrace;
-        Error.prepareStackTrace = void 0;
-        error = error.stack;
-        Error.prepareStackTrace = prevPrepareStackTrace;
-        error.startsWith("Error: react-stack-top-frame\n") && (error = error.slice(29));
-        prevPrepareStackTrace = error.indexOf("\n");
-        -1 !== prevPrepareStackTrace && (error = error.slice(prevPrepareStackTrace + 1));
-        prevPrepareStackTrace = error.indexOf("react-stack-bottom-frame");
-        -1 !== prevPrepareStackTrace && (prevPrepareStackTrace = error.lastIndexOf(
-          "\n",
-          prevPrepareStackTrace
-        ));
-        if (-1 !== prevPrepareStackTrace)
-          error = error.slice(0, prevPrepareStackTrace);
-        else return "";
-        return error;
-      }
-      function describeFiber(fiber) {
-        switch (fiber.tag) {
-          case 26:
-          case 27:
-          case 5:
-            return describeBuiltInComponentFrame(fiber.type);
-          case 16:
-            return describeBuiltInComponentFrame("Lazy");
-          case 13:
-            return describeBuiltInComponentFrame("Suspense");
-          case 19:
-            return describeBuiltInComponentFrame("SuspenseList");
-          case 0:
-          case 15:
-            return describeNativeComponentFrame(fiber.type, false);
-          case 11:
-            return describeNativeComponentFrame(fiber.type.render, false);
-          case 1:
-            return describeNativeComponentFrame(fiber.type, true);
-          case 31:
-            return describeBuiltInComponentFrame("Activity");
-          default:
-            return "";
-        }
-      }
-      function getStackByFiberInDevAndProd(workInProgress2) {
-        try {
-          var info = "";
-          do {
-            info += describeFiber(workInProgress2);
-            var debugInfo = workInProgress2._debugInfo;
-            if (debugInfo)
-              for (var i = debugInfo.length - 1; 0 <= i; i--) {
-                var entry = debugInfo[i];
-                if ("string" === typeof entry.name) {
-                  var JSCompiler_temp_const = info, env = entry.env;
-                  var JSCompiler_inline_result = describeBuiltInComponentFrame(
-                    entry.name + (env ? " [" + env + "]" : "")
-                  );
-                  info = JSCompiler_temp_const + JSCompiler_inline_result;
-                }
-              }
-            workInProgress2 = workInProgress2.return;
-          } while (workInProgress2);
-          return info;
-        } catch (x) {
-          return "\nError generating stack: " + x.message + "\n" + x.stack;
-        }
-      }
-      function describeFunctionComponentFrameWithoutLineNumber(fn) {
-        return (fn = fn ? fn.displayName || fn.name : "") ? describeBuiltInComponentFrame(fn) : "";
-      }
-      function getCurrentFiberOwnerNameInDevOrNull() {
-        if (null === current) return null;
-        var owner = current._debugOwner;
-        return null != owner ? getComponentNameFromOwner(owner) : null;
-      }
-      function getCurrentFiberStackInDev() {
-        if (null === current) return "";
-        var workInProgress2 = current;
-        try {
-          var info = "";
-          6 === workInProgress2.tag && (workInProgress2 = workInProgress2.return);
-          switch (workInProgress2.tag) {
-            case 26:
-            case 27:
-            case 5:
-              info += describeBuiltInComponentFrame(workInProgress2.type);
-              break;
-            case 13:
-              info += describeBuiltInComponentFrame("Suspense");
-              break;
-            case 19:
-              info += describeBuiltInComponentFrame("SuspenseList");
-              break;
-            case 31:
-              info += describeBuiltInComponentFrame("Activity");
-              break;
-            case 30:
-            case 0:
-            case 15:
-            case 1:
-              workInProgress2._debugOwner || "" !== info || (info += describeFunctionComponentFrameWithoutLineNumber(
-                workInProgress2.type
-              ));
-              break;
-            case 11:
-              workInProgress2._debugOwner || "" !== info || (info += describeFunctionComponentFrameWithoutLineNumber(
-                workInProgress2.type.render
-              ));
-          }
-          for (; workInProgress2; )
-            if ("number" === typeof workInProgress2.tag) {
-              var fiber = workInProgress2;
-              workInProgress2 = fiber._debugOwner;
-              var debugStack = fiber._debugStack;
-              workInProgress2 && debugStack && ("string" !== typeof debugStack && (fiber._debugStack = debugStack = formatOwnerStack(debugStack)), "" !== debugStack && (info += "\n" + debugStack));
-            } else if (null != workInProgress2.debugStack) {
-              var ownerStack = workInProgress2.debugStack;
-              (workInProgress2 = workInProgress2.owner) && ownerStack && (info += "\n" + formatOwnerStack(ownerStack));
-            } else break;
-          var JSCompiler_inline_result = info;
-        } catch (x) {
-          JSCompiler_inline_result = "\nError generating stack: " + x.message + "\n" + x.stack;
-        }
-        return JSCompiler_inline_result;
-      }
-      function runWithFiberInDEV(fiber, callback, arg0, arg1, arg2, arg3, arg4) {
-        var previousFiber = current;
-        setCurrentFiber(fiber);
-        try {
-          return null !== fiber && fiber._debugTask ? fiber._debugTask.run(
-            callback.bind(null, arg0, arg1, arg2, arg3, arg4)
-          ) : callback(arg0, arg1, arg2, arg3, arg4);
-        } finally {
-          setCurrentFiber(previousFiber);
-        }
-        throw Error(
-          "runWithFiberInDEV should never be called in production. This is a bug in React."
-        );
-      }
-      function setCurrentFiber(fiber) {
-        ReactSharedInternals.getCurrentStack = null === fiber ? null : getCurrentFiberStackInDev;
-        isRendering = false;
-        current = fiber;
-      }
       function getToStringValue(value) {
         switch (typeof value) {
           case "bigint":
@@ -2777,13 +2795,11 @@ var require_react_dom_client_development = __commonJS({
         var type = elem.type;
         return (elem = elem.nodeName) && "input" === elem.toLowerCase() && ("checkbox" === type || "radio" === type);
       }
-      function trackValueOnNode(node) {
-        var valueField = isCheckable(node) ? "checked" : "value", descriptor = Object.getOwnPropertyDescriptor(
+      function trackValueOnNode(node, valueField, currentValue) {
+        var descriptor = Object.getOwnPropertyDescriptor(
           node.constructor.prototype,
           valueField
         );
-        checkFormFieldValueStringCoercion(node[valueField]);
-        var currentValue = "" + node[valueField];
         if (!node.hasOwnProperty(valueField) && "undefined" !== typeof descriptor && "function" === typeof descriptor.get && "function" === typeof descriptor.set) {
           var get = descriptor.get, set = descriptor.set;
           Object.defineProperty(node, valueField, {
@@ -2816,7 +2832,14 @@ var require_react_dom_client_development = __commonJS({
         }
       }
       function track(node) {
-        node._valueTracker || (node._valueTracker = trackValueOnNode(node));
+        if (!node._valueTracker) {
+          var valueField = isCheckable(node) ? "checked" : "value";
+          node._valueTracker = trackValueOnNode(
+            node,
+            valueField,
+            "" + node[valueField]
+          );
+        }
       }
       function updateValueIfChanged(node) {
         if (!node) return false;
@@ -2876,8 +2899,10 @@ var require_react_dom_client_development = __commonJS({
       function initInput(element, value, defaultValue, checked, defaultChecked, type, name, isHydrating2) {
         null != type && "function" !== typeof type && "symbol" !== typeof type && "boolean" !== typeof type && (checkAttributeStringCoercion(type, "type"), element.type = type);
         if (null != value || null != defaultValue) {
-          if (!("submit" !== type && "reset" !== type || void 0 !== value && null !== value))
+          if (!("submit" !== type && "reset" !== type || void 0 !== value && null !== value)) {
+            track(element);
             return;
+          }
           defaultValue = null != defaultValue ? "" + getToStringValue(defaultValue) : "";
           value = null != value ? "" + getToStringValue(value) : defaultValue;
           isHydrating2 || value === element.value || (element.value = value);
@@ -2888,6 +2913,7 @@ var require_react_dom_client_development = __commonJS({
         element.checked = isHydrating2 ? element.checked : !!checked;
         element.defaultChecked = !!checked;
         null != name && "function" !== typeof name && "symbol" !== typeof name && "boolean" !== typeof name && (checkAttributeStringCoercion(name, "name"), element.name = name);
+        track(element);
       }
       function setDefaultValue(node, type, value) {
         "number" === type && getActiveElement(node.ownerDocument) === node || node.defaultValue === "" + value || (node.defaultValue = "" + value);
@@ -2987,6 +3013,7 @@ var require_react_dom_client_development = __commonJS({
         element.defaultValue = defaultValue;
         children = element.textContent;
         children === defaultValue && "" !== children && null !== children && (element.value = children);
+        track(element);
       }
       function findNotableNode(node, indent) {
         return void 0 === node.serverProps && 0 === node.serverTail.length && 1 === node.children.length && 3 < node.distanceFromLeaf && node.distanceFromLeaf > 15 - indent ? findNotableNode(node.children[0], indent) : node;
@@ -3008,6 +3035,8 @@ var require_react_dom_client_development = __commonJS({
             return fiber.type;
           case 16:
             return "Lazy";
+          case 31:
+            return "Activity";
           case 13:
             return "Suspense";
           case 19:
@@ -3821,6 +3850,8 @@ var require_react_dom_client_development = __commonJS({
       function sanitizeURL(url) {
         return isJavaScriptProtocol.test("" + url) ? "javascript:throw new Error('React has blocked a javascript: URL as a security precaution.')" : url;
       }
+      function noop$1() {
+      }
       function getEventTarget(nativeEvent) {
         nativeEvent = nativeEvent.target || nativeEvent.srcElement || window;
         nativeEvent.correspondingUseElement && (nativeEvent = nativeEvent.correspondingUseElement);
@@ -4196,23 +4227,540 @@ var require_react_dom_client_development = __commonJS({
         topLevelEventsToReactNames.set(domEventName, reactName);
         registerTwoPhaseEvent(reactName, [domEventName]);
       }
-      function createCapturedValueAtFiber(value, source) {
-        if ("object" === typeof value && null !== value) {
-          var existing = CapturedStacks.get(value);
-          if (void 0 !== existing) return existing;
-          source = {
-            value,
-            source,
-            stack: getStackByFiberInDevAndProd(source)
-          };
-          CapturedStacks.set(value, source);
-          return source;
+      function getArrayKind(array) {
+        for (var kind = EMPTY_ARRAY, i = 0; i < array.length; i++) {
+          var value = array[i];
+          if ("object" === typeof value && null !== value)
+            if (isArrayImpl(value) && 2 === value.length && "string" === typeof value[0]) {
+              if (kind !== EMPTY_ARRAY && kind !== ENTRIES_ARRAY)
+                return COMPLEX_ARRAY;
+              kind = ENTRIES_ARRAY;
+            } else return COMPLEX_ARRAY;
+          else {
+            if ("function" === typeof value || "string" === typeof value && 50 < value.length || kind !== EMPTY_ARRAY && kind !== PRIMITIVE_ARRAY)
+              return COMPLEX_ARRAY;
+            kind = PRIMITIVE_ARRAY;
+          }
         }
-        return {
-          value,
-          source,
-          stack: getStackByFiberInDevAndProd(source)
-        };
+        return kind;
+      }
+      function addObjectToProperties(object, properties, indent, prefix2) {
+        for (var key in object)
+          hasOwnProperty.call(object, key) && "_" !== key[0] && addValueToProperties(key, object[key], properties, indent, prefix2);
+      }
+      function addValueToProperties(propertyName, value, properties, indent, prefix2) {
+        switch (typeof value) {
+          case "object":
+            if (null === value) {
+              value = "null";
+              break;
+            } else {
+              if (value.$$typeof === REACT_ELEMENT_TYPE) {
+                var typeName2 = getComponentNameFromType(value.type) || "\u2026", key = value.key;
+                value = value.props;
+                var propsKeys = Object.keys(value), propsLength = propsKeys.length;
+                if (null == key && 0 === propsLength) {
+                  value = "<" + typeName2 + " />";
+                  break;
+                }
+                if (3 > indent || 1 === propsLength && "children" === propsKeys[0] && null == key) {
+                  value = "<" + typeName2 + " \u2026 />";
+                  break;
+                }
+                properties.push([
+                  prefix2 + "\xA0\xA0".repeat(indent) + propertyName,
+                  "<" + typeName2
+                ]);
+                null !== key && addValueToProperties(
+                  "key",
+                  key,
+                  properties,
+                  indent + 1,
+                  prefix2
+                );
+                propertyName = false;
+                for (var propKey in value)
+                  "children" === propKey ? null != value.children && (!isArrayImpl(value.children) || 0 < value.children.length) && (propertyName = true) : hasOwnProperty.call(value, propKey) && "_" !== propKey[0] && addValueToProperties(
+                    propKey,
+                    value[propKey],
+                    properties,
+                    indent + 1,
+                    prefix2
+                  );
+                properties.push([
+                  "",
+                  propertyName ? ">\u2026</" + typeName2 + ">" : "/>"
+                ]);
+                return;
+              }
+              typeName2 = Object.prototype.toString.call(value);
+              typeName2 = typeName2.slice(8, typeName2.length - 1);
+              if ("Array" === typeName2) {
+                if (propKey = getArrayKind(value), propKey === PRIMITIVE_ARRAY || propKey === EMPTY_ARRAY) {
+                  value = JSON.stringify(value);
+                  break;
+                } else if (propKey === ENTRIES_ARRAY) {
+                  properties.push([
+                    prefix2 + "\xA0\xA0".repeat(indent) + propertyName,
+                    ""
+                  ]);
+                  for (propertyName = 0; propertyName < value.length; propertyName++)
+                    typeName2 = value[propertyName], addValueToProperties(
+                      typeName2[0],
+                      typeName2[1],
+                      properties,
+                      indent + 1,
+                      prefix2
+                    );
+                  return;
+                }
+              }
+              if ("Promise" === typeName2) {
+                if ("fulfilled" === value.status) {
+                  if (typeName2 = properties.length, addValueToProperties(
+                    propertyName,
+                    value.value,
+                    properties,
+                    indent,
+                    prefix2
+                  ), properties.length > typeName2) {
+                    properties = properties[typeName2];
+                    properties[1] = "Promise<" + (properties[1] || "Object") + ">";
+                    return;
+                  }
+                } else if ("rejected" === value.status && (typeName2 = properties.length, addValueToProperties(
+                  propertyName,
+                  value.reason,
+                  properties,
+                  indent,
+                  prefix2
+                ), properties.length > typeName2)) {
+                  properties = properties[typeName2];
+                  properties[1] = "Rejected Promise<" + properties[1] + ">";
+                  return;
+                }
+                properties.push([
+                  "\xA0\xA0".repeat(indent) + propertyName,
+                  "Promise"
+                ]);
+                return;
+              }
+              "Object" === typeName2 && (propKey = Object.getPrototypeOf(value)) && "function" === typeof propKey.constructor && (typeName2 = propKey.constructor.name);
+              properties.push([
+                prefix2 + "\xA0\xA0".repeat(indent) + propertyName,
+                "Object" === typeName2 ? 3 > indent ? "" : "\u2026" : typeName2
+              ]);
+              3 > indent && addObjectToProperties(value, properties, indent + 1, prefix2);
+              return;
+            }
+          case "function":
+            value = "" === value.name ? "() => {}" : value.name + "() {}";
+            break;
+          case "string":
+            value = value === OMITTED_PROP_ERROR ? "\u2026" : JSON.stringify(value);
+            break;
+          case "undefined":
+            value = "undefined";
+            break;
+          case "boolean":
+            value = value ? "true" : "false";
+            break;
+          default:
+            value = String(value);
+        }
+        properties.push([
+          prefix2 + "\xA0\xA0".repeat(indent) + propertyName,
+          value
+        ]);
+      }
+      function addObjectDiffToProperties(prev, next, properties, indent) {
+        var isDeeplyEqual = true;
+        for (key in prev)
+          key in next || (properties.push([
+            REMOVED + "\xA0\xA0".repeat(indent) + key,
+            "\u2026"
+          ]), isDeeplyEqual = false);
+        for (var _key in next)
+          if (_key in prev) {
+            var key = prev[_key];
+            var nextValue = next[_key];
+            if (key !== nextValue) {
+              if (0 === indent && "children" === _key)
+                isDeeplyEqual = "\xA0\xA0".repeat(indent) + _key, properties.push(
+                  [REMOVED + isDeeplyEqual, "\u2026"],
+                  [ADDED + isDeeplyEqual, "\u2026"]
+                );
+              else {
+                if (!(3 <= indent)) {
+                  if ("object" === typeof key && "object" === typeof nextValue && null !== key && null !== nextValue && key.$$typeof === nextValue.$$typeof)
+                    if (nextValue.$$typeof === REACT_ELEMENT_TYPE) {
+                      if (key.type === nextValue.type && key.key === nextValue.key) {
+                        key = getComponentNameFromType(nextValue.type) || "\u2026";
+                        isDeeplyEqual = "\xA0\xA0".repeat(indent) + _key;
+                        key = "<" + key + " \u2026 />";
+                        properties.push(
+                          [REMOVED + isDeeplyEqual, key],
+                          [ADDED + isDeeplyEqual, key]
+                        );
+                        isDeeplyEqual = false;
+                        continue;
+                      }
+                    } else {
+                      var prevKind = Object.prototype.toString.call(key), nextKind = Object.prototype.toString.call(nextValue);
+                      if (prevKind === nextKind && ("[object Object]" === nextKind || "[object Array]" === nextKind)) {
+                        prevKind = [
+                          UNCHANGED + "\xA0\xA0".repeat(indent) + _key,
+                          "[object Array]" === nextKind ? "Array" : ""
+                        ];
+                        properties.push(prevKind);
+                        nextKind = properties.length;
+                        addObjectDiffToProperties(
+                          key,
+                          nextValue,
+                          properties,
+                          indent + 1
+                        ) ? nextKind === properties.length && (prevKind[1] = "Referentially unequal but deeply equal objects. Consider memoization.") : isDeeplyEqual = false;
+                        continue;
+                      }
+                    }
+                  else if ("function" === typeof key && "function" === typeof nextValue && key.name === nextValue.name && key.length === nextValue.length && (prevKind = Function.prototype.toString.call(key), nextKind = Function.prototype.toString.call(nextValue), prevKind === nextKind)) {
+                    key = "" === nextValue.name ? "() => {}" : nextValue.name + "() {}";
+                    properties.push([
+                      UNCHANGED + "\xA0\xA0".repeat(indent) + _key,
+                      key + " Referentially unequal function closure. Consider memoization."
+                    ]);
+                    continue;
+                  }
+                }
+                addValueToProperties(_key, key, properties, indent, REMOVED);
+                addValueToProperties(_key, nextValue, properties, indent, ADDED);
+              }
+              isDeeplyEqual = false;
+            }
+          } else
+            properties.push([
+              ADDED + "\xA0\xA0".repeat(indent) + _key,
+              "\u2026"
+            ]), isDeeplyEqual = false;
+        return isDeeplyEqual;
+      }
+      function setCurrentTrackFromLanes(lanes) {
+        currentTrack = lanes & 63 ? "Blocking" : lanes & 64 ? "Gesture" : lanes & 4194176 ? "Transition" : lanes & 62914560 ? "Suspense" : lanes & 2080374784 ? "Idle" : "Other";
+      }
+      function logComponentTrigger(fiber, startTime, endTime, trigger) {
+        supportsUserTiming && (reusableComponentOptions.start = startTime, reusableComponentOptions.end = endTime, reusableComponentDevToolDetails.color = "warning", reusableComponentDevToolDetails.tooltipText = trigger, reusableComponentDevToolDetails.properties = null, (fiber = fiber._debugTask) ? fiber.run(
+          performance.measure.bind(
+            performance,
+            trigger,
+            reusableComponentOptions
+          )
+        ) : performance.measure(trigger, reusableComponentOptions));
+      }
+      function logComponentReappeared(fiber, startTime, endTime) {
+        logComponentTrigger(fiber, startTime, endTime, "Reconnect");
+      }
+      function logComponentRender(fiber, startTime, endTime, wasHydrated, committedLanes) {
+        var name = getComponentNameFromFiber(fiber);
+        if (null !== name && supportsUserTiming) {
+          var alternate = fiber.alternate, selfTime = fiber.actualDuration;
+          if (null === alternate || alternate.child !== fiber.child)
+            for (var child = fiber.child; null !== child; child = child.sibling)
+              selfTime -= child.actualDuration;
+          wasHydrated = 0.5 > selfTime ? wasHydrated ? "tertiary-light" : "primary-light" : 10 > selfTime ? wasHydrated ? "tertiary" : "primary" : 100 > selfTime ? wasHydrated ? "tertiary-dark" : "primary-dark" : "error";
+          var props = fiber.memoizedProps;
+          selfTime = fiber._debugTask;
+          null !== props && null !== alternate && alternate.memoizedProps !== props ? (child = [resuableChangedPropsEntry], props = addObjectDiffToProperties(
+            alternate.memoizedProps,
+            props,
+            child,
+            0
+          ), 1 < child.length && (props && !alreadyWarnedForDeepEquality && 0 === (alternate.lanes & committedLanes) && 100 < fiber.actualDuration ? (alreadyWarnedForDeepEquality = true, child[0] = reusableDeeplyEqualPropsEntry, reusableComponentDevToolDetails.color = "warning", reusableComponentDevToolDetails.tooltipText = DEEP_EQUALITY_WARNING) : (reusableComponentDevToolDetails.color = wasHydrated, reusableComponentDevToolDetails.tooltipText = name), reusableComponentDevToolDetails.properties = child, reusableComponentOptions.start = startTime, reusableComponentOptions.end = endTime, null != selfTime ? selfTime.run(
+            performance.measure.bind(
+              performance,
+              "\u200B" + name,
+              reusableComponentOptions
+            )
+          ) : performance.measure(
+            "\u200B" + name,
+            reusableComponentOptions
+          ))) : null != selfTime ? selfTime.run(
+            console.timeStamp.bind(
+              console,
+              name,
+              startTime,
+              endTime,
+              COMPONENTS_TRACK,
+              void 0,
+              wasHydrated
+            )
+          ) : console.timeStamp(
+            name,
+            startTime,
+            endTime,
+            COMPONENTS_TRACK,
+            void 0,
+            wasHydrated
+          );
+        }
+      }
+      function logComponentErrored(fiber, startTime, endTime, errors) {
+        if (supportsUserTiming) {
+          var name = getComponentNameFromFiber(fiber);
+          if (null !== name) {
+            for (var debugTask = null, properties = [], i = 0; i < errors.length; i++) {
+              var capturedValue = errors[i];
+              null == debugTask && null !== capturedValue.source && (debugTask = capturedValue.source._debugTask);
+              capturedValue = capturedValue.value;
+              properties.push([
+                "Error",
+                "object" === typeof capturedValue && null !== capturedValue && "string" === typeof capturedValue.message ? String(capturedValue.message) : String(capturedValue)
+              ]);
+            }
+            null !== fiber.key && addValueToProperties("key", fiber.key, properties, 0, "");
+            null !== fiber.memoizedProps && addObjectToProperties(fiber.memoizedProps, properties, 0, "");
+            null == debugTask && (debugTask = fiber._debugTask);
+            fiber = {
+              start: startTime,
+              end: endTime,
+              detail: {
+                devtools: {
+                  color: "error",
+                  track: COMPONENTS_TRACK,
+                  tooltipText: 13 === fiber.tag ? "Hydration failed" : "Error boundary caught an error",
+                  properties
+                }
+              }
+            };
+            debugTask ? debugTask.run(
+              performance.measure.bind(performance, "\u200B" + name, fiber)
+            ) : performance.measure("\u200B" + name, fiber);
+          }
+        }
+      }
+      function logComponentEffect(fiber, startTime, endTime, selfTime, errors) {
+        if (null !== errors) {
+          if (supportsUserTiming) {
+            var name = getComponentNameFromFiber(fiber);
+            if (null !== name) {
+              selfTime = [];
+              for (var i = 0; i < errors.length; i++) {
+                var error = errors[i].value;
+                selfTime.push([
+                  "Error",
+                  "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error)
+                ]);
+              }
+              null !== fiber.key && addValueToProperties("key", fiber.key, selfTime, 0, "");
+              null !== fiber.memoizedProps && addObjectToProperties(fiber.memoizedProps, selfTime, 0, "");
+              startTime = {
+                start: startTime,
+                end: endTime,
+                detail: {
+                  devtools: {
+                    color: "error",
+                    track: COMPONENTS_TRACK,
+                    tooltipText: "A lifecycle or effect errored",
+                    properties: selfTime
+                  }
+                }
+              };
+              (fiber = fiber._debugTask) ? fiber.run(
+                performance.measure.bind(
+                  performance,
+                  "\u200B" + name,
+                  startTime
+                )
+              ) : performance.measure("\u200B" + name, startTime);
+            }
+          }
+        } else
+          name = getComponentNameFromFiber(fiber), null !== name && supportsUserTiming && (errors = 1 > selfTime ? "secondary-light" : 100 > selfTime ? "secondary" : 500 > selfTime ? "secondary-dark" : "error", (fiber = fiber._debugTask) ? fiber.run(
+            console.timeStamp.bind(
+              console,
+              name,
+              startTime,
+              endTime,
+              COMPONENTS_TRACK,
+              void 0,
+              errors
+            )
+          ) : console.timeStamp(
+            name,
+            startTime,
+            endTime,
+            COMPONENTS_TRACK,
+            void 0,
+            errors
+          ));
+      }
+      function logRenderPhase(startTime, endTime, lanes, debugTask) {
+        if (supportsUserTiming && !(endTime <= startTime)) {
+          var color = (lanes & 738197653) === lanes ? "tertiary-dark" : "primary-dark";
+          lanes = (lanes & 536870912) === lanes ? "Prepared" : (lanes & 201326741) === lanes ? "Hydrated" : "Render";
+          debugTask ? debugTask.run(
+            console.timeStamp.bind(
+              console,
+              lanes,
+              startTime,
+              endTime,
+              currentTrack,
+              LANES_TRACK_GROUP,
+              color
+            )
+          ) : console.timeStamp(
+            lanes,
+            startTime,
+            endTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            color
+          );
+        }
+      }
+      function logSuspendedRenderPhase(startTime, endTime, lanes, debugTask) {
+        !supportsUserTiming || endTime <= startTime || (lanes = (lanes & 738197653) === lanes ? "tertiary-dark" : "primary-dark", debugTask ? debugTask.run(
+          console.timeStamp.bind(
+            console,
+            "Prewarm",
+            startTime,
+            endTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            lanes
+          )
+        ) : console.timeStamp(
+          "Prewarm",
+          startTime,
+          endTime,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          lanes
+        ));
+      }
+      function logSuspendedWithDelayPhase(startTime, endTime, lanes, debugTask) {
+        !supportsUserTiming || endTime <= startTime || (lanes = (lanes & 738197653) === lanes ? "tertiary-dark" : "primary-dark", debugTask ? debugTask.run(
+          console.timeStamp.bind(
+            console,
+            "Suspended",
+            startTime,
+            endTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            lanes
+          )
+        ) : console.timeStamp(
+          "Suspended",
+          startTime,
+          endTime,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          lanes
+        ));
+      }
+      function logRecoveredRenderPhase(startTime, endTime, lanes, recoverableErrors, hydrationFailed, debugTask) {
+        if (supportsUserTiming && !(endTime <= startTime)) {
+          lanes = [];
+          for (var i = 0; i < recoverableErrors.length; i++) {
+            var error = recoverableErrors[i].value;
+            lanes.push([
+              "Recoverable Error",
+              "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error)
+            ]);
+          }
+          startTime = {
+            start: startTime,
+            end: endTime,
+            detail: {
+              devtools: {
+                color: "primary-dark",
+                track: currentTrack,
+                trackGroup: LANES_TRACK_GROUP,
+                tooltipText: hydrationFailed ? "Hydration Failed" : "Recovered after Error",
+                properties: lanes
+              }
+            }
+          };
+          debugTask ? debugTask.run(
+            performance.measure.bind(performance, "Recovered", startTime)
+          ) : performance.measure("Recovered", startTime);
+        }
+      }
+      function logErroredRenderPhase(startTime, endTime, lanes, debugTask) {
+        !supportsUserTiming || endTime <= startTime || (debugTask ? debugTask.run(
+          console.timeStamp.bind(
+            console,
+            "Errored",
+            startTime,
+            endTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            "error"
+          )
+        ) : console.timeStamp(
+          "Errored",
+          startTime,
+          endTime,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          "error"
+        ));
+      }
+      function logSuspendedCommitPhase(startTime, endTime, reason, debugTask) {
+        !supportsUserTiming || endTime <= startTime || (debugTask ? debugTask.run(
+          console.timeStamp.bind(
+            console,
+            reason,
+            startTime,
+            endTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            "secondary-light"
+          )
+        ) : console.timeStamp(
+          reason,
+          startTime,
+          endTime,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          "secondary-light"
+        ));
+      }
+      function logCommitErrored(startTime, endTime, errors, passive, debugTask) {
+        if (supportsUserTiming && !(endTime <= startTime)) {
+          for (var properties = [], i = 0; i < errors.length; i++) {
+            var error = errors[i].value;
+            properties.push([
+              "Error",
+              "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error)
+            ]);
+          }
+          startTime = {
+            start: startTime,
+            end: endTime,
+            detail: {
+              devtools: {
+                color: "error",
+                track: currentTrack,
+                trackGroup: LANES_TRACK_GROUP,
+                tooltipText: passive ? "Remaining Effects Errored" : "Commit Errored",
+                properties
+              }
+            }
+          };
+          debugTask ? debugTask.run(
+            performance.measure.bind(performance, "Errored", startTime)
+          ) : performance.measure("Errored", startTime);
+        }
+      }
+      function logAnimatingPhase(startTime, endTime, debugTask) {
+        !supportsUserTiming || endTime <= startTime || (console.timeStamp(
+          "Animating",
+          startTime,
+          endTime,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          "secondary-dark"
+        ));
       }
       function finishQueueingConcurrentUpdates() {
         for (var endIndex = concurrentQueuesIndex, i = concurrentlyUpdatedLanes = concurrentQueuesIndex = 0; i < endIndex; ) {
@@ -4309,35 +4857,36 @@ var require_react_dom_client_development = __commonJS({
         null !== resolveFamily && "function" === typeof WeakSet && (null === failedBoundaries && (failedBoundaries = /* @__PURE__ */ new WeakSet()), failedBoundaries.add(fiber));
       }
       function scheduleFibersWithFamiliesRecursively(fiber, updatedFamilies, staleFamilies) {
-        var alternate = fiber.alternate, child = fiber.child, sibling = fiber.sibling, tag = fiber.tag, type = fiber.type, candidateType = null;
-        switch (tag) {
-          case 0:
-          case 15:
-          case 1:
-            candidateType = type;
-            break;
-          case 11:
-            candidateType = type.render;
-        }
-        if (null === resolveFamily)
-          throw Error("Expected resolveFamily to be set during hot reload.");
-        var needsRender = false;
-        type = false;
-        null !== candidateType && (candidateType = resolveFamily(candidateType), void 0 !== candidateType && (staleFamilies.has(candidateType) ? type = true : updatedFamilies.has(candidateType) && (1 === tag ? type = true : needsRender = true)));
-        null !== failedBoundaries && (failedBoundaries.has(fiber) || null !== alternate && failedBoundaries.has(alternate)) && (type = true);
-        type && (fiber._debugNeedsRemount = true);
-        if (type || needsRender)
-          alternate = enqueueConcurrentRenderForLane(fiber, 2), null !== alternate && scheduleUpdateOnFiber(alternate, fiber, 2);
-        null === child || type || scheduleFibersWithFamiliesRecursively(
-          child,
-          updatedFamilies,
-          staleFamilies
-        );
-        null !== sibling && scheduleFibersWithFamiliesRecursively(
-          sibling,
-          updatedFamilies,
-          staleFamilies
-        );
+        do {
+          var _fiber = fiber, alternate = _fiber.alternate, child = _fiber.child, sibling = _fiber.sibling, tag = _fiber.tag;
+          _fiber = _fiber.type;
+          var candidateType = null;
+          switch (tag) {
+            case 0:
+            case 15:
+            case 1:
+              candidateType = _fiber;
+              break;
+            case 11:
+              candidateType = _fiber.render;
+          }
+          if (null === resolveFamily)
+            throw Error("Expected resolveFamily to be set during hot reload.");
+          var needsRender = false;
+          _fiber = false;
+          null !== candidateType && (candidateType = resolveFamily(candidateType), void 0 !== candidateType && (staleFamilies.has(candidateType) ? _fiber = true : updatedFamilies.has(candidateType) && (1 === tag ? _fiber = true : needsRender = true)));
+          null !== failedBoundaries && (failedBoundaries.has(fiber) || null !== alternate && failedBoundaries.has(alternate)) && (_fiber = true);
+          _fiber && (fiber._debugNeedsRemount = true);
+          if (_fiber || needsRender)
+            alternate = enqueueConcurrentRenderForLane(fiber, 2), null !== alternate && scheduleUpdateOnFiber(alternate, fiber, 2);
+          null === child || _fiber || scheduleFibersWithFamiliesRecursively(
+            child,
+            updatedFamilies,
+            staleFamilies
+          );
+          if (null === sibling) break;
+          fiber = sibling;
+        } while (1);
       }
       function FiberNode(tag, pendingProps, key, mode) {
         this.tag = tag;
@@ -4450,7 +4999,6 @@ var require_react_dom_client_development = __commonJS({
             default:
               if ("object" === typeof type && null !== type)
                 switch (type.$$typeof) {
-                  case REACT_PROVIDER_TYPE:
                   case REACT_CONTEXT_TYPE:
                     fiberTag = 10;
                     break a;
@@ -4511,6 +5059,11 @@ var require_react_dom_client_development = __commonJS({
         content.lanes = lanes;
         return content;
       }
+      function createFiberFromDehydratedFragment(dehydratedNode) {
+        var fiber = createFiber(18, null, null, NoMode);
+        fiber.stateNode = dehydratedNode;
+        return fiber;
+      }
       function createFiberFromPortal(portal, mode, lanes) {
         mode = createFiber(
           4,
@@ -4525,6 +5078,24 @@ var require_react_dom_client_development = __commonJS({
           implementation: portal.implementation
         };
         return mode;
+      }
+      function createCapturedValueAtFiber(value, source) {
+        if ("object" === typeof value && null !== value) {
+          var existing = CapturedStacks.get(value);
+          if (void 0 !== existing) return existing;
+          source = {
+            value,
+            source,
+            stack: getStackByFiberInDevAndProd(source)
+          };
+          CapturedStacks.set(value, source);
+          return source;
+        }
+        return {
+          value,
+          source,
+          stack: getStackByFiberInDevAndProd(source)
+        };
       }
       function pushTreeFork(workInProgress2, totalChildren) {
         warnIfNotHydrating();
@@ -4564,6 +5135,19 @@ var require_react_dom_client_development = __commonJS({
           treeForkProvider = forkStack[--forkStackIndex], forkStack[forkStackIndex] = null, treeForkCount = forkStack[--forkStackIndex], forkStack[forkStackIndex] = null;
         for (; workInProgress2 === treeContextProvider; )
           treeContextProvider = idStack[--idStackIndex], idStack[idStackIndex] = null, treeContextOverflow = idStack[--idStackIndex], idStack[idStackIndex] = null, treeContextId = idStack[--idStackIndex], idStack[idStackIndex] = null;
+      }
+      function getSuspendedTreeContext() {
+        warnIfNotHydrating();
+        return null !== treeContextProvider ? { id: treeContextId, overflow: treeContextOverflow } : null;
+      }
+      function restoreSuspendedTreeContext(workInProgress2, suspendedContext) {
+        warnIfNotHydrating();
+        idStack[idStackIndex++] = treeContextId;
+        idStack[idStackIndex++] = treeContextOverflow;
+        idStack[idStackIndex++] = treeContextProvider;
+        treeContextId = suspendedContext.id;
+        treeContextOverflow = suspendedContext.overflow;
+        treeContextProvider = workInProgress2;
       }
       function warnIfNotHydrating() {
         isHydrating || console.error(
@@ -4605,16 +5189,21 @@ var require_react_dom_client_development = __commonJS({
         siblings.push(distanceFromLeaf);
         return distanceFromLeaf;
       }
+      function warnIfHydrating() {
+        isHydrating && console.error(
+          "We should not be hydrating here. This is a bug in React. Please file a bug."
+        );
+      }
       function warnNonHydratedInstance(fiber, rejectedCandidate) {
         didSuspendOrErrorDEV || (fiber = buildHydrationDiffNode(fiber, 0), fiber.serverProps = null, null !== rejectedCandidate && (rejectedCandidate = describeHydratableInstanceForDevWarnings(rejectedCandidate), fiber.serverTail.push(rejectedCandidate)));
       }
       function throwOnHydrationMismatch(fiber) {
-        var diff = "", diffRoot = hydrationDiffRootDEV;
+        var fromText = 1 < arguments.length && void 0 !== arguments[1] ? arguments[1] : false, diff = "", diffRoot = hydrationDiffRootDEV;
         null !== diffRoot && (hydrationDiffRootDEV = null, diff = describeDiff(diffRoot));
         queueHydrationError(
           createCapturedValueAtFiber(
             Error(
-              "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch" + diff
+              "Hydration failed because the server rendered " + (fromText ? "text" : "HTML") + " didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch" + diff
             ),
             fiber
           )
@@ -4668,7 +5257,6 @@ var require_react_dom_client_development = __commonJS({
               props.name,
               true
             );
-            track(didHydrate);
             break;
           case "option":
             validateOptionProps(didHydrate, props);
@@ -4684,16 +5272,17 @@ var require_react_dom_client_development = __commonJS({
               props.value,
               props.defaultValue,
               props.children
-            ), track(didHydrate);
+            );
         }
         type = props.children;
         "string" !== typeof type && "number" !== typeof type && "bigint" !== typeof type || didHydrate.textContent === "" + type || true === props.suppressHydrationWarning || checkForUnmatchedText(didHydrate.textContent, type) ? (null != props.popover && (listenToNonDelegatedEvent("beforetoggle", didHydrate), listenToNonDelegatedEvent("toggle", didHydrate)), null != props.onScroll && listenToNonDelegatedEvent("scroll", didHydrate), null != props.onScrollEnd && listenToNonDelegatedEvent("scrollend", didHydrate), null != props.onClick && (didHydrate.onclick = noop$1), didHydrate = true) : didHydrate = false;
-        didHydrate || throwOnHydrationMismatch(fiber);
+        didHydrate || throwOnHydrationMismatch(fiber, true);
       }
       function popToNextHostParent(fiber) {
         for (hydrationParentFiber = fiber.return; hydrationParentFiber; )
           switch (hydrationParentFiber.tag) {
             case 5:
+            case 31:
             case 13:
               rootOrSingletonContext = false;
               return;
@@ -4719,7 +5308,7 @@ var require_react_dom_client_development = __commonJS({
           for (JSCompiler_temp = nextHydratableInstance; JSCompiler_temp; ) {
             var diffNode = buildHydrationDiffNode(fiber, 0), description = describeHydratableInstanceForDevWarnings(JSCompiler_temp);
             diffNode.serverTail.push(description);
-            JSCompiler_temp = "Suspense" === description.type ? getNextHydratableInstanceAfterSuspenseInstance(JSCompiler_temp) : getNextHydratable(JSCompiler_temp.nextSibling);
+            JSCompiler_temp = "Suspense" === description.type ? getNextHydratableInstanceAfterHydrationBoundary(JSCompiler_temp) : getNextHydratable(JSCompiler_temp.nextSibling);
           }
           throwOnHydrationMismatch(fiber);
         }
@@ -4731,7 +5320,15 @@ var require_react_dom_client_development = __commonJS({
             throw Error(
               "Expected to have a hydrated suspense instance. This error is likely caused by a bug in React. Please file an issue."
             );
-          nextHydratableInstance = getNextHydratableInstanceAfterSuspenseInstance(fiber);
+          nextHydratableInstance = getNextHydratableInstanceAfterHydrationBoundary(fiber);
+        } else if (31 === tag) {
+          fiber = fiber.memoizedState;
+          fiber = null !== fiber ? fiber.dehydrated : null;
+          if (!fiber)
+            throw Error(
+              "Expected to have a hydrated suspense instance. This error is likely caused by a bug in React. Please file an issue."
+            );
+          nextHydratableInstance = getNextHydratableInstanceAfterHydrationBoundary(fiber);
         } else
           27 === tag ? (tag = nextHydratableInstance, isSingletonScope(fiber.type) ? (fiber = previousHydratableOnEnteringScopedSingleton, previousHydratableOnEnteringScopedSingleton = null, nextHydratableInstance = fiber) : nextHydratableInstance = tag) : nextHydratableInstance = hydrationParentFiber ? getNextHydratable(fiber.stateNode.nextSibling) : null;
         return true;
@@ -4956,6 +5553,37 @@ var require_react_dom_client_development = __commonJS({
           cache.controller.abort();
         });
       }
+      function startUpdateTimerByLane(lane, method, fiber) {
+        if (0 !== (lane & 127))
+          0 > blockingUpdateTime && (blockingUpdateTime = now(), blockingUpdateTask = createTask(method), blockingUpdateMethodName = method, null != fiber && (blockingUpdateComponentName = getComponentNameFromFiber(fiber)), (executionContext & (RenderContext | CommitContext)) !== NoContext && (componentEffectSpawnedUpdate = true, blockingUpdateType = SPAWNED_UPDATE), lane = resolveEventTimeStamp(), method = resolveEventType(), lane !== blockingEventRepeatTime || method !== blockingEventType ? blockingEventRepeatTime = -1.1 : null !== method && (blockingUpdateType = SPAWNED_UPDATE), blockingEventTime = lane, blockingEventType = method);
+        else if (0 !== (lane & 4194048) && 0 > transitionUpdateTime && (transitionUpdateTime = now(), transitionUpdateTask = createTask(method), transitionUpdateMethodName = method, null != fiber && (transitionUpdateComponentName = getComponentNameFromFiber(fiber)), 0 > transitionStartTime)) {
+          lane = resolveEventTimeStamp();
+          method = resolveEventType();
+          if (lane !== transitionEventRepeatTime || method !== transitionEventType)
+            transitionEventRepeatTime = -1.1;
+          transitionEventTime = lane;
+          transitionEventType = method;
+        }
+      }
+      function startHostActionTimer(fiber) {
+        if (0 > blockingUpdateTime) {
+          blockingUpdateTime = now();
+          blockingUpdateTask = null != fiber._debugTask ? fiber._debugTask : null;
+          (executionContext & (RenderContext | CommitContext)) !== NoContext && (blockingUpdateType = SPAWNED_UPDATE);
+          var newEventTime = resolveEventTimeStamp(), newEventType = resolveEventType();
+          newEventTime !== blockingEventRepeatTime || newEventType !== blockingEventType ? blockingEventRepeatTime = -1.1 : null !== newEventType && (blockingUpdateType = SPAWNED_UPDATE);
+          blockingEventTime = newEventTime;
+          blockingEventType = newEventType;
+        }
+        if (0 > transitionUpdateTime && (transitionUpdateTime = now(), transitionUpdateTask = null != fiber._debugTask ? fiber._debugTask : null, 0 > transitionStartTime)) {
+          fiber = resolveEventTimeStamp();
+          newEventTime = resolveEventType();
+          if (fiber !== transitionEventRepeatTime || newEventTime !== transitionEventType)
+            transitionEventRepeatTime = -1.1;
+          transitionEventTime = fiber;
+          transitionEventType = newEventTime;
+        }
+      }
       function pushNestedEffectDurations() {
         var prevEffectDuration = profilerEffectDuration;
         profilerEffectDuration = 0;
@@ -4970,6 +5598,35 @@ var require_react_dom_client_development = __commonJS({
         var elapsedTime = profilerEffectDuration;
         profilerEffectDuration += prevEffectDuration;
         return elapsedTime;
+      }
+      function resetComponentEffectTimers() {
+        componentEffectEndTime = componentEffectStartTime = -1.1;
+      }
+      function pushComponentEffectStart() {
+        var prevEffectStart = componentEffectStartTime;
+        componentEffectStartTime = -1.1;
+        return prevEffectStart;
+      }
+      function popComponentEffectStart(prevEffectStart) {
+        0 <= prevEffectStart && (componentEffectStartTime = prevEffectStart);
+      }
+      function pushComponentEffectDuration() {
+        var prevEffectDuration = componentEffectDuration;
+        componentEffectDuration = -0;
+        return prevEffectDuration;
+      }
+      function popComponentEffectDuration(prevEffectDuration) {
+        0 <= prevEffectDuration && (componentEffectDuration = prevEffectDuration);
+      }
+      function pushComponentEffectErrors() {
+        var prevErrors = componentEffectErrors;
+        componentEffectErrors = null;
+        return prevErrors;
+      }
+      function pushComponentEffectDidSpawnUpdate() {
+        var prev = componentEffectSpawnedUpdate;
+        componentEffectSpawnedUpdate = false;
+        return prev;
       }
       function startProfilerTimer(fiber) {
         profilerStartTime = now();
@@ -4992,13 +5649,22 @@ var require_react_dom_client_development = __commonJS({
       }
       function recordEffectDuration() {
         if (0 <= profilerStartTime) {
-          var elapsedTime = now() - profilerStartTime;
+          var endTime = now(), elapsedTime = endTime - profilerStartTime;
           profilerStartTime = -1;
           profilerEffectDuration += elapsedTime;
+          componentEffectDuration += elapsedTime;
+          componentEffectEndTime = endTime;
         }
+      }
+      function recordEffectError(errorInfo) {
+        null === componentEffectErrors && (componentEffectErrors = []);
+        componentEffectErrors.push(errorInfo);
+        null === commitErrors && (commitErrors = []);
+        commitErrors.push(errorInfo);
       }
       function startEffectTimer() {
         profilerStartTime = now();
+        0 > componentEffectStartTime && (componentEffectStartTime = profilerStartTime);
       }
       function transferActualDuration(fiber) {
         for (var child = fiber.child; child; )
@@ -5022,7 +5688,7 @@ var require_react_dom_client_development = __commonJS({
         return thenable;
       }
       function pingEngtangledActionScope() {
-        if (0 === --currentEntangledPendingCount && null !== currentEntangledListeners) {
+        if (0 === --currentEntangledPendingCount && (-1 < transitionUpdateTime || (transitionStartTime = -1.1), null !== currentEntangledListeners)) {
           null !== currentEntangledActionThenable && (currentEntangledActionThenable.status = "fulfilled");
           var listeners = currentEntangledListeners;
           currentEntangledListeners = null;
@@ -5073,15 +5739,27 @@ var require_react_dom_client_development = __commonJS({
         thenable = thenable.status;
         return "fulfilled" === thenable || "rejected" === thenable;
       }
-      function noop$3() {
-      }
       function trackUsedThenable(thenableState2, thenable, index) {
         null !== ReactSharedInternals.actQueue && (ReactSharedInternals.didUsePromise = true);
         var trackedThenables = thenableState2.thenables;
         index = trackedThenables[index];
         void 0 === index ? trackedThenables.push(thenable) : index !== thenable && (thenableState2.didWarnAboutUncachedPromise || (thenableState2.didWarnAboutUncachedPromise = true, console.error(
           "A component was suspended by an uncached promise. Creating promises inside a Client Component or hook is not yet supported, except via a Suspense-compatible library or framework."
-        )), thenable.then(noop$3, noop$3), thenable = index);
+        )), thenable.then(noop$1, noop$1), thenable = index);
+        if (void 0 === thenable._debugInfo) {
+          thenableState2 = performance.now();
+          trackedThenables = thenable.displayName;
+          var ioInfo = {
+            name: "string" === typeof trackedThenables ? trackedThenables : "Promise",
+            start: thenableState2,
+            end: thenableState2,
+            value: thenable
+          };
+          thenable._debugInfo = [{ awaited: ioInfo }];
+          "fulfilled" !== thenable.status && "rejected" !== thenable.status && (thenableState2 = function() {
+            ioInfo.end = performance.now();
+          }, thenable.then(thenableState2, thenableState2));
+        }
         switch (thenable.status) {
           case "fulfilled":
             return thenable.value;
@@ -5089,7 +5767,7 @@ var require_react_dom_client_development = __commonJS({
             throw thenableState2 = thenable.reason, checkIfUseWrappedInAsyncCatch(thenableState2), thenableState2;
           default:
             if ("string" === typeof thenable.status)
-              thenable.then(noop$3, noop$3);
+              thenable.then(noop$1, noop$1);
             else {
               thenableState2 = workInProgressRoot;
               if (null !== thenableState2 && 100 < thenableState2.shellSuspendCounter)
@@ -5126,6 +5804,15 @@ var require_react_dom_client_development = __commonJS({
             throw SuspenseException;
         }
       }
+      function resolveLazy(lazyType) {
+        try {
+          return callLazyInitInDEV(lazyType);
+        } catch (x) {
+          if (null !== x && "object" === typeof x && "function" === typeof x.then)
+            throw suspendedThenable = x, needsToResetSuspendedThenableDEV = true, SuspenseException;
+          throw x;
+        }
+      }
       function getSuspendedThenable() {
         if (null === suspendedThenable)
           throw Error(
@@ -5141,6 +5828,736 @@ var require_react_dom_client_development = __commonJS({
           throw Error(
             "Hooks are not supported inside an async component. This error is often caused by accidentally adding `'use client'` to a module that was originally written for the server."
           );
+      }
+      function pushDebugInfo(debugInfo) {
+        var previousDebugInfo = currentDebugInfo;
+        null != debugInfo && (currentDebugInfo = null === previousDebugInfo ? debugInfo : previousDebugInfo.concat(debugInfo));
+        return previousDebugInfo;
+      }
+      function getCurrentDebugTask() {
+        var debugInfo = currentDebugInfo;
+        if (null != debugInfo) {
+          for (var i = debugInfo.length - 1; 0 <= i; i--)
+            if (null != debugInfo[i].name) {
+              var debugTask = debugInfo[i].debugTask;
+              if (null != debugTask) return debugTask;
+            }
+        }
+        return null;
+      }
+      function validateFragmentProps(element, fiber, returnFiber) {
+        for (var keys = Object.keys(element.props), i = 0; i < keys.length; i++) {
+          var key = keys[i];
+          if ("children" !== key && "key" !== key) {
+            null === fiber && (fiber = createFiberFromElement(element, returnFiber.mode, 0), fiber._debugInfo = currentDebugInfo, fiber.return = returnFiber);
+            runWithFiberInDEV(
+              fiber,
+              function(erroredKey) {
+                console.error(
+                  "Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.",
+                  erroredKey
+                );
+              },
+              key
+            );
+            break;
+          }
+        }
+      }
+      function unwrapThenable(thenable) {
+        var index = thenableIndexCounter$1;
+        thenableIndexCounter$1 += 1;
+        null === thenableState$1 && (thenableState$1 = createThenableState());
+        return trackUsedThenable(thenableState$1, thenable, index);
+      }
+      function coerceRef(workInProgress2, element) {
+        element = element.props.ref;
+        workInProgress2.ref = void 0 !== element ? element : null;
+      }
+      function throwOnInvalidObjectTypeImpl(returnFiber, newChild) {
+        if (newChild.$$typeof === REACT_LEGACY_ELEMENT_TYPE)
+          throw Error(
+            'A React Element from an older version of React was rendered. This is not supported. It can happen if:\n- Multiple copies of the "react" package is used.\n- A library pre-bundled an old copy of "react" or "react/jsx-runtime".\n- A compiler tries to "inline" JSX instead of using the runtime.'
+          );
+        returnFiber = Object.prototype.toString.call(newChild);
+        throw Error(
+          "Objects are not valid as a React child (found: " + ("[object Object]" === returnFiber ? "object with keys {" + Object.keys(newChild).join(", ") + "}" : returnFiber) + "). If you meant to render a collection of children, use an array instead."
+        );
+      }
+      function throwOnInvalidObjectType(returnFiber, newChild) {
+        var debugTask = getCurrentDebugTask();
+        null !== debugTask ? debugTask.run(
+          throwOnInvalidObjectTypeImpl.bind(null, returnFiber, newChild)
+        ) : throwOnInvalidObjectTypeImpl(returnFiber, newChild);
+      }
+      function warnOnFunctionTypeImpl(returnFiber, invalidChild) {
+        var parentName = getComponentNameFromFiber(returnFiber) || "Component";
+        ownerHasFunctionTypeWarning[parentName] || (ownerHasFunctionTypeWarning[parentName] = true, invalidChild = invalidChild.displayName || invalidChild.name || "Component", 3 === returnFiber.tag ? console.error(
+          "Functions are not valid as a React child. This may happen if you return %s instead of <%s /> from render. Or maybe you meant to call this function rather than return it.\n  root.render(%s)",
+          invalidChild,
+          invalidChild,
+          invalidChild
+        ) : console.error(
+          "Functions are not valid as a React child. This may happen if you return %s instead of <%s /> from render. Or maybe you meant to call this function rather than return it.\n  <%s>{%s}</%s>",
+          invalidChild,
+          invalidChild,
+          parentName,
+          invalidChild,
+          parentName
+        ));
+      }
+      function warnOnFunctionType(returnFiber, invalidChild) {
+        var debugTask = getCurrentDebugTask();
+        null !== debugTask ? debugTask.run(
+          warnOnFunctionTypeImpl.bind(null, returnFiber, invalidChild)
+        ) : warnOnFunctionTypeImpl(returnFiber, invalidChild);
+      }
+      function warnOnSymbolTypeImpl(returnFiber, invalidChild) {
+        var parentName = getComponentNameFromFiber(returnFiber) || "Component";
+        ownerHasSymbolTypeWarning[parentName] || (ownerHasSymbolTypeWarning[parentName] = true, invalidChild = String(invalidChild), 3 === returnFiber.tag ? console.error(
+          "Symbols are not valid as a React child.\n  root.render(%s)",
+          invalidChild
+        ) : console.error(
+          "Symbols are not valid as a React child.\n  <%s>%s</%s>",
+          parentName,
+          invalidChild,
+          parentName
+        ));
+      }
+      function warnOnSymbolType(returnFiber, invalidChild) {
+        var debugTask = getCurrentDebugTask();
+        null !== debugTask ? debugTask.run(
+          warnOnSymbolTypeImpl.bind(null, returnFiber, invalidChild)
+        ) : warnOnSymbolTypeImpl(returnFiber, invalidChild);
+      }
+      function createChildReconciler(shouldTrackSideEffects) {
+        function deleteChild(returnFiber, childToDelete) {
+          if (shouldTrackSideEffects) {
+            var deletions = returnFiber.deletions;
+            null === deletions ? (returnFiber.deletions = [childToDelete], returnFiber.flags |= 16) : deletions.push(childToDelete);
+          }
+        }
+        function deleteRemainingChildren(returnFiber, currentFirstChild) {
+          if (!shouldTrackSideEffects) return null;
+          for (; null !== currentFirstChild; )
+            deleteChild(returnFiber, currentFirstChild), currentFirstChild = currentFirstChild.sibling;
+          return null;
+        }
+        function mapRemainingChildren(currentFirstChild) {
+          for (var existingChildren = /* @__PURE__ */ new Map(); null !== currentFirstChild; )
+            null !== currentFirstChild.key ? existingChildren.set(currentFirstChild.key, currentFirstChild) : existingChildren.set(currentFirstChild.index, currentFirstChild), currentFirstChild = currentFirstChild.sibling;
+          return existingChildren;
+        }
+        function useFiber(fiber, pendingProps) {
+          fiber = createWorkInProgress(fiber, pendingProps);
+          fiber.index = 0;
+          fiber.sibling = null;
+          return fiber;
+        }
+        function placeChild(newFiber, lastPlacedIndex, newIndex) {
+          newFiber.index = newIndex;
+          if (!shouldTrackSideEffects)
+            return newFiber.flags |= 1048576, lastPlacedIndex;
+          newIndex = newFiber.alternate;
+          if (null !== newIndex)
+            return newIndex = newIndex.index, newIndex < lastPlacedIndex ? (newFiber.flags |= 67108866, lastPlacedIndex) : newIndex;
+          newFiber.flags |= 67108866;
+          return lastPlacedIndex;
+        }
+        function placeSingleChild(newFiber) {
+          shouldTrackSideEffects && null === newFiber.alternate && (newFiber.flags |= 67108866);
+          return newFiber;
+        }
+        function updateTextNode(returnFiber, current2, textContent, lanes) {
+          if (null === current2 || 6 !== current2.tag)
+            return current2 = createFiberFromText(
+              textContent,
+              returnFiber.mode,
+              lanes
+            ), current2.return = returnFiber, current2._debugOwner = returnFiber, current2._debugTask = returnFiber._debugTask, current2._debugInfo = currentDebugInfo, current2;
+          current2 = useFiber(current2, textContent);
+          current2.return = returnFiber;
+          current2._debugInfo = currentDebugInfo;
+          return current2;
+        }
+        function updateElement(returnFiber, current2, element, lanes) {
+          var elementType = element.type;
+          if (elementType === REACT_FRAGMENT_TYPE)
+            return current2 = updateFragment(
+              returnFiber,
+              current2,
+              element.props.children,
+              lanes,
+              element.key
+            ), validateFragmentProps(element, current2, returnFiber), current2;
+          if (null !== current2 && (current2.elementType === elementType || isCompatibleFamilyForHotReloading(current2, element) || "object" === typeof elementType && null !== elementType && elementType.$$typeof === REACT_LAZY_TYPE && resolveLazy(elementType) === current2.type))
+            return current2 = useFiber(current2, element.props), coerceRef(current2, element), current2.return = returnFiber, current2._debugOwner = element._owner, current2._debugInfo = currentDebugInfo, current2;
+          current2 = createFiberFromElement(element, returnFiber.mode, lanes);
+          coerceRef(current2, element);
+          current2.return = returnFiber;
+          current2._debugInfo = currentDebugInfo;
+          return current2;
+        }
+        function updatePortal(returnFiber, current2, portal, lanes) {
+          if (null === current2 || 4 !== current2.tag || current2.stateNode.containerInfo !== portal.containerInfo || current2.stateNode.implementation !== portal.implementation)
+            return current2 = createFiberFromPortal(portal, returnFiber.mode, lanes), current2.return = returnFiber, current2._debugInfo = currentDebugInfo, current2;
+          current2 = useFiber(current2, portal.children || []);
+          current2.return = returnFiber;
+          current2._debugInfo = currentDebugInfo;
+          return current2;
+        }
+        function updateFragment(returnFiber, current2, fragment, lanes, key) {
+          if (null === current2 || 7 !== current2.tag)
+            return current2 = createFiberFromFragment(
+              fragment,
+              returnFiber.mode,
+              lanes,
+              key
+            ), current2.return = returnFiber, current2._debugOwner = returnFiber, current2._debugTask = returnFiber._debugTask, current2._debugInfo = currentDebugInfo, current2;
+          current2 = useFiber(current2, fragment);
+          current2.return = returnFiber;
+          current2._debugInfo = currentDebugInfo;
+          return current2;
+        }
+        function createChild(returnFiber, newChild, lanes) {
+          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
+            return newChild = createFiberFromText(
+              "" + newChild,
+              returnFiber.mode,
+              lanes
+            ), newChild.return = returnFiber, newChild._debugOwner = returnFiber, newChild._debugTask = returnFiber._debugTask, newChild._debugInfo = currentDebugInfo, newChild;
+          if ("object" === typeof newChild && null !== newChild) {
+            switch (newChild.$$typeof) {
+              case REACT_ELEMENT_TYPE:
+                return lanes = createFiberFromElement(
+                  newChild,
+                  returnFiber.mode,
+                  lanes
+                ), coerceRef(lanes, newChild), lanes.return = returnFiber, returnFiber = pushDebugInfo(newChild._debugInfo), lanes._debugInfo = currentDebugInfo, currentDebugInfo = returnFiber, lanes;
+              case REACT_PORTAL_TYPE:
+                return newChild = createFiberFromPortal(
+                  newChild,
+                  returnFiber.mode,
+                  lanes
+                ), newChild.return = returnFiber, newChild._debugInfo = currentDebugInfo, newChild;
+              case REACT_LAZY_TYPE:
+                var _prevDebugInfo = pushDebugInfo(newChild._debugInfo);
+                newChild = resolveLazy(newChild);
+                returnFiber = createChild(returnFiber, newChild, lanes);
+                currentDebugInfo = _prevDebugInfo;
+                return returnFiber;
+            }
+            if (isArrayImpl(newChild) || getIteratorFn(newChild))
+              return lanes = createFiberFromFragment(
+                newChild,
+                returnFiber.mode,
+                lanes,
+                null
+              ), lanes.return = returnFiber, lanes._debugOwner = returnFiber, lanes._debugTask = returnFiber._debugTask, returnFiber = pushDebugInfo(newChild._debugInfo), lanes._debugInfo = currentDebugInfo, currentDebugInfo = returnFiber, lanes;
+            if ("function" === typeof newChild.then)
+              return _prevDebugInfo = pushDebugInfo(newChild._debugInfo), returnFiber = createChild(
+                returnFiber,
+                unwrapThenable(newChild),
+                lanes
+              ), currentDebugInfo = _prevDebugInfo, returnFiber;
+            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
+              return createChild(
+                returnFiber,
+                readContextDuringReconciliation(returnFiber, newChild),
+                lanes
+              );
+            throwOnInvalidObjectType(returnFiber, newChild);
+          }
+          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
+          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
+          return null;
+        }
+        function updateSlot(returnFiber, oldFiber, newChild, lanes) {
+          var key = null !== oldFiber ? oldFiber.key : null;
+          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
+            return null !== key ? null : updateTextNode(returnFiber, oldFiber, "" + newChild, lanes);
+          if ("object" === typeof newChild && null !== newChild) {
+            switch (newChild.$$typeof) {
+              case REACT_ELEMENT_TYPE:
+                return newChild.key === key ? (key = pushDebugInfo(newChild._debugInfo), returnFiber = updateElement(
+                  returnFiber,
+                  oldFiber,
+                  newChild,
+                  lanes
+                ), currentDebugInfo = key, returnFiber) : null;
+              case REACT_PORTAL_TYPE:
+                return newChild.key === key ? updatePortal(returnFiber, oldFiber, newChild, lanes) : null;
+              case REACT_LAZY_TYPE:
+                return key = pushDebugInfo(newChild._debugInfo), newChild = resolveLazy(newChild), returnFiber = updateSlot(
+                  returnFiber,
+                  oldFiber,
+                  newChild,
+                  lanes
+                ), currentDebugInfo = key, returnFiber;
+            }
+            if (isArrayImpl(newChild) || getIteratorFn(newChild)) {
+              if (null !== key) return null;
+              key = pushDebugInfo(newChild._debugInfo);
+              returnFiber = updateFragment(
+                returnFiber,
+                oldFiber,
+                newChild,
+                lanes,
+                null
+              );
+              currentDebugInfo = key;
+              return returnFiber;
+            }
+            if ("function" === typeof newChild.then)
+              return key = pushDebugInfo(newChild._debugInfo), returnFiber = updateSlot(
+                returnFiber,
+                oldFiber,
+                unwrapThenable(newChild),
+                lanes
+              ), currentDebugInfo = key, returnFiber;
+            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
+              return updateSlot(
+                returnFiber,
+                oldFiber,
+                readContextDuringReconciliation(returnFiber, newChild),
+                lanes
+              );
+            throwOnInvalidObjectType(returnFiber, newChild);
+          }
+          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
+          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
+          return null;
+        }
+        function updateFromMap(existingChildren, returnFiber, newIdx, newChild, lanes) {
+          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
+            return existingChildren = existingChildren.get(newIdx) || null, updateTextNode(returnFiber, existingChildren, "" + newChild, lanes);
+          if ("object" === typeof newChild && null !== newChild) {
+            switch (newChild.$$typeof) {
+              case REACT_ELEMENT_TYPE:
+                return newIdx = existingChildren.get(
+                  null === newChild.key ? newIdx : newChild.key
+                ) || null, existingChildren = pushDebugInfo(newChild._debugInfo), returnFiber = updateElement(
+                  returnFiber,
+                  newIdx,
+                  newChild,
+                  lanes
+                ), currentDebugInfo = existingChildren, returnFiber;
+              case REACT_PORTAL_TYPE:
+                return existingChildren = existingChildren.get(
+                  null === newChild.key ? newIdx : newChild.key
+                ) || null, updatePortal(returnFiber, existingChildren, newChild, lanes);
+              case REACT_LAZY_TYPE:
+                var _prevDebugInfo7 = pushDebugInfo(newChild._debugInfo);
+                newChild = resolveLazy(newChild);
+                returnFiber = updateFromMap(
+                  existingChildren,
+                  returnFiber,
+                  newIdx,
+                  newChild,
+                  lanes
+                );
+                currentDebugInfo = _prevDebugInfo7;
+                return returnFiber;
+            }
+            if (isArrayImpl(newChild) || getIteratorFn(newChild))
+              return newIdx = existingChildren.get(newIdx) || null, existingChildren = pushDebugInfo(newChild._debugInfo), returnFiber = updateFragment(
+                returnFiber,
+                newIdx,
+                newChild,
+                lanes,
+                null
+              ), currentDebugInfo = existingChildren, returnFiber;
+            if ("function" === typeof newChild.then)
+              return _prevDebugInfo7 = pushDebugInfo(newChild._debugInfo), returnFiber = updateFromMap(
+                existingChildren,
+                returnFiber,
+                newIdx,
+                unwrapThenable(newChild),
+                lanes
+              ), currentDebugInfo = _prevDebugInfo7, returnFiber;
+            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
+              return updateFromMap(
+                existingChildren,
+                returnFiber,
+                newIdx,
+                readContextDuringReconciliation(returnFiber, newChild),
+                lanes
+              );
+            throwOnInvalidObjectType(returnFiber, newChild);
+          }
+          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
+          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
+          return null;
+        }
+        function warnOnInvalidKey(returnFiber, workInProgress2, child, knownKeys) {
+          if ("object" !== typeof child || null === child) return knownKeys;
+          switch (child.$$typeof) {
+            case REACT_ELEMENT_TYPE:
+            case REACT_PORTAL_TYPE:
+              warnForMissingKey(returnFiber, workInProgress2, child);
+              var key = child.key;
+              if ("string" !== typeof key) break;
+              if (null === knownKeys) {
+                knownKeys = /* @__PURE__ */ new Set();
+                knownKeys.add(key);
+                break;
+              }
+              if (!knownKeys.has(key)) {
+                knownKeys.add(key);
+                break;
+              }
+              runWithFiberInDEV(workInProgress2, function() {
+                console.error(
+                  "Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted \u2014 the behavior is unsupported and could change in a future version.",
+                  key
+                );
+              });
+              break;
+            case REACT_LAZY_TYPE:
+              child = resolveLazy(child), warnOnInvalidKey(returnFiber, workInProgress2, child, knownKeys);
+          }
+          return knownKeys;
+        }
+        function reconcileChildrenArray(returnFiber, currentFirstChild, newChildren, lanes) {
+          for (var knownKeys = null, resultingFirstChild = null, previousNewFiber = null, oldFiber = currentFirstChild, newIdx = currentFirstChild = 0, nextOldFiber = null; null !== oldFiber && newIdx < newChildren.length; newIdx++) {
+            oldFiber.index > newIdx ? (nextOldFiber = oldFiber, oldFiber = null) : nextOldFiber = oldFiber.sibling;
+            var newFiber = updateSlot(
+              returnFiber,
+              oldFiber,
+              newChildren[newIdx],
+              lanes
+            );
+            if (null === newFiber) {
+              null === oldFiber && (oldFiber = nextOldFiber);
+              break;
+            }
+            knownKeys = warnOnInvalidKey(
+              returnFiber,
+              newFiber,
+              newChildren[newIdx],
+              knownKeys
+            );
+            shouldTrackSideEffects && oldFiber && null === newFiber.alternate && deleteChild(returnFiber, oldFiber);
+            currentFirstChild = placeChild(newFiber, currentFirstChild, newIdx);
+            null === previousNewFiber ? resultingFirstChild = newFiber : previousNewFiber.sibling = newFiber;
+            previousNewFiber = newFiber;
+            oldFiber = nextOldFiber;
+          }
+          if (newIdx === newChildren.length)
+            return deleteRemainingChildren(returnFiber, oldFiber), isHydrating && pushTreeFork(returnFiber, newIdx), resultingFirstChild;
+          if (null === oldFiber) {
+            for (; newIdx < newChildren.length; newIdx++)
+              oldFiber = createChild(returnFiber, newChildren[newIdx], lanes), null !== oldFiber && (knownKeys = warnOnInvalidKey(
+                returnFiber,
+                oldFiber,
+                newChildren[newIdx],
+                knownKeys
+              ), currentFirstChild = placeChild(
+                oldFiber,
+                currentFirstChild,
+                newIdx
+              ), null === previousNewFiber ? resultingFirstChild = oldFiber : previousNewFiber.sibling = oldFiber, previousNewFiber = oldFiber);
+            isHydrating && pushTreeFork(returnFiber, newIdx);
+            return resultingFirstChild;
+          }
+          for (oldFiber = mapRemainingChildren(oldFiber); newIdx < newChildren.length; newIdx++)
+            nextOldFiber = updateFromMap(
+              oldFiber,
+              returnFiber,
+              newIdx,
+              newChildren[newIdx],
+              lanes
+            ), null !== nextOldFiber && (knownKeys = warnOnInvalidKey(
+              returnFiber,
+              nextOldFiber,
+              newChildren[newIdx],
+              knownKeys
+            ), shouldTrackSideEffects && null !== nextOldFiber.alternate && oldFiber.delete(
+              null === nextOldFiber.key ? newIdx : nextOldFiber.key
+            ), currentFirstChild = placeChild(
+              nextOldFiber,
+              currentFirstChild,
+              newIdx
+            ), null === previousNewFiber ? resultingFirstChild = nextOldFiber : previousNewFiber.sibling = nextOldFiber, previousNewFiber = nextOldFiber);
+          shouldTrackSideEffects && oldFiber.forEach(function(child) {
+            return deleteChild(returnFiber, child);
+          });
+          isHydrating && pushTreeFork(returnFiber, newIdx);
+          return resultingFirstChild;
+        }
+        function reconcileChildrenIterator(returnFiber, currentFirstChild, newChildren, lanes) {
+          if (null == newChildren)
+            throw Error("An iterable object provided no iterator.");
+          for (var resultingFirstChild = null, previousNewFiber = null, oldFiber = currentFirstChild, newIdx = currentFirstChild = 0, nextOldFiber = null, knownKeys = null, step = newChildren.next(); null !== oldFiber && !step.done; newIdx++, step = newChildren.next()) {
+            oldFiber.index > newIdx ? (nextOldFiber = oldFiber, oldFiber = null) : nextOldFiber = oldFiber.sibling;
+            var newFiber = updateSlot(returnFiber, oldFiber, step.value, lanes);
+            if (null === newFiber) {
+              null === oldFiber && (oldFiber = nextOldFiber);
+              break;
+            }
+            knownKeys = warnOnInvalidKey(
+              returnFiber,
+              newFiber,
+              step.value,
+              knownKeys
+            );
+            shouldTrackSideEffects && oldFiber && null === newFiber.alternate && deleteChild(returnFiber, oldFiber);
+            currentFirstChild = placeChild(newFiber, currentFirstChild, newIdx);
+            null === previousNewFiber ? resultingFirstChild = newFiber : previousNewFiber.sibling = newFiber;
+            previousNewFiber = newFiber;
+            oldFiber = nextOldFiber;
+          }
+          if (step.done)
+            return deleteRemainingChildren(returnFiber, oldFiber), isHydrating && pushTreeFork(returnFiber, newIdx), resultingFirstChild;
+          if (null === oldFiber) {
+            for (; !step.done; newIdx++, step = newChildren.next())
+              oldFiber = createChild(returnFiber, step.value, lanes), null !== oldFiber && (knownKeys = warnOnInvalidKey(
+                returnFiber,
+                oldFiber,
+                step.value,
+                knownKeys
+              ), currentFirstChild = placeChild(
+                oldFiber,
+                currentFirstChild,
+                newIdx
+              ), null === previousNewFiber ? resultingFirstChild = oldFiber : previousNewFiber.sibling = oldFiber, previousNewFiber = oldFiber);
+            isHydrating && pushTreeFork(returnFiber, newIdx);
+            return resultingFirstChild;
+          }
+          for (oldFiber = mapRemainingChildren(oldFiber); !step.done; newIdx++, step = newChildren.next())
+            nextOldFiber = updateFromMap(
+              oldFiber,
+              returnFiber,
+              newIdx,
+              step.value,
+              lanes
+            ), null !== nextOldFiber && (knownKeys = warnOnInvalidKey(
+              returnFiber,
+              nextOldFiber,
+              step.value,
+              knownKeys
+            ), shouldTrackSideEffects && null !== nextOldFiber.alternate && oldFiber.delete(
+              null === nextOldFiber.key ? newIdx : nextOldFiber.key
+            ), currentFirstChild = placeChild(
+              nextOldFiber,
+              currentFirstChild,
+              newIdx
+            ), null === previousNewFiber ? resultingFirstChild = nextOldFiber : previousNewFiber.sibling = nextOldFiber, previousNewFiber = nextOldFiber);
+          shouldTrackSideEffects && oldFiber.forEach(function(child) {
+            return deleteChild(returnFiber, child);
+          });
+          isHydrating && pushTreeFork(returnFiber, newIdx);
+          return resultingFirstChild;
+        }
+        function reconcileChildFibersImpl(returnFiber, currentFirstChild, newChild, lanes) {
+          "object" === typeof newChild && null !== newChild && newChild.type === REACT_FRAGMENT_TYPE && null === newChild.key && (validateFragmentProps(newChild, null, returnFiber), newChild = newChild.props.children);
+          if ("object" === typeof newChild && null !== newChild) {
+            switch (newChild.$$typeof) {
+              case REACT_ELEMENT_TYPE:
+                var prevDebugInfo = pushDebugInfo(newChild._debugInfo);
+                a: {
+                  for (var key = newChild.key; null !== currentFirstChild; ) {
+                    if (currentFirstChild.key === key) {
+                      key = newChild.type;
+                      if (key === REACT_FRAGMENT_TYPE) {
+                        if (7 === currentFirstChild.tag) {
+                          deleteRemainingChildren(
+                            returnFiber,
+                            currentFirstChild.sibling
+                          );
+                          lanes = useFiber(
+                            currentFirstChild,
+                            newChild.props.children
+                          );
+                          lanes.return = returnFiber;
+                          lanes._debugOwner = newChild._owner;
+                          lanes._debugInfo = currentDebugInfo;
+                          validateFragmentProps(newChild, lanes, returnFiber);
+                          returnFiber = lanes;
+                          break a;
+                        }
+                      } else if (currentFirstChild.elementType === key || isCompatibleFamilyForHotReloading(
+                        currentFirstChild,
+                        newChild
+                      ) || "object" === typeof key && null !== key && key.$$typeof === REACT_LAZY_TYPE && resolveLazy(key) === currentFirstChild.type) {
+                        deleteRemainingChildren(
+                          returnFiber,
+                          currentFirstChild.sibling
+                        );
+                        lanes = useFiber(currentFirstChild, newChild.props);
+                        coerceRef(lanes, newChild);
+                        lanes.return = returnFiber;
+                        lanes._debugOwner = newChild._owner;
+                        lanes._debugInfo = currentDebugInfo;
+                        returnFiber = lanes;
+                        break a;
+                      }
+                      deleteRemainingChildren(returnFiber, currentFirstChild);
+                      break;
+                    } else deleteChild(returnFiber, currentFirstChild);
+                    currentFirstChild = currentFirstChild.sibling;
+                  }
+                  newChild.type === REACT_FRAGMENT_TYPE ? (lanes = createFiberFromFragment(
+                    newChild.props.children,
+                    returnFiber.mode,
+                    lanes,
+                    newChild.key
+                  ), lanes.return = returnFiber, lanes._debugOwner = returnFiber, lanes._debugTask = returnFiber._debugTask, lanes._debugInfo = currentDebugInfo, validateFragmentProps(newChild, lanes, returnFiber), returnFiber = lanes) : (lanes = createFiberFromElement(
+                    newChild,
+                    returnFiber.mode,
+                    lanes
+                  ), coerceRef(lanes, newChild), lanes.return = returnFiber, lanes._debugInfo = currentDebugInfo, returnFiber = lanes);
+                }
+                returnFiber = placeSingleChild(returnFiber);
+                currentDebugInfo = prevDebugInfo;
+                return returnFiber;
+              case REACT_PORTAL_TYPE:
+                a: {
+                  prevDebugInfo = newChild;
+                  for (newChild = prevDebugInfo.key; null !== currentFirstChild; ) {
+                    if (currentFirstChild.key === newChild)
+                      if (4 === currentFirstChild.tag && currentFirstChild.stateNode.containerInfo === prevDebugInfo.containerInfo && currentFirstChild.stateNode.implementation === prevDebugInfo.implementation) {
+                        deleteRemainingChildren(
+                          returnFiber,
+                          currentFirstChild.sibling
+                        );
+                        lanes = useFiber(
+                          currentFirstChild,
+                          prevDebugInfo.children || []
+                        );
+                        lanes.return = returnFiber;
+                        returnFiber = lanes;
+                        break a;
+                      } else {
+                        deleteRemainingChildren(returnFiber, currentFirstChild);
+                        break;
+                      }
+                    else deleteChild(returnFiber, currentFirstChild);
+                    currentFirstChild = currentFirstChild.sibling;
+                  }
+                  lanes = createFiberFromPortal(
+                    prevDebugInfo,
+                    returnFiber.mode,
+                    lanes
+                  );
+                  lanes.return = returnFiber;
+                  returnFiber = lanes;
+                }
+                return placeSingleChild(returnFiber);
+              case REACT_LAZY_TYPE:
+                return prevDebugInfo = pushDebugInfo(newChild._debugInfo), newChild = resolveLazy(newChild), returnFiber = reconcileChildFibersImpl(
+                  returnFiber,
+                  currentFirstChild,
+                  newChild,
+                  lanes
+                ), currentDebugInfo = prevDebugInfo, returnFiber;
+            }
+            if (isArrayImpl(newChild))
+              return prevDebugInfo = pushDebugInfo(newChild._debugInfo), returnFiber = reconcileChildrenArray(
+                returnFiber,
+                currentFirstChild,
+                newChild,
+                lanes
+              ), currentDebugInfo = prevDebugInfo, returnFiber;
+            if (getIteratorFn(newChild)) {
+              prevDebugInfo = pushDebugInfo(newChild._debugInfo);
+              key = getIteratorFn(newChild);
+              if ("function" !== typeof key)
+                throw Error(
+                  "An object is not an iterable. This error is likely caused by a bug in React. Please file an issue."
+                );
+              var newChildren = key.call(newChild);
+              if (newChildren === newChild) {
+                if (0 !== returnFiber.tag || "[object GeneratorFunction]" !== Object.prototype.toString.call(returnFiber.type) || "[object Generator]" !== Object.prototype.toString.call(newChildren))
+                  didWarnAboutGenerators || console.error(
+                    "Using Iterators as children is unsupported and will likely yield unexpected results because enumerating a generator mutates it. You may convert it to an array with `Array.from()` or the `[...spread]` operator before rendering. You can also use an Iterable that can iterate multiple times over the same items."
+                  ), didWarnAboutGenerators = true;
+              } else
+                newChild.entries !== key || didWarnAboutMaps || (console.error(
+                  "Using Maps as children is not supported. Use an array of keyed ReactElements instead."
+                ), didWarnAboutMaps = true);
+              returnFiber = reconcileChildrenIterator(
+                returnFiber,
+                currentFirstChild,
+                newChildren,
+                lanes
+              );
+              currentDebugInfo = prevDebugInfo;
+              return returnFiber;
+            }
+            if ("function" === typeof newChild.then)
+              return prevDebugInfo = pushDebugInfo(newChild._debugInfo), returnFiber = reconcileChildFibersImpl(
+                returnFiber,
+                currentFirstChild,
+                unwrapThenable(newChild),
+                lanes
+              ), currentDebugInfo = prevDebugInfo, returnFiber;
+            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
+              return reconcileChildFibersImpl(
+                returnFiber,
+                currentFirstChild,
+                readContextDuringReconciliation(returnFiber, newChild),
+                lanes
+              );
+            throwOnInvalidObjectType(returnFiber, newChild);
+          }
+          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
+            return prevDebugInfo = "" + newChild, null !== currentFirstChild && 6 === currentFirstChild.tag ? (deleteRemainingChildren(
+              returnFiber,
+              currentFirstChild.sibling
+            ), lanes = useFiber(currentFirstChild, prevDebugInfo), lanes.return = returnFiber, returnFiber = lanes) : (deleteRemainingChildren(returnFiber, currentFirstChild), lanes = createFiberFromText(
+              prevDebugInfo,
+              returnFiber.mode,
+              lanes
+            ), lanes.return = returnFiber, lanes._debugOwner = returnFiber, lanes._debugTask = returnFiber._debugTask, lanes._debugInfo = currentDebugInfo, returnFiber = lanes), placeSingleChild(returnFiber);
+          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
+          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
+          return deleteRemainingChildren(returnFiber, currentFirstChild);
+        }
+        return function(returnFiber, currentFirstChild, newChild, lanes) {
+          var prevDebugInfo = currentDebugInfo;
+          currentDebugInfo = null;
+          try {
+            thenableIndexCounter$1 = 0;
+            var firstChildFiber = reconcileChildFibersImpl(
+              returnFiber,
+              currentFirstChild,
+              newChild,
+              lanes
+            );
+            thenableState$1 = null;
+            return firstChildFiber;
+          } catch (x) {
+            if (x === SuspenseException || x === SuspenseActionException) throw x;
+            var fiber = createFiber(29, x, null, returnFiber.mode);
+            fiber.lanes = lanes;
+            fiber.return = returnFiber;
+            var debugInfo = fiber._debugInfo = currentDebugInfo;
+            fiber._debugOwner = returnFiber._debugOwner;
+            fiber._debugTask = returnFiber._debugTask;
+            if (null != debugInfo) {
+              for (var i = debugInfo.length - 1; 0 <= i; i--)
+                if ("string" === typeof debugInfo[i].stack) {
+                  fiber._debugOwner = debugInfo[i];
+                  fiber._debugTask = debugInfo[i].debugTask;
+                  break;
+                }
+            }
+            return fiber;
+          } finally {
+            currentDebugInfo = prevDebugInfo;
+          }
+        };
+      }
+      function validateSuspenseListNestedChild(childSlot, index) {
+        var isAnArray = isArrayImpl(childSlot);
+        childSlot = !isAnArray && "function" === typeof getIteratorFn(childSlot);
+        return isAnArray || childSlot ? (isAnArray = isAnArray ? "array" : "iterable", console.error(
+          "A nested %s was passed to row #%s in <SuspenseList />. Wrap it in an additional SuspenseList to configure its revealOrder: <SuspenseList revealOrder=...> ... <SuspenseList revealOrder=...>{%s}</SuspenseList> ... </SuspenseList>",
+          isAnArray,
+          index,
+          isAnArray
+        ), false) : true;
       }
       function initializeUpdateQueue(fiber) {
         fiber.updateQueue = {
@@ -5389,6 +6806,60 @@ var require_react_dom_client_development = __commonJS({
         pop(currentTreeHiddenStackCursor, fiber);
         pop(prevEntangledRenderLanesCursor, fiber);
       }
+      function pushPrimaryTreeSuspenseHandler(handler) {
+        var current2 = handler.alternate;
+        push(
+          suspenseStackCursor,
+          suspenseStackCursor.current & SubtreeSuspenseContextMask,
+          handler
+        );
+        push(suspenseHandlerStackCursor, handler, handler);
+        null === shellBoundary && (null === current2 || null !== currentTreeHiddenStackCursor.current ? shellBoundary = handler : null !== current2.memoizedState && (shellBoundary = handler));
+      }
+      function pushDehydratedActivitySuspenseHandler(fiber) {
+        push(suspenseStackCursor, suspenseStackCursor.current, fiber);
+        push(suspenseHandlerStackCursor, fiber, fiber);
+        null === shellBoundary && (shellBoundary = fiber);
+      }
+      function pushOffscreenSuspenseHandler(fiber) {
+        22 === fiber.tag ? (push(suspenseStackCursor, suspenseStackCursor.current, fiber), push(suspenseHandlerStackCursor, fiber, fiber), null === shellBoundary && (shellBoundary = fiber)) : reuseSuspenseHandlerOnStack(fiber);
+      }
+      function reuseSuspenseHandlerOnStack(fiber) {
+        push(suspenseStackCursor, suspenseStackCursor.current, fiber);
+        push(
+          suspenseHandlerStackCursor,
+          suspenseHandlerStackCursor.current,
+          fiber
+        );
+      }
+      function popSuspenseHandler(fiber) {
+        pop(suspenseHandlerStackCursor, fiber);
+        shellBoundary === fiber && (shellBoundary = null);
+        pop(suspenseStackCursor, fiber);
+      }
+      function findFirstSuspended(row) {
+        for (var node = row; null !== node; ) {
+          if (13 === node.tag) {
+            var state = node.memoizedState;
+            if (null !== state && (state = state.dehydrated, null === state || isSuspenseInstancePending(state) || isSuspenseInstanceFallback(state)))
+              return node;
+          } else if (19 === node.tag && ("forwards" === node.memoizedProps.revealOrder || "backwards" === node.memoizedProps.revealOrder || "unstable_legacy-backwards" === node.memoizedProps.revealOrder || "together" === node.memoizedProps.revealOrder)) {
+            if (0 !== (node.flags & 128)) return node;
+          } else if (null !== node.child) {
+            node.child.return = node;
+            node = node.child;
+            continue;
+          }
+          if (node === row) break;
+          for (; null === node.sibling; ) {
+            if (null === node.return || node.return === row) return null;
+            node = node.return;
+          }
+          node.sibling.return = node.return;
+          node = node.sibling;
+        }
+        return null;
+      }
       function mountHookTypesDev() {
         var hookName = currentHookNameInDev;
         null === hookTypesDev ? hookTypesDev = [hookName] : hookTypesDev.push(hookName);
@@ -5491,11 +6962,11 @@ var require_react_dom_client_development = __commonJS({
       }
       function finishRenderingHooks(current2, workInProgress2) {
         workInProgress2._debugHookTypes = hookTypesDev;
-        null === workInProgress2.dependencies ? null !== thenableState$1 && (workInProgress2.dependencies = {
+        null === workInProgress2.dependencies ? null !== thenableState && (workInProgress2.dependencies = {
           lanes: 0,
           firstContext: null,
-          _debugThenableState: thenableState$1
-        }) : workInProgress2.dependencies._debugThenableState = thenableState$1;
+          _debugThenableState: thenableState
+        }) : workInProgress2.dependencies._debugThenableState = thenableState;
         ReactSharedInternals.H = ContextOnlyDispatcher;
         var didRenderTooFewHooks = null !== currentHook && null !== currentHook.next;
         renderLanes = 0;
@@ -5505,8 +6976,8 @@ var require_react_dom_client_development = __commonJS({
           "Internal React error: Expected static flag was missing. Please notify the React team."
         );
         didScheduleRenderPhaseUpdate = false;
-        thenableIndexCounter$1 = 0;
-        thenableState$1 = null;
+        thenableIndexCounter = 0;
+        thenableState = null;
         if (didRenderTooFewHooks)
           throw Error(
             "Rendered fewer hooks than expected. This may be caused by an accidental early return statement."
@@ -5521,8 +6992,8 @@ var require_react_dom_client_development = __commonJS({
         currentlyRenderingFiber = workInProgress2;
         var numberOfReRenders = 0;
         do {
-          didScheduleRenderPhaseUpdateDuringThisPass && (thenableState$1 = null);
-          thenableIndexCounter$1 = 0;
+          didScheduleRenderPhaseUpdateDuringThisPass && (thenableState = null);
+          thenableIndexCounter = 0;
           didScheduleRenderPhaseUpdateDuringThisPass = false;
           if (numberOfReRenders >= RE_RENDER_LIMIT)
             throw Error(
@@ -5575,8 +7046,8 @@ var require_react_dom_client_development = __commonJS({
         hookTypesUpdateIndexDev = -1;
         currentHookNameInDev = null;
         didScheduleRenderPhaseUpdateDuringThisPass = false;
-        thenableIndexCounter$1 = localIdCounter = 0;
-        thenableState$1 = null;
+        thenableIndexCounter = localIdCounter = 0;
+        thenableState = null;
       }
       function mountWorkInProgressHook() {
         var hook = {
@@ -5621,10 +7092,10 @@ var require_react_dom_client_development = __commonJS({
         return { lastEffect: null, events: null, stores: null, memoCache: null };
       }
       function useThenable(thenable) {
-        var index = thenableIndexCounter$1;
-        thenableIndexCounter$1 += 1;
-        null === thenableState$1 && (thenableState$1 = createThenableState());
-        thenable = trackUsedThenable(thenableState$1, thenable, index);
+        var index = thenableIndexCounter;
+        thenableIndexCounter += 1;
+        null === thenableState && (thenableState = createThenableState());
+        thenable = trackUsedThenable(thenableState, thenable, index);
         index = currentlyRenderingFiber;
         null === (null === workInProgressHook ? index.memoizedState : workInProgressHook.next) && (index = index.alternate, ReactSharedInternals.H = null !== index && null !== index.memoizedState ? HooksDispatcherOnUpdateInDEV : HooksDispatcherOnMountInDEV);
         return thenable;
@@ -5733,6 +7204,7 @@ var require_react_dom_client_development = __commonJS({
                 null !== newBaseQueueLast && (newBaseQueueLast = newBaseQueueLast.next = {
                   lane: 0,
                   revertLane: 0,
+                  gesture: null,
                   action: update.action,
                   hasEagerState: update.hasEagerState,
                   eagerState: update.eagerState,
@@ -5746,6 +7218,7 @@ var require_react_dom_client_development = __commonJS({
                 updateLane = {
                   lane: 0,
                   revertLane: update.revertLane,
+                  gesture: null,
                   action: update.action,
                   hasEagerState: update.hasEagerState,
                   eagerState: update.eagerState,
@@ -5758,6 +7231,7 @@ var require_react_dom_client_development = __commonJS({
               revertLane = {
                 lane: updateLane,
                 revertLane: update.revertLane,
+                gesture: update.gesture,
                 action: update.action,
                 hasEagerState: update.hasEagerState,
                 eagerState: update.eagerState,
@@ -5817,7 +7291,7 @@ var require_react_dom_client_development = __commonJS({
             throw Error(
               "Expected a work-in-progress root. This is a bug in React. Please file an issue."
             );
-          0 !== (workInProgressRootRenderLanes & 124) || pushStoreConsistencyCheck(fiber, getSnapshot, nextSnapshot);
+          0 !== (workInProgressRootRenderLanes & 127) || pushStoreConsistencyCheck(fiber, getSnapshot, nextSnapshot);
         }
         hook.memoizedState = nextSnapshot;
         getServerSnapshot = { value: nextSnapshot, getSnapshot };
@@ -5829,7 +7303,7 @@ var require_react_dom_client_development = __commonJS({
         fiber.flags |= 2048;
         pushSimpleEffect(
           HasEffect | Passive,
-          createEffectInstance(),
+          { destroy: void 0 },
           updateStoreInstance.bind(
             null,
             fiber,
@@ -5867,7 +7341,7 @@ var require_react_dom_client_development = __commonJS({
           fiber.flags |= 2048;
           pushSimpleEffect(
             HasEffect | Passive,
-            createEffectInstance(),
+            { destroy: void 0 },
             updateStoreInstance.bind(
               null,
               fiber,
@@ -5881,7 +7355,7 @@ var require_react_dom_client_development = __commonJS({
             throw Error(
               "Expected a work-in-progress root. This is a bug in React. Please file an issue."
             );
-          isHydrating$jscomp$0 || 0 !== (renderLanes & 124) || pushStoreConsistencyCheck(fiber, getSnapshot, getServerSnapshot);
+          isHydrating$jscomp$0 || 0 !== (renderLanes & 127) || pushStoreConsistencyCheck(fiber, getSnapshot, getServerSnapshot);
         }
         return getServerSnapshot;
       }
@@ -5898,7 +7372,7 @@ var require_react_dom_client_development = __commonJS({
       }
       function subscribeToStore(fiber, inst, subscribe) {
         return subscribe(function() {
-          checkIfSnapshotChanged(inst) && forceStoreRerender(fiber);
+          checkIfSnapshotChanged(inst) && (startUpdateTimerByLane(2, "updateSyncExternalStore()", fiber), forceStoreRerender(fiber));
         });
       }
       function checkIfSnapshotChanged(inst) {
@@ -6012,8 +7486,8 @@ var require_react_dom_client_development = __commonJS({
         var action = node.action, payload = node.payload, prevState = actionQueue.state;
         if (node.isTransition) {
           var prevTransition = ReactSharedInternals.T, currentTransition = {};
+          currentTransition._updatedFibers = /* @__PURE__ */ new Set();
           ReactSharedInternals.T = currentTransition;
-          ReactSharedInternals.T._updatedFibers = /* @__PURE__ */ new Set();
           try {
             var returnValue = action(prevState, payload), onStartTransitionFinish = ReactSharedInternals.S;
             null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
@@ -6021,7 +7495,9 @@ var require_react_dom_client_development = __commonJS({
           } catch (error) {
             onActionError(actionQueue, node, error);
           } finally {
-            ReactSharedInternals.T = prevTransition, null === prevTransition && currentTransition._updatedFibers && (actionQueue = currentTransition._updatedFibers.size, currentTransition._updatedFibers.clear(), 10 < actionQueue && console.warn(
+            null !== prevTransition && null !== currentTransition.types && (null !== prevTransition.types && prevTransition.types !== currentTransition.types && console.error(
+              "We expected inner Transitions to have transferred the outer types set and that you cannot add to the outer Transition while inside the inner.This is a bug in React."
+            ), prevTransition.types = currentTransition.types), ReactSharedInternals.T = prevTransition, null === prevTransition && currentTransition._updatedFibers && (actionQueue = currentTransition._updatedFibers.size, currentTransition._updatedFibers.clear(), 10 < actionQueue && console.warn(
               "Detected a large number of updates inside startTransition. If this is due to a subscription please re-write it to use React provided hooks. Otherwise concurrent mode guarantees are off the table."
             ));
           }
@@ -6033,7 +7509,7 @@ var require_react_dom_client_development = __commonJS({
           }
       }
       function handleActionReturnValue(actionQueue, node, returnValue) {
-        null !== returnValue && "object" === typeof returnValue && "function" === typeof returnValue.then ? (returnValue.then(
+        null !== returnValue && "object" === typeof returnValue && "function" === typeof returnValue.then ? (ReactSharedInternals.asyncTransitions++, returnValue.then(releaseAsyncTransition, releaseAsyncTransition), returnValue.then(
           function(nextState) {
             onActionSuccess(actionQueue, node, nextState);
           },
@@ -6176,7 +7652,7 @@ var require_react_dom_client_development = __commonJS({
         var actionQueue = currentStateHook.queue, dispatch = actionQueue.dispatch;
         action !== currentStateHook.memoizedState && (currentlyRenderingFiber.flags |= 2048, pushSimpleEffect(
           HasEffect | Passive,
-          createEffectInstance(),
+          { destroy: void 0 },
           actionStateActionEffect.bind(null, actionQueue, action),
           null
         ));
@@ -6196,37 +7672,27 @@ var require_react_dom_client_development = __commonJS({
         currentStateHook.memoizedState = action;
         return [stateHook, dispatch, false];
       }
-      function pushSimpleEffect(tag, inst, create, createDeps) {
-        tag = {
-          tag,
-          create,
-          deps: createDeps,
-          inst,
-          next: null
-        };
+      function pushSimpleEffect(tag, inst, create, deps) {
+        tag = { tag, create, deps, inst, next: null };
         inst = currentlyRenderingFiber.updateQueue;
         null === inst && (inst = createFunctionComponentUpdateQueue(), currentlyRenderingFiber.updateQueue = inst);
         create = inst.lastEffect;
-        null === create ? inst.lastEffect = tag.next = tag : (createDeps = create.next, create.next = tag, tag.next = createDeps, inst.lastEffect = tag);
+        null === create ? inst.lastEffect = tag.next = tag : (deps = create.next, create.next = tag, tag.next = deps, inst.lastEffect = tag);
         return tag;
-      }
-      function createEffectInstance() {
-        return { destroy: void 0, resource: void 0 };
       }
       function mountRef(initialValue) {
         var hook = mountWorkInProgressHook();
         initialValue = { current: initialValue };
         return hook.memoizedState = initialValue;
       }
-      function mountEffectImpl(fiberFlags, hookFlags, create, createDeps) {
+      function mountEffectImpl(fiberFlags, hookFlags, create, deps) {
         var hook = mountWorkInProgressHook();
-        createDeps = void 0 === createDeps ? null : createDeps;
         currentlyRenderingFiber.flags |= fiberFlags;
         hook.memoizedState = pushSimpleEffect(
           HasEffect | hookFlags,
-          createEffectInstance(),
+          { destroy: void 0 },
           create,
-          createDeps
+          void 0 === deps ? null : deps
         );
       }
       function updateEffectImpl(fiberFlags, hookFlags, create, deps) {
@@ -6240,8 +7706,40 @@ var require_react_dom_client_development = __commonJS({
           deps
         ));
       }
-      function mountEffect(create, createDeps) {
-        (currentlyRenderingFiber.mode & StrictEffectsMode) !== NoMode && (currentlyRenderingFiber.mode & NoStrictPassiveEffectsMode) === NoMode ? mountEffectImpl(276826112, Passive, create, createDeps) : mountEffectImpl(8390656, Passive, create, createDeps);
+      function mountEffect(create, deps) {
+        (currentlyRenderingFiber.mode & StrictEffectsMode) !== NoMode ? mountEffectImpl(276826112, Passive, create, deps) : mountEffectImpl(8390656, Passive, create, deps);
+      }
+      function useEffectEventImpl(payload) {
+        currentlyRenderingFiber.flags |= 4;
+        var componentUpdateQueue = currentlyRenderingFiber.updateQueue;
+        if (null === componentUpdateQueue)
+          componentUpdateQueue = createFunctionComponentUpdateQueue(), currentlyRenderingFiber.updateQueue = componentUpdateQueue, componentUpdateQueue.events = [payload];
+        else {
+          var events = componentUpdateQueue.events;
+          null === events ? componentUpdateQueue.events = [payload] : events.push(payload);
+        }
+      }
+      function mountEvent(callback) {
+        var hook = mountWorkInProgressHook(), ref = { impl: callback };
+        hook.memoizedState = ref;
+        return function() {
+          if ((executionContext & RenderContext) !== NoContext)
+            throw Error(
+              "A function wrapped in useEffectEvent can't be called during rendering."
+            );
+          return ref.impl.apply(void 0, arguments);
+        };
+      }
+      function updateEvent(callback) {
+        var ref = updateWorkInProgressHook().memoizedState;
+        useEffectEventImpl({ ref, nextImpl: callback });
+        return function() {
+          if ((executionContext & RenderContext) !== NoContext)
+            throw Error(
+              "A function wrapped in useEffectEvent can't be called during rendering."
+            );
+          return ref.impl.apply(void 0, arguments);
+        };
       }
       function mountLayoutEffect(create, deps) {
         var fiberFlags = 4194308;
@@ -6364,7 +7862,7 @@ var require_react_dom_client_development = __commonJS({
         );
       }
       function mountDeferredValueImpl(hook, value, initialValue) {
-        if (void 0 === initialValue || 0 !== (renderLanes & 1073741824))
+        if (void 0 === initialValue || 0 !== (renderLanes & 1073741824) && 0 === (workInProgressRootRenderLanes & 261930))
           return hook.memoizedState = value;
         hook.memoizedState = initialValue;
         hook = requestDeferredLane();
@@ -6376,24 +7874,29 @@ var require_react_dom_client_development = __commonJS({
         if (objectIs(value, prevValue)) return value;
         if (null !== currentTreeHiddenStackCursor.current)
           return hook = mountDeferredValueImpl(hook, value, initialValue), objectIs(hook, prevValue) || (didReceiveUpdate = true), hook;
-        if (0 === (renderLanes & 42))
+        if (0 === (renderLanes & 42) || 0 !== (renderLanes & 1073741824) && 0 === (workInProgressRootRenderLanes & 261930))
           return didReceiveUpdate = true, hook.memoizedState = value;
         hook = requestDeferredLane();
         currentlyRenderingFiber.lanes |= hook;
         workInProgressRootSkippedLanes |= hook;
         return prevValue;
       }
+      function releaseAsyncTransition() {
+        ReactSharedInternals.asyncTransitions--;
+      }
       function startTransition(fiber, queue, pendingState, finishedState, callback) {
         var previousPriority = ReactDOMSharedInternals.p;
         ReactDOMSharedInternals.p = 0 !== previousPriority && previousPriority < ContinuousEventPriority ? previousPriority : ContinuousEventPriority;
         var prevTransition = ReactSharedInternals.T, currentTransition = {};
+        currentTransition._updatedFibers = /* @__PURE__ */ new Set();
         ReactSharedInternals.T = currentTransition;
         dispatchOptimisticSetState(fiber, false, queue, pendingState);
-        currentTransition._updatedFibers = /* @__PURE__ */ new Set();
         try {
           var returnValue = callback(), onStartTransitionFinish = ReactSharedInternals.S;
           null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
           if (null !== returnValue && "object" === typeof returnValue && "function" === typeof returnValue.then) {
+            ReactSharedInternals.asyncTransitions++;
+            returnValue.then(releaseAsyncTransition, releaseAsyncTransition);
             var thenableForFinishedState = chainThenableValue(
               returnValue,
               finishedState
@@ -6420,7 +7923,9 @@ var require_react_dom_client_development = __commonJS({
             requestUpdateLane(fiber)
           );
         } finally {
-          ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = prevTransition, null === prevTransition && currentTransition._updatedFibers && (fiber = currentTransition._updatedFibers.size, currentTransition._updatedFibers.clear(), 10 < fiber && console.warn(
+          ReactDOMSharedInternals.p = previousPriority, null !== prevTransition && null !== currentTransition.types && (null !== prevTransition.types && prevTransition.types !== currentTransition.types && console.error(
+            "We expected inner Transitions to have transferred the outer types set and that you cannot add to the outer Transition while inside the inner.This is a bug in React."
+          ), prevTransition.types = currentTransition.types), ReactSharedInternals.T = prevTransition, null === prevTransition && currentTransition._updatedFibers && (fiber = currentTransition._updatedFibers.size, currentTransition._updatedFibers.clear(), 10 < fiber && console.warn(
             "Detected a large number of updates inside startTransition. If this is due to a subscription please re-write it to use React provided hooks. Otherwise concurrent mode guarantees are off the table."
           ));
         }
@@ -6431,12 +7936,13 @@ var require_react_dom_client_development = __commonJS({
             "Expected the form instance to be a HostComponent. This is a bug in React."
           );
         var queue = ensureFormComponentIsStateful(formFiber).queue;
+        startHostActionTimer(formFiber);
         startTransition(
           formFiber,
           queue,
           pendingState,
           NotPendingTransition,
-          null === action ? noop$2 : function() {
+          null === action ? noop : function() {
             requestFormReset$1(formFiber);
             return action(formData);
           }
@@ -6481,10 +7987,11 @@ var require_react_dom_client_development = __commonJS({
         null === ReactSharedInternals.T && console.error(
           "requestFormReset was called outside a transition or action. To fix, move to an action, or wrap with startTransition."
         );
-        var resetStateQueue = ensureFormComponentIsStateful(formFiber).next.queue;
+        var stateHook = ensureFormComponentIsStateful(formFiber);
+        null === stateHook.next && (stateHook = formFiber.alternate.memoizedState);
         dispatchSetStateInternal(
           formFiber,
-          resetStateQueue,
+          stateHook.next.queue,
           {},
           requestUpdateLane(formFiber)
         );
@@ -6524,12 +8031,12 @@ var require_react_dom_client_development = __commonJS({
           var treeId = treeContextOverflow;
           var idWithLeadingBit = treeContextId;
           treeId = (idWithLeadingBit & ~(1 << 32 - clz32(idWithLeadingBit) - 1)).toString(32) + treeId;
-          identifierPrefix = "\xAB" + identifierPrefix + "R" + treeId;
+          identifierPrefix = "_" + identifierPrefix + "R_" + treeId;
           treeId = localIdCounter++;
           0 < treeId && (identifierPrefix += "H" + treeId.toString(32));
-          identifierPrefix += "\xBB";
+          identifierPrefix += "_";
         } else
-          treeId = globalClientIdCounter++, identifierPrefix = "\xAB" + identifierPrefix + "r" + treeId.toString(32) + "\xBB";
+          treeId = globalClientIdCounter++, identifierPrefix = "_" + identifierPrefix + "r_" + treeId.toString(32) + "_";
         return hook.memoizedState = identifierPrefix;
       }
       function mountRefresh() {
@@ -6543,15 +8050,13 @@ var require_react_dom_client_development = __commonJS({
           switch (provider.tag) {
             case 24:
             case 3:
-              var lane = requestUpdateLane(provider);
-              fiber = createUpdate(lane);
-              var root2 = enqueueUpdate(provider, fiber, lane);
-              null !== root2 && (scheduleUpdateOnFiber(root2, provider, lane), entangleTransitions(root2, provider, lane));
-              provider = createCache();
+              var lane = requestUpdateLane(provider), refreshUpdate = createUpdate(lane), root2 = enqueueUpdate(provider, refreshUpdate, lane);
+              null !== root2 && (startUpdateTimerByLane(lane, "refresh()", fiber), scheduleUpdateOnFiber(root2, provider, lane), entangleTransitions(root2, provider, lane));
+              fiber = createCache();
               null !== seedKey && void 0 !== seedKey && null !== root2 && console.error(
                 "The seed argument is not enabled outside experimental channels."
               );
-              fiber.payload = { cache: provider };
+              refreshUpdate.payload = { cache: fiber };
               return;
           }
           provider = provider.return;
@@ -6566,13 +8071,13 @@ var require_react_dom_client_development = __commonJS({
         var update = {
           lane: args,
           revertLane: 0,
+          gesture: null,
           action,
           hasEagerState: false,
           eagerState: null,
           next: null
         };
-        isRenderPhaseUpdate(fiber) ? enqueueRenderPhaseUpdate(queue, update) : (update = enqueueConcurrentHookUpdate(fiber, queue, update, args), null !== update && (scheduleUpdateOnFiber(update, fiber, args), entangleTransitionUpdate(update, queue, args)));
-        markStateUpdateScheduled(fiber, args);
+        isRenderPhaseUpdate(fiber) ? enqueueRenderPhaseUpdate(queue, update) : (update = enqueueConcurrentHookUpdate(fiber, queue, update, args), null !== update && (startUpdateTimerByLane(args, "dispatch()", fiber), scheduleUpdateOnFiber(update, fiber, args), entangleTransitionUpdate(update, queue, args)));
       }
       function dispatchSetState(fiber, queue, action) {
         var args = arguments;
@@ -6580,13 +8085,13 @@ var require_react_dom_client_development = __commonJS({
           "State updates from the useState() and useReducer() Hooks don't support the second callback argument. To execute a side effect after rendering, declare it in the component body with useEffect()."
         );
         args = requestUpdateLane(fiber);
-        dispatchSetStateInternal(fiber, queue, action, args);
-        markStateUpdateScheduled(fiber, args);
+        dispatchSetStateInternal(fiber, queue, action, args) && startUpdateTimerByLane(args, "setState()", fiber);
       }
       function dispatchSetStateInternal(fiber, queue, action, lane) {
         var update = {
           lane,
           revertLane: 0,
+          gesture: null,
           action,
           hasEagerState: false,
           eagerState: null,
@@ -6622,6 +8127,7 @@ var require_react_dom_client_development = __commonJS({
         action = {
           lane: 2,
           revertLane: requestTransitionLane(),
+          gesture: null,
           action,
           hasEagerState: false,
           eagerState: null,
@@ -6637,8 +8143,7 @@ var require_react_dom_client_development = __commonJS({
             queue,
             action,
             2
-          ), null !== throwIfDuringRender && scheduleUpdateOnFiber(throwIfDuringRender, fiber, 2);
-        markStateUpdateScheduled(fiber, 2);
+          ), null !== throwIfDuringRender && (startUpdateTimerByLane(2, "setOptimistic()", fiber), scheduleUpdateOnFiber(throwIfDuringRender, fiber, 2));
       }
       function isRenderPhaseUpdate(fiber) {
         var alternate = fiber.alternate;
@@ -6658,751 +8163,6 @@ var require_react_dom_client_development = __commonJS({
           queue.lanes = lane;
           markRootEntangled(root2, lane);
         }
-      }
-      function pushDebugInfo(debugInfo) {
-        var previousDebugInfo = currentDebugInfo;
-        null != debugInfo && (currentDebugInfo = null === previousDebugInfo ? debugInfo : previousDebugInfo.concat(debugInfo));
-        return previousDebugInfo;
-      }
-      function validateFragmentProps(element, fiber, returnFiber) {
-        for (var keys = Object.keys(element.props), i = 0; i < keys.length; i++) {
-          var key = keys[i];
-          if ("children" !== key && "key" !== key) {
-            null === fiber && (fiber = createFiberFromElement(element, returnFiber.mode, 0), fiber._debugInfo = currentDebugInfo, fiber.return = returnFiber);
-            runWithFiberInDEV(
-              fiber,
-              function(erroredKey) {
-                console.error(
-                  "Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.",
-                  erroredKey
-                );
-              },
-              key
-            );
-            break;
-          }
-        }
-      }
-      function unwrapThenable(thenable) {
-        var index = thenableIndexCounter;
-        thenableIndexCounter += 1;
-        null === thenableState && (thenableState = createThenableState());
-        return trackUsedThenable(thenableState, thenable, index);
-      }
-      function coerceRef(workInProgress2, element) {
-        element = element.props.ref;
-        workInProgress2.ref = void 0 !== element ? element : null;
-      }
-      function throwOnInvalidObjectType(returnFiber, newChild) {
-        if (newChild.$$typeof === REACT_LEGACY_ELEMENT_TYPE)
-          throw Error(
-            'A React Element from an older version of React was rendered. This is not supported. It can happen if:\n- Multiple copies of the "react" package is used.\n- A library pre-bundled an old copy of "react" or "react/jsx-runtime".\n- A compiler tries to "inline" JSX instead of using the runtime.'
-          );
-        returnFiber = Object.prototype.toString.call(newChild);
-        throw Error(
-          "Objects are not valid as a React child (found: " + ("[object Object]" === returnFiber ? "object with keys {" + Object.keys(newChild).join(", ") + "}" : returnFiber) + "). If you meant to render a collection of children, use an array instead."
-        );
-      }
-      function warnOnFunctionType(returnFiber, invalidChild) {
-        var parentName = getComponentNameFromFiber(returnFiber) || "Component";
-        ownerHasFunctionTypeWarning[parentName] || (ownerHasFunctionTypeWarning[parentName] = true, invalidChild = invalidChild.displayName || invalidChild.name || "Component", 3 === returnFiber.tag ? console.error(
-          "Functions are not valid as a React child. This may happen if you return %s instead of <%s /> from render. Or maybe you meant to call this function rather than return it.\n  root.render(%s)",
-          invalidChild,
-          invalidChild,
-          invalidChild
-        ) : console.error(
-          "Functions are not valid as a React child. This may happen if you return %s instead of <%s /> from render. Or maybe you meant to call this function rather than return it.\n  <%s>{%s}</%s>",
-          invalidChild,
-          invalidChild,
-          parentName,
-          invalidChild,
-          parentName
-        ));
-      }
-      function warnOnSymbolType(returnFiber, invalidChild) {
-        var parentName = getComponentNameFromFiber(returnFiber) || "Component";
-        ownerHasSymbolTypeWarning[parentName] || (ownerHasSymbolTypeWarning[parentName] = true, invalidChild = String(invalidChild), 3 === returnFiber.tag ? console.error(
-          "Symbols are not valid as a React child.\n  root.render(%s)",
-          invalidChild
-        ) : console.error(
-          "Symbols are not valid as a React child.\n  <%s>%s</%s>",
-          parentName,
-          invalidChild,
-          parentName
-        ));
-      }
-      function createChildReconciler(shouldTrackSideEffects) {
-        function deleteChild(returnFiber, childToDelete) {
-          if (shouldTrackSideEffects) {
-            var deletions = returnFiber.deletions;
-            null === deletions ? (returnFiber.deletions = [childToDelete], returnFiber.flags |= 16) : deletions.push(childToDelete);
-          }
-        }
-        function deleteRemainingChildren(returnFiber, currentFirstChild) {
-          if (!shouldTrackSideEffects) return null;
-          for (; null !== currentFirstChild; )
-            deleteChild(returnFiber, currentFirstChild), currentFirstChild = currentFirstChild.sibling;
-          return null;
-        }
-        function mapRemainingChildren(currentFirstChild) {
-          for (var existingChildren = /* @__PURE__ */ new Map(); null !== currentFirstChild; )
-            null !== currentFirstChild.key ? existingChildren.set(currentFirstChild.key, currentFirstChild) : existingChildren.set(currentFirstChild.index, currentFirstChild), currentFirstChild = currentFirstChild.sibling;
-          return existingChildren;
-        }
-        function useFiber(fiber, pendingProps) {
-          fiber = createWorkInProgress(fiber, pendingProps);
-          fiber.index = 0;
-          fiber.sibling = null;
-          return fiber;
-        }
-        function placeChild(newFiber, lastPlacedIndex, newIndex) {
-          newFiber.index = newIndex;
-          if (!shouldTrackSideEffects)
-            return newFiber.flags |= 1048576, lastPlacedIndex;
-          newIndex = newFiber.alternate;
-          if (null !== newIndex)
-            return newIndex = newIndex.index, newIndex < lastPlacedIndex ? (newFiber.flags |= 67108866, lastPlacedIndex) : newIndex;
-          newFiber.flags |= 67108866;
-          return lastPlacedIndex;
-        }
-        function placeSingleChild(newFiber) {
-          shouldTrackSideEffects && null === newFiber.alternate && (newFiber.flags |= 67108866);
-          return newFiber;
-        }
-        function updateTextNode(returnFiber, current2, textContent, lanes) {
-          if (null === current2 || 6 !== current2.tag)
-            return current2 = createFiberFromText(
-              textContent,
-              returnFiber.mode,
-              lanes
-            ), current2.return = returnFiber, current2._debugOwner = returnFiber, current2._debugTask = returnFiber._debugTask, current2._debugInfo = currentDebugInfo, current2;
-          current2 = useFiber(current2, textContent);
-          current2.return = returnFiber;
-          current2._debugInfo = currentDebugInfo;
-          return current2;
-        }
-        function updateElement(returnFiber, current2, element, lanes) {
-          var elementType = element.type;
-          if (elementType === REACT_FRAGMENT_TYPE)
-            return current2 = updateFragment(
-              returnFiber,
-              current2,
-              element.props.children,
-              lanes,
-              element.key
-            ), validateFragmentProps(element, current2, returnFiber), current2;
-          if (null !== current2 && (current2.elementType === elementType || isCompatibleFamilyForHotReloading(current2, element) || "object" === typeof elementType && null !== elementType && elementType.$$typeof === REACT_LAZY_TYPE && callLazyInitInDEV(elementType) === current2.type))
-            return current2 = useFiber(current2, element.props), coerceRef(current2, element), current2.return = returnFiber, current2._debugOwner = element._owner, current2._debugInfo = currentDebugInfo, current2;
-          current2 = createFiberFromElement(element, returnFiber.mode, lanes);
-          coerceRef(current2, element);
-          current2.return = returnFiber;
-          current2._debugInfo = currentDebugInfo;
-          return current2;
-        }
-        function updatePortal(returnFiber, current2, portal, lanes) {
-          if (null === current2 || 4 !== current2.tag || current2.stateNode.containerInfo !== portal.containerInfo || current2.stateNode.implementation !== portal.implementation)
-            return current2 = createFiberFromPortal(portal, returnFiber.mode, lanes), current2.return = returnFiber, current2._debugInfo = currentDebugInfo, current2;
-          current2 = useFiber(current2, portal.children || []);
-          current2.return = returnFiber;
-          current2._debugInfo = currentDebugInfo;
-          return current2;
-        }
-        function updateFragment(returnFiber, current2, fragment, lanes, key) {
-          if (null === current2 || 7 !== current2.tag)
-            return current2 = createFiberFromFragment(
-              fragment,
-              returnFiber.mode,
-              lanes,
-              key
-            ), current2.return = returnFiber, current2._debugOwner = returnFiber, current2._debugTask = returnFiber._debugTask, current2._debugInfo = currentDebugInfo, current2;
-          current2 = useFiber(current2, fragment);
-          current2.return = returnFiber;
-          current2._debugInfo = currentDebugInfo;
-          return current2;
-        }
-        function createChild(returnFiber, newChild, lanes) {
-          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
-            return newChild = createFiberFromText(
-              "" + newChild,
-              returnFiber.mode,
-              lanes
-            ), newChild.return = returnFiber, newChild._debugOwner = returnFiber, newChild._debugTask = returnFiber._debugTask, newChild._debugInfo = currentDebugInfo, newChild;
-          if ("object" === typeof newChild && null !== newChild) {
-            switch (newChild.$$typeof) {
-              case REACT_ELEMENT_TYPE:
-                return lanes = createFiberFromElement(
-                  newChild,
-                  returnFiber.mode,
-                  lanes
-                ), coerceRef(lanes, newChild), lanes.return = returnFiber, returnFiber = pushDebugInfo(newChild._debugInfo), lanes._debugInfo = currentDebugInfo, currentDebugInfo = returnFiber, lanes;
-              case REACT_PORTAL_TYPE:
-                return newChild = createFiberFromPortal(
-                  newChild,
-                  returnFiber.mode,
-                  lanes
-                ), newChild.return = returnFiber, newChild._debugInfo = currentDebugInfo, newChild;
-              case REACT_LAZY_TYPE:
-                var _prevDebugInfo = pushDebugInfo(newChild._debugInfo);
-                newChild = callLazyInitInDEV(newChild);
-                returnFiber = createChild(returnFiber, newChild, lanes);
-                currentDebugInfo = _prevDebugInfo;
-                return returnFiber;
-            }
-            if (isArrayImpl(newChild) || getIteratorFn(newChild))
-              return lanes = createFiberFromFragment(
-                newChild,
-                returnFiber.mode,
-                lanes,
-                null
-              ), lanes.return = returnFiber, lanes._debugOwner = returnFiber, lanes._debugTask = returnFiber._debugTask, returnFiber = pushDebugInfo(newChild._debugInfo), lanes._debugInfo = currentDebugInfo, currentDebugInfo = returnFiber, lanes;
-            if ("function" === typeof newChild.then)
-              return _prevDebugInfo = pushDebugInfo(newChild._debugInfo), returnFiber = createChild(
-                returnFiber,
-                unwrapThenable(newChild),
-                lanes
-              ), currentDebugInfo = _prevDebugInfo, returnFiber;
-            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
-              return createChild(
-                returnFiber,
-                readContextDuringReconciliation(returnFiber, newChild),
-                lanes
-              );
-            throwOnInvalidObjectType(returnFiber, newChild);
-          }
-          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
-          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
-          return null;
-        }
-        function updateSlot(returnFiber, oldFiber, newChild, lanes) {
-          var key = null !== oldFiber ? oldFiber.key : null;
-          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
-            return null !== key ? null : updateTextNode(returnFiber, oldFiber, "" + newChild, lanes);
-          if ("object" === typeof newChild && null !== newChild) {
-            switch (newChild.$$typeof) {
-              case REACT_ELEMENT_TYPE:
-                return newChild.key === key ? (key = pushDebugInfo(newChild._debugInfo), returnFiber = updateElement(
-                  returnFiber,
-                  oldFiber,
-                  newChild,
-                  lanes
-                ), currentDebugInfo = key, returnFiber) : null;
-              case REACT_PORTAL_TYPE:
-                return newChild.key === key ? updatePortal(returnFiber, oldFiber, newChild, lanes) : null;
-              case REACT_LAZY_TYPE:
-                return key = pushDebugInfo(newChild._debugInfo), newChild = callLazyInitInDEV(newChild), returnFiber = updateSlot(
-                  returnFiber,
-                  oldFiber,
-                  newChild,
-                  lanes
-                ), currentDebugInfo = key, returnFiber;
-            }
-            if (isArrayImpl(newChild) || getIteratorFn(newChild)) {
-              if (null !== key) return null;
-              key = pushDebugInfo(newChild._debugInfo);
-              returnFiber = updateFragment(
-                returnFiber,
-                oldFiber,
-                newChild,
-                lanes,
-                null
-              );
-              currentDebugInfo = key;
-              return returnFiber;
-            }
-            if ("function" === typeof newChild.then)
-              return key = pushDebugInfo(newChild._debugInfo), returnFiber = updateSlot(
-                returnFiber,
-                oldFiber,
-                unwrapThenable(newChild),
-                lanes
-              ), currentDebugInfo = key, returnFiber;
-            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
-              return updateSlot(
-                returnFiber,
-                oldFiber,
-                readContextDuringReconciliation(returnFiber, newChild),
-                lanes
-              );
-            throwOnInvalidObjectType(returnFiber, newChild);
-          }
-          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
-          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
-          return null;
-        }
-        function updateFromMap(existingChildren, returnFiber, newIdx, newChild, lanes) {
-          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
-            return existingChildren = existingChildren.get(newIdx) || null, updateTextNode(returnFiber, existingChildren, "" + newChild, lanes);
-          if ("object" === typeof newChild && null !== newChild) {
-            switch (newChild.$$typeof) {
-              case REACT_ELEMENT_TYPE:
-                return newIdx = existingChildren.get(
-                  null === newChild.key ? newIdx : newChild.key
-                ) || null, existingChildren = pushDebugInfo(newChild._debugInfo), returnFiber = updateElement(
-                  returnFiber,
-                  newIdx,
-                  newChild,
-                  lanes
-                ), currentDebugInfo = existingChildren, returnFiber;
-              case REACT_PORTAL_TYPE:
-                return existingChildren = existingChildren.get(
-                  null === newChild.key ? newIdx : newChild.key
-                ) || null, updatePortal(returnFiber, existingChildren, newChild, lanes);
-              case REACT_LAZY_TYPE:
-                var _prevDebugInfo7 = pushDebugInfo(newChild._debugInfo);
-                newChild = callLazyInitInDEV(newChild);
-                returnFiber = updateFromMap(
-                  existingChildren,
-                  returnFiber,
-                  newIdx,
-                  newChild,
-                  lanes
-                );
-                currentDebugInfo = _prevDebugInfo7;
-                return returnFiber;
-            }
-            if (isArrayImpl(newChild) || getIteratorFn(newChild))
-              return newIdx = existingChildren.get(newIdx) || null, existingChildren = pushDebugInfo(newChild._debugInfo), returnFiber = updateFragment(
-                returnFiber,
-                newIdx,
-                newChild,
-                lanes,
-                null
-              ), currentDebugInfo = existingChildren, returnFiber;
-            if ("function" === typeof newChild.then)
-              return _prevDebugInfo7 = pushDebugInfo(newChild._debugInfo), returnFiber = updateFromMap(
-                existingChildren,
-                returnFiber,
-                newIdx,
-                unwrapThenable(newChild),
-                lanes
-              ), currentDebugInfo = _prevDebugInfo7, returnFiber;
-            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
-              return updateFromMap(
-                existingChildren,
-                returnFiber,
-                newIdx,
-                readContextDuringReconciliation(returnFiber, newChild),
-                lanes
-              );
-            throwOnInvalidObjectType(returnFiber, newChild);
-          }
-          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
-          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
-          return null;
-        }
-        function warnOnInvalidKey(returnFiber, workInProgress2, child, knownKeys) {
-          if ("object" !== typeof child || null === child) return knownKeys;
-          switch (child.$$typeof) {
-            case REACT_ELEMENT_TYPE:
-            case REACT_PORTAL_TYPE:
-              warnForMissingKey(returnFiber, workInProgress2, child);
-              var key = child.key;
-              if ("string" !== typeof key) break;
-              if (null === knownKeys) {
-                knownKeys = /* @__PURE__ */ new Set();
-                knownKeys.add(key);
-                break;
-              }
-              if (!knownKeys.has(key)) {
-                knownKeys.add(key);
-                break;
-              }
-              runWithFiberInDEV(workInProgress2, function() {
-                console.error(
-                  "Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted \u2014 the behavior is unsupported and could change in a future version.",
-                  key
-                );
-              });
-              break;
-            case REACT_LAZY_TYPE:
-              child = callLazyInitInDEV(child), warnOnInvalidKey(returnFiber, workInProgress2, child, knownKeys);
-          }
-          return knownKeys;
-        }
-        function reconcileChildrenArray(returnFiber, currentFirstChild, newChildren, lanes) {
-          for (var knownKeys = null, resultingFirstChild = null, previousNewFiber = null, oldFiber = currentFirstChild, newIdx = currentFirstChild = 0, nextOldFiber = null; null !== oldFiber && newIdx < newChildren.length; newIdx++) {
-            oldFiber.index > newIdx ? (nextOldFiber = oldFiber, oldFiber = null) : nextOldFiber = oldFiber.sibling;
-            var newFiber = updateSlot(
-              returnFiber,
-              oldFiber,
-              newChildren[newIdx],
-              lanes
-            );
-            if (null === newFiber) {
-              null === oldFiber && (oldFiber = nextOldFiber);
-              break;
-            }
-            knownKeys = warnOnInvalidKey(
-              returnFiber,
-              newFiber,
-              newChildren[newIdx],
-              knownKeys
-            );
-            shouldTrackSideEffects && oldFiber && null === newFiber.alternate && deleteChild(returnFiber, oldFiber);
-            currentFirstChild = placeChild(newFiber, currentFirstChild, newIdx);
-            null === previousNewFiber ? resultingFirstChild = newFiber : previousNewFiber.sibling = newFiber;
-            previousNewFiber = newFiber;
-            oldFiber = nextOldFiber;
-          }
-          if (newIdx === newChildren.length)
-            return deleteRemainingChildren(returnFiber, oldFiber), isHydrating && pushTreeFork(returnFiber, newIdx), resultingFirstChild;
-          if (null === oldFiber) {
-            for (; newIdx < newChildren.length; newIdx++)
-              oldFiber = createChild(returnFiber, newChildren[newIdx], lanes), null !== oldFiber && (knownKeys = warnOnInvalidKey(
-                returnFiber,
-                oldFiber,
-                newChildren[newIdx],
-                knownKeys
-              ), currentFirstChild = placeChild(
-                oldFiber,
-                currentFirstChild,
-                newIdx
-              ), null === previousNewFiber ? resultingFirstChild = oldFiber : previousNewFiber.sibling = oldFiber, previousNewFiber = oldFiber);
-            isHydrating && pushTreeFork(returnFiber, newIdx);
-            return resultingFirstChild;
-          }
-          for (oldFiber = mapRemainingChildren(oldFiber); newIdx < newChildren.length; newIdx++)
-            nextOldFiber = updateFromMap(
-              oldFiber,
-              returnFiber,
-              newIdx,
-              newChildren[newIdx],
-              lanes
-            ), null !== nextOldFiber && (knownKeys = warnOnInvalidKey(
-              returnFiber,
-              nextOldFiber,
-              newChildren[newIdx],
-              knownKeys
-            ), shouldTrackSideEffects && null !== nextOldFiber.alternate && oldFiber.delete(
-              null === nextOldFiber.key ? newIdx : nextOldFiber.key
-            ), currentFirstChild = placeChild(
-              nextOldFiber,
-              currentFirstChild,
-              newIdx
-            ), null === previousNewFiber ? resultingFirstChild = nextOldFiber : previousNewFiber.sibling = nextOldFiber, previousNewFiber = nextOldFiber);
-          shouldTrackSideEffects && oldFiber.forEach(function(child) {
-            return deleteChild(returnFiber, child);
-          });
-          isHydrating && pushTreeFork(returnFiber, newIdx);
-          return resultingFirstChild;
-        }
-        function reconcileChildrenIterator(returnFiber, currentFirstChild, newChildren, lanes) {
-          if (null == newChildren)
-            throw Error("An iterable object provided no iterator.");
-          for (var resultingFirstChild = null, previousNewFiber = null, oldFiber = currentFirstChild, newIdx = currentFirstChild = 0, nextOldFiber = null, knownKeys = null, step = newChildren.next(); null !== oldFiber && !step.done; newIdx++, step = newChildren.next()) {
-            oldFiber.index > newIdx ? (nextOldFiber = oldFiber, oldFiber = null) : nextOldFiber = oldFiber.sibling;
-            var newFiber = updateSlot(returnFiber, oldFiber, step.value, lanes);
-            if (null === newFiber) {
-              null === oldFiber && (oldFiber = nextOldFiber);
-              break;
-            }
-            knownKeys = warnOnInvalidKey(
-              returnFiber,
-              newFiber,
-              step.value,
-              knownKeys
-            );
-            shouldTrackSideEffects && oldFiber && null === newFiber.alternate && deleteChild(returnFiber, oldFiber);
-            currentFirstChild = placeChild(newFiber, currentFirstChild, newIdx);
-            null === previousNewFiber ? resultingFirstChild = newFiber : previousNewFiber.sibling = newFiber;
-            previousNewFiber = newFiber;
-            oldFiber = nextOldFiber;
-          }
-          if (step.done)
-            return deleteRemainingChildren(returnFiber, oldFiber), isHydrating && pushTreeFork(returnFiber, newIdx), resultingFirstChild;
-          if (null === oldFiber) {
-            for (; !step.done; newIdx++, step = newChildren.next())
-              oldFiber = createChild(returnFiber, step.value, lanes), null !== oldFiber && (knownKeys = warnOnInvalidKey(
-                returnFiber,
-                oldFiber,
-                step.value,
-                knownKeys
-              ), currentFirstChild = placeChild(
-                oldFiber,
-                currentFirstChild,
-                newIdx
-              ), null === previousNewFiber ? resultingFirstChild = oldFiber : previousNewFiber.sibling = oldFiber, previousNewFiber = oldFiber);
-            isHydrating && pushTreeFork(returnFiber, newIdx);
-            return resultingFirstChild;
-          }
-          for (oldFiber = mapRemainingChildren(oldFiber); !step.done; newIdx++, step = newChildren.next())
-            nextOldFiber = updateFromMap(
-              oldFiber,
-              returnFiber,
-              newIdx,
-              step.value,
-              lanes
-            ), null !== nextOldFiber && (knownKeys = warnOnInvalidKey(
-              returnFiber,
-              nextOldFiber,
-              step.value,
-              knownKeys
-            ), shouldTrackSideEffects && null !== nextOldFiber.alternate && oldFiber.delete(
-              null === nextOldFiber.key ? newIdx : nextOldFiber.key
-            ), currentFirstChild = placeChild(
-              nextOldFiber,
-              currentFirstChild,
-              newIdx
-            ), null === previousNewFiber ? resultingFirstChild = nextOldFiber : previousNewFiber.sibling = nextOldFiber, previousNewFiber = nextOldFiber);
-          shouldTrackSideEffects && oldFiber.forEach(function(child) {
-            return deleteChild(returnFiber, child);
-          });
-          isHydrating && pushTreeFork(returnFiber, newIdx);
-          return resultingFirstChild;
-        }
-        function reconcileChildFibersImpl(returnFiber, currentFirstChild, newChild, lanes) {
-          "object" === typeof newChild && null !== newChild && newChild.type === REACT_FRAGMENT_TYPE && null === newChild.key && (validateFragmentProps(newChild, null, returnFiber), newChild = newChild.props.children);
-          if ("object" === typeof newChild && null !== newChild) {
-            switch (newChild.$$typeof) {
-              case REACT_ELEMENT_TYPE:
-                var prevDebugInfo = pushDebugInfo(newChild._debugInfo);
-                a: {
-                  for (var key = newChild.key; null !== currentFirstChild; ) {
-                    if (currentFirstChild.key === key) {
-                      key = newChild.type;
-                      if (key === REACT_FRAGMENT_TYPE) {
-                        if (7 === currentFirstChild.tag) {
-                          deleteRemainingChildren(
-                            returnFiber,
-                            currentFirstChild.sibling
-                          );
-                          lanes = useFiber(
-                            currentFirstChild,
-                            newChild.props.children
-                          );
-                          lanes.return = returnFiber;
-                          lanes._debugOwner = newChild._owner;
-                          lanes._debugInfo = currentDebugInfo;
-                          validateFragmentProps(newChild, lanes, returnFiber);
-                          returnFiber = lanes;
-                          break a;
-                        }
-                      } else if (currentFirstChild.elementType === key || isCompatibleFamilyForHotReloading(
-                        currentFirstChild,
-                        newChild
-                      ) || "object" === typeof key && null !== key && key.$$typeof === REACT_LAZY_TYPE && callLazyInitInDEV(key) === currentFirstChild.type) {
-                        deleteRemainingChildren(
-                          returnFiber,
-                          currentFirstChild.sibling
-                        );
-                        lanes = useFiber(currentFirstChild, newChild.props);
-                        coerceRef(lanes, newChild);
-                        lanes.return = returnFiber;
-                        lanes._debugOwner = newChild._owner;
-                        lanes._debugInfo = currentDebugInfo;
-                        returnFiber = lanes;
-                        break a;
-                      }
-                      deleteRemainingChildren(returnFiber, currentFirstChild);
-                      break;
-                    } else deleteChild(returnFiber, currentFirstChild);
-                    currentFirstChild = currentFirstChild.sibling;
-                  }
-                  newChild.type === REACT_FRAGMENT_TYPE ? (lanes = createFiberFromFragment(
-                    newChild.props.children,
-                    returnFiber.mode,
-                    lanes,
-                    newChild.key
-                  ), lanes.return = returnFiber, lanes._debugOwner = returnFiber, lanes._debugTask = returnFiber._debugTask, lanes._debugInfo = currentDebugInfo, validateFragmentProps(newChild, lanes, returnFiber), returnFiber = lanes) : (lanes = createFiberFromElement(
-                    newChild,
-                    returnFiber.mode,
-                    lanes
-                  ), coerceRef(lanes, newChild), lanes.return = returnFiber, lanes._debugInfo = currentDebugInfo, returnFiber = lanes);
-                }
-                returnFiber = placeSingleChild(returnFiber);
-                currentDebugInfo = prevDebugInfo;
-                return returnFiber;
-              case REACT_PORTAL_TYPE:
-                a: {
-                  prevDebugInfo = newChild;
-                  for (newChild = prevDebugInfo.key; null !== currentFirstChild; ) {
-                    if (currentFirstChild.key === newChild)
-                      if (4 === currentFirstChild.tag && currentFirstChild.stateNode.containerInfo === prevDebugInfo.containerInfo && currentFirstChild.stateNode.implementation === prevDebugInfo.implementation) {
-                        deleteRemainingChildren(
-                          returnFiber,
-                          currentFirstChild.sibling
-                        );
-                        lanes = useFiber(
-                          currentFirstChild,
-                          prevDebugInfo.children || []
-                        );
-                        lanes.return = returnFiber;
-                        returnFiber = lanes;
-                        break a;
-                      } else {
-                        deleteRemainingChildren(returnFiber, currentFirstChild);
-                        break;
-                      }
-                    else deleteChild(returnFiber, currentFirstChild);
-                    currentFirstChild = currentFirstChild.sibling;
-                  }
-                  lanes = createFiberFromPortal(
-                    prevDebugInfo,
-                    returnFiber.mode,
-                    lanes
-                  );
-                  lanes.return = returnFiber;
-                  returnFiber = lanes;
-                }
-                return placeSingleChild(returnFiber);
-              case REACT_LAZY_TYPE:
-                return prevDebugInfo = pushDebugInfo(newChild._debugInfo), newChild = callLazyInitInDEV(newChild), returnFiber = reconcileChildFibersImpl(
-                  returnFiber,
-                  currentFirstChild,
-                  newChild,
-                  lanes
-                ), currentDebugInfo = prevDebugInfo, returnFiber;
-            }
-            if (isArrayImpl(newChild))
-              return prevDebugInfo = pushDebugInfo(newChild._debugInfo), returnFiber = reconcileChildrenArray(
-                returnFiber,
-                currentFirstChild,
-                newChild,
-                lanes
-              ), currentDebugInfo = prevDebugInfo, returnFiber;
-            if (getIteratorFn(newChild)) {
-              prevDebugInfo = pushDebugInfo(newChild._debugInfo);
-              key = getIteratorFn(newChild);
-              if ("function" !== typeof key)
-                throw Error(
-                  "An object is not an iterable. This error is likely caused by a bug in React. Please file an issue."
-                );
-              var newChildren = key.call(newChild);
-              if (newChildren === newChild) {
-                if (0 !== returnFiber.tag || "[object GeneratorFunction]" !== Object.prototype.toString.call(returnFiber.type) || "[object Generator]" !== Object.prototype.toString.call(newChildren))
-                  didWarnAboutGenerators || console.error(
-                    "Using Iterators as children is unsupported and will likely yield unexpected results because enumerating a generator mutates it. You may convert it to an array with `Array.from()` or the `[...spread]` operator before rendering. You can also use an Iterable that can iterate multiple times over the same items."
-                  ), didWarnAboutGenerators = true;
-              } else
-                newChild.entries !== key || didWarnAboutMaps || (console.error(
-                  "Using Maps as children is not supported. Use an array of keyed ReactElements instead."
-                ), didWarnAboutMaps = true);
-              returnFiber = reconcileChildrenIterator(
-                returnFiber,
-                currentFirstChild,
-                newChildren,
-                lanes
-              );
-              currentDebugInfo = prevDebugInfo;
-              return returnFiber;
-            }
-            if ("function" === typeof newChild.then)
-              return prevDebugInfo = pushDebugInfo(newChild._debugInfo), returnFiber = reconcileChildFibersImpl(
-                returnFiber,
-                currentFirstChild,
-                unwrapThenable(newChild),
-                lanes
-              ), currentDebugInfo = prevDebugInfo, returnFiber;
-            if (newChild.$$typeof === REACT_CONTEXT_TYPE)
-              return reconcileChildFibersImpl(
-                returnFiber,
-                currentFirstChild,
-                readContextDuringReconciliation(returnFiber, newChild),
-                lanes
-              );
-            throwOnInvalidObjectType(returnFiber, newChild);
-          }
-          if ("string" === typeof newChild && "" !== newChild || "number" === typeof newChild || "bigint" === typeof newChild)
-            return prevDebugInfo = "" + newChild, null !== currentFirstChild && 6 === currentFirstChild.tag ? (deleteRemainingChildren(
-              returnFiber,
-              currentFirstChild.sibling
-            ), lanes = useFiber(currentFirstChild, prevDebugInfo), lanes.return = returnFiber, returnFiber = lanes) : (deleteRemainingChildren(returnFiber, currentFirstChild), lanes = createFiberFromText(
-              prevDebugInfo,
-              returnFiber.mode,
-              lanes
-            ), lanes.return = returnFiber, lanes._debugOwner = returnFiber, lanes._debugTask = returnFiber._debugTask, lanes._debugInfo = currentDebugInfo, returnFiber = lanes), placeSingleChild(returnFiber);
-          "function" === typeof newChild && warnOnFunctionType(returnFiber, newChild);
-          "symbol" === typeof newChild && warnOnSymbolType(returnFiber, newChild);
-          return deleteRemainingChildren(returnFiber, currentFirstChild);
-        }
-        return function(returnFiber, currentFirstChild, newChild, lanes) {
-          var prevDebugInfo = currentDebugInfo;
-          currentDebugInfo = null;
-          try {
-            thenableIndexCounter = 0;
-            var firstChildFiber = reconcileChildFibersImpl(
-              returnFiber,
-              currentFirstChild,
-              newChild,
-              lanes
-            );
-            thenableState = null;
-            return firstChildFiber;
-          } catch (x) {
-            if (x === SuspenseException || x === SuspenseActionException) throw x;
-            var fiber = createFiber(29, x, null, returnFiber.mode);
-            fiber.lanes = lanes;
-            fiber.return = returnFiber;
-            var debugInfo = fiber._debugInfo = currentDebugInfo;
-            fiber._debugOwner = returnFiber._debugOwner;
-            fiber._debugTask = returnFiber._debugTask;
-            if (null != debugInfo) {
-              for (var i = debugInfo.length - 1; 0 <= i; i--)
-                if ("string" === typeof debugInfo[i].stack) {
-                  fiber._debugOwner = debugInfo[i];
-                  fiber._debugTask = debugInfo[i].debugTask;
-                  break;
-                }
-            }
-            return fiber;
-          } finally {
-            currentDebugInfo = prevDebugInfo;
-          }
-        };
-      }
-      function pushPrimaryTreeSuspenseHandler(handler) {
-        var current2 = handler.alternate;
-        push(
-          suspenseStackCursor,
-          suspenseStackCursor.current & SubtreeSuspenseContextMask,
-          handler
-        );
-        push(suspenseHandlerStackCursor, handler, handler);
-        null === shellBoundary && (null === current2 || null !== currentTreeHiddenStackCursor.current ? shellBoundary = handler : null !== current2.memoizedState && (shellBoundary = handler));
-      }
-      function pushOffscreenSuspenseHandler(fiber) {
-        if (22 === fiber.tag) {
-          if (push(suspenseStackCursor, suspenseStackCursor.current, fiber), push(suspenseHandlerStackCursor, fiber, fiber), null === shellBoundary) {
-            var current2 = fiber.alternate;
-            null !== current2 && null !== current2.memoizedState && (shellBoundary = fiber);
-          }
-        } else reuseSuspenseHandlerOnStack(fiber);
-      }
-      function reuseSuspenseHandlerOnStack(fiber) {
-        push(suspenseStackCursor, suspenseStackCursor.current, fiber);
-        push(
-          suspenseHandlerStackCursor,
-          suspenseHandlerStackCursor.current,
-          fiber
-        );
-      }
-      function popSuspenseHandler(fiber) {
-        pop(suspenseHandlerStackCursor, fiber);
-        shellBoundary === fiber && (shellBoundary = null);
-        pop(suspenseStackCursor, fiber);
-      }
-      function findFirstSuspended(row) {
-        for (var node = row; null !== node; ) {
-          if (13 === node.tag) {
-            var state = node.memoizedState;
-            if (null !== state && (state = state.dehydrated, null === state || state.data === SUSPENSE_PENDING_START_DATA || isSuspenseInstanceFallback(state)))
-              return node;
-          } else if (19 === node.tag && void 0 !== node.memoizedProps.revealOrder) {
-            if (0 !== (node.flags & 128)) return node;
-          } else if (null !== node.child) {
-            node.child.return = node;
-            node = node.child;
-            continue;
-          }
-          if (node === row) break;
-          for (; null === node.sibling; ) {
-            if (null === node.return || node.return === row) return null;
-            node = node.return;
-          }
-          node.sibling.return = node.return;
-          node = node.sibling;
-        }
-        return null;
       }
       function warnOnInvalidCallback(callback) {
         if (null !== callback && "function" !== typeof callback) {
@@ -7507,7 +8267,7 @@ var require_react_dom_client_development = __commonJS({
           "string" === typeof error[0] ? error.splice(
             0,
             1,
-            badgeFormat + error[0],
+            badgeFormat + " " + error[0],
             badgeStyle,
             pad + JSCompiler_inline_result + pad,
             resetStyle
@@ -7630,6 +8390,7 @@ var require_react_dom_client_development = __commonJS({
           sourceFiber = suspenseHandlerStackCursor.current;
           if (null !== sourceFiber) {
             switch (sourceFiber.tag) {
+              case 31:
               case 13:
                 return null === shellBoundary ? renderDidSuspendDelayIfPossible() : null === sourceFiber.alternate && workInProgressRootExitStatus === RootInProgress && (workInProgressRootExitStatus = RootSuspended), sourceFiber.flags &= -257, sourceFiber.flags |= 65536, sourceFiber.lanes = rootRenderLanes, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? sourceFiber.updateQueue = /* @__PURE__ */ new Set([value]) : returnFiber.add(value), attachPingListener(root2, value, rootRenderLanes)), false;
               case 22:
@@ -7719,7 +8480,6 @@ var require_react_dom_client_development = __commonJS({
             "ref" !== key && (propsWithoutRef[key] = nextProps[key]);
         } else propsWithoutRef = nextProps;
         prepareToReadContext(workInProgress2);
-        markComponentRenderStarted(workInProgress2);
         nextProps = renderWithHooks(
           current2,
           workInProgress2,
@@ -7729,7 +8489,6 @@ var require_react_dom_client_development = __commonJS({
           renderLanes2
         );
         key = checkDidRenderIdHook();
-        markComponentRenderStopped();
         if (null !== current2 && !didReceiveUpdate)
           return bailoutHooks(current2, workInProgress2, renderLanes2), bailoutOnAlreadyFinishedWork(current2, workInProgress2, renderLanes2);
         isHydrating && key && pushMaterializedTreeId(workInProgress2);
@@ -7795,22 +8554,29 @@ var require_react_dom_client_development = __commonJS({
           renderLanes2
         );
       }
-      function updateOffscreenComponent(current2, workInProgress2, renderLanes2) {
-        var nextProps = workInProgress2.pendingProps, nextChildren = nextProps.children, prevState = null !== current2 ? current2.memoizedState : null;
+      function updateOffscreenComponent(current2, workInProgress2, renderLanes2, nextProps) {
+        var nextChildren = nextProps.children, prevState = null !== current2 ? current2.memoizedState : null;
+        null === current2 && null === workInProgress2.stateNode && (workInProgress2.stateNode = {
+          _visibility: OffscreenVisible,
+          _pendingMarkers: null,
+          _retryCache: null,
+          _transitions: null
+        });
         if ("hidden" === nextProps.mode) {
           if (0 !== (workInProgress2.flags & 128)) {
-            nextProps = null !== prevState ? prevState.baseLanes | renderLanes2 : renderLanes2;
+            prevState = null !== prevState ? prevState.baseLanes | renderLanes2 : renderLanes2;
             if (null !== current2) {
-              nextChildren = workInProgress2.child = current2.child;
-              for (prevState = 0; null !== nextChildren; )
-                prevState = prevState | nextChildren.lanes | nextChildren.childLanes, nextChildren = nextChildren.sibling;
-              workInProgress2.childLanes = prevState & ~nextProps;
-            } else workInProgress2.childLanes = 0, workInProgress2.child = null;
+              nextProps = workInProgress2.child = current2.child;
+              for (nextChildren = 0; null !== nextProps; )
+                nextChildren = nextChildren | nextProps.lanes | nextProps.childLanes, nextProps = nextProps.sibling;
+              nextProps = nextChildren & ~prevState;
+            } else nextProps = 0, workInProgress2.child = null;
             return deferHiddenOffscreenComponent(
               current2,
               workInProgress2,
-              nextProps,
-              renderLanes2
+              prevState,
+              renderLanes2,
+              nextProps
             );
           }
           if (0 !== (renderLanes2 & 536870912))
@@ -7819,18 +8585,28 @@ var require_react_dom_client_development = __commonJS({
               null !== prevState ? prevState.cachePool : null
             ), null !== prevState ? pushHiddenContext(workInProgress2, prevState) : reuseHiddenContextOnStack(workInProgress2), pushOffscreenSuspenseHandler(workInProgress2);
           else
-            return workInProgress2.lanes = workInProgress2.childLanes = 536870912, deferHiddenOffscreenComponent(
+            return nextProps = workInProgress2.lanes = 536870912, deferHiddenOffscreenComponent(
               current2,
               workInProgress2,
               null !== prevState ? prevState.baseLanes | renderLanes2 : renderLanes2,
-              renderLanes2
+              renderLanes2,
+              nextProps
             );
         } else
           null !== prevState ? (pushTransition(workInProgress2, prevState.cachePool), pushHiddenContext(workInProgress2, prevState), reuseSuspenseHandlerOnStack(workInProgress2), workInProgress2.memoizedState = null) : (null !== current2 && pushTransition(workInProgress2, null), reuseHiddenContextOnStack(workInProgress2), reuseSuspenseHandlerOnStack(workInProgress2));
         reconcileChildren(current2, workInProgress2, nextChildren, renderLanes2);
         return workInProgress2.child;
       }
-      function deferHiddenOffscreenComponent(current2, workInProgress2, nextBaseLanes, renderLanes2) {
+      function bailoutOffscreenComponent(current2, workInProgress2) {
+        null !== current2 && 22 === current2.tag || null !== workInProgress2.stateNode || (workInProgress2.stateNode = {
+          _visibility: OffscreenVisible,
+          _pendingMarkers: null,
+          _retryCache: null,
+          _transitions: null
+        });
+        return workInProgress2.sibling;
+      }
+      function deferHiddenOffscreenComponent(current2, workInProgress2, nextBaseLanes, renderLanes2, remainingChildLanes) {
         var JSCompiler_inline_result = peekCacheFromPool();
         JSCompiler_inline_result = null === JSCompiler_inline_result ? null : {
           parent: CacheContext._currentValue,
@@ -7844,7 +8620,111 @@ var require_react_dom_client_development = __commonJS({
         reuseHiddenContextOnStack(workInProgress2);
         pushOffscreenSuspenseHandler(workInProgress2);
         null !== current2 && propagateParentContextChanges(current2, workInProgress2, renderLanes2, true);
+        workInProgress2.childLanes = remainingChildLanes;
         return null;
+      }
+      function mountActivityChildren(workInProgress2, nextProps) {
+        var hiddenProp = nextProps.hidden;
+        void 0 !== hiddenProp && console.error(
+          `<Activity> doesn't accept a hidden prop. Use mode="hidden" instead.
+- <Activity %s>
++ <Activity %s>`,
+          true === hiddenProp ? "hidden" : false === hiddenProp ? "hidden={false}" : "hidden={...}",
+          hiddenProp ? 'mode="hidden"' : 'mode="visible"'
+        );
+        nextProps = mountWorkInProgressOffscreenFiber(
+          { mode: nextProps.mode, children: nextProps.children },
+          workInProgress2.mode
+        );
+        nextProps.ref = workInProgress2.ref;
+        workInProgress2.child = nextProps;
+        nextProps.return = workInProgress2;
+        return nextProps;
+      }
+      function retryActivityComponentWithoutHydrating(current2, workInProgress2, renderLanes2) {
+        reconcileChildFibers(workInProgress2, current2.child, null, renderLanes2);
+        current2 = mountActivityChildren(
+          workInProgress2,
+          workInProgress2.pendingProps
+        );
+        current2.flags |= 2;
+        popSuspenseHandler(workInProgress2);
+        workInProgress2.memoizedState = null;
+        return current2;
+      }
+      function updateActivityComponent(current2, workInProgress2, renderLanes2) {
+        var nextProps = workInProgress2.pendingProps, didSuspend = 0 !== (workInProgress2.flags & 128);
+        workInProgress2.flags &= -129;
+        if (null === current2) {
+          if (isHydrating) {
+            if ("hidden" === nextProps.mode)
+              return current2 = mountActivityChildren(workInProgress2, nextProps), workInProgress2.lanes = 536870912, bailoutOffscreenComponent(null, current2);
+            pushDehydratedActivitySuspenseHandler(workInProgress2);
+            (current2 = nextHydratableInstance) ? (renderLanes2 = canHydrateHydrationBoundary(
+              current2,
+              rootOrSingletonContext
+            ), renderLanes2 = null !== renderLanes2 && renderLanes2.data === ACTIVITY_START_DATA ? renderLanes2 : null, null !== renderLanes2 && (nextProps = {
+              dehydrated: renderLanes2,
+              treeContext: getSuspendedTreeContext(),
+              retryLane: 536870912,
+              hydrationErrors: null
+            }, workInProgress2.memoizedState = nextProps, nextProps = createFiberFromDehydratedFragment(renderLanes2), nextProps.return = workInProgress2, workInProgress2.child = nextProps, hydrationParentFiber = workInProgress2, nextHydratableInstance = null)) : renderLanes2 = null;
+            if (null === renderLanes2)
+              throw warnNonHydratedInstance(workInProgress2, current2), throwOnHydrationMismatch(workInProgress2);
+            workInProgress2.lanes = 536870912;
+            return null;
+          }
+          return mountActivityChildren(workInProgress2, nextProps);
+        }
+        var prevState = current2.memoizedState;
+        if (null !== prevState) {
+          var activityInstance = prevState.dehydrated;
+          pushDehydratedActivitySuspenseHandler(workInProgress2);
+          if (didSuspend)
+            if (workInProgress2.flags & 256)
+              workInProgress2.flags &= -257, workInProgress2 = retryActivityComponentWithoutHydrating(
+                current2,
+                workInProgress2,
+                renderLanes2
+              );
+            else if (null !== workInProgress2.memoizedState)
+              workInProgress2.child = current2.child, workInProgress2.flags |= 128, workInProgress2 = null;
+            else
+              throw Error(
+                "Client rendering an Activity suspended it again. This is a bug in React."
+              );
+          else if (warnIfHydrating(), 0 !== (renderLanes2 & 536870912) && markRenderDerivedCause(workInProgress2), didReceiveUpdate || propagateParentContextChanges(
+            current2,
+            workInProgress2,
+            renderLanes2,
+            false
+          ), didSuspend = 0 !== (renderLanes2 & current2.childLanes), didReceiveUpdate || didSuspend) {
+            nextProps = workInProgressRoot;
+            if (null !== nextProps && (activityInstance = getBumpedLaneForHydration(
+              nextProps,
+              renderLanes2
+            ), 0 !== activityInstance && activityInstance !== prevState.retryLane))
+              throw prevState.retryLane = activityInstance, enqueueConcurrentRenderForLane(current2, activityInstance), scheduleUpdateOnFiber(nextProps, current2, activityInstance), SelectiveHydrationException;
+            renderDidSuspendDelayIfPossible();
+            workInProgress2 = retryActivityComponentWithoutHydrating(
+              current2,
+              workInProgress2,
+              renderLanes2
+            );
+          } else
+            current2 = prevState.treeContext, nextHydratableInstance = getNextHydratable(
+              activityInstance.nextSibling
+            ), hydrationParentFiber = workInProgress2, isHydrating = true, hydrationErrors = null, didSuspendOrErrorDEV = false, hydrationDiffRootDEV = null, rootOrSingletonContext = false, null !== current2 && restoreSuspendedTreeContext(workInProgress2, current2), workInProgress2 = mountActivityChildren(workInProgress2, nextProps), workInProgress2.flags |= 4096;
+          return workInProgress2;
+        }
+        prevState = current2.child;
+        nextProps = { mode: nextProps.mode, children: nextProps.children };
+        0 !== (renderLanes2 & 536870912) && 0 !== (renderLanes2 & current2.lanes) && markRenderDerivedCause(workInProgress2);
+        current2 = createWorkInProgress(prevState, nextProps);
+        current2.ref = workInProgress2.ref;
+        workInProgress2.child = current2;
+        current2.return = workInProgress2;
+        return current2;
       }
       function markRef(current2, workInProgress2) {
         var ref = workInProgress2.ref;
@@ -7877,7 +8757,6 @@ var require_react_dom_client_development = __commonJS({
           componentName2
         ))));
         prepareToReadContext(workInProgress2);
-        markComponentRenderStarted(workInProgress2);
         Component = renderWithHooks(
           current2,
           workInProgress2,
@@ -7887,7 +8766,6 @@ var require_react_dom_client_development = __commonJS({
           renderLanes2
         );
         nextProps = checkDidRenderIdHook();
-        markComponentRenderStopped();
         if (null !== current2 && !didReceiveUpdate)
           return bailoutHooks(current2, workInProgress2, renderLanes2), bailoutOnAlreadyFinishedWork(current2, workInProgress2, renderLanes2);
         isHydrating && nextProps && pushMaterializedTreeId(workInProgress2);
@@ -7897,7 +8775,6 @@ var require_react_dom_client_development = __commonJS({
       }
       function replayFunctionComponent(current2, workInProgress2, nextProps, Component, secondArg, renderLanes2) {
         prepareToReadContext(workInProgress2);
-        markComponentRenderStarted(workInProgress2);
         hookTypesUpdateIndexDev = -1;
         ignorePreviousDependencies = null !== current2 && current2.type !== workInProgress2.type;
         workInProgress2.updateQueue = null;
@@ -7909,7 +8786,6 @@ var require_react_dom_client_development = __commonJS({
         );
         finishRenderingHooks(current2, workInProgress2);
         Component = checkDidRenderIdHook();
-        markComponentRenderStopped();
         if (null !== current2 && !didReceiveUpdate)
           return bailoutHooks(current2, workInProgress2, renderLanes2), bailoutOnAlreadyFinishedWork(current2, workInProgress2, renderLanes2);
         isHydrating && Component && pushMaterializedTreeId(workInProgress2);
@@ -8205,18 +9081,13 @@ var require_react_dom_client_development = __commonJS({
           setCurrentFiber(workInProgress2);
           if (state && "function" !== typeof Component.getDerivedStateFromError)
             Component = null, profilerStartTime = -1;
-          else {
-            markComponentRenderStarted(workInProgress2);
-            Component = callRenderInDEV(lane);
-            if (workInProgress2.mode & StrictLegacyMode) {
-              setIsStrictModeForDevtools(true);
-              try {
-                callRenderInDEV(lane);
-              } finally {
-                setIsStrictModeForDevtools(false);
-              }
+          else if (Component = callRenderInDEV(lane), workInProgress2.mode & StrictLegacyMode) {
+            setIsStrictModeForDevtools(true);
+            try {
+              callRenderInDEV(lane);
+            } finally {
+              setIsStrictModeForDevtools(false);
             }
-            markComponentRenderStopped();
           }
           workInProgress2.flags |= 1;
           null !== current2 && state ? (workInProgress2.child = reconcileChildFibers(
@@ -8274,209 +9145,216 @@ var require_react_dom_client_development = __commonJS({
         return current2;
       }
       function updateSuspenseComponent(current2, workInProgress2, renderLanes2) {
-        var JSCompiler_object_inline_digest_2451;
-        var JSCompiler_object_inline_stack_2452 = workInProgress2.pendingProps;
+        var JSCompiler_object_inline_digest_2724;
+        var JSCompiler_object_inline_stack_2725 = workInProgress2.pendingProps;
         shouldSuspendImpl(workInProgress2) && (workInProgress2.flags |= 128);
-        var JSCompiler_object_inline_componentStack_2453 = false;
+        var JSCompiler_object_inline_message_2723 = false;
         var didSuspend = 0 !== (workInProgress2.flags & 128);
-        (JSCompiler_object_inline_digest_2451 = didSuspend) || (JSCompiler_object_inline_digest_2451 = null !== current2 && null === current2.memoizedState ? false : 0 !== (suspenseStackCursor.current & ForceSuspenseFallback));
-        JSCompiler_object_inline_digest_2451 && (JSCompiler_object_inline_componentStack_2453 = true, workInProgress2.flags &= -129);
-        JSCompiler_object_inline_digest_2451 = 0 !== (workInProgress2.flags & 32);
+        (JSCompiler_object_inline_digest_2724 = didSuspend) || (JSCompiler_object_inline_digest_2724 = null !== current2 && null === current2.memoizedState ? false : 0 !== (suspenseStackCursor.current & ForceSuspenseFallback));
+        JSCompiler_object_inline_digest_2724 && (JSCompiler_object_inline_message_2723 = true, workInProgress2.flags &= -129);
+        JSCompiler_object_inline_digest_2724 = 0 !== (workInProgress2.flags & 32);
         workInProgress2.flags &= -33;
         if (null === current2) {
           if (isHydrating) {
-            JSCompiler_object_inline_componentStack_2453 ? pushPrimaryTreeSuspenseHandler(workInProgress2) : reuseSuspenseHandlerOnStack(workInProgress2);
-            if (isHydrating) {
-              var JSCompiler_object_inline_message_2450 = nextHydratableInstance;
-              var JSCompiler_temp;
-              if (!(JSCompiler_temp = !JSCompiler_object_inline_message_2450)) {
-                c: {
-                  var instance = JSCompiler_object_inline_message_2450;
-                  for (JSCompiler_temp = rootOrSingletonContext; 8 !== instance.nodeType; ) {
-                    if (!JSCompiler_temp) {
-                      JSCompiler_temp = null;
-                      break c;
-                    }
-                    instance = getNextHydratable(instance.nextSibling);
-                    if (null === instance) {
-                      JSCompiler_temp = null;
-                      break c;
-                    }
-                  }
-                  JSCompiler_temp = instance;
-                }
-                null !== JSCompiler_temp ? (warnIfNotHydrating(), workInProgress2.memoizedState = {
-                  dehydrated: JSCompiler_temp,
-                  treeContext: null !== treeContextProvider ? { id: treeContextId, overflow: treeContextOverflow } : null,
-                  retryLane: 536870912,
-                  hydrationErrors: null
-                }, instance = createFiber(18, null, null, NoMode), instance.stateNode = JSCompiler_temp, instance.return = workInProgress2, workInProgress2.child = instance, hydrationParentFiber = workInProgress2, nextHydratableInstance = null, JSCompiler_temp = true) : JSCompiler_temp = false;
-                JSCompiler_temp = !JSCompiler_temp;
-              }
-              JSCompiler_temp && (warnNonHydratedInstance(
-                workInProgress2,
-                JSCompiler_object_inline_message_2450
-              ), throwOnHydrationMismatch(workInProgress2));
-            }
-            JSCompiler_object_inline_message_2450 = workInProgress2.memoizedState;
-            if (null !== JSCompiler_object_inline_message_2450 && (JSCompiler_object_inline_message_2450 = JSCompiler_object_inline_message_2450.dehydrated, null !== JSCompiler_object_inline_message_2450))
-              return isSuspenseInstanceFallback(JSCompiler_object_inline_message_2450) ? workInProgress2.lanes = 32 : workInProgress2.lanes = 536870912, null;
-            popSuspenseHandler(workInProgress2);
+            JSCompiler_object_inline_message_2723 ? pushPrimaryTreeSuspenseHandler(workInProgress2) : reuseSuspenseHandlerOnStack(workInProgress2);
+            (current2 = nextHydratableInstance) ? (renderLanes2 = canHydrateHydrationBoundary(
+              current2,
+              rootOrSingletonContext
+            ), renderLanes2 = null !== renderLanes2 && renderLanes2.data !== ACTIVITY_START_DATA ? renderLanes2 : null, null !== renderLanes2 && (JSCompiler_object_inline_digest_2724 = {
+              dehydrated: renderLanes2,
+              treeContext: getSuspendedTreeContext(),
+              retryLane: 536870912,
+              hydrationErrors: null
+            }, workInProgress2.memoizedState = JSCompiler_object_inline_digest_2724, JSCompiler_object_inline_digest_2724 = createFiberFromDehydratedFragment(renderLanes2), JSCompiler_object_inline_digest_2724.return = workInProgress2, workInProgress2.child = JSCompiler_object_inline_digest_2724, hydrationParentFiber = workInProgress2, nextHydratableInstance = null)) : renderLanes2 = null;
+            if (null === renderLanes2)
+              throw warnNonHydratedInstance(workInProgress2, current2), throwOnHydrationMismatch(workInProgress2);
+            isSuspenseInstanceFallback(renderLanes2) ? workInProgress2.lanes = 32 : workInProgress2.lanes = 536870912;
+            return null;
           }
-          JSCompiler_object_inline_message_2450 = JSCompiler_object_inline_stack_2452.children;
-          JSCompiler_object_inline_stack_2452 = JSCompiler_object_inline_stack_2452.fallback;
-          if (JSCompiler_object_inline_componentStack_2453)
-            return reuseSuspenseHandlerOnStack(workInProgress2), JSCompiler_object_inline_componentStack_2453 = workInProgress2.mode, JSCompiler_object_inline_message_2450 = mountWorkInProgressOffscreenFiber(
-              {
-                mode: "hidden",
-                children: JSCompiler_object_inline_message_2450
-              },
-              JSCompiler_object_inline_componentStack_2453
-            ), JSCompiler_object_inline_stack_2452 = createFiberFromFragment(
-              JSCompiler_object_inline_stack_2452,
-              JSCompiler_object_inline_componentStack_2453,
+          var nextPrimaryChildren = JSCompiler_object_inline_stack_2725.children;
+          JSCompiler_object_inline_stack_2725 = JSCompiler_object_inline_stack_2725.fallback;
+          if (JSCompiler_object_inline_message_2723) {
+            reuseSuspenseHandlerOnStack(workInProgress2);
+            var mode = workInProgress2.mode;
+            nextPrimaryChildren = mountWorkInProgressOffscreenFiber(
+              { mode: "hidden", children: nextPrimaryChildren },
+              mode
+            );
+            JSCompiler_object_inline_stack_2725 = createFiberFromFragment(
+              JSCompiler_object_inline_stack_2725,
+              mode,
               renderLanes2,
               null
-            ), JSCompiler_object_inline_message_2450.return = workInProgress2, JSCompiler_object_inline_stack_2452.return = workInProgress2, JSCompiler_object_inline_message_2450.sibling = JSCompiler_object_inline_stack_2452, workInProgress2.child = JSCompiler_object_inline_message_2450, JSCompiler_object_inline_componentStack_2453 = workInProgress2.child, JSCompiler_object_inline_componentStack_2453.memoizedState = mountSuspenseOffscreenState(renderLanes2), JSCompiler_object_inline_componentStack_2453.childLanes = getRemainingWorkInPrimaryTree(
+            );
+            nextPrimaryChildren.return = workInProgress2;
+            JSCompiler_object_inline_stack_2725.return = workInProgress2;
+            nextPrimaryChildren.sibling = JSCompiler_object_inline_stack_2725;
+            workInProgress2.child = nextPrimaryChildren;
+            JSCompiler_object_inline_stack_2725 = workInProgress2.child;
+            JSCompiler_object_inline_stack_2725.memoizedState = mountSuspenseOffscreenState(renderLanes2);
+            JSCompiler_object_inline_stack_2725.childLanes = getRemainingWorkInPrimaryTree(
               current2,
-              JSCompiler_object_inline_digest_2451,
+              JSCompiler_object_inline_digest_2724,
               renderLanes2
-            ), workInProgress2.memoizedState = SUSPENDED_MARKER, JSCompiler_object_inline_stack_2452;
+            );
+            workInProgress2.memoizedState = SUSPENDED_MARKER;
+            return bailoutOffscreenComponent(
+              null,
+              JSCompiler_object_inline_stack_2725
+            );
+          }
           pushPrimaryTreeSuspenseHandler(workInProgress2);
           return mountSuspensePrimaryChildren(
             workInProgress2,
-            JSCompiler_object_inline_message_2450
+            nextPrimaryChildren
           );
         }
         var prevState = current2.memoizedState;
-        if (null !== prevState && (JSCompiler_object_inline_message_2450 = prevState.dehydrated, null !== JSCompiler_object_inline_message_2450)) {
-          if (didSuspend)
-            workInProgress2.flags & 256 ? (pushPrimaryTreeSuspenseHandler(workInProgress2), workInProgress2.flags &= -257, workInProgress2 = retrySuspenseComponentWithoutHydrating(
+        if (null !== prevState) {
+          var JSCompiler_object_inline_componentStack_2726 = prevState.dehydrated;
+          if (null !== JSCompiler_object_inline_componentStack_2726) {
+            if (didSuspend)
+              workInProgress2.flags & 256 ? (pushPrimaryTreeSuspenseHandler(workInProgress2), workInProgress2.flags &= -257, workInProgress2 = retrySuspenseComponentWithoutHydrating(
+                current2,
+                workInProgress2,
+                renderLanes2
+              )) : null !== workInProgress2.memoizedState ? (reuseSuspenseHandlerOnStack(workInProgress2), workInProgress2.child = current2.child, workInProgress2.flags |= 128, workInProgress2 = null) : (reuseSuspenseHandlerOnStack(workInProgress2), nextPrimaryChildren = JSCompiler_object_inline_stack_2725.fallback, mode = workInProgress2.mode, JSCompiler_object_inline_stack_2725 = mountWorkInProgressOffscreenFiber(
+                {
+                  mode: "visible",
+                  children: JSCompiler_object_inline_stack_2725.children
+                },
+                mode
+              ), nextPrimaryChildren = createFiberFromFragment(
+                nextPrimaryChildren,
+                mode,
+                renderLanes2,
+                null
+              ), nextPrimaryChildren.flags |= 2, JSCompiler_object_inline_stack_2725.return = workInProgress2, nextPrimaryChildren.return = workInProgress2, JSCompiler_object_inline_stack_2725.sibling = nextPrimaryChildren, workInProgress2.child = JSCompiler_object_inline_stack_2725, reconcileChildFibers(
+                workInProgress2,
+                current2.child,
+                null,
+                renderLanes2
+              ), JSCompiler_object_inline_stack_2725 = workInProgress2.child, JSCompiler_object_inline_stack_2725.memoizedState = mountSuspenseOffscreenState(renderLanes2), JSCompiler_object_inline_stack_2725.childLanes = getRemainingWorkInPrimaryTree(
+                current2,
+                JSCompiler_object_inline_digest_2724,
+                renderLanes2
+              ), workInProgress2.memoizedState = SUSPENDED_MARKER, workInProgress2 = bailoutOffscreenComponent(
+                null,
+                JSCompiler_object_inline_stack_2725
+              ));
+            else if (pushPrimaryTreeSuspenseHandler(workInProgress2), warnIfHydrating(), 0 !== (renderLanes2 & 536870912) && markRenderDerivedCause(workInProgress2), isSuspenseInstanceFallback(
+              JSCompiler_object_inline_componentStack_2726
+            )) {
+              JSCompiler_object_inline_digest_2724 = JSCompiler_object_inline_componentStack_2726.nextSibling && JSCompiler_object_inline_componentStack_2726.nextSibling.dataset;
+              if (JSCompiler_object_inline_digest_2724) {
+                nextPrimaryChildren = JSCompiler_object_inline_digest_2724.dgst;
+                var message = JSCompiler_object_inline_digest_2724.msg;
+                mode = JSCompiler_object_inline_digest_2724.stck;
+                var componentStack = JSCompiler_object_inline_digest_2724.cstck;
+              }
+              JSCompiler_object_inline_message_2723 = message;
+              JSCompiler_object_inline_digest_2724 = nextPrimaryChildren;
+              JSCompiler_object_inline_stack_2725 = mode;
+              JSCompiler_object_inline_componentStack_2726 = componentStack;
+              nextPrimaryChildren = JSCompiler_object_inline_message_2723;
+              mode = JSCompiler_object_inline_componentStack_2726;
+              nextPrimaryChildren = nextPrimaryChildren ? Error(nextPrimaryChildren) : Error(
+                "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering."
+              );
+              nextPrimaryChildren.stack = JSCompiler_object_inline_stack_2725 || "";
+              nextPrimaryChildren.digest = JSCompiler_object_inline_digest_2724;
+              JSCompiler_object_inline_digest_2724 = void 0 === mode ? null : mode;
+              JSCompiler_object_inline_stack_2725 = {
+                value: nextPrimaryChildren,
+                source: null,
+                stack: JSCompiler_object_inline_digest_2724
+              };
+              "string" === typeof JSCompiler_object_inline_digest_2724 && CapturedStacks.set(
+                nextPrimaryChildren,
+                JSCompiler_object_inline_stack_2725
+              );
+              queueHydrationError(JSCompiler_object_inline_stack_2725);
+              workInProgress2 = retrySuspenseComponentWithoutHydrating(
+                current2,
+                workInProgress2,
+                renderLanes2
+              );
+            } else if (didReceiveUpdate || propagateParentContextChanges(
               current2,
               workInProgress2,
-              renderLanes2
-            )) : null !== workInProgress2.memoizedState ? (reuseSuspenseHandlerOnStack(workInProgress2), workInProgress2.child = current2.child, workInProgress2.flags |= 128, workInProgress2 = null) : (reuseSuspenseHandlerOnStack(workInProgress2), JSCompiler_object_inline_componentStack_2453 = JSCompiler_object_inline_stack_2452.fallback, JSCompiler_object_inline_message_2450 = workInProgress2.mode, JSCompiler_object_inline_stack_2452 = mountWorkInProgressOffscreenFiber(
-              {
-                mode: "visible",
-                children: JSCompiler_object_inline_stack_2452.children
-              },
-              JSCompiler_object_inline_message_2450
-            ), JSCompiler_object_inline_componentStack_2453 = createFiberFromFragment(
-              JSCompiler_object_inline_componentStack_2453,
-              JSCompiler_object_inline_message_2450,
               renderLanes2,
-              null
-            ), JSCompiler_object_inline_componentStack_2453.flags |= 2, JSCompiler_object_inline_stack_2452.return = workInProgress2, JSCompiler_object_inline_componentStack_2453.return = workInProgress2, JSCompiler_object_inline_stack_2452.sibling = JSCompiler_object_inline_componentStack_2453, workInProgress2.child = JSCompiler_object_inline_stack_2452, reconcileChildFibers(
-              workInProgress2,
-              current2.child,
-              null,
-              renderLanes2
-            ), JSCompiler_object_inline_stack_2452 = workInProgress2.child, JSCompiler_object_inline_stack_2452.memoizedState = mountSuspenseOffscreenState(renderLanes2), JSCompiler_object_inline_stack_2452.childLanes = getRemainingWorkInPrimaryTree(
-              current2,
-              JSCompiler_object_inline_digest_2451,
-              renderLanes2
-            ), workInProgress2.memoizedState = SUSPENDED_MARKER, workInProgress2 = JSCompiler_object_inline_componentStack_2453);
-          else if (pushPrimaryTreeSuspenseHandler(workInProgress2), isHydrating && console.error(
-            "We should not be hydrating here. This is a bug in React. Please file a bug."
-          ), isSuspenseInstanceFallback(JSCompiler_object_inline_message_2450)) {
-            JSCompiler_object_inline_digest_2451 = JSCompiler_object_inline_message_2450.nextSibling && JSCompiler_object_inline_message_2450.nextSibling.dataset;
-            if (JSCompiler_object_inline_digest_2451) {
-              JSCompiler_temp = JSCompiler_object_inline_digest_2451.dgst;
-              var message = JSCompiler_object_inline_digest_2451.msg;
-              instance = JSCompiler_object_inline_digest_2451.stck;
-              var componentStack = JSCompiler_object_inline_digest_2451.cstck;
-            }
-            JSCompiler_object_inline_message_2450 = message;
-            JSCompiler_object_inline_digest_2451 = JSCompiler_temp;
-            JSCompiler_object_inline_stack_2452 = instance;
-            JSCompiler_temp = JSCompiler_object_inline_componentStack_2453 = componentStack;
-            JSCompiler_object_inline_componentStack_2453 = JSCompiler_object_inline_message_2450 ? Error(JSCompiler_object_inline_message_2450) : Error(
-              "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering."
-            );
-            JSCompiler_object_inline_componentStack_2453.stack = JSCompiler_object_inline_stack_2452 || "";
-            JSCompiler_object_inline_componentStack_2453.digest = JSCompiler_object_inline_digest_2451;
-            JSCompiler_object_inline_digest_2451 = void 0 === JSCompiler_temp ? null : JSCompiler_temp;
-            JSCompiler_object_inline_stack_2452 = {
-              value: JSCompiler_object_inline_componentStack_2453,
-              source: null,
-              stack: JSCompiler_object_inline_digest_2451
-            };
-            "string" === typeof JSCompiler_object_inline_digest_2451 && CapturedStacks.set(
-              JSCompiler_object_inline_componentStack_2453,
-              JSCompiler_object_inline_stack_2452
-            );
-            queueHydrationError(JSCompiler_object_inline_stack_2452);
-            workInProgress2 = retrySuspenseComponentWithoutHydrating(
-              current2,
-              workInProgress2,
-              renderLanes2
-            );
-          } else if (didReceiveUpdate || propagateParentContextChanges(
-            current2,
-            workInProgress2,
-            renderLanes2,
-            false
-          ), JSCompiler_object_inline_digest_2451 = 0 !== (renderLanes2 & current2.childLanes), didReceiveUpdate || JSCompiler_object_inline_digest_2451) {
-            JSCompiler_object_inline_digest_2451 = workInProgressRoot;
-            if (null !== JSCompiler_object_inline_digest_2451 && (JSCompiler_object_inline_stack_2452 = renderLanes2 & -renderLanes2, JSCompiler_object_inline_stack_2452 = 0 !== (JSCompiler_object_inline_stack_2452 & 42) ? 1 : getBumpedLaneForHydrationByLane(
-              JSCompiler_object_inline_stack_2452
-            ), JSCompiler_object_inline_stack_2452 = 0 !== (JSCompiler_object_inline_stack_2452 & (JSCompiler_object_inline_digest_2451.suspendedLanes | renderLanes2)) ? 0 : JSCompiler_object_inline_stack_2452, 0 !== JSCompiler_object_inline_stack_2452 && JSCompiler_object_inline_stack_2452 !== prevState.retryLane))
-              throw prevState.retryLane = JSCompiler_object_inline_stack_2452, enqueueConcurrentRenderForLane(
+              false
+            ), JSCompiler_object_inline_digest_2724 = 0 !== (renderLanes2 & current2.childLanes), didReceiveUpdate || JSCompiler_object_inline_digest_2724) {
+              JSCompiler_object_inline_digest_2724 = workInProgressRoot;
+              if (null !== JSCompiler_object_inline_digest_2724 && (JSCompiler_object_inline_stack_2725 = getBumpedLaneForHydration(
+                JSCompiler_object_inline_digest_2724,
+                renderLanes2
+              ), 0 !== JSCompiler_object_inline_stack_2725 && JSCompiler_object_inline_stack_2725 !== prevState.retryLane))
+                throw prevState.retryLane = JSCompiler_object_inline_stack_2725, enqueueConcurrentRenderForLane(
+                  current2,
+                  JSCompiler_object_inline_stack_2725
+                ), scheduleUpdateOnFiber(
+                  JSCompiler_object_inline_digest_2724,
+                  current2,
+                  JSCompiler_object_inline_stack_2725
+                ), SelectiveHydrationException;
+              isSuspenseInstancePending(
+                JSCompiler_object_inline_componentStack_2726
+              ) || renderDidSuspendDelayIfPossible();
+              workInProgress2 = retrySuspenseComponentWithoutHydrating(
                 current2,
-                JSCompiler_object_inline_stack_2452
-              ), scheduleUpdateOnFiber(
-                JSCompiler_object_inline_digest_2451,
-                current2,
-                JSCompiler_object_inline_stack_2452
-              ), SelectiveHydrationException;
-            JSCompiler_object_inline_message_2450.data === SUSPENSE_PENDING_START_DATA || renderDidSuspendDelayIfPossible();
-            workInProgress2 = retrySuspenseComponentWithoutHydrating(
-              current2,
-              workInProgress2,
-              renderLanes2
-            );
-          } else
-            JSCompiler_object_inline_message_2450.data === SUSPENSE_PENDING_START_DATA ? (workInProgress2.flags |= 192, workInProgress2.child = current2.child, workInProgress2 = null) : (current2 = prevState.treeContext, nextHydratableInstance = getNextHydratable(
-              JSCompiler_object_inline_message_2450.nextSibling
-            ), hydrationParentFiber = workInProgress2, isHydrating = true, hydrationErrors = null, didSuspendOrErrorDEV = false, hydrationDiffRootDEV = null, rootOrSingletonContext = false, null !== current2 && (warnIfNotHydrating(), idStack[idStackIndex++] = treeContextId, idStack[idStackIndex++] = treeContextOverflow, idStack[idStackIndex++] = treeContextProvider, treeContextId = current2.id, treeContextOverflow = current2.overflow, treeContextProvider = workInProgress2), workInProgress2 = mountSuspensePrimaryChildren(
-              workInProgress2,
-              JSCompiler_object_inline_stack_2452.children
-            ), workInProgress2.flags |= 4096);
-          return workInProgress2;
+                workInProgress2,
+                renderLanes2
+              );
+            } else
+              isSuspenseInstancePending(
+                JSCompiler_object_inline_componentStack_2726
+              ) ? (workInProgress2.flags |= 192, workInProgress2.child = current2.child, workInProgress2 = null) : (current2 = prevState.treeContext, nextHydratableInstance = getNextHydratable(
+                JSCompiler_object_inline_componentStack_2726.nextSibling
+              ), hydrationParentFiber = workInProgress2, isHydrating = true, hydrationErrors = null, didSuspendOrErrorDEV = false, hydrationDiffRootDEV = null, rootOrSingletonContext = false, null !== current2 && restoreSuspendedTreeContext(workInProgress2, current2), workInProgress2 = mountSuspensePrimaryChildren(
+                workInProgress2,
+                JSCompiler_object_inline_stack_2725.children
+              ), workInProgress2.flags |= 4096);
+            return workInProgress2;
+          }
         }
-        if (JSCompiler_object_inline_componentStack_2453)
-          return reuseSuspenseHandlerOnStack(workInProgress2), JSCompiler_object_inline_componentStack_2453 = JSCompiler_object_inline_stack_2452.fallback, JSCompiler_object_inline_message_2450 = workInProgress2.mode, JSCompiler_temp = current2.child, instance = JSCompiler_temp.sibling, JSCompiler_object_inline_stack_2452 = createWorkInProgress(
-            JSCompiler_temp,
+        if (JSCompiler_object_inline_message_2723)
+          return reuseSuspenseHandlerOnStack(workInProgress2), nextPrimaryChildren = JSCompiler_object_inline_stack_2725.fallback, mode = workInProgress2.mode, componentStack = current2.child, JSCompiler_object_inline_componentStack_2726 = componentStack.sibling, JSCompiler_object_inline_stack_2725 = createWorkInProgress(
+            componentStack,
             {
               mode: "hidden",
-              children: JSCompiler_object_inline_stack_2452.children
+              children: JSCompiler_object_inline_stack_2725.children
             }
-          ), JSCompiler_object_inline_stack_2452.subtreeFlags = JSCompiler_temp.subtreeFlags & 65011712, null !== instance ? JSCompiler_object_inline_componentStack_2453 = createWorkInProgress(
-            instance,
-            JSCompiler_object_inline_componentStack_2453
-          ) : (JSCompiler_object_inline_componentStack_2453 = createFiberFromFragment(
-            JSCompiler_object_inline_componentStack_2453,
-            JSCompiler_object_inline_message_2450,
+          ), JSCompiler_object_inline_stack_2725.subtreeFlags = componentStack.subtreeFlags & 65011712, null !== JSCompiler_object_inline_componentStack_2726 ? nextPrimaryChildren = createWorkInProgress(
+            JSCompiler_object_inline_componentStack_2726,
+            nextPrimaryChildren
+          ) : (nextPrimaryChildren = createFiberFromFragment(
+            nextPrimaryChildren,
+            mode,
             renderLanes2,
             null
-          ), JSCompiler_object_inline_componentStack_2453.flags |= 2), JSCompiler_object_inline_componentStack_2453.return = workInProgress2, JSCompiler_object_inline_stack_2452.return = workInProgress2, JSCompiler_object_inline_stack_2452.sibling = JSCompiler_object_inline_componentStack_2453, workInProgress2.child = JSCompiler_object_inline_stack_2452, JSCompiler_object_inline_stack_2452 = JSCompiler_object_inline_componentStack_2453, JSCompiler_object_inline_componentStack_2453 = workInProgress2.child, JSCompiler_object_inline_message_2450 = current2.child.memoizedState, null === JSCompiler_object_inline_message_2450 ? JSCompiler_object_inline_message_2450 = mountSuspenseOffscreenState(renderLanes2) : (JSCompiler_temp = JSCompiler_object_inline_message_2450.cachePool, null !== JSCompiler_temp ? (instance = CacheContext._currentValue, JSCompiler_temp = JSCompiler_temp.parent !== instance ? { parent: instance, pool: instance } : JSCompiler_temp) : JSCompiler_temp = getSuspendedCache(), JSCompiler_object_inline_message_2450 = {
-            baseLanes: JSCompiler_object_inline_message_2450.baseLanes | renderLanes2,
-            cachePool: JSCompiler_temp
-          }), JSCompiler_object_inline_componentStack_2453.memoizedState = JSCompiler_object_inline_message_2450, JSCompiler_object_inline_componentStack_2453.childLanes = getRemainingWorkInPrimaryTree(
+          ), nextPrimaryChildren.flags |= 2), nextPrimaryChildren.return = workInProgress2, JSCompiler_object_inline_stack_2725.return = workInProgress2, JSCompiler_object_inline_stack_2725.sibling = nextPrimaryChildren, workInProgress2.child = JSCompiler_object_inline_stack_2725, bailoutOffscreenComponent(null, JSCompiler_object_inline_stack_2725), JSCompiler_object_inline_stack_2725 = workInProgress2.child, nextPrimaryChildren = current2.child.memoizedState, null === nextPrimaryChildren ? nextPrimaryChildren = mountSuspenseOffscreenState(renderLanes2) : (mode = nextPrimaryChildren.cachePool, null !== mode ? (componentStack = CacheContext._currentValue, mode = mode.parent !== componentStack ? { parent: componentStack, pool: componentStack } : mode) : mode = getSuspendedCache(), nextPrimaryChildren = {
+            baseLanes: nextPrimaryChildren.baseLanes | renderLanes2,
+            cachePool: mode
+          }), JSCompiler_object_inline_stack_2725.memoizedState = nextPrimaryChildren, JSCompiler_object_inline_stack_2725.childLanes = getRemainingWorkInPrimaryTree(
             current2,
-            JSCompiler_object_inline_digest_2451,
+            JSCompiler_object_inline_digest_2724,
             renderLanes2
-          ), workInProgress2.memoizedState = SUSPENDED_MARKER, JSCompiler_object_inline_stack_2452;
+          ), workInProgress2.memoizedState = SUSPENDED_MARKER, bailoutOffscreenComponent(
+            current2.child,
+            JSCompiler_object_inline_stack_2725
+          );
+        null !== prevState && (renderLanes2 & 62914560) === renderLanes2 && 0 !== (renderLanes2 & current2.lanes) && markRenderDerivedCause(workInProgress2);
         pushPrimaryTreeSuspenseHandler(workInProgress2);
         renderLanes2 = current2.child;
         current2 = renderLanes2.sibling;
         renderLanes2 = createWorkInProgress(renderLanes2, {
           mode: "visible",
-          children: JSCompiler_object_inline_stack_2452.children
+          children: JSCompiler_object_inline_stack_2725.children
         });
         renderLanes2.return = workInProgress2;
         renderLanes2.sibling = null;
-        null !== current2 && (JSCompiler_object_inline_digest_2451 = workInProgress2.deletions, null === JSCompiler_object_inline_digest_2451 ? (workInProgress2.deletions = [current2], workInProgress2.flags |= 16) : JSCompiler_object_inline_digest_2451.push(current2));
+        null !== current2 && (JSCompiler_object_inline_digest_2724 = workInProgress2.deletions, null === JSCompiler_object_inline_digest_2724 ? (workInProgress2.deletions = [current2], workInProgress2.flags |= 16) : JSCompiler_object_inline_digest_2724.push(current2));
         workInProgress2.child = renderLanes2;
         workInProgress2.memoizedState = null;
         return renderLanes2;
@@ -8492,12 +9370,6 @@ var require_react_dom_client_development = __commonJS({
       function mountWorkInProgressOffscreenFiber(offscreenProps, mode) {
         offscreenProps = createFiber(22, offscreenProps, null, mode);
         offscreenProps.lanes = 0;
-        offscreenProps.stateNode = {
-          _visibility: OffscreenVisible,
-          _pendingMarkers: null,
-          _retryCache: null,
-          _transitions: null
-        };
         return offscreenProps;
       }
       function retrySuspenseComponentWithoutHydrating(current2, workInProgress2, renderLanes2) {
@@ -8520,17 +9392,7 @@ var require_react_dom_client_development = __commonJS({
           propagationRoot
         );
       }
-      function validateSuspenseListNestedChild(childSlot, index) {
-        var isAnArray = isArrayImpl(childSlot);
-        childSlot = !isAnArray && "function" === typeof getIteratorFn(childSlot);
-        return isAnArray || childSlot ? (isAnArray = isAnArray ? "array" : "iterable", console.error(
-          "A nested %s was passed to row #%s in <SuspenseList />. Wrap it in an additional SuspenseList to configure its revealOrder: <SuspenseList revealOrder=...> ... <SuspenseList revealOrder=...>{%s}</SuspenseList> ... </SuspenseList>",
-          isAnArray,
-          index,
-          isAnArray
-        ), false) : true;
-      }
-      function initSuspenseListRenderState(workInProgress2, isBackwards, tail, lastContentRow, tailMode) {
+      function initSuspenseListRenderState(workInProgress2, isBackwards, tail, lastContentRow, tailMode, treeForkCount2) {
         var renderState = workInProgress2.memoizedState;
         null === renderState ? workInProgress2.memoizedState = {
           isBackwards,
@@ -8538,18 +9400,30 @@ var require_react_dom_client_development = __commonJS({
           renderingStartTime: 0,
           last: lastContentRow,
           tail,
-          tailMode
-        } : (renderState.isBackwards = isBackwards, renderState.rendering = null, renderState.renderingStartTime = 0, renderState.last = lastContentRow, renderState.tail = tail, renderState.tailMode = tailMode);
+          tailMode,
+          treeForkCount: treeForkCount2
+        } : (renderState.isBackwards = isBackwards, renderState.rendering = null, renderState.renderingStartTime = 0, renderState.last = lastContentRow, renderState.tail = tail, renderState.tailMode = tailMode, renderState.treeForkCount = treeForkCount2);
       }
       function updateSuspenseListComponent(current2, workInProgress2, renderLanes2) {
-        var nextProps = workInProgress2.pendingProps, revealOrder = nextProps.revealOrder, tailMode = nextProps.tail;
-        nextProps = nextProps.children;
-        if (void 0 !== revealOrder && "forwards" !== revealOrder && "backwards" !== revealOrder && "together" !== revealOrder && !didWarnAboutRevealOrder[revealOrder])
-          if (didWarnAboutRevealOrder[revealOrder] = true, "string" === typeof revealOrder)
+        var nextProps = workInProgress2.pendingProps, revealOrder = nextProps.revealOrder, tailMode = nextProps.tail, newChildren = nextProps.children, suspenseContext = suspenseStackCursor.current;
+        (nextProps = 0 !== (suspenseContext & ForceSuspenseFallback)) ? (suspenseContext = suspenseContext & SubtreeSuspenseContextMask | ForceSuspenseFallback, workInProgress2.flags |= 128) : suspenseContext &= SubtreeSuspenseContextMask;
+        push(suspenseStackCursor, suspenseContext, workInProgress2);
+        suspenseContext = null == revealOrder ? "null" : revealOrder;
+        if ("forwards" !== revealOrder && "unstable_legacy-backwards" !== revealOrder && "together" !== revealOrder && "independent" !== revealOrder && !didWarnAboutRevealOrder[suspenseContext])
+          if (didWarnAboutRevealOrder[suspenseContext] = true, null == revealOrder)
+            console.error(
+              'The default for the <SuspenseList revealOrder="..."> prop is changing. To be future compatible you must explictly specify either "independent" (the current default), "together", "forwards" or "legacy_unstable-backwards".'
+            );
+          else if ("backwards" === revealOrder)
+            console.error(
+              'The rendering order of <SuspenseList revealOrder="backwards"> is changing. To be future compatible you must specify revealOrder="legacy_unstable-backwards" instead.'
+            );
+          else if ("string" === typeof revealOrder)
             switch (revealOrder.toLowerCase()) {
               case "together":
               case "forwards":
               case "backwards":
+              case "independent":
                 console.error(
                   '"%s" is not a valid value for revealOrder on <SuspenseList />. Use lowercase "%s" instead.',
                   revealOrder,
@@ -8566,30 +9440,42 @@ var require_react_dom_client_development = __commonJS({
                 break;
               default:
                 console.error(
-                  '"%s" is not a supported revealOrder on <SuspenseList />. Did you mean "together", "forwards" or "backwards"?',
+                  '"%s" is not a supported revealOrder on <SuspenseList />. Did you mean "independent", "together", "forwards" or "backwards"?',
                   revealOrder
                 );
             }
           else
             console.error(
-              '%s is not a supported value for revealOrder on <SuspenseList />. Did you mean "together", "forwards" or "backwards"?',
+              '%s is not a supported value for revealOrder on <SuspenseList />. Did you mean "independent", "together", "forwards" or "backwards"?',
               revealOrder
             );
-        void 0 === tailMode || didWarnAboutTailOptions[tailMode] || ("collapsed" !== tailMode && "hidden" !== tailMode ? (didWarnAboutTailOptions[tailMode] = true, console.error(
-          '"%s" is not a supported value for tail on <SuspenseList />. Did you mean "collapsed" or "hidden"?',
-          tailMode
-        )) : "forwards" !== revealOrder && "backwards" !== revealOrder && (didWarnAboutTailOptions[tailMode] = true, console.error(
-          '<SuspenseList tail="%s" /> is only valid if revealOrder is "forwards" or "backwards". Did you mean to specify revealOrder="forwards"?',
-          tailMode
-        )));
-        a: if (("forwards" === revealOrder || "backwards" === revealOrder) && void 0 !== nextProps && null !== nextProps && false !== nextProps)
-          if (isArrayImpl(nextProps))
-            for (var i = 0; i < nextProps.length; i++) {
-              if (!validateSuspenseListNestedChild(nextProps[i], i)) break a;
+        suspenseContext = null == tailMode ? "null" : tailMode;
+        if (!didWarnAboutTailOptions[suspenseContext])
+          if (null == tailMode) {
+            if ("forwards" === revealOrder || "backwards" === revealOrder || "unstable_legacy-backwards" === revealOrder)
+              didWarnAboutTailOptions[suspenseContext] = true, console.error(
+                'The default for the <SuspenseList tail="..."> prop is changing. To be future compatible you must explictly specify either "visible" (the current default), "collapsed" or "hidden".'
+              );
+          } else
+            "visible" !== tailMode && "collapsed" !== tailMode && "hidden" !== tailMode ? (didWarnAboutTailOptions[suspenseContext] = true, console.error(
+              '"%s" is not a supported value for tail on <SuspenseList />. Did you mean "visible", "collapsed" or "hidden"?',
+              tailMode
+            )) : "forwards" !== revealOrder && "backwards" !== revealOrder && "unstable_legacy-backwards" !== revealOrder && (didWarnAboutTailOptions[suspenseContext] = true, console.error(
+              '<SuspenseList tail="%s" /> is only valid if revealOrder is "forwards" or "backwards". Did you mean to specify revealOrder="forwards"?',
+              tailMode
+            ));
+        a: if (("forwards" === revealOrder || "backwards" === revealOrder || "unstable_legacy-backwards" === revealOrder) && void 0 !== newChildren && null !== newChildren && false !== newChildren)
+          if (isArrayImpl(newChildren))
+            for (suspenseContext = 0; suspenseContext < newChildren.length; suspenseContext++) {
+              if (!validateSuspenseListNestedChild(
+                newChildren[suspenseContext],
+                suspenseContext
+              ))
+                break a;
             }
-          else if (i = getIteratorFn(nextProps), "function" === typeof i) {
-            if (i = i.call(nextProps))
-              for (var step = i.next(), _i = 0; !step.done; step = i.next()) {
+          else if (suspenseContext = getIteratorFn(newChildren), "function" === typeof suspenseContext) {
+            if (suspenseContext = suspenseContext.call(newChildren))
+              for (var step = suspenseContext.next(), _i = 0; !step.done; step = suspenseContext.next()) {
                 if (!validateSuspenseListNestedChild(step.value, _i)) break a;
                 _i++;
               }
@@ -8598,38 +9484,28 @@ var require_react_dom_client_development = __commonJS({
               'A single row was passed to a <SuspenseList revealOrder="%s" />. This is not useful since it needs multiple rows. Did you mean to pass multiple children or an array?',
               revealOrder
             );
-        reconcileChildren(current2, workInProgress2, nextProps, renderLanes2);
-        nextProps = suspenseStackCursor.current;
-        if (0 !== (nextProps & ForceSuspenseFallback))
-          nextProps = nextProps & SubtreeSuspenseContextMask | ForceSuspenseFallback, workInProgress2.flags |= 128;
-        else {
-          if (null !== current2 && 0 !== (current2.flags & 128))
-            a: for (current2 = workInProgress2.child; null !== current2; ) {
-              if (13 === current2.tag)
-                null !== current2.memoizedState && scheduleSuspenseWorkOnFiber(
-                  current2,
-                  renderLanes2,
-                  workInProgress2
-                );
-              else if (19 === current2.tag)
-                scheduleSuspenseWorkOnFiber(current2, renderLanes2, workInProgress2);
-              else if (null !== current2.child) {
-                current2.child.return = current2;
-                current2 = current2.child;
-                continue;
-              }
-              if (current2 === workInProgress2) break a;
-              for (; null === current2.sibling; ) {
-                if (null === current2.return || current2.return === workInProgress2)
-                  break a;
-                current2 = current2.return;
-              }
-              current2.sibling.return = current2.return;
-              current2 = current2.sibling;
+        reconcileChildren(current2, workInProgress2, newChildren, renderLanes2);
+        isHydrating ? (warnIfNotHydrating(), newChildren = treeForkCount) : newChildren = 0;
+        if (!nextProps && null !== current2 && 0 !== (current2.flags & 128))
+          a: for (current2 = workInProgress2.child; null !== current2; ) {
+            if (13 === current2.tag)
+              null !== current2.memoizedState && scheduleSuspenseWorkOnFiber(current2, renderLanes2, workInProgress2);
+            else if (19 === current2.tag)
+              scheduleSuspenseWorkOnFiber(current2, renderLanes2, workInProgress2);
+            else if (null !== current2.child) {
+              current2.child.return = current2;
+              current2 = current2.child;
+              continue;
             }
-          nextProps &= SubtreeSuspenseContextMask;
-        }
-        push(suspenseStackCursor, nextProps, workInProgress2);
+            if (current2 === workInProgress2) break a;
+            for (; null === current2.sibling; ) {
+              if (null === current2.return || current2.return === workInProgress2)
+                break a;
+              current2 = current2.return;
+            }
+            current2.sibling.return = current2.return;
+            current2 = current2.sibling;
+          }
         switch (revealOrder) {
           case "forwards":
             renderLanes2 = workInProgress2.child;
@@ -8642,10 +9518,12 @@ var require_react_dom_client_development = __commonJS({
               false,
               revealOrder,
               renderLanes2,
-              tailMode
+              tailMode,
+              newChildren
             );
             break;
           case "backwards":
+          case "unstable_legacy-backwards":
             renderLanes2 = null;
             revealOrder = workInProgress2.child;
             for (workInProgress2.child = null; null !== revealOrder; ) {
@@ -8664,11 +9542,19 @@ var require_react_dom_client_development = __commonJS({
               true,
               renderLanes2,
               null,
-              tailMode
+              tailMode,
+              newChildren
             );
             break;
           case "together":
-            initSuspenseListRenderState(workInProgress2, false, null, null, void 0);
+            initSuspenseListRenderState(
+              workInProgress2,
+              false,
+              null,
+              null,
+              void 0,
+              newChildren
+            );
             break;
           default:
             workInProgress2.memoizedState = null;
@@ -8744,6 +9630,10 @@ var require_react_dom_client_development = __commonJS({
             stateNode.effectDuration = -0;
             stateNode.passiveEffectDuration = -0;
             break;
+          case 31:
+            if (null !== workInProgress2.memoizedState)
+              return workInProgress2.flags |= 128, pushDehydratedActivitySuspenseHandler(workInProgress2), null;
+            break;
           case 13:
             stateNode = workInProgress2.memoizedState;
             if (null !== stateNode) {
@@ -8793,8 +9683,12 @@ var require_react_dom_client_development = __commonJS({
             if (stateNode) break;
             else return null;
           case 22:
-          case 23:
-            return workInProgress2.lanes = 0, updateOffscreenComponent(current2, workInProgress2, renderLanes2);
+            return workInProgress2.lanes = 0, updateOffscreenComponent(
+              current2,
+              workInProgress2,
+              renderLanes2,
+              workInProgress2.pendingProps
+            );
           case 24:
             pushProvider(
               workInProgress2,
@@ -8862,7 +9756,7 @@ var require_react_dom_client_development = __commonJS({
         workInProgress2.lanes = 0;
         switch (workInProgress2.tag) {
           case 16:
-            a: if (returnFiber = workInProgress2.pendingProps, current2 = callLazyInitInDEV(workInProgress2.elementType), workInProgress2.type = current2, "function" === typeof current2)
+            a: if (returnFiber = workInProgress2.pendingProps, current2 = resolveLazy(workInProgress2.elementType), workInProgress2.type = current2, "function" === typeof current2)
               shouldConstruct(current2) ? (returnFiber = resolveClassComponentProps(
                 current2,
                 returnFiber
@@ -8906,9 +9800,9 @@ var require_react_dom_client_development = __commonJS({
               }
               workInProgress2 = "";
               null !== current2 && "object" === typeof current2 && current2.$$typeof === REACT_LAZY_TYPE && (workInProgress2 = " Did you wrap a component in React.lazy() more than once?");
-              current2 = getComponentNameFromType(current2) || current2;
+              renderLanes2 = getComponentNameFromType(current2) || current2;
               throw Error(
-                "Element type is invalid. Received a promise that resolves to: " + current2 + ". Lazy element type must resolve to a class or function." + workInProgress2
+                "Element type is invalid. Received a promise that resolves to: " + renderLanes2 + ". Lazy element type must resolve to a class or function." + workInProgress2
               );
             }
             return workInProgress2;
@@ -9001,14 +9895,14 @@ var require_react_dom_client_development = __commonJS({
                   didSuspendOrErrorDEV = false;
                   hydrationDiffRootDEV = null;
                   rootOrSingletonContext = true;
-                  current2 = mountChildFibers(
+                  renderLanes2 = mountChildFibers(
                     workInProgress2,
                     null,
                     returnFiber,
                     renderLanes2
                   );
-                  for (workInProgress2.child = current2; current2; )
-                    current2.flags = current2.flags & -3 | 4096, current2 = current2.sibling;
+                  for (workInProgress2.child = renderLanes2; renderLanes2; )
+                    renderLanes2.flags = renderLanes2.flags & -3 | 4096, renderLanes2 = renderLanes2.sibling;
                 }
               else {
                 resetHydrationState();
@@ -9031,16 +9925,16 @@ var require_react_dom_client_development = __commonJS({
             }
             return workInProgress2;
           case 26:
-            return markRef(current2, workInProgress2), null === current2 ? (current2 = getResource(
+            return markRef(current2, workInProgress2), null === current2 ? (renderLanes2 = getResource(
               workInProgress2.type,
               null,
               workInProgress2.pendingProps,
               null
-            )) ? workInProgress2.memoizedState = current2 : isHydrating || (current2 = workInProgress2.type, renderLanes2 = workInProgress2.pendingProps, returnFiber = requiredContext(
+            )) ? workInProgress2.memoizedState = renderLanes2 : isHydrating || (renderLanes2 = workInProgress2.type, current2 = workInProgress2.pendingProps, returnFiber = requiredContext(
               rootInstanceStackCursor.current
             ), returnFiber = getOwnerDocumentFromRootContainer(
               returnFiber
-            ).createElement(current2), returnFiber[internalInstanceKey] = workInProgress2, returnFiber[internalPropsKey] = renderLanes2, setInitialProperties(returnFiber, current2, renderLanes2), markNodeAsHoistable(returnFiber), workInProgress2.stateNode = returnFiber) : workInProgress2.memoizedState = getResource(
+            ).createElement(renderLanes2), returnFiber[internalInstanceKey] = workInProgress2, returnFiber[internalPropsKey] = current2, setInitialProperties(returnFiber, renderLanes2, current2), markNodeAsHoistable(returnFiber), workInProgress2.stateNode = returnFiber) : workInProgress2.memoizedState = getResource(
               workInProgress2.type,
               current2.memoizedProps,
               workInProgress2.pendingProps,
@@ -9096,15 +9990,15 @@ var require_react_dom_client_development = __commonJS({
               renderLanes2
             ), workInProgress2.child;
           case 6:
-            return null === current2 && isHydrating && (current2 = workInProgress2.pendingProps, renderLanes2 = getHostContext(), returnFiber = renderLanes2.ancestorInfo.current, current2 = null != returnFiber ? validateTextNesting(
-              current2,
-              returnFiber.tag,
-              renderLanes2.ancestorInfo.implicitRootScope
-            ) : true, renderLanes2 = nextHydratableInstance, (returnFiber = !renderLanes2) || (returnFiber = canHydrateTextInstance(
+            return null === current2 && isHydrating && (renderLanes2 = workInProgress2.pendingProps, current2 = getHostContext(), returnFiber = current2.ancestorInfo.current, renderLanes2 = null != returnFiber ? validateTextNesting(
               renderLanes2,
+              returnFiber.tag,
+              current2.ancestorInfo.implicitRootScope
+            ) : true, current2 = nextHydratableInstance, (returnFiber = !current2) || (returnFiber = canHydrateTextInstance(
+              current2,
               workInProgress2.pendingProps,
               rootOrSingletonContext
-            ), null !== returnFiber ? (workInProgress2.stateNode = returnFiber, hydrationParentFiber = workInProgress2, nextHydratableInstance = null, returnFiber = true) : returnFiber = false, returnFiber = !returnFiber), returnFiber && (current2 && warnNonHydratedInstance(workInProgress2, renderLanes2), throwOnHydrationMismatch(workInProgress2))), null;
+            ), null !== returnFiber ? (workInProgress2.stateNode = returnFiber, hydrationParentFiber = workInProgress2, nextHydratableInstance = null, returnFiber = true) : returnFiber = false, returnFiber = !returnFiber), returnFiber && (renderLanes2 && warnNonHydratedInstance(workInProgress2, current2), throwOnHydrationMismatch(workInProgress2))), null;
           case 13:
             return updateSuspenseComponent(current2, workInProgress2, renderLanes2);
           case 4:
@@ -9163,11 +10057,11 @@ var require_react_dom_client_development = __commonJS({
           case 9:
             return prevSibling = workInProgress2.type._context, returnFiber = workInProgress2.pendingProps.children, "function" !== typeof returnFiber && console.error(
               "A context consumer was rendered with multiple children, or a child that isn't a function. A context consumer expects a single child that is a function. If you did pass a function, make sure there is no trailing or leading whitespace around it."
-            ), prepareToReadContext(workInProgress2), prevSibling = readContext(prevSibling), markComponentRenderStarted(workInProgress2), returnFiber = callComponentInDEV(
+            ), prepareToReadContext(workInProgress2), prevSibling = readContext(prevSibling), returnFiber = callComponentInDEV(
               returnFiber,
               prevSibling,
               void 0
-            ), markComponentRenderStopped(), workInProgress2.flags |= 1, reconcileChildren(
+            ), workInProgress2.flags |= 1, reconcileChildren(
               current2,
               workInProgress2,
               returnFiber,
@@ -9196,15 +10090,14 @@ var require_react_dom_client_development = __commonJS({
               renderLanes2
             );
           case 31:
-            return returnFiber = workInProgress2.pendingProps, renderLanes2 = workInProgress2.mode, returnFiber = {
-              mode: returnFiber.mode,
-              children: returnFiber.children
-            }, null === current2 ? (current2 = mountWorkInProgressOffscreenFiber(
-              returnFiber,
-              renderLanes2
-            ), current2.ref = workInProgress2.ref, workInProgress2.child = current2, current2.return = workInProgress2, workInProgress2 = current2) : (current2 = createWorkInProgress(current2.child, returnFiber), current2.ref = workInProgress2.ref, workInProgress2.child = current2, current2.return = workInProgress2, workInProgress2 = current2), workInProgress2;
+            return updateActivityComponent(current2, workInProgress2, renderLanes2);
           case 22:
-            return updateOffscreenComponent(current2, workInProgress2, renderLanes2);
+            return updateOffscreenComponent(
+              current2,
+              workInProgress2,
+              renderLanes2,
+              workInProgress2.pendingProps
+            );
           case 24:
             return prepareToReadContext(workInProgress2), returnFiber = readContext(CacheContext), null === current2 ? (prevSibling = peekCacheFromPool(), null === prevSibling && (prevSibling = workInProgressRoot, prevState = createCache(), prevSibling.pooledCache = prevState, retainCache(prevState), null !== prevState && (prevSibling.pooledCacheLanes |= renderLanes2), prevSibling = prevState), workInProgress2.memoizedState = {
               parent: returnFiber,
@@ -9233,15 +10126,24 @@ var require_react_dom_client_development = __commonJS({
       function markUpdate(workInProgress2) {
         workInProgress2.flags |= 4;
       }
+      function preloadInstanceAndSuspendIfNeeded(workInProgress2, type, oldProps, newProps, renderLanes2) {
+        if (type = (workInProgress2.mode & SuspenseyImagesMode) !== NoMode)
+          type = false;
+        if (type) {
+          if (workInProgress2.flags |= 16777216, (renderLanes2 & 335544128) === renderLanes2)
+            if (workInProgress2.stateNode.complete) workInProgress2.flags |= 8192;
+            else if (shouldRemainOnPreviousScreen()) workInProgress2.flags |= 8192;
+            else
+              throw suspendedThenable = noopSuspenseyCommitThenable, SuspenseyCommitException;
+        } else workInProgress2.flags &= -16777217;
+      }
       function preloadResourceAndSuspendIfNeeded(workInProgress2, resource) {
         if ("stylesheet" !== resource.type || (resource.state.loading & Inserted) !== NotLoaded)
           workInProgress2.flags &= -16777217;
-        else if (workInProgress2.flags |= 16777216, !preloadResource(resource)) {
-          resource = suspenseHandlerStackCursor.current;
-          if (null !== resource && ((workInProgressRootRenderLanes & 4194048) === workInProgressRootRenderLanes ? null !== shellBoundary : (workInProgressRootRenderLanes & 62914560) !== workInProgressRootRenderLanes && 0 === (workInProgressRootRenderLanes & 536870912) || resource !== shellBoundary))
+        else if (workInProgress2.flags |= 16777216, !preloadResource(resource))
+          if (shouldRemainOnPreviousScreen()) workInProgress2.flags |= 8192;
+          else
             throw suspendedThenable = noopSuspenseyCommitThenable, SuspenseyCommitException;
-          workInProgress2.flags |= 8192;
-        }
       }
       function scheduleRetryEffect(workInProgress2, retryQueue) {
         null !== retryQueue && (workInProgress2.flags |= 4);
@@ -9291,7 +10193,6 @@ var require_react_dom_client_development = __commonJS({
         var newProps = workInProgress2.pendingProps;
         popTreeContext(workInProgress2);
         switch (workInProgress2.tag) {
-          case 31:
           case 16:
           case 15:
           case 0:
@@ -9317,17 +10218,31 @@ var require_react_dom_client_development = __commonJS({
             bubbleProperties(workInProgress2);
             return null;
           case 26:
-            return renderLanes2 = workInProgress2.memoizedState, null === current2 ? (markUpdate(workInProgress2), null !== renderLanes2 ? (bubbleProperties(workInProgress2), preloadResourceAndSuspendIfNeeded(
+            var type = workInProgress2.type, nextResource = workInProgress2.memoizedState;
+            null === current2 ? (markUpdate(workInProgress2), null !== nextResource ? (bubbleProperties(workInProgress2), preloadResourceAndSuspendIfNeeded(
               workInProgress2,
-              renderLanes2
-            )) : (bubbleProperties(workInProgress2), workInProgress2.flags &= -16777217)) : renderLanes2 ? renderLanes2 !== current2.memoizedState ? (markUpdate(workInProgress2), bubbleProperties(workInProgress2), preloadResourceAndSuspendIfNeeded(
+              nextResource
+            )) : (bubbleProperties(workInProgress2), preloadInstanceAndSuspendIfNeeded(
               workInProgress2,
+              type,
+              null,
+              newProps,
               renderLanes2
-            )) : (bubbleProperties(workInProgress2), workInProgress2.flags &= -16777217) : (current2.memoizedProps !== newProps && markUpdate(workInProgress2), bubbleProperties(workInProgress2), workInProgress2.flags &= -16777217), null;
+            ))) : nextResource ? nextResource !== current2.memoizedState ? (markUpdate(workInProgress2), bubbleProperties(workInProgress2), preloadResourceAndSuspendIfNeeded(
+              workInProgress2,
+              nextResource
+            )) : (bubbleProperties(workInProgress2), workInProgress2.flags &= -16777217) : (current2 = current2.memoizedProps, current2 !== newProps && markUpdate(workInProgress2), bubbleProperties(workInProgress2), preloadInstanceAndSuspendIfNeeded(
+              workInProgress2,
+              type,
+              current2,
+              newProps,
+              renderLanes2
+            ));
+            return null;
           case 27:
             popHostContext(workInProgress2);
             renderLanes2 = requiredContext(rootInstanceStackCursor.current);
-            var _type = workInProgress2.type;
+            type = workInProgress2.type;
             if (null !== current2 && null != workInProgress2.stateNode)
               current2.memoizedProps !== newProps && markUpdate(workInProgress2);
             else {
@@ -9341,7 +10256,7 @@ var require_react_dom_client_development = __commonJS({
               }
               current2 = getHostContext();
               popHydrationState(workInProgress2) ? prepareToHydrateHostInstance(workInProgress2) : (current2 = resolveSingletonInstance(
-                _type,
+                type,
                 newProps,
                 renderLanes2,
                 current2,
@@ -9352,7 +10267,7 @@ var require_react_dom_client_development = __commonJS({
             return null;
           case 5:
             popHostContext(workInProgress2);
-            renderLanes2 = workInProgress2.type;
+            type = workInProgress2.type;
             if (null !== current2 && null != workInProgress2.stateNode)
               current2.memoizedProps !== newProps && markUpdate(workInProgress2);
             else {
@@ -9364,100 +10279,110 @@ var require_react_dom_client_development = __commonJS({
                 bubbleProperties(workInProgress2);
                 return null;
               }
-              _type = getHostContext();
+              var _currentHostContext = getHostContext();
               if (popHydrationState(workInProgress2))
                 prepareToHydrateHostInstance(workInProgress2);
               else {
-                current2 = requiredContext(rootInstanceStackCursor.current);
-                validateDOMNesting(renderLanes2, _type.ancestorInfo);
-                _type = _type.context;
-                current2 = getOwnerDocumentFromRootContainer(current2);
-                switch (_type) {
+                nextResource = requiredContext(rootInstanceStackCursor.current);
+                validateDOMNesting(type, _currentHostContext.ancestorInfo);
+                _currentHostContext = _currentHostContext.context;
+                nextResource = getOwnerDocumentFromRootContainer(nextResource);
+                switch (_currentHostContext) {
                   case HostContextNamespaceSvg:
-                    current2 = current2.createElementNS(SVG_NAMESPACE, renderLanes2);
+                    nextResource = nextResource.createElementNS(
+                      SVG_NAMESPACE,
+                      type
+                    );
                     break;
                   case HostContextNamespaceMath:
-                    current2 = current2.createElementNS(
+                    nextResource = nextResource.createElementNS(
                       MATH_NAMESPACE,
-                      renderLanes2
+                      type
                     );
                     break;
                   default:
-                    switch (renderLanes2) {
+                    switch (type) {
                       case "svg":
-                        current2 = current2.createElementNS(
+                        nextResource = nextResource.createElementNS(
                           SVG_NAMESPACE,
-                          renderLanes2
+                          type
                         );
                         break;
                       case "math":
-                        current2 = current2.createElementNS(
+                        nextResource = nextResource.createElementNS(
                           MATH_NAMESPACE,
-                          renderLanes2
+                          type
                         );
                         break;
                       case "script":
-                        current2 = current2.createElement("div");
-                        current2.innerHTML = "<script><\/script>";
-                        current2 = current2.removeChild(current2.firstChild);
+                        nextResource = nextResource.createElement("div");
+                        nextResource.innerHTML = "<script><\/script>";
+                        nextResource = nextResource.removeChild(
+                          nextResource.firstChild
+                        );
                         break;
                       case "select":
-                        current2 = "string" === typeof newProps.is ? current2.createElement("select", { is: newProps.is }) : current2.createElement("select");
-                        newProps.multiple ? current2.multiple = true : newProps.size && (current2.size = newProps.size);
+                        nextResource = "string" === typeof newProps.is ? nextResource.createElement("select", {
+                          is: newProps.is
+                        }) : nextResource.createElement("select");
+                        newProps.multiple ? nextResource.multiple = true : newProps.size && (nextResource.size = newProps.size);
                         break;
                       default:
-                        current2 = "string" === typeof newProps.is ? current2.createElement(renderLanes2, {
+                        nextResource = "string" === typeof newProps.is ? nextResource.createElement(type, {
                           is: newProps.is
-                        }) : current2.createElement(renderLanes2), -1 === renderLanes2.indexOf("-") && (renderLanes2 !== renderLanes2.toLowerCase() && console.error(
+                        }) : nextResource.createElement(type), -1 === type.indexOf("-") && (type !== type.toLowerCase() && console.error(
                           "<%s /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.",
-                          renderLanes2
-                        ), "[object HTMLUnknownElement]" !== Object.prototype.toString.call(current2) || hasOwnProperty.call(
-                          warnedUnknownTags,
-                          renderLanes2
-                        ) || (warnedUnknownTags[renderLanes2] = true, console.error(
+                          type
+                        ), "[object HTMLUnknownElement]" !== Object.prototype.toString.call(nextResource) || hasOwnProperty.call(warnedUnknownTags, type) || (warnedUnknownTags[type] = true, console.error(
                           "The tag <%s> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.",
-                          renderLanes2
+                          type
                         )));
                     }
                 }
-                current2[internalInstanceKey] = workInProgress2;
-                current2[internalPropsKey] = newProps;
-                a: for (_type = workInProgress2.child; null !== _type; ) {
-                  if (5 === _type.tag || 6 === _type.tag)
-                    current2.appendChild(_type.stateNode);
-                  else if (4 !== _type.tag && 27 !== _type.tag && null !== _type.child) {
-                    _type.child.return = _type;
-                    _type = _type.child;
+                nextResource[internalInstanceKey] = workInProgress2;
+                nextResource[internalPropsKey] = newProps;
+                a: for (_currentHostContext = workInProgress2.child; null !== _currentHostContext; ) {
+                  if (5 === _currentHostContext.tag || 6 === _currentHostContext.tag)
+                    nextResource.appendChild(_currentHostContext.stateNode);
+                  else if (4 !== _currentHostContext.tag && 27 !== _currentHostContext.tag && null !== _currentHostContext.child) {
+                    _currentHostContext.child.return = _currentHostContext;
+                    _currentHostContext = _currentHostContext.child;
                     continue;
                   }
-                  if (_type === workInProgress2) break a;
-                  for (; null === _type.sibling; ) {
-                    if (null === _type.return || _type.return === workInProgress2)
+                  if (_currentHostContext === workInProgress2) break a;
+                  for (; null === _currentHostContext.sibling; ) {
+                    if (null === _currentHostContext.return || _currentHostContext.return === workInProgress2)
                       break a;
-                    _type = _type.return;
+                    _currentHostContext = _currentHostContext.return;
                   }
-                  _type.sibling.return = _type.return;
-                  _type = _type.sibling;
+                  _currentHostContext.sibling.return = _currentHostContext.return;
+                  _currentHostContext = _currentHostContext.sibling;
                 }
-                workInProgress2.stateNode = current2;
-                a: switch (setInitialProperties(current2, renderLanes2, newProps), renderLanes2) {
+                workInProgress2.stateNode = nextResource;
+                a: switch (setInitialProperties(nextResource, type, newProps), type) {
                   case "button":
                   case "input":
                   case "select":
                   case "textarea":
-                    current2 = !!newProps.autoFocus;
+                    newProps = !!newProps.autoFocus;
                     break a;
                   case "img":
-                    current2 = true;
+                    newProps = true;
                     break a;
                   default:
-                    current2 = false;
+                    newProps = false;
                 }
-                current2 && markUpdate(workInProgress2);
+                newProps && markUpdate(workInProgress2);
               }
             }
             bubbleProperties(workInProgress2);
-            workInProgress2.flags &= -16777217;
+            preloadInstanceAndSuspendIfNeeded(
+              workInProgress2,
+              workInProgress2.type,
+              null === current2 ? null : current2.memoizedProps,
+              workInProgress2.pendingProps,
+              renderLanes2
+            );
             return null;
           case 6:
             if (current2 && null != workInProgress2.stateNode)
@@ -9472,36 +10397,36 @@ var require_react_dom_client_development = __commonJS({
               if (popHydrationState(workInProgress2)) {
                 current2 = workInProgress2.stateNode;
                 renderLanes2 = workInProgress2.memoizedProps;
-                _type = !didSuspendOrErrorDEV;
+                type = !didSuspendOrErrorDEV;
                 newProps = null;
-                var returnFiber = hydrationParentFiber;
-                if (null !== returnFiber)
-                  switch (returnFiber.tag) {
+                nextResource = hydrationParentFiber;
+                if (null !== nextResource)
+                  switch (nextResource.tag) {
                     case 3:
-                      _type && (_type = diffHydratedTextForDevWarnings(
+                      type && (type = diffHydratedTextForDevWarnings(
                         current2,
                         renderLanes2,
                         newProps
-                      ), null !== _type && (buildHydrationDiffNode(workInProgress2, 0).serverProps = _type));
+                      ), null !== type && (buildHydrationDiffNode(workInProgress2, 0).serverProps = type));
                       break;
                     case 27:
                     case 5:
-                      newProps = returnFiber.memoizedProps, _type && (_type = diffHydratedTextForDevWarnings(
+                      newProps = nextResource.memoizedProps, type && (type = diffHydratedTextForDevWarnings(
                         current2,
                         renderLanes2,
                         newProps
-                      ), null !== _type && (buildHydrationDiffNode(
+                      ), null !== type && (buildHydrationDiffNode(
                         workInProgress2,
                         0
-                      ).serverProps = _type));
+                      ).serverProps = type));
                   }
                 current2[internalInstanceKey] = workInProgress2;
                 current2 = current2.nodeValue === renderLanes2 || null !== newProps && true === newProps.suppressHydrationWarning || checkForUnmatchedText(current2.nodeValue, renderLanes2) ? true : false;
-                current2 || throwOnHydrationMismatch(workInProgress2);
+                current2 || throwOnHydrationMismatch(workInProgress2, true);
               } else
-                _type = renderLanes2.ancestorInfo.current, null != _type && validateTextNesting(
+                type = renderLanes2.ancestorInfo.current, null != type && validateTextNesting(
                   newProps,
-                  _type.tag,
+                  type.tag,
                   renderLanes2.ancestorInfo.implicitRootScope
                 ), current2 = getOwnerDocumentFromRootContainer(current2).createTextNode(
                   newProps
@@ -9509,31 +10434,69 @@ var require_react_dom_client_development = __commonJS({
             }
             bubbleProperties(workInProgress2);
             return null;
-          case 13:
-            newProps = workInProgress2.memoizedState;
-            if (null === current2 || null !== current2.memoizedState && null !== current2.memoizedState.dehydrated) {
-              _type = popHydrationState(workInProgress2);
-              if (null !== newProps && null !== newProps.dehydrated) {
+          case 31:
+            renderLanes2 = workInProgress2.memoizedState;
+            if (null === current2 || null !== current2.memoizedState) {
+              newProps = popHydrationState(workInProgress2);
+              if (null !== renderLanes2) {
                 if (null === current2) {
-                  if (!_type)
+                  if (!newProps)
                     throw Error(
                       "A dehydrated suspense component was completed without a hydrated node. This is probably a bug in React."
                     );
-                  _type = workInProgress2.memoizedState;
-                  _type = null !== _type ? _type.dehydrated : null;
-                  if (!_type)
+                  current2 = workInProgress2.memoizedState;
+                  current2 = null !== current2 ? current2.dehydrated : null;
+                  if (!current2)
+                    throw Error(
+                      "Expected to have a hydrated activity instance. This error is likely caused by a bug in React. Please file an issue."
+                    );
+                  current2[internalInstanceKey] = workInProgress2;
+                  bubbleProperties(workInProgress2);
+                  (workInProgress2.mode & ProfileMode) !== NoMode && null !== renderLanes2 && (current2 = workInProgress2.child, null !== current2 && (workInProgress2.treeBaseDuration -= current2.treeBaseDuration));
+                } else
+                  emitPendingHydrationWarnings(), resetHydrationState(), 0 === (workInProgress2.flags & 128) && (renderLanes2 = workInProgress2.memoizedState = null), workInProgress2.flags |= 4, bubbleProperties(workInProgress2), (workInProgress2.mode & ProfileMode) !== NoMode && null !== renderLanes2 && (current2 = workInProgress2.child, null !== current2 && (workInProgress2.treeBaseDuration -= current2.treeBaseDuration));
+                current2 = false;
+              } else
+                renderLanes2 = upgradeHydrationErrorsToRecoverable(), null !== current2 && null !== current2.memoizedState && (current2.memoizedState.hydrationErrors = renderLanes2), current2 = true;
+              if (!current2) {
+                if (workInProgress2.flags & 256)
+                  return popSuspenseHandler(workInProgress2), workInProgress2;
+                popSuspenseHandler(workInProgress2);
+                return null;
+              }
+              if (0 !== (workInProgress2.flags & 128))
+                throw Error(
+                  "Client rendering an Activity suspended it again. This is a bug in React."
+                );
+            }
+            bubbleProperties(workInProgress2);
+            return null;
+          case 13:
+            newProps = workInProgress2.memoizedState;
+            if (null === current2 || null !== current2.memoizedState && null !== current2.memoizedState.dehydrated) {
+              type = newProps;
+              nextResource = popHydrationState(workInProgress2);
+              if (null !== type && null !== type.dehydrated) {
+                if (null === current2) {
+                  if (!nextResource)
+                    throw Error(
+                      "A dehydrated suspense component was completed without a hydrated node. This is probably a bug in React."
+                    );
+                  nextResource = workInProgress2.memoizedState;
+                  nextResource = null !== nextResource ? nextResource.dehydrated : null;
+                  if (!nextResource)
                     throw Error(
                       "Expected to have a hydrated suspense instance. This error is likely caused by a bug in React. Please file an issue."
                     );
-                  _type[internalInstanceKey] = workInProgress2;
+                  nextResource[internalInstanceKey] = workInProgress2;
                   bubbleProperties(workInProgress2);
-                  (workInProgress2.mode & ProfileMode) !== NoMode && null !== newProps && (_type = workInProgress2.child, null !== _type && (workInProgress2.treeBaseDuration -= _type.treeBaseDuration));
+                  (workInProgress2.mode & ProfileMode) !== NoMode && null !== type && (type = workInProgress2.child, null !== type && (workInProgress2.treeBaseDuration -= type.treeBaseDuration));
                 } else
-                  emitPendingHydrationWarnings(), resetHydrationState(), 0 === (workInProgress2.flags & 128) && (workInProgress2.memoizedState = null), workInProgress2.flags |= 4, bubbleProperties(workInProgress2), (workInProgress2.mode & ProfileMode) !== NoMode && null !== newProps && (_type = workInProgress2.child, null !== _type && (workInProgress2.treeBaseDuration -= _type.treeBaseDuration));
-                _type = false;
+                  emitPendingHydrationWarnings(), resetHydrationState(), 0 === (workInProgress2.flags & 128) && (type = workInProgress2.memoizedState = null), workInProgress2.flags |= 4, bubbleProperties(workInProgress2), (workInProgress2.mode & ProfileMode) !== NoMode && null !== type && (type = workInProgress2.child, null !== type && (workInProgress2.treeBaseDuration -= type.treeBaseDuration));
+                type = false;
               } else
-                _type = upgradeHydrationErrorsToRecoverable(), null !== current2 && null !== current2.memoizedState && (current2.memoizedState.hydrationErrors = _type), _type = true;
-              if (!_type) {
+                type = upgradeHydrationErrorsToRecoverable(), null !== current2 && null !== current2.memoizedState && (current2.memoizedState.hydrationErrors = type), type = true;
+              if (!type) {
                 if (workInProgress2.flags & 256)
                   return popSuspenseHandler(workInProgress2), workInProgress2;
                 popSuspenseHandler(workInProgress2);
@@ -9545,7 +10508,7 @@ var require_react_dom_client_development = __commonJS({
               return workInProgress2.lanes = renderLanes2, (workInProgress2.mode & ProfileMode) !== NoMode && transferActualDuration(workInProgress2), workInProgress2;
             renderLanes2 = null !== newProps;
             current2 = null !== current2 && null !== current2.memoizedState;
-            renderLanes2 && (newProps = workInProgress2.child, _type = null, null !== newProps.alternate && null !== newProps.alternate.memoizedState && null !== newProps.alternate.memoizedState.cachePool && (_type = newProps.alternate.memoizedState.cachePool.pool), returnFiber = null, null !== newProps.memoizedState && null !== newProps.memoizedState.cachePool && (returnFiber = newProps.memoizedState.cachePool.pool), returnFiber !== _type && (newProps.flags |= 2048));
+            renderLanes2 && (newProps = workInProgress2.child, type = null, null !== newProps.alternate && null !== newProps.alternate.memoizedState && null !== newProps.alternate.memoizedState.cachePool && (type = newProps.alternate.memoizedState.cachePool.pool), nextResource = null, null !== newProps.memoizedState && null !== newProps.memoizedState.cachePool && (nextResource = newProps.memoizedState.cachePool.pool), nextResource !== type && (newProps.flags |= 2048));
             renderLanes2 !== current2 && renderLanes2 && (workInProgress2.child.flags |= 8192);
             scheduleRetryEffect(workInProgress2, workInProgress2.updateQueue);
             bubbleProperties(workInProgress2);
@@ -9559,20 +10522,20 @@ var require_react_dom_client_development = __commonJS({
             return popProvider(workInProgress2.type, workInProgress2), bubbleProperties(workInProgress2), null;
           case 19:
             pop(suspenseStackCursor, workInProgress2);
-            _type = workInProgress2.memoizedState;
-            if (null === _type) return bubbleProperties(workInProgress2), null;
-            newProps = 0 !== (workInProgress2.flags & 128);
-            returnFiber = _type.rendering;
-            if (null === returnFiber)
-              if (newProps) cutOffTailIfNeeded(_type, false);
+            newProps = workInProgress2.memoizedState;
+            if (null === newProps) return bubbleProperties(workInProgress2), null;
+            type = 0 !== (workInProgress2.flags & 128);
+            nextResource = newProps.rendering;
+            if (null === nextResource)
+              if (type) cutOffTailIfNeeded(newProps, false);
               else {
                 if (workInProgressRootExitStatus !== RootInProgress || null !== current2 && 0 !== (current2.flags & 128))
                   for (current2 = workInProgress2.child; null !== current2; ) {
-                    returnFiber = findFirstSuspended(current2);
-                    if (null !== returnFiber) {
+                    nextResource = findFirstSuspended(current2);
+                    if (null !== nextResource) {
                       workInProgress2.flags |= 128;
-                      cutOffTailIfNeeded(_type, false);
-                      current2 = returnFiber.updateQueue;
+                      cutOffTailIfNeeded(newProps, false);
+                      current2 = nextResource.updateQueue;
                       workInProgress2.updateQueue = current2;
                       scheduleRetryEffect(workInProgress2, current2);
                       workInProgress2.subtreeFlags = 0;
@@ -9584,23 +10547,24 @@ var require_react_dom_client_development = __commonJS({
                         suspenseStackCursor.current & SubtreeSuspenseContextMask | ForceSuspenseFallback,
                         workInProgress2
                       );
+                      isHydrating && pushTreeFork(workInProgress2, newProps.treeForkCount);
                       return workInProgress2.child;
                     }
                     current2 = current2.sibling;
                   }
-                null !== _type.tail && now$1() > workInProgressRootRenderTargetTime && (workInProgress2.flags |= 128, newProps = true, cutOffTailIfNeeded(_type, false), workInProgress2.lanes = 4194304);
+                null !== newProps.tail && now$1() > workInProgressRootRenderTargetTime && (workInProgress2.flags |= 128, type = true, cutOffTailIfNeeded(newProps, false), workInProgress2.lanes = 4194304);
               }
             else {
-              if (!newProps)
-                if (current2 = findFirstSuspended(returnFiber), null !== current2) {
-                  if (workInProgress2.flags |= 128, newProps = true, current2 = current2.updateQueue, workInProgress2.updateQueue = current2, scheduleRetryEffect(workInProgress2, current2), cutOffTailIfNeeded(_type, true), null === _type.tail && "hidden" === _type.tailMode && !returnFiber.alternate && !isHydrating)
+              if (!type)
+                if (current2 = findFirstSuspended(nextResource), null !== current2) {
+                  if (workInProgress2.flags |= 128, type = true, current2 = current2.updateQueue, workInProgress2.updateQueue = current2, scheduleRetryEffect(workInProgress2, current2), cutOffTailIfNeeded(newProps, true), null === newProps.tail && "hidden" === newProps.tailMode && !nextResource.alternate && !isHydrating)
                     return bubbleProperties(workInProgress2), null;
                 } else
-                  2 * now$1() - _type.renderingStartTime > workInProgressRootRenderTargetTime && 536870912 !== renderLanes2 && (workInProgress2.flags |= 128, newProps = true, cutOffTailIfNeeded(_type, false), workInProgress2.lanes = 4194304);
-              _type.isBackwards ? (returnFiber.sibling = workInProgress2.child, workInProgress2.child = returnFiber) : (current2 = _type.last, null !== current2 ? current2.sibling = returnFiber : workInProgress2.child = returnFiber, _type.last = returnFiber);
+                  2 * now$1() - newProps.renderingStartTime > workInProgressRootRenderTargetTime && 536870912 !== renderLanes2 && (workInProgress2.flags |= 128, type = true, cutOffTailIfNeeded(newProps, false), workInProgress2.lanes = 4194304);
+              newProps.isBackwards ? (nextResource.sibling = workInProgress2.child, workInProgress2.child = nextResource) : (current2 = newProps.last, null !== current2 ? current2.sibling = nextResource : workInProgress2.child = nextResource, newProps.last = nextResource);
             }
-            if (null !== _type.tail)
-              return current2 = _type.tail, _type.rendering = current2, _type.tail = current2.sibling, _type.renderingStartTime = now$1(), current2.sibling = null, renderLanes2 = suspenseStackCursor.current, renderLanes2 = newProps ? renderLanes2 & SubtreeSuspenseContextMask | ForceSuspenseFallback : renderLanes2 & SubtreeSuspenseContextMask, push(suspenseStackCursor, renderLanes2, workInProgress2), current2;
+            if (null !== newProps.tail)
+              return current2 = newProps.tail, newProps.rendering = current2, newProps.tail = current2.sibling, newProps.renderingStartTime = now$1(), current2.sibling = null, renderLanes2 = suspenseStackCursor.current, renderLanes2 = type ? renderLanes2 & SubtreeSuspenseContextMask | ForceSuspenseFallback : renderLanes2 & SubtreeSuspenseContextMask, push(suspenseStackCursor, renderLanes2, workInProgress2), isHydrating && pushTreeFork(workInProgress2, newProps.treeForkCount), current2;
             bubbleProperties(workInProgress2);
             return null;
           case 22:
@@ -9628,6 +10592,17 @@ var require_react_dom_client_development = __commonJS({
           case 27:
           case 5:
             return popHostContext(workInProgress2), null;
+          case 31:
+            if (null !== workInProgress2.memoizedState) {
+              popSuspenseHandler(workInProgress2);
+              if (null === workInProgress2.alternate)
+                throw Error(
+                  "Threw in newly mounted dehydrated component. This is likely a bug in React. Please file an issue."
+                );
+              resetHydrationState();
+            }
+            current2 = workInProgress2.flags;
+            return current2 & 65536 ? (workInProgress2.flags = current2 & -65537 | 128, (workInProgress2.mode & ProfileMode) !== NoMode && transferActualDuration(workInProgress2), workInProgress2) : null;
           case 13:
             popSuspenseHandler(workInProgress2);
             current2 = workInProgress2.memoizedState;
@@ -9672,6 +10647,9 @@ var require_react_dom_client_development = __commonJS({
           case 4:
             popHostContainer(interruptedWork);
             break;
+          case 31:
+            null !== interruptedWork.memoizedState && popSuspenseHandler(interruptedWork);
+            break;
           case 13:
             popSuspenseHandler(interruptedWork);
             break;
@@ -9715,15 +10693,11 @@ var require_react_dom_client_development = __commonJS({
             var firstEffect = lastEffect.next;
             updateQueue = firstEffect;
             do {
-              if ((updateQueue.tag & flags) === flags && ((flags & Passive) !== NoFlags ? null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentPassiveEffectMountStarted && injectedProfilingHooks.markComponentPassiveEffectMountStarted(
-                finishedWork
-              ) : (flags & Layout) !== NoFlags && null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentLayoutEffectMountStarted && injectedProfilingHooks.markComponentLayoutEffectMountStarted(
-                finishedWork
-              ), lastEffect = void 0, (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = true), lastEffect = runWithFiberInDEV(
+              if ((updateQueue.tag & flags) === flags && (lastEffect = void 0, (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = true), lastEffect = runWithFiberInDEV(
                 finishedWork,
                 callCreateInDEV,
                 updateQueue
-              ), (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = false), (flags & Passive) !== NoFlags ? null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentPassiveEffectMountStopped && injectedProfilingHooks.markComponentPassiveEffectMountStopped() : (flags & Layout) !== NoFlags && null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentLayoutEffectMountStopped && injectedProfilingHooks.markComponentLayoutEffectMountStopped(), void 0 !== lastEffect && "function" !== typeof lastEffect)) {
+              ), (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = false), void 0 !== lastEffect && "function" !== typeof lastEffect)) {
                 var hookName = void 0;
                 hookName = 0 !== (updateQueue.tag & Layout) ? "useLayoutEffect" : 0 !== (updateQueue.tag & Insertion) ? "useInsertionEffect" : "useEffect";
                 var addendum = void 0;
@@ -9757,17 +10731,13 @@ var require_react_dom_client_development = __commonJS({
             do {
               if ((updateQueue.tag & flags) === flags) {
                 var inst = updateQueue.inst, destroy = inst.destroy;
-                void 0 !== destroy && (inst.destroy = void 0, (flags & Passive) !== NoFlags ? null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentPassiveEffectUnmountStarted && injectedProfilingHooks.markComponentPassiveEffectUnmountStarted(
-                  finishedWork
-                ) : (flags & Layout) !== NoFlags && null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentLayoutEffectUnmountStarted && injectedProfilingHooks.markComponentLayoutEffectUnmountStarted(
-                  finishedWork
-                ), (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = true), lastEffect = finishedWork, runWithFiberInDEV(
+                void 0 !== destroy && (inst.destroy = void 0, (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = true), lastEffect = finishedWork, runWithFiberInDEV(
                   lastEffect,
                   callDestroyInDEV,
                   lastEffect,
                   nearestMountedAncestor,
                   destroy
-                ), (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = false), (flags & Passive) !== NoFlags ? null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentPassiveEffectUnmountStopped && injectedProfilingHooks.markComponentPassiveEffectUnmountStopped() : (flags & Layout) !== NoFlags && null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentLayoutEffectUnmountStopped && injectedProfilingHooks.markComponentLayoutEffectUnmountStopped());
+                ), (flags & Insertion) !== NoFlags && (isRunningInsertionEffect = false));
               }
               updateQueue = updateQueue.next;
             } while (updateQueue !== firstEffect);
@@ -9829,8 +10799,7 @@ var require_react_dom_client_development = __commonJS({
         try {
           var resolvedPrevProps = resolveClassComponentProps(
             finishedWork.type,
-            prevProps,
-            finishedWork.elementType === finishedWork.type
+            prevProps
           );
           var snapshot = runWithFiberInDEV(
             finishedWork,
@@ -9952,12 +10921,7 @@ var require_react_dom_client_development = __commonJS({
           finishedWork.actualStartTime,
           commitStartTime2
         );
-        "function" === typeof onCommit && onCommit(
-          finishedWork.memoizedProps.id,
-          current2,
-          effectDuration,
-          commitStartTime2
-        );
+        "function" === typeof onCommit && onCommit(id, current2, effectDuration, commitStartTime2);
       }
       function commitProfilerPostCommitImpl(finishedWork, current2, commitStartTime2, passiveEffectDuration) {
         var _finishedWork$memoize2 = finishedWork.memoizedProps;
@@ -10024,7 +10988,7 @@ var require_react_dom_client_development = __commonJS({
       function insertOrAppendPlacementNodeIntoContainer(node, before, parent) {
         var tag = node.tag;
         if (5 === tag || 6 === tag)
-          node = node.stateNode, before ? (9 === parent.nodeType ? parent.body : "HTML" === parent.nodeName ? parent.ownerDocument.body : parent).insertBefore(node, before) : (before = 9 === parent.nodeType ? parent.body : "HTML" === parent.nodeName ? parent.ownerDocument.body : parent, before.appendChild(node), parent = parent._reactRootContainer, null !== parent && void 0 !== parent || null !== before.onclick || (before.onclick = noop$1));
+          node = node.stateNode, before ? (warnForReactChildrenConflict(parent), (9 === parent.nodeType ? parent.body : "HTML" === parent.nodeName ? parent.ownerDocument.body : parent).insertBefore(node, before)) : (warnForReactChildrenConflict(parent), before = 9 === parent.nodeType ? parent.body : "HTML" === parent.nodeName ? parent.ownerDocument.body : parent, before.appendChild(node), parent = parent._reactRootContainer, null !== parent && void 0 !== parent || null !== before.onclick || (before.onclick = noop$1));
         else if (4 !== tag && (27 === tag && isSingletonScope(node.type) && (parent = node.stateNode, before = null), node = node.child, null !== node))
           for (insertOrAppendPlacementNodeIntoContainer(node, before, parent), node = node.sibling; null !== node; )
             insertOrAppendPlacementNodeIntoContainer(node, before, parent), node = node.sibling;
@@ -10100,6 +11064,9 @@ var require_react_dom_client_development = __commonJS({
           captureCommitPhaseError(finishedWork, finishedWork.return, error);
         }
       }
+      function isHydratingParent(current2, finishedWork) {
+        return 31 === finishedWork.tag ? (finishedWork = finishedWork.memoizedState, null !== current2.memoizedState && null === finishedWork) : 13 === finishedWork.tag ? (current2 = current2.memoizedState, finishedWork = finishedWork.memoizedState, null !== current2 && null !== current2.dehydrated && (null === finishedWork || null === finishedWork.dehydrated)) : 3 === finishedWork.tag ? current2.memoizedState.isDehydrated && 0 === (finishedWork.flags & 256) : false;
+      }
       function commitBeforeMutationEffects(root2, firstChild) {
         root2 = root2.containerInfo;
         eventsEnabled = _enabled;
@@ -10155,7 +11122,7 @@ var require_react_dom_client_development = __commonJS({
         };
         _enabled = false;
         for (nextEffect = firstChild; null !== nextEffect; )
-          if (firstChild = nextEffect, root2 = firstChild.child, 0 !== (firstChild.subtreeFlags & 1024) && null !== root2)
+          if (firstChild = nextEffect, root2 = firstChild.child, 0 !== (firstChild.subtreeFlags & 1028) && null !== root2)
             root2.return = firstChild, nextEffect = root2;
           else
             for (; null !== nextEffect; ) {
@@ -10164,6 +11131,9 @@ var require_react_dom_client_development = __commonJS({
               anchorOffset = root2.flags;
               switch (root2.tag) {
                 case 0:
+                  if (0 !== (anchorOffset & 4) && (root2 = root2.updateQueue, root2 = null !== root2 ? root2.events : null, null !== root2))
+                    for (JSCompiler_temp = 0; JSCompiler_temp < root2.length; JSCompiler_temp++)
+                      anchorOffset = root2[JSCompiler_temp], anchorOffset.ref.impl = anchorOffset.nextImpl;
                   break;
                 case 11:
                 case 15:
@@ -10210,7 +11180,7 @@ var require_react_dom_client_development = __commonJS({
             }
       }
       function commitLayoutEffectOnFiber(finishedRoot, current2, finishedWork) {
-        var flags = finishedWork.flags;
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate(), flags = finishedWork.flags;
         switch (finishedWork.tag) {
           case 0:
           case 11:
@@ -10305,7 +11275,30 @@ var require_react_dom_client_development = __commonJS({
           case 26:
           case 5:
             recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
-            null === current2 && flags & 4 && commitHostMount(finishedWork);
+            if (null === current2) {
+              if (flags & 4) commitHostMount(finishedWork);
+              else if (flags & 64) {
+                finishedRoot = finishedWork.type;
+                current2 = finishedWork.memoizedProps;
+                prevProps = finishedWork.stateNode;
+                try {
+                  runWithFiberInDEV(
+                    finishedWork,
+                    commitHydratedInstance,
+                    prevProps,
+                    finishedRoot,
+                    current2,
+                    finishedWork
+                  );
+                } catch (error) {
+                  captureCommitPhaseError(
+                    finishedWork,
+                    finishedWork.return,
+                    error
+                  );
+                }
+              }
+            }
             flags & 512 && safelyAttachRef(finishedWork, finishedWork.return);
             break;
           case 12:
@@ -10328,13 +11321,17 @@ var require_react_dom_client_development = __commonJS({
               }
             } else recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
             break;
+          case 31:
+            recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+            flags & 4 && commitActivityHydrationCallbacks(finishedRoot, finishedWork);
+            break;
           case 13:
             recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
             flags & 4 && commitSuspenseHydrationCallbacks(finishedRoot, finishedWork);
-            flags & 64 && (finishedRoot = finishedWork.memoizedState, null !== finishedRoot && (finishedRoot = finishedRoot.dehydrated, null !== finishedRoot && (finishedWork = retryDehydratedSuspenseBoundary.bind(
+            flags & 64 && (finishedRoot = finishedWork.memoizedState, null !== finishedRoot && (finishedRoot = finishedRoot.dehydrated, null !== finishedRoot && (flags = retryDehydratedSuspenseBoundary.bind(
               null,
               finishedWork
-            ), registerSuspenseInstanceRetry(finishedRoot, finishedWork))));
+            ), registerSuspenseInstanceRetry(finishedRoot, flags))));
             break;
           case 22:
             flags = null !== finishedWork.memoizedState || offscreenSubtreeIsHidden;
@@ -10343,11 +11340,15 @@ var require_react_dom_client_development = __commonJS({
               prevProps = offscreenSubtreeIsHidden;
               var prevOffscreenSubtreeWasHidden = offscreenSubtreeWasHidden;
               offscreenSubtreeIsHidden = flags;
-              (offscreenSubtreeWasHidden = current2) && !prevOffscreenSubtreeWasHidden ? recursivelyTraverseReappearLayoutEffects(
+              (offscreenSubtreeWasHidden = current2) && !prevOffscreenSubtreeWasHidden ? (recursivelyTraverseReappearLayoutEffects(
                 finishedRoot,
                 finishedWork,
                 0 !== (finishedWork.subtreeFlags & 8772)
-              ) : recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+              ), (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentReappeared(
+                finishedWork,
+                componentEffectStartTime,
+                componentEffectEndTime
+              )) : recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
               offscreenSubtreeIsHidden = prevProps;
               offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden;
             }
@@ -10357,6 +11358,25 @@ var require_react_dom_client_development = __commonJS({
           default:
             recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && ((componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        ), null === finishedWork.alternate && null !== finishedWork.return && null !== finishedWork.return.alternate && 0.05 < componentEffectEndTime - componentEffectStartTime && (isHydratingParent(
+          finishedWork.return.alternate,
+          finishedWork.return
+        ) || logComponentTrigger(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          "Mount"
+        )));
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
       }
       function detachFiberAfterEffects(fiber) {
         var alternate = fiber.alternate;
@@ -10389,10 +11409,11 @@ var require_react_dom_client_development = __commonJS({
             injectedHook.onCommitFiberUnmount(rendererID, deletedFiber);
           } catch (err) {
             hasLoggedError || (hasLoggedError = true, console.error(
-              "React instrumentation encountered an error: %s",
+              "React instrumentation encountered an error: %o",
               err
             ));
           }
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate();
         switch (deletedFiber.tag) {
           case 26:
             offscreenSubtreeWasHidden || safelyDetachRef(deletedFiber, nearestMountedAncestor);
@@ -10401,7 +11422,7 @@ var require_react_dom_client_development = __commonJS({
               nearestMountedAncestor,
               deletedFiber
             );
-            deletedFiber.memoizedState ? deletedFiber.memoizedState.count-- : deletedFiber.stateNode && (deletedFiber = deletedFiber.stateNode, deletedFiber.parentNode.removeChild(deletedFiber));
+            deletedFiber.memoizedState ? deletedFiber.memoizedState.count-- : deletedFiber.stateNode && (finishedRoot = deletedFiber.stateNode, finishedRoot.parentNode.removeChild(finishedRoot));
             break;
           case 27:
             offscreenSubtreeWasHidden || safelyDetachRef(deletedFiber, nearestMountedAncestor);
@@ -10466,10 +11487,10 @@ var require_react_dom_client_development = __commonJS({
                 }
             break;
           case 18:
-            null !== hostParent && (hostParentIsContainer ? (finishedRoot = hostParent, clearSuspenseBoundary(
+            null !== hostParent && (hostParentIsContainer ? (finishedRoot = hostParent, clearHydrationBoundary(
               9 === finishedRoot.nodeType ? finishedRoot.body : "HTML" === finishedRoot.nodeName ? finishedRoot.ownerDocument.body : finishedRoot,
               deletedFiber.stateNode
-            ), retryIfBlockedOn(finishedRoot)) : clearSuspenseBoundary(hostParent, deletedFiber.stateNode));
+            ), retryIfBlockedOn(finishedRoot)) : clearHydrationBoundary(hostParent, deletedFiber.stateNode));
             break;
           case 4:
             prevHostParent = hostParent;
@@ -10488,7 +11509,7 @@ var require_react_dom_client_development = __commonJS({
           case 11:
           case 14:
           case 15:
-            offscreenSubtreeWasHidden || commitHookEffectListUnmount(
+            commitHookEffectListUnmount(
               Insertion,
               deletedFiber,
               nearestMountedAncestor
@@ -10539,6 +11560,31 @@ var require_react_dom_client_development = __commonJS({
               deletedFiber
             );
         }
+        (deletedFiber.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          deletedFiber,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        );
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
+      }
+      function commitActivityHydrationCallbacks(finishedRoot, finishedWork) {
+        if (null === finishedWork.memoizedState && (finishedRoot = finishedWork.alternate, null !== finishedRoot && (finishedRoot = finishedRoot.memoizedState, null !== finishedRoot))) {
+          finishedRoot = finishedRoot.dehydrated;
+          try {
+            runWithFiberInDEV(
+              finishedWork,
+              commitHydratedActivityInstance,
+              finishedRoot
+            );
+          } catch (error) {
+            captureCommitPhaseError(finishedWork, finishedWork.return, error);
+          }
+        }
       }
       function commitSuspenseHydrationCallbacks(finishedRoot, finishedWork) {
         if (null === finishedWork.memoizedState && (finishedRoot = finishedWork.alternate, null !== finishedRoot && (finishedRoot = finishedRoot.memoizedState, null !== finishedRoot && (finishedRoot = finishedRoot.dehydrated, null !== finishedRoot))))
@@ -10554,6 +11600,7 @@ var require_react_dom_client_development = __commonJS({
       }
       function getRetryCache(finishedWork) {
         switch (finishedWork.tag) {
+          case 31:
           case 13:
           case 19:
             var retryCache = finishedWork.stateNode;
@@ -10570,7 +11617,6 @@ var require_react_dom_client_development = __commonJS({
       function attachSuspenseRetryListeners(finishedWork, wakeables) {
         var retryCache = getRetryCache(finishedWork);
         wakeables.forEach(function(wakeable) {
-          var retry = resolveRetryWakeable.bind(null, finishedWork, wakeable);
           if (!retryCache.has(wakeable)) {
             retryCache.add(wakeable);
             if (isDevToolsPresent)
@@ -10580,6 +11626,7 @@ var require_react_dom_client_development = __commonJS({
                 throw Error(
                   "Expected finished root and lanes to be set. This is a bug in React."
                 );
+            var retry = resolveRetryWakeable.bind(null, finishedWork, wakeable);
             wakeable.then(retry, retry);
           }
         });
@@ -10588,7 +11635,7 @@ var require_react_dom_client_development = __commonJS({
         var deletions = parentFiber.deletions;
         if (null !== deletions)
           for (var i = 0; i < deletions.length; i++) {
-            var root2 = root$jscomp$0, returnFiber = parentFiber, deletedFiber = deletions[i], parent = returnFiber;
+            var root2 = root$jscomp$0, returnFiber = parentFiber, deletedFiber = deletions[i], prevEffectStart = pushComponentEffectStart(), parent = returnFiber;
             a: for (; null !== parent; ) {
               switch (parent.tag) {
                 case 27:
@@ -10617,17 +11664,24 @@ var require_react_dom_client_development = __commonJS({
             commitDeletionEffectsOnFiber(root2, returnFiber, deletedFiber);
             hostParent = null;
             hostParentIsContainer = false;
+            (deletedFiber.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentTrigger(
+              deletedFiber,
+              componentEffectStartTime,
+              componentEffectEndTime,
+              "Unmount"
+            );
+            popComponentEffectStart(prevEffectStart);
             root2 = deletedFiber;
             returnFiber = root2.alternate;
             null !== returnFiber && (returnFiber.return = null);
             root2.return = null;
           }
-        if (parentFiber.subtreeFlags & 13878)
+        if (parentFiber.subtreeFlags & 13886)
           for (parentFiber = parentFiber.child; null !== parentFiber; )
             commitMutationEffectsOnFiber(parentFiber, root$jscomp$0), parentFiber = parentFiber.sibling;
       }
       function commitMutationEffectsOnFiber(finishedWork, root2) {
-        var current2 = finishedWork.alternate, flags = finishedWork.flags;
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate(), current2 = finishedWork.alternate, flags = finishedWork.flags;
         switch (finishedWork.tag) {
           case 0:
           case 11:
@@ -10649,99 +11703,112 @@ var require_react_dom_client_development = __commonJS({
             recursivelyTraverseMutationEffects(root2, finishedWork);
             commitReconciliationEffects(finishedWork);
             flags & 512 && (offscreenSubtreeWasHidden || null === current2 || safelyDetachRef(current2, current2.return));
-            flags & 64 && offscreenSubtreeIsHidden && (finishedWork = finishedWork.updateQueue, null !== finishedWork && (flags = finishedWork.callbacks, null !== flags && (current2 = finishedWork.shared.hiddenCallbacks, finishedWork.shared.hiddenCallbacks = null === current2 ? flags : current2.concat(flags))));
+            if (flags & 64 && offscreenSubtreeIsHidden && (flags = finishedWork.updateQueue, null !== flags && (current2 = flags.callbacks, null !== current2))) {
+              var existingHiddenCallbacks = flags.shared.hiddenCallbacks;
+              flags.shared.hiddenCallbacks = null === existingHiddenCallbacks ? current2 : existingHiddenCallbacks.concat(current2);
+            }
             break;
           case 26:
-            var hoistableRoot = currentHoistableRoot;
+            existingHiddenCallbacks = currentHoistableRoot;
             recursivelyTraverseMutationEffects(root2, finishedWork);
             commitReconciliationEffects(finishedWork);
             flags & 512 && (offscreenSubtreeWasHidden || null === current2 || safelyDetachRef(current2, current2.return));
-            if (flags & 4)
-              if (root2 = null !== current2 ? current2.memoizedState : null, flags = finishedWork.memoizedState, null === current2)
+            if (flags & 4) {
+              var currentResource = null !== current2 ? current2.memoizedState : null;
+              flags = finishedWork.memoizedState;
+              if (null === current2)
                 if (null === flags)
                   if (null === finishedWork.stateNode) {
                     a: {
                       flags = finishedWork.type;
                       current2 = finishedWork.memoizedProps;
-                      root2 = hoistableRoot.ownerDocument || hoistableRoot;
+                      existingHiddenCallbacks = existingHiddenCallbacks.ownerDocument || existingHiddenCallbacks;
                       b: switch (flags) {
                         case "title":
-                          hoistableRoot = root2.getElementsByTagName("title")[0];
-                          if (!hoistableRoot || hoistableRoot[internalHoistableMarker] || hoistableRoot[internalInstanceKey] || hoistableRoot.namespaceURI === SVG_NAMESPACE || hoistableRoot.hasAttribute("itemprop"))
-                            hoistableRoot = root2.createElement(flags), root2.head.insertBefore(
-                              hoistableRoot,
-                              root2.querySelector("head > title")
+                          currentResource = existingHiddenCallbacks.getElementsByTagName(
+                            "title"
+                          )[0];
+                          if (!currentResource || currentResource[internalHoistableMarker] || currentResource[internalInstanceKey] || currentResource.namespaceURI === SVG_NAMESPACE || currentResource.hasAttribute("itemprop"))
+                            currentResource = existingHiddenCallbacks.createElement(flags), existingHiddenCallbacks.head.insertBefore(
+                              currentResource,
+                              existingHiddenCallbacks.querySelector(
+                                "head > title"
+                              )
                             );
-                          setInitialProperties(hoistableRoot, flags, current2);
-                          hoistableRoot[internalInstanceKey] = finishedWork;
-                          markNodeAsHoistable(hoistableRoot);
-                          flags = hoistableRoot;
+                          setInitialProperties(currentResource, flags, current2);
+                          currentResource[internalInstanceKey] = finishedWork;
+                          markNodeAsHoistable(currentResource);
+                          flags = currentResource;
                           break a;
                         case "link":
                           var maybeNodes = getHydratableHoistableCache(
                             "link",
                             "href",
-                            root2
+                            existingHiddenCallbacks
                           ).get(flags + (current2.href || ""));
                           if (maybeNodes) {
                             for (var i = 0; i < maybeNodes.length; i++)
-                              if (hoistableRoot = maybeNodes[i], hoistableRoot.getAttribute("href") === (null == current2.href || "" === current2.href ? null : current2.href) && hoistableRoot.getAttribute("rel") === (null == current2.rel ? null : current2.rel) && hoistableRoot.getAttribute("title") === (null == current2.title ? null : current2.title) && hoistableRoot.getAttribute("crossorigin") === (null == current2.crossOrigin ? null : current2.crossOrigin)) {
+                              if (currentResource = maybeNodes[i], currentResource.getAttribute("href") === (null == current2.href || "" === current2.href ? null : current2.href) && currentResource.getAttribute("rel") === (null == current2.rel ? null : current2.rel) && currentResource.getAttribute("title") === (null == current2.title ? null : current2.title) && currentResource.getAttribute("crossorigin") === (null == current2.crossOrigin ? null : current2.crossOrigin)) {
                                 maybeNodes.splice(i, 1);
                                 break b;
                               }
                           }
-                          hoistableRoot = root2.createElement(flags);
-                          setInitialProperties(hoistableRoot, flags, current2);
-                          root2.head.appendChild(hoistableRoot);
+                          currentResource = existingHiddenCallbacks.createElement(flags);
+                          setInitialProperties(currentResource, flags, current2);
+                          existingHiddenCallbacks.head.appendChild(
+                            currentResource
+                          );
                           break;
                         case "meta":
                           if (maybeNodes = getHydratableHoistableCache(
                             "meta",
                             "content",
-                            root2
+                            existingHiddenCallbacks
                           ).get(flags + (current2.content || ""))) {
                             for (i = 0; i < maybeNodes.length; i++)
-                              if (hoistableRoot = maybeNodes[i], checkAttributeStringCoercion(
+                              if (currentResource = maybeNodes[i], checkAttributeStringCoercion(
                                 current2.content,
                                 "content"
-                              ), hoistableRoot.getAttribute("content") === (null == current2.content ? null : "" + current2.content) && hoistableRoot.getAttribute("name") === (null == current2.name ? null : current2.name) && hoistableRoot.getAttribute("property") === (null == current2.property ? null : current2.property) && hoistableRoot.getAttribute("http-equiv") === (null == current2.httpEquiv ? null : current2.httpEquiv) && hoistableRoot.getAttribute("charset") === (null == current2.charSet ? null : current2.charSet)) {
+                              ), currentResource.getAttribute("content") === (null == current2.content ? null : "" + current2.content) && currentResource.getAttribute("name") === (null == current2.name ? null : current2.name) && currentResource.getAttribute("property") === (null == current2.property ? null : current2.property) && currentResource.getAttribute("http-equiv") === (null == current2.httpEquiv ? null : current2.httpEquiv) && currentResource.getAttribute("charset") === (null == current2.charSet ? null : current2.charSet)) {
                                 maybeNodes.splice(i, 1);
                                 break b;
                               }
                           }
-                          hoistableRoot = root2.createElement(flags);
-                          setInitialProperties(hoistableRoot, flags, current2);
-                          root2.head.appendChild(hoistableRoot);
+                          currentResource = existingHiddenCallbacks.createElement(flags);
+                          setInitialProperties(currentResource, flags, current2);
+                          existingHiddenCallbacks.head.appendChild(
+                            currentResource
+                          );
                           break;
                         default:
                           throw Error(
                             'getNodesForType encountered a type it did not expect: "' + flags + '". This is a bug in React.'
                           );
                       }
-                      hoistableRoot[internalInstanceKey] = finishedWork;
-                      markNodeAsHoistable(hoistableRoot);
-                      flags = hoistableRoot;
+                      currentResource[internalInstanceKey] = finishedWork;
+                      markNodeAsHoistable(currentResource);
+                      flags = currentResource;
                     }
                     finishedWork.stateNode = flags;
                   } else
                     mountHoistable(
-                      hoistableRoot,
+                      existingHiddenCallbacks,
                       finishedWork.type,
                       finishedWork.stateNode
                     );
                 else
                   finishedWork.stateNode = acquireResource(
-                    hoistableRoot,
+                    existingHiddenCallbacks,
                     flags,
                     finishedWork.memoizedProps
                   );
               else
-                root2 !== flags ? (null === root2 ? null !== current2.stateNode && (current2 = current2.stateNode, current2.parentNode.removeChild(current2)) : root2.count--, null === flags ? mountHoistable(
-                  hoistableRoot,
+                currentResource !== flags ? (null === currentResource ? null !== current2.stateNode && (current2 = current2.stateNode, current2.parentNode.removeChild(current2)) : currentResource.count--, null === flags ? mountHoistable(
+                  existingHiddenCallbacks,
                   finishedWork.type,
                   finishedWork.stateNode
                 ) : acquireResource(
-                  hoistableRoot,
+                  existingHiddenCallbacks,
                   flags,
                   finishedWork.memoizedProps
                 )) : null === flags && null !== finishedWork.stateNode && commitHostUpdate(
@@ -10749,6 +11816,7 @@ var require_react_dom_client_development = __commonJS({
                   finishedWork.memoizedProps,
                   current2.memoizedProps
                 );
+            }
             break;
           case 27:
             recursivelyTraverseMutationEffects(root2, finishedWork);
@@ -10765,17 +11833,21 @@ var require_react_dom_client_development = __commonJS({
             commitReconciliationEffects(finishedWork);
             flags & 512 && (offscreenSubtreeWasHidden || null === current2 || safelyDetachRef(current2, current2.return));
             if (finishedWork.flags & 32) {
-              root2 = finishedWork.stateNode;
+              existingHiddenCallbacks = finishedWork.stateNode;
               try {
-                runWithFiberInDEV(finishedWork, resetTextContent, root2);
+                runWithFiberInDEV(
+                  finishedWork,
+                  resetTextContent,
+                  existingHiddenCallbacks
+                );
               } catch (error) {
                 captureCommitPhaseError(finishedWork, finishedWork.return, error);
               }
             }
-            flags & 4 && null != finishedWork.stateNode && (root2 = finishedWork.memoizedProps, commitHostUpdate(
+            flags & 4 && null != finishedWork.stateNode && (existingHiddenCallbacks = finishedWork.memoizedProps, commitHostUpdate(
               finishedWork,
-              root2,
-              null !== current2 ? current2.memoizedProps : root2
+              existingHiddenCallbacks,
+              null !== current2 ? current2.memoizedProps : existingHiddenCallbacks
             ));
             flags & 1024 && (needsFormReset = true, "form" !== finishedWork.type && console.error(
               "Unexpected host component type. Expected a form. This is a bug in React."
@@ -10791,12 +11863,12 @@ var require_react_dom_client_development = __commonJS({
                 );
               flags = finishedWork.memoizedProps;
               current2 = null !== current2 ? current2.memoizedProps : flags;
-              root2 = finishedWork.stateNode;
+              existingHiddenCallbacks = finishedWork.stateNode;
               try {
                 runWithFiberInDEV(
                   finishedWork,
                   commitTextUpdate,
-                  root2,
+                  existingHiddenCallbacks,
                   current2,
                   flags
                 );
@@ -10806,12 +11878,12 @@ var require_react_dom_client_development = __commonJS({
             }
             break;
           case 3:
-            hoistableRoot = pushNestedEffectDurations();
+            existingHiddenCallbacks = pushNestedEffectDurations();
             tagCaches = null;
-            maybeNodes = currentHoistableRoot;
+            currentResource = currentHoistableRoot;
             currentHoistableRoot = getHoistableRoot(root2.containerInfo);
             recursivelyTraverseMutationEffects(root2, finishedWork);
-            currentHoistableRoot = maybeNodes;
+            currentHoistableRoot = currentResource;
             commitReconciliationEffects(finishedWork);
             if (flags & 4 && null !== current2 && current2.memoizedState.isDehydrated)
               try {
@@ -10824,7 +11896,9 @@ var require_react_dom_client_development = __commonJS({
                 captureCommitPhaseError(finishedWork, finishedWork.return, error);
               }
             needsFormReset && (needsFormReset = false, recursivelyResetForms(finishedWork));
-            root2.effectDuration += popNestedEffectDurations(hoistableRoot);
+            root2.effectDuration += popNestedEffectDurations(
+              existingHiddenCallbacks
+            );
             break;
           case 4:
             flags = currentHoistableRoot;
@@ -10841,6 +11915,11 @@ var require_react_dom_client_development = __commonJS({
             commitReconciliationEffects(finishedWork);
             finishedWork.stateNode.effectDuration += bubbleNestedEffectDurations(flags);
             break;
+          case 31:
+            recursivelyTraverseMutationEffects(root2, finishedWork);
+            commitReconciliationEffects(finishedWork);
+            flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
+            break;
           case 13:
             recursivelyTraverseMutationEffects(root2, finishedWork);
             commitReconciliationEffects(finishedWork);
@@ -10848,21 +11927,35 @@ var require_react_dom_client_development = __commonJS({
             flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
             break;
           case 22:
-            hoistableRoot = null !== finishedWork.memoizedState;
+            existingHiddenCallbacks = null !== finishedWork.memoizedState;
             var wasHidden = null !== current2 && null !== current2.memoizedState, prevOffscreenSubtreeIsHidden = offscreenSubtreeIsHidden, prevOffscreenSubtreeWasHidden = offscreenSubtreeWasHidden;
-            offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden || hoistableRoot;
+            offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden || existingHiddenCallbacks;
             offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden || wasHidden;
             recursivelyTraverseMutationEffects(root2, finishedWork);
             offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden;
             offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden;
+            wasHidden && !existingHiddenCallbacks && !prevOffscreenSubtreeIsHidden && !prevOffscreenSubtreeWasHidden && (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentReappeared(
+              finishedWork,
+              componentEffectStartTime,
+              componentEffectEndTime
+            );
             commitReconciliationEffects(finishedWork);
             if (flags & 8192)
-              a: for (root2 = finishedWork.stateNode, root2._visibility = hoistableRoot ? root2._visibility & -2 : root2._visibility | OffscreenVisible, hoistableRoot && (null === current2 || wasHidden || offscreenSubtreeIsHidden || offscreenSubtreeWasHidden || recursivelyTraverseDisappearLayoutEffects(finishedWork)), current2 = null, root2 = finishedWork; ; ) {
+              a: for (root2 = finishedWork.stateNode, root2._visibility = existingHiddenCallbacks ? root2._visibility & -2 : root2._visibility | OffscreenVisible, !existingHiddenCallbacks || null === current2 || wasHidden || offscreenSubtreeIsHidden || offscreenSubtreeWasHidden || (recursivelyTraverseDisappearLayoutEffects(finishedWork), (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentTrigger(
+                finishedWork,
+                componentEffectStartTime,
+                componentEffectEndTime,
+                "Disconnect"
+              )), current2 = null, root2 = finishedWork; ; ) {
                 if (5 === root2.tag || 26 === root2.tag) {
                   if (null === current2) {
                     wasHidden = current2 = root2;
                     try {
-                      maybeNodes = wasHidden.stateNode, hoistableRoot ? runWithFiberInDEV(wasHidden, hideInstance, maybeNodes) : runWithFiberInDEV(
+                      currentResource = wasHidden.stateNode, existingHiddenCallbacks ? runWithFiberInDEV(
+                        wasHidden,
+                        hideInstance,
+                        currentResource
+                      ) : runWithFiberInDEV(
                         wasHidden,
                         unhideInstance,
                         wasHidden.stateNode,
@@ -10876,11 +11969,32 @@ var require_react_dom_client_development = __commonJS({
                   if (null === current2) {
                     wasHidden = root2;
                     try {
-                      i = wasHidden.stateNode, hoistableRoot ? runWithFiberInDEV(wasHidden, hideTextInstance, i) : runWithFiberInDEV(
+                      maybeNodes = wasHidden.stateNode, existingHiddenCallbacks ? runWithFiberInDEV(
+                        wasHidden,
+                        hideTextInstance,
+                        maybeNodes
+                      ) : runWithFiberInDEV(
                         wasHidden,
                         unhideTextInstance,
-                        i,
+                        maybeNodes,
                         wasHidden.memoizedProps
+                      );
+                    } catch (error) {
+                      captureCommitPhaseError(wasHidden, wasHidden.return, error);
+                    }
+                  }
+                } else if (18 === root2.tag) {
+                  if (null === current2) {
+                    wasHidden = root2;
+                    try {
+                      i = wasHidden.stateNode, existingHiddenCallbacks ? runWithFiberInDEV(
+                        wasHidden,
+                        hideDehydratedBoundary,
+                        i
+                      ) : runWithFiberInDEV(
+                        wasHidden,
+                        unhideDehydratedBoundary,
+                        wasHidden.stateNode
                       );
                     } catch (error) {
                       captureCommitPhaseError(wasHidden, wasHidden.return, error);
@@ -10916,6 +12030,25 @@ var require_react_dom_client_development = __commonJS({
           default:
             recursivelyTraverseMutationEffects(root2, finishedWork), commitReconciliationEffects(finishedWork);
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && ((componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        ), null === finishedWork.alternate && null !== finishedWork.return && null !== finishedWork.return.alternate && 0.05 < componentEffectEndTime - componentEffectStartTime && (isHydratingParent(
+          finishedWork.return.alternate,
+          finishedWork.return
+        ) || logComponentTrigger(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          "Mount"
+        )));
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
       }
       function commitReconciliationEffects(finishedWork) {
         var flags = finishedWork.flags;
@@ -10944,6 +12077,7 @@ var require_react_dom_client_development = __commonJS({
             commitLayoutEffectOnFiber(root2, parentFiber.alternate, parentFiber), parentFiber = parentFiber.sibling;
       }
       function disappearLayoutEffects(finishedWork) {
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate();
         switch (finishedWork.tag) {
           case 0:
           case 11:
@@ -10986,13 +12120,24 @@ var require_react_dom_client_development = __commonJS({
           default:
             recursivelyTraverseDisappearLayoutEffects(finishedWork);
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        );
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
       }
       function recursivelyTraverseDisappearLayoutEffects(parentFiber) {
         for (parentFiber = parentFiber.child; null !== parentFiber; )
           disappearLayoutEffects(parentFiber), parentFiber = parentFiber.sibling;
       }
       function reappearLayoutEffects(finishedRoot, current2, finishedWork, includeWorkInProgressEffects) {
-        var flags = finishedWork.flags;
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate(), flags = finishedWork.flags;
         switch (finishedWork.tag) {
           case 0:
           case 11:
@@ -11075,6 +12220,14 @@ var require_react_dom_client_development = __commonJS({
                 includeWorkInProgressEffects
               );
             break;
+          case 31:
+            recursivelyTraverseReappearLayoutEffects(
+              finishedRoot,
+              finishedWork,
+              includeWorkInProgressEffects
+            );
+            includeWorkInProgressEffects && flags & 4 && commitActivityHydrationCallbacks(finishedRoot, finishedWork);
+            break;
           case 13:
             recursivelyTraverseReappearLayoutEffects(
               finishedRoot,
@@ -11100,6 +12253,17 @@ var require_react_dom_client_development = __commonJS({
               includeWorkInProgressEffects
             );
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        );
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
       }
       function recursivelyTraverseReappearLayoutEffects(finishedRoot, parentFiber, includeWorkInProgressEffects) {
         includeWorkInProgressEffects = includeWorkInProgressEffects && 0 !== (parentFiber.subtreeFlags & 8772);
@@ -11124,48 +12288,78 @@ var require_react_dom_client_development = __commonJS({
         finishedWork = finishedWork.memoizedState.cache;
         finishedWork !== current2 && (retainCache(finishedWork), null != current2 && releaseCache(current2));
       }
-      function recursivelyTraversePassiveMountEffects(root2, parentFiber, committedLanes, committedTransitions) {
-        if (parentFiber.subtreeFlags & 10256)
-          for (parentFiber = parentFiber.child; null !== parentFiber; )
+      function recursivelyTraversePassiveMountEffects(root2, parentFiber, committedLanes, committedTransitions, endTime) {
+        if (parentFiber.subtreeFlags & 10256 || 0 !== parentFiber.actualDuration && (null === parentFiber.alternate || parentFiber.alternate.child !== parentFiber.child))
+          for (parentFiber = parentFiber.child; null !== parentFiber; ) {
+            var nextSibling = parentFiber.sibling;
             commitPassiveMountOnFiber(
               root2,
               parentFiber,
               committedLanes,
-              committedTransitions
-            ), parentFiber = parentFiber.sibling;
+              committedTransitions,
+              null !== nextSibling ? nextSibling.actualStartTime : endTime
+            );
+            parentFiber = nextSibling;
+          }
       }
-      function commitPassiveMountOnFiber(finishedRoot, finishedWork, committedLanes, committedTransitions) {
-        var flags = finishedWork.flags;
+      function commitPassiveMountOnFiber(finishedRoot, finishedWork, committedLanes, committedTransitions, endTime) {
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate(), prevDeepEquality = alreadyWarnedForDeepEquality, flags = finishedWork.flags;
         switch (finishedWork.tag) {
           case 0:
           case 11:
           case 15:
+            (finishedWork.mode & ProfileMode) !== NoMode && 0 < finishedWork.actualStartTime && 0 !== (finishedWork.flags & 1) && logComponentRender(
+              finishedWork,
+              finishedWork.actualStartTime,
+              endTime,
+              inHydratedSubtree,
+              committedLanes
+            );
             recursivelyTraversePassiveMountEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
-              committedTransitions
+              committedTransitions,
+              endTime
             );
             flags & 2048 && commitHookPassiveMountEffects(finishedWork, Passive | HasEffect);
             break;
           case 1:
+            (finishedWork.mode & ProfileMode) !== NoMode && 0 < finishedWork.actualStartTime && (0 !== (finishedWork.flags & 128) ? logComponentErrored(
+              finishedWork,
+              finishedWork.actualStartTime,
+              endTime,
+              []
+            ) : 0 !== (finishedWork.flags & 1) && logComponentRender(
+              finishedWork,
+              finishedWork.actualStartTime,
+              endTime,
+              inHydratedSubtree,
+              committedLanes
+            ));
             recursivelyTraversePassiveMountEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
-              committedTransitions
+              committedTransitions,
+              endTime
             );
             break;
           case 3:
-            var prevEffectDuration = pushNestedEffectDurations();
+            var prevProfilerEffectDuration = pushNestedEffectDurations(), wasInHydratedSubtree = inHydratedSubtree;
+            inHydratedSubtree = null !== finishedWork.alternate && finishedWork.alternate.memoizedState.isDehydrated && 0 === (finishedWork.flags & 256);
             recursivelyTraversePassiveMountEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
-              committedTransitions
+              committedTransitions,
+              endTime
             );
-            flags & 2048 && (committedLanes = null, null !== finishedWork.alternate && (committedLanes = finishedWork.alternate.memoizedState.cache), finishedWork = finishedWork.memoizedState.cache, finishedWork !== committedLanes && (retainCache(finishedWork), null != committedLanes && releaseCache(committedLanes)));
-            finishedRoot.passiveEffectDuration += popNestedEffectDurations(prevEffectDuration);
+            inHydratedSubtree = wasInHydratedSubtree;
+            flags & 2048 && (committedLanes = null, null !== finishedWork.alternate && (committedLanes = finishedWork.alternate.memoizedState.cache), committedTransitions = finishedWork.memoizedState.cache, committedTransitions !== committedLanes && (retainCache(committedTransitions), null != committedLanes && releaseCache(committedLanes)));
+            finishedRoot.passiveEffectDuration += popNestedEffectDurations(
+              prevProfilerEffectDuration
+            );
             break;
           case 12:
             if (flags & 2048) {
@@ -11174,7 +12368,8 @@ var require_react_dom_client_development = __commonJS({
                 finishedRoot,
                 finishedWork,
                 committedLanes,
-                committedTransitions
+                committedTransitions,
+                endTime
               );
               finishedRoot = finishedWork.stateNode;
               finishedRoot.passiveEffectDuration += bubbleNestedEffectDurations(flags);
@@ -11195,50 +12390,95 @@ var require_react_dom_client_development = __commonJS({
                 finishedRoot,
                 finishedWork,
                 committedLanes,
-                committedTransitions
+                committedTransitions,
+                endTime
               );
             break;
-          case 13:
+          case 31:
+            flags = inHydratedSubtree;
+            prevProfilerEffectDuration = null !== finishedWork.alternate ? finishedWork.alternate.memoizedState : null;
+            wasInHydratedSubtree = finishedWork.memoizedState;
+            null !== prevProfilerEffectDuration && null === wasInHydratedSubtree ? (wasInHydratedSubtree = finishedWork.deletions, null !== wasInHydratedSubtree && 0 < wasInHydratedSubtree.length && 18 === wasInHydratedSubtree[0].tag ? (inHydratedSubtree = false, prevProfilerEffectDuration = prevProfilerEffectDuration.hydrationErrors, null !== prevProfilerEffectDuration && logComponentErrored(
+              finishedWork,
+              finishedWork.actualStartTime,
+              endTime,
+              prevProfilerEffectDuration
+            )) : inHydratedSubtree = true) : inHydratedSubtree = false;
             recursivelyTraversePassiveMountEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
-              committedTransitions
+              committedTransitions,
+              endTime
             );
+            inHydratedSubtree = flags;
             break;
-          case 23:
-            break;
-          case 22:
-            prevEffectDuration = finishedWork.stateNode;
-            var _current = finishedWork.alternate;
-            null !== finishedWork.memoizedState ? prevEffectDuration._visibility & OffscreenPassiveEffectsConnected ? recursivelyTraversePassiveMountEffects(
-              finishedRoot,
+          case 13:
+            flags = inHydratedSubtree;
+            prevProfilerEffectDuration = null !== finishedWork.alternate ? finishedWork.alternate.memoizedState : null;
+            wasInHydratedSubtree = finishedWork.memoizedState;
+            null === prevProfilerEffectDuration || null === prevProfilerEffectDuration.dehydrated || null !== wasInHydratedSubtree && null !== wasInHydratedSubtree.dehydrated ? inHydratedSubtree = false : (wasInHydratedSubtree = finishedWork.deletions, null !== wasInHydratedSubtree && 0 < wasInHydratedSubtree.length && 18 === wasInHydratedSubtree[0].tag ? (inHydratedSubtree = false, prevProfilerEffectDuration = prevProfilerEffectDuration.hydrationErrors, null !== prevProfilerEffectDuration && logComponentErrored(
               finishedWork,
-              committedLanes,
-              committedTransitions
-            ) : recursivelyTraverseAtomicPassiveEffects(
-              finishedRoot,
-              finishedWork
-            ) : prevEffectDuration._visibility & OffscreenPassiveEffectsConnected ? recursivelyTraversePassiveMountEffects(
-              finishedRoot,
-              finishedWork,
-              committedLanes,
-              committedTransitions
-            ) : (prevEffectDuration._visibility |= OffscreenPassiveEffectsConnected, recursivelyTraverseReconnectPassiveEffects(
+              finishedWork.actualStartTime,
+              endTime,
+              prevProfilerEffectDuration
+            )) : inHydratedSubtree = true);
+            recursivelyTraversePassiveMountEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
               committedTransitions,
-              0 !== (finishedWork.subtreeFlags & 10256)
-            ));
-            flags & 2048 && commitOffscreenPassiveMountEffects(_current, finishedWork);
+              endTime
+            );
+            inHydratedSubtree = flags;
+            break;
+          case 23:
+            break;
+          case 22:
+            wasInHydratedSubtree = finishedWork.stateNode;
+            prevProfilerEffectDuration = finishedWork.alternate;
+            null !== finishedWork.memoizedState ? wasInHydratedSubtree._visibility & OffscreenPassiveEffectsConnected ? recursivelyTraversePassiveMountEffects(
+              finishedRoot,
+              finishedWork,
+              committedLanes,
+              committedTransitions,
+              endTime
+            ) : recursivelyTraverseAtomicPassiveEffects(
+              finishedRoot,
+              finishedWork,
+              committedLanes,
+              committedTransitions,
+              endTime
+            ) : wasInHydratedSubtree._visibility & OffscreenPassiveEffectsConnected ? recursivelyTraversePassiveMountEffects(
+              finishedRoot,
+              finishedWork,
+              committedLanes,
+              committedTransitions,
+              endTime
+            ) : (wasInHydratedSubtree._visibility |= OffscreenPassiveEffectsConnected, recursivelyTraverseReconnectPassiveEffects(
+              finishedRoot,
+              finishedWork,
+              committedLanes,
+              committedTransitions,
+              0 !== (finishedWork.subtreeFlags & 10256) || 0 !== finishedWork.actualDuration && (null === finishedWork.alternate || finishedWork.alternate.child !== finishedWork.child),
+              endTime
+            ), (finishedWork.mode & ProfileMode) === NoMode || inHydratedSubtree || (finishedRoot = finishedWork.actualStartTime, 0 <= finishedRoot && 0.05 < endTime - finishedRoot && logComponentReappeared(finishedWork, finishedRoot, endTime), 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentReappeared(
+              finishedWork,
+              componentEffectStartTime,
+              componentEffectEndTime
+            )));
+            flags & 2048 && commitOffscreenPassiveMountEffects(
+              prevProfilerEffectDuration,
+              finishedWork
+            );
             break;
           case 24:
             recursivelyTraversePassiveMountEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
-              committedTransitions
+              committedTransitions,
+              endTime
             );
             flags & 2048 && commitCachePassiveMountEffect(finishedWork.alternate, finishedWork);
             break;
@@ -11247,22 +12487,61 @@ var require_react_dom_client_development = __commonJS({
               finishedRoot,
               finishedWork,
               committedLanes,
-              committedTransitions
+              committedTransitions,
+              endTime
             );
         }
+        if ((finishedWork.mode & ProfileMode) !== NoMode) {
+          if (finishedRoot = !inHydratedSubtree && null === finishedWork.alternate && null !== finishedWork.return && null !== finishedWork.return.alternate)
+            committedLanes = finishedWork.actualStartTime, 0 <= committedLanes && 0.05 < endTime - committedLanes && logComponentTrigger(
+              finishedWork,
+              committedLanes,
+              endTime,
+              "Mount"
+            );
+          0 <= componentEffectStartTime && 0 <= componentEffectEndTime && ((componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+            finishedWork,
+            componentEffectStartTime,
+            componentEffectEndTime,
+            componentEffectDuration,
+            componentEffectErrors
+          ), finishedRoot && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentTrigger(
+            finishedWork,
+            componentEffectStartTime,
+            componentEffectEndTime,
+            "Mount"
+          ));
+        }
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
+        alreadyWarnedForDeepEquality = prevDeepEquality;
       }
-      function recursivelyTraverseReconnectPassiveEffects(finishedRoot, parentFiber, committedLanes, committedTransitions, includeWorkInProgressEffects) {
-        includeWorkInProgressEffects = includeWorkInProgressEffects && 0 !== (parentFiber.subtreeFlags & 10256);
-        for (parentFiber = parentFiber.child; null !== parentFiber; )
+      function recursivelyTraverseReconnectPassiveEffects(finishedRoot, parentFiber, committedLanes, committedTransitions, includeWorkInProgressEffects, endTime) {
+        includeWorkInProgressEffects = includeWorkInProgressEffects && (0 !== (parentFiber.subtreeFlags & 10256) || 0 !== parentFiber.actualDuration && (null === parentFiber.alternate || parentFiber.alternate.child !== parentFiber.child));
+        for (parentFiber = parentFiber.child; null !== parentFiber; ) {
+          var nextSibling = parentFiber.sibling;
           reconnectPassiveEffects(
             finishedRoot,
             parentFiber,
             committedLanes,
             committedTransitions,
-            includeWorkInProgressEffects
-          ), parentFiber = parentFiber.sibling;
+            includeWorkInProgressEffects,
+            null !== nextSibling ? nextSibling.actualStartTime : endTime
+          );
+          parentFiber = nextSibling;
+        }
       }
-      function reconnectPassiveEffects(finishedRoot, finishedWork, committedLanes, committedTransitions, includeWorkInProgressEffects) {
+      function reconnectPassiveEffects(finishedRoot, finishedWork, committedLanes, committedTransitions, includeWorkInProgressEffects, endTime) {
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate(), prevDeepEquality = alreadyWarnedForDeepEquality;
+        includeWorkInProgressEffects && (finishedWork.mode & ProfileMode) !== NoMode && 0 < finishedWork.actualStartTime && 0 !== (finishedWork.flags & 1) && logComponentRender(
+          finishedWork,
+          finishedWork.actualStartTime,
+          endTime,
+          inHydratedSubtree,
+          committedLanes
+        );
         var flags = finishedWork.flags;
         switch (finishedWork.tag) {
           case 0:
@@ -11273,7 +12552,8 @@ var require_react_dom_client_development = __commonJS({
               finishedWork,
               committedLanes,
               committedTransitions,
-              includeWorkInProgressEffects
+              includeWorkInProgressEffects,
+              endTime
             );
             commitHookPassiveMountEffects(finishedWork, Passive);
             break;
@@ -11286,16 +12566,21 @@ var require_react_dom_client_development = __commonJS({
               finishedWork,
               committedLanes,
               committedTransitions,
-              includeWorkInProgressEffects
+              includeWorkInProgressEffects,
+              endTime
             ) : recursivelyTraverseAtomicPassiveEffects(
               finishedRoot,
-              finishedWork
+              finishedWork,
+              committedLanes,
+              committedTransitions,
+              endTime
             ) : (_instance2._visibility |= OffscreenPassiveEffectsConnected, recursivelyTraverseReconnectPassiveEffects(
               finishedRoot,
               finishedWork,
               committedLanes,
               committedTransitions,
-              includeWorkInProgressEffects
+              includeWorkInProgressEffects,
+              endTime
             ));
             includeWorkInProgressEffects && flags & 2048 && commitOffscreenPassiveMountEffects(
               finishedWork.alternate,
@@ -11308,7 +12593,8 @@ var require_react_dom_client_development = __commonJS({
               finishedWork,
               committedLanes,
               committedTransitions,
-              includeWorkInProgressEffects
+              includeWorkInProgressEffects,
+              endTime
             );
             includeWorkInProgressEffects && flags & 2048 && commitCachePassiveMountEffect(finishedWork.alternate, finishedWork);
             break;
@@ -11318,61 +12604,100 @@ var require_react_dom_client_development = __commonJS({
               finishedWork,
               committedLanes,
               committedTransitions,
-              includeWorkInProgressEffects
+              includeWorkInProgressEffects,
+              endTime
             );
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        );
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectErrors = prevEffectErrors;
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
+        alreadyWarnedForDeepEquality = prevDeepEquality;
       }
-      function recursivelyTraverseAtomicPassiveEffects(finishedRoot$jscomp$0, parentFiber) {
-        if (parentFiber.subtreeFlags & 10256)
-          for (parentFiber = parentFiber.child; null !== parentFiber; ) {
-            var finishedRoot = finishedRoot$jscomp$0, finishedWork = parentFiber, flags = finishedWork.flags;
-            switch (finishedWork.tag) {
+      function recursivelyTraverseAtomicPassiveEffects(finishedRoot$jscomp$0, parentFiber, committedLanes$jscomp$0, committedTransitions$jscomp$0, endTime$jscomp$0) {
+        if (parentFiber.subtreeFlags & 10256 || 0 !== parentFiber.actualDuration && (null === parentFiber.alternate || parentFiber.alternate.child !== parentFiber.child))
+          for (var child = parentFiber.child; null !== child; ) {
+            parentFiber = child.sibling;
+            var finishedRoot = finishedRoot$jscomp$0, committedLanes = committedLanes$jscomp$0, committedTransitions = committedTransitions$jscomp$0, endTime = null !== parentFiber ? parentFiber.actualStartTime : endTime$jscomp$0, prevDeepEquality = alreadyWarnedForDeepEquality;
+            (child.mode & ProfileMode) !== NoMode && 0 < child.actualStartTime && 0 !== (child.flags & 1) && logComponentRender(
+              child,
+              child.actualStartTime,
+              endTime,
+              inHydratedSubtree,
+              committedLanes
+            );
+            var flags = child.flags;
+            switch (child.tag) {
               case 22:
                 recursivelyTraverseAtomicPassiveEffects(
                   finishedRoot,
-                  finishedWork
+                  child,
+                  committedLanes,
+                  committedTransitions,
+                  endTime
                 );
-                flags & 2048 && commitOffscreenPassiveMountEffects(
-                  finishedWork.alternate,
-                  finishedWork
-                );
+                flags & 2048 && commitOffscreenPassiveMountEffects(child.alternate, child);
                 break;
               case 24:
                 recursivelyTraverseAtomicPassiveEffects(
                   finishedRoot,
-                  finishedWork
+                  child,
+                  committedLanes,
+                  committedTransitions,
+                  endTime
                 );
-                flags & 2048 && commitCachePassiveMountEffect(
-                  finishedWork.alternate,
-                  finishedWork
-                );
+                flags & 2048 && commitCachePassiveMountEffect(child.alternate, child);
                 break;
               default:
                 recursivelyTraverseAtomicPassiveEffects(
                   finishedRoot,
-                  finishedWork
+                  child,
+                  committedLanes,
+                  committedTransitions,
+                  endTime
                 );
             }
-            parentFiber = parentFiber.sibling;
+            alreadyWarnedForDeepEquality = prevDeepEquality;
+            child = parentFiber;
           }
       }
-      function recursivelyAccumulateSuspenseyCommit(parentFiber) {
+      function recursivelyAccumulateSuspenseyCommit(parentFiber, committedLanes, suspendedState) {
         if (parentFiber.subtreeFlags & suspenseyCommitFlag)
           for (parentFiber = parentFiber.child; null !== parentFiber; )
-            accumulateSuspenseyCommitOnFiber(parentFiber), parentFiber = parentFiber.sibling;
+            accumulateSuspenseyCommitOnFiber(
+              parentFiber,
+              committedLanes,
+              suspendedState
+            ), parentFiber = parentFiber.sibling;
       }
-      function accumulateSuspenseyCommitOnFiber(fiber) {
+      function accumulateSuspenseyCommitOnFiber(fiber, committedLanes, suspendedState) {
         switch (fiber.tag) {
           case 26:
-            recursivelyAccumulateSuspenseyCommit(fiber);
+            recursivelyAccumulateSuspenseyCommit(
+              fiber,
+              committedLanes,
+              suspendedState
+            );
             fiber.flags & suspenseyCommitFlag && null !== fiber.memoizedState && suspendResource(
+              suspendedState,
               currentHoistableRoot,
               fiber.memoizedState,
               fiber.memoizedProps
             );
             break;
           case 5:
-            recursivelyAccumulateSuspenseyCommit(fiber);
+            recursivelyAccumulateSuspenseyCommit(
+              fiber,
+              committedLanes,
+              suspendedState
+            );
             break;
           case 3:
           case 4:
@@ -11380,14 +12705,30 @@ var require_react_dom_client_development = __commonJS({
             currentHoistableRoot = getHoistableRoot(
               fiber.stateNode.containerInfo
             );
-            recursivelyAccumulateSuspenseyCommit(fiber);
+            recursivelyAccumulateSuspenseyCommit(
+              fiber,
+              committedLanes,
+              suspendedState
+            );
             currentHoistableRoot = previousHoistableRoot;
             break;
           case 22:
-            null === fiber.memoizedState && (previousHoistableRoot = fiber.alternate, null !== previousHoistableRoot && null !== previousHoistableRoot.memoizedState ? (previousHoistableRoot = suspenseyCommitFlag, suspenseyCommitFlag = 16777216, recursivelyAccumulateSuspenseyCommit(fiber), suspenseyCommitFlag = previousHoistableRoot) : recursivelyAccumulateSuspenseyCommit(fiber));
+            null === fiber.memoizedState && (previousHoistableRoot = fiber.alternate, null !== previousHoistableRoot && null !== previousHoistableRoot.memoizedState ? (previousHoistableRoot = suspenseyCommitFlag, suspenseyCommitFlag = 16777216, recursivelyAccumulateSuspenseyCommit(
+              fiber,
+              committedLanes,
+              suspendedState
+            ), suspenseyCommitFlag = previousHoistableRoot) : recursivelyAccumulateSuspenseyCommit(
+              fiber,
+              committedLanes,
+              suspendedState
+            ));
             break;
           default:
-            recursivelyAccumulateSuspenseyCommit(fiber);
+            recursivelyAccumulateSuspenseyCommit(
+              fiber,
+              committedLanes,
+              suspendedState
+            );
         }
       }
       function detachAlternateSiblings(parentFiber) {
@@ -11404,12 +12745,19 @@ var require_react_dom_client_development = __commonJS({
         if (0 !== (parentFiber.flags & 16)) {
           if (null !== deletions)
             for (var i = 0; i < deletions.length; i++) {
-              var childToDelete = deletions[i];
+              var childToDelete = deletions[i], prevEffectStart = pushComponentEffectStart();
               nextEffect = childToDelete;
               commitPassiveUnmountEffectsInsideOfDeletedTree_begin(
                 childToDelete,
                 parentFiber
               );
+              (childToDelete.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentTrigger(
+                childToDelete,
+                componentEffectStartTime,
+                componentEffectEndTime,
+                "Unmount"
+              );
+              popComponentEffectStart(prevEffectStart);
             }
           detachAlternateSiblings(parentFiber);
         }
@@ -11418,6 +12766,7 @@ var require_react_dom_client_development = __commonJS({
             commitPassiveUnmountOnFiber(parentFiber), parentFiber = parentFiber.sibling;
       }
       function commitPassiveUnmountOnFiber(finishedWork) {
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate();
         switch (finishedWork.tag) {
           case 0:
           case 11:
@@ -11430,34 +12779,57 @@ var require_react_dom_client_development = __commonJS({
             );
             break;
           case 3:
-            var prevEffectDuration = pushNestedEffectDurations();
+            var prevProfilerEffectDuration = pushNestedEffectDurations();
             recursivelyTraversePassiveUnmountEffects(finishedWork);
-            finishedWork.stateNode.passiveEffectDuration += popNestedEffectDurations(prevEffectDuration);
+            finishedWork.stateNode.passiveEffectDuration += popNestedEffectDurations(prevProfilerEffectDuration);
             break;
           case 12:
-            prevEffectDuration = pushNestedEffectDurations();
+            prevProfilerEffectDuration = pushNestedEffectDurations();
             recursivelyTraversePassiveUnmountEffects(finishedWork);
-            finishedWork.stateNode.passiveEffectDuration += bubbleNestedEffectDurations(prevEffectDuration);
+            finishedWork.stateNode.passiveEffectDuration += bubbleNestedEffectDurations(prevProfilerEffectDuration);
             break;
           case 22:
-            prevEffectDuration = finishedWork.stateNode;
-            null !== finishedWork.memoizedState && prevEffectDuration._visibility & OffscreenPassiveEffectsConnected && (null === finishedWork.return || 13 !== finishedWork.return.tag) ? (prevEffectDuration._visibility &= -3, recursivelyTraverseDisconnectPassiveEffects(finishedWork)) : recursivelyTraversePassiveUnmountEffects(finishedWork);
+            prevProfilerEffectDuration = finishedWork.stateNode;
+            null !== finishedWork.memoizedState && prevProfilerEffectDuration._visibility & OffscreenPassiveEffectsConnected && (null === finishedWork.return || 13 !== finishedWork.return.tag) ? (prevProfilerEffectDuration._visibility &= -3, recursivelyTraverseDisconnectPassiveEffects(finishedWork), (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentTrigger(
+              finishedWork,
+              componentEffectStartTime,
+              componentEffectEndTime,
+              "Disconnect"
+            )) : recursivelyTraversePassiveUnmountEffects(finishedWork);
             break;
           default:
             recursivelyTraversePassiveUnmountEffects(finishedWork);
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        );
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
+        componentEffectErrors = prevEffectErrors;
       }
       function recursivelyTraverseDisconnectPassiveEffects(parentFiber) {
         var deletions = parentFiber.deletions;
         if (0 !== (parentFiber.flags & 16)) {
           if (null !== deletions)
             for (var i = 0; i < deletions.length; i++) {
-              var childToDelete = deletions[i];
+              var childToDelete = deletions[i], prevEffectStart = pushComponentEffectStart();
               nextEffect = childToDelete;
               commitPassiveUnmountEffectsInsideOfDeletedTree_begin(
                 childToDelete,
                 parentFiber
               );
+              (childToDelete.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && 0.05 < componentEffectEndTime - componentEffectStartTime && logComponentTrigger(
+                childToDelete,
+                componentEffectStartTime,
+                componentEffectEndTime,
+                "Unmount"
+              );
+              popComponentEffectStart(prevEffectStart);
             }
           detachAlternateSiblings(parentFiber);
         }
@@ -11465,6 +12837,7 @@ var require_react_dom_client_development = __commonJS({
           disconnectPassiveEffect(parentFiber), parentFiber = parentFiber.sibling;
       }
       function disconnectPassiveEffect(finishedWork) {
+        var prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate();
         switch (finishedWork.tag) {
           case 0:
           case 11:
@@ -11483,10 +12856,21 @@ var require_react_dom_client_development = __commonJS({
           default:
             recursivelyTraverseDisconnectPassiveEffects(finishedWork);
         }
+        (finishedWork.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+          finishedWork,
+          componentEffectStartTime,
+          componentEffectEndTime,
+          componentEffectDuration,
+          componentEffectErrors
+        );
+        popComponentEffectStart(prevEffectStart);
+        popComponentEffectDuration(prevEffectDuration);
+        componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
+        componentEffectErrors = prevEffectErrors;
       }
-      function commitPassiveUnmountEffectsInsideOfDeletedTree_begin(deletedSubtreeRoot, nearestMountedAncestor) {
+      function commitPassiveUnmountEffectsInsideOfDeletedTree_begin(deletedSubtreeRoot, nearestMountedAncestor$jscomp$0) {
         for (; null !== nextEffect; ) {
-          var fiber = nextEffect, current2 = fiber;
+          var fiber = nextEffect, current2 = fiber, nearestMountedAncestor = nearestMountedAncestor$jscomp$0, prevEffectStart = pushComponentEffectStart(), prevEffectDuration = pushComponentEffectDuration(), prevEffectErrors = pushComponentEffectErrors(), prevEffectDidSpawnUpdate = pushComponentEffectDidSpawnUpdate();
           switch (current2.tag) {
             case 0:
             case 11:
@@ -11499,28 +12883,40 @@ var require_react_dom_client_development = __commonJS({
               break;
             case 23:
             case 22:
-              null !== current2.memoizedState && null !== current2.memoizedState.cachePool && (current2 = current2.memoizedState.cachePool.pool, null != current2 && retainCache(current2));
+              null !== current2.memoizedState && null !== current2.memoizedState.cachePool && (nearestMountedAncestor = current2.memoizedState.cachePool.pool, null != nearestMountedAncestor && retainCache(nearestMountedAncestor));
               break;
             case 24:
               releaseCache(current2.memoizedState.cache);
           }
+          (current2.mode & ProfileMode) !== NoMode && 0 <= componentEffectStartTime && 0 <= componentEffectEndTime && (componentEffectSpawnedUpdate || 0.05 < componentEffectDuration) && logComponentEffect(
+            current2,
+            componentEffectStartTime,
+            componentEffectEndTime,
+            componentEffectDuration,
+            componentEffectErrors
+          );
+          popComponentEffectStart(prevEffectStart);
+          popComponentEffectDuration(prevEffectDuration);
+          componentEffectSpawnedUpdate = prevEffectDidSpawnUpdate;
+          componentEffectErrors = prevEffectErrors;
           current2 = fiber.child;
           if (null !== current2) current2.return = fiber, nextEffect = current2;
           else
             a: for (fiber = deletedSubtreeRoot; null !== nextEffect; ) {
               current2 = nextEffect;
-              var sibling = current2.sibling, returnFiber = current2.return;
+              prevEffectStart = current2.sibling;
+              prevEffectDuration = current2.return;
               detachFiberAfterEffects(current2);
               if (current2 === fiber) {
                 nextEffect = null;
                 break a;
               }
-              if (null !== sibling) {
-                sibling.return = returnFiber;
-                nextEffect = sibling;
+              if (null !== prevEffectStart) {
+                prevEffectStart.return = prevEffectDuration;
+                nextEffect = prevEffectStart;
                 break a;
               }
-              nextEffect = returnFiber;
+              nextEffect = prevEffectDuration;
             }
         }
       }
@@ -11540,12 +12936,18 @@ var require_react_dom_client_development = __commonJS({
         if ((executionContext & RenderContext) !== NoContext && 0 !== workInProgressRootRenderLanes)
           return workInProgressRootRenderLanes & -workInProgressRootRenderLanes;
         var transition = ReactSharedInternals.T;
-        return null !== transition ? (transition._updatedFibers || (transition._updatedFibers = /* @__PURE__ */ new Set()), transition._updatedFibers.add(fiber), fiber = currentEntangledLane, 0 !== fiber ? fiber : requestTransitionLane()) : resolveUpdatePriority();
+        return null !== transition ? (transition._updatedFibers || (transition._updatedFibers = /* @__PURE__ */ new Set()), transition._updatedFibers.add(fiber), requestTransitionLane()) : resolveUpdatePriority();
       }
       function requestDeferredLane() {
-        0 === workInProgressDeferredLane && (workInProgressDeferredLane = 0 === (workInProgressRootRenderLanes & 536870912) || isHydrating ? claimNextTransitionLane() : 536870912);
-        var suspenseHandler = suspenseHandlerStackCursor.current;
-        null !== suspenseHandler && (suspenseHandler.flags |= 32);
+        if (0 === workInProgressDeferredLane)
+          if (0 === (workInProgressRootRenderLanes & 536870912) || isHydrating) {
+            var lane = nextTransitionDeferredLane;
+            nextTransitionDeferredLane <<= 1;
+            0 === (nextTransitionDeferredLane & 3932160) && (nextTransitionDeferredLane = 262144);
+            workInProgressDeferredLane = lane;
+          } else workInProgressDeferredLane = 536870912;
+        lane = suspenseHandlerStackCursor.current;
+        null !== lane && (lane.flags |= 32);
         return workInProgressDeferredLane;
       }
       function scheduleUpdateOnFiber(root2, fiber, lane) {
@@ -11559,7 +12961,7 @@ var require_react_dom_client_development = __commonJS({
             false
           );
         markRootUpdated$1(root2, lane);
-        if (0 !== (executionContext & RenderContext) && root2 === workInProgressRoot) {
+        if ((executionContext & RenderContext) !== NoContext && root2 === workInProgressRoot) {
           if (isRendering)
             switch (fiber.tag) {
               case 0:
@@ -11589,76 +12991,184 @@ var require_react_dom_client_development = __commonJS({
       function performWorkOnRoot(root2, lanes, forceSync) {
         if ((executionContext & (RenderContext | CommitContext)) !== NoContext)
           throw Error("Should not already be working.");
-        var shouldTimeSlice = !forceSync && 0 === (lanes & 124) && 0 === (lanes & root2.expiredLanes) || checkIfRootIsPrerendering(root2, lanes), exitStatus = shouldTimeSlice ? renderRootConcurrent(root2, lanes) : renderRootSync(root2, lanes, true), renderWasConcurrent = shouldTimeSlice;
+        if (0 !== workInProgressRootRenderLanes && null !== workInProgress) {
+          var yieldedFiber = workInProgress, yieldEndTime = now$1();
+          switch (yieldReason) {
+            case SuspendedOnImmediate:
+            case SuspendedOnData:
+              var startTime = yieldStartTime;
+              supportsUserTiming && ((yieldedFiber = yieldedFiber._debugTask) ? yieldedFiber.run(
+                console.timeStamp.bind(
+                  console,
+                  "Suspended",
+                  startTime,
+                  yieldEndTime,
+                  COMPONENTS_TRACK,
+                  void 0,
+                  "primary-light"
+                )
+              ) : console.timeStamp(
+                "Suspended",
+                startTime,
+                yieldEndTime,
+                COMPONENTS_TRACK,
+                void 0,
+                "primary-light"
+              ));
+              break;
+            case SuspendedOnAction:
+              startTime = yieldStartTime;
+              supportsUserTiming && ((yieldedFiber = yieldedFiber._debugTask) ? yieldedFiber.run(
+                console.timeStamp.bind(
+                  console,
+                  "Action",
+                  startTime,
+                  yieldEndTime,
+                  COMPONENTS_TRACK,
+                  void 0,
+                  "primary-light"
+                )
+              ) : console.timeStamp(
+                "Action",
+                startTime,
+                yieldEndTime,
+                COMPONENTS_TRACK,
+                void 0,
+                "primary-light"
+              ));
+              break;
+            default:
+              supportsUserTiming && (yieldedFiber = yieldEndTime - yieldStartTime, 3 > yieldedFiber || console.timeStamp(
+                "Blocked",
+                yieldStartTime,
+                yieldEndTime,
+                COMPONENTS_TRACK,
+                void 0,
+                5 > yieldedFiber ? "primary-light" : 10 > yieldedFiber ? "primary" : 100 > yieldedFiber ? "primary-dark" : "error"
+              ));
+          }
+        }
+        startTime = (forceSync = !forceSync && 0 === (lanes & 127) && 0 === (lanes & root2.expiredLanes) || checkIfRootIsPrerendering(root2, lanes)) ? renderRootConcurrent(root2, lanes) : renderRootSync(root2, lanes, true);
+        var renderWasConcurrent = forceSync;
         do {
-          if (exitStatus === RootInProgress) {
-            workInProgressRootIsPrerendering && !shouldTimeSlice && markRootSuspended(root2, lanes, 0, false);
+          if (startTime === RootInProgress) {
+            workInProgressRootIsPrerendering && !forceSync && markRootSuspended(root2, lanes, 0, false);
+            lanes = workInProgressSuspendedReason;
+            yieldStartTime = now();
+            yieldReason = lanes;
             break;
           } else {
-            forceSync = root2.current.alternate;
-            if (renderWasConcurrent && !isRenderConsistentWithExternalStores(forceSync)) {
-              exitStatus = renderRootSync(root2, lanes, false);
+            yieldedFiber = now$1();
+            yieldEndTime = root2.current.alternate;
+            if (renderWasConcurrent && !isRenderConsistentWithExternalStores(yieldEndTime)) {
+              setCurrentTrackFromLanes(lanes);
+              yieldEndTime = renderStartTime;
+              startTime = yieldedFiber;
+              !supportsUserTiming || startTime <= yieldEndTime || (workInProgressUpdateTask ? workInProgressUpdateTask.run(
+                console.timeStamp.bind(
+                  console,
+                  "Teared Render",
+                  yieldEndTime,
+                  startTime,
+                  currentTrack,
+                  LANES_TRACK_GROUP,
+                  "error"
+                )
+              ) : console.timeStamp(
+                "Teared Render",
+                yieldEndTime,
+                startTime,
+                currentTrack,
+                LANES_TRACK_GROUP,
+                "error"
+              ));
+              finalizeRender(lanes, yieldedFiber);
+              startTime = renderRootSync(root2, lanes, false);
               renderWasConcurrent = false;
               continue;
             }
-            if (exitStatus === RootErrored) {
+            if (startTime === RootErrored) {
               renderWasConcurrent = lanes;
               if (root2.errorRecoveryDisabledLanes & renderWasConcurrent)
                 var errorRetryLanes = 0;
               else
                 errorRetryLanes = root2.pendingLanes & -536870913, errorRetryLanes = 0 !== errorRetryLanes ? errorRetryLanes : errorRetryLanes & 536870912 ? 536870912 : 0;
               if (0 !== errorRetryLanes) {
+                setCurrentTrackFromLanes(lanes);
+                logErroredRenderPhase(
+                  renderStartTime,
+                  yieldedFiber,
+                  lanes,
+                  workInProgressUpdateTask
+                );
+                finalizeRender(lanes, yieldedFiber);
                 lanes = errorRetryLanes;
                 a: {
-                  exitStatus = root2;
-                  var errorRetryLanes$jscomp$0 = errorRetryLanes;
-                  errorRetryLanes = workInProgressRootConcurrentErrors;
-                  var wasRootDehydrated = exitStatus.current.memoizedState.isDehydrated;
-                  wasRootDehydrated && (prepareFreshStack(
-                    exitStatus,
-                    errorRetryLanes$jscomp$0
-                  ).flags |= 256);
-                  errorRetryLanes$jscomp$0 = renderRootSync(
-                    exitStatus,
-                    errorRetryLanes$jscomp$0,
+                  yieldedFiber = root2;
+                  startTime = renderWasConcurrent;
+                  renderWasConcurrent = workInProgressRootConcurrentErrors;
+                  var wasRootDehydrated = yieldedFiber.current.memoizedState.isDehydrated;
+                  wasRootDehydrated && (prepareFreshStack(yieldedFiber, errorRetryLanes).flags |= 256);
+                  errorRetryLanes = renderRootSync(
+                    yieldedFiber,
+                    errorRetryLanes,
                     false
                   );
-                  if (errorRetryLanes$jscomp$0 !== RootErrored) {
+                  if (errorRetryLanes !== RootErrored) {
                     if (workInProgressRootDidAttachPingListener && !wasRootDehydrated) {
-                      exitStatus.errorRecoveryDisabledLanes |= renderWasConcurrent;
-                      workInProgressRootInterleavedUpdatedLanes |= renderWasConcurrent;
-                      exitStatus = RootSuspendedWithDelay;
+                      yieldedFiber.errorRecoveryDisabledLanes |= startTime;
+                      workInProgressRootInterleavedUpdatedLanes |= startTime;
+                      startTime = RootSuspendedWithDelay;
                       break a;
                     }
-                    exitStatus = workInProgressRootRecoverableErrors;
-                    workInProgressRootRecoverableErrors = errorRetryLanes;
-                    null !== exitStatus && (null === workInProgressRootRecoverableErrors ? workInProgressRootRecoverableErrors = exitStatus : workInProgressRootRecoverableErrors.push.apply(
+                    yieldedFiber = workInProgressRootRecoverableErrors;
+                    workInProgressRootRecoverableErrors = renderWasConcurrent;
+                    null !== yieldedFiber && (null === workInProgressRootRecoverableErrors ? workInProgressRootRecoverableErrors = yieldedFiber : workInProgressRootRecoverableErrors.push.apply(
                       workInProgressRootRecoverableErrors,
-                      exitStatus
+                      yieldedFiber
                     ));
                   }
-                  exitStatus = errorRetryLanes$jscomp$0;
+                  startTime = errorRetryLanes;
                 }
                 renderWasConcurrent = false;
-                if (exitStatus !== RootErrored) continue;
+                if (startTime !== RootErrored) continue;
+                else yieldedFiber = now$1();
               }
             }
-            if (exitStatus === RootFatalErrored) {
+            if (startTime === RootFatalErrored) {
+              setCurrentTrackFromLanes(lanes);
+              logErroredRenderPhase(
+                renderStartTime,
+                yieldedFiber,
+                lanes,
+                workInProgressUpdateTask
+              );
+              finalizeRender(lanes, yieldedFiber);
               prepareFreshStack(root2, 0);
               markRootSuspended(root2, lanes, 0, true);
               break;
             }
             a: {
-              shouldTimeSlice = root2;
-              switch (exitStatus) {
+              forceSync = root2;
+              switch (startTime) {
                 case RootInProgress:
                 case RootFatalErrored:
                   throw Error("Root did not complete. This is a bug in React.");
                 case RootSuspendedWithDelay:
                   if ((lanes & 4194048) !== lanes) break;
                 case RootSuspendedAtTheShell:
+                  setCurrentTrackFromLanes(lanes);
+                  logSuspendedRenderPhase(
+                    renderStartTime,
+                    yieldedFiber,
+                    lanes,
+                    workInProgressUpdateTask
+                  );
+                  finalizeRender(lanes, yieldedFiber);
+                  yieldEndTime = lanes;
+                  0 !== (yieldEndTime & 127) ? blockingSuspendedTime = yieldedFiber : 0 !== (yieldEndTime & 4194048) && (transitionSuspendedTime = yieldedFiber);
                   markRootSuspended(
-                    shouldTimeSlice,
+                    forceSync,
                     lanes,
                     workInProgressDeferredLane,
                     !workInProgressRootDidSkipSuspendedSiblings
@@ -11675,30 +13185,36 @@ var require_react_dom_client_development = __commonJS({
               }
               if (null !== ReactSharedInternals.actQueue)
                 commitRoot(
-                  shouldTimeSlice,
                   forceSync,
+                  yieldEndTime,
                   lanes,
                   workInProgressRootRecoverableErrors,
                   workInProgressTransitions,
                   workInProgressRootDidIncludeRecursiveRenderUpdate,
                   workInProgressDeferredLane,
                   workInProgressRootInterleavedUpdatedLanes,
-                  workInProgressSuspendedRetryLanes
+                  workInProgressSuspendedRetryLanes,
+                  startTime,
+                  null,
+                  null,
+                  renderStartTime,
+                  yieldedFiber
                 );
               else {
                 if ((lanes & 62914560) === lanes && (renderWasConcurrent = globalMostRecentFallbackTime + FALLBACK_THROTTLE_MS - now$1(), 10 < renderWasConcurrent)) {
                   markRootSuspended(
-                    shouldTimeSlice,
+                    forceSync,
                     lanes,
                     workInProgressDeferredLane,
                     !workInProgressRootDidSkipSuspendedSiblings
                   );
-                  if (0 !== getNextLanes(shouldTimeSlice, 0, true)) break a;
-                  shouldTimeSlice.timeoutHandle = scheduleTimeout(
+                  if (0 !== getNextLanes(forceSync, 0, true)) break a;
+                  pendingEffectsLanes = lanes;
+                  forceSync.timeoutHandle = scheduleTimeout(
                     commitRootWhenReady.bind(
                       null,
-                      shouldTimeSlice,
                       forceSync,
+                      yieldEndTime,
                       workInProgressRootRecoverableErrors,
                       workInProgressTransitions,
                       workInProgressRootDidIncludeRecursiveRenderUpdate,
@@ -11707,18 +13223,18 @@ var require_react_dom_client_development = __commonJS({
                       workInProgressRootInterleavedUpdatedLanes,
                       workInProgressSuspendedRetryLanes,
                       workInProgressRootDidSkipSuspendedSiblings,
-                      exitStatus,
-                      THROTTLED_COMMIT,
+                      startTime,
+                      "Throttled",
                       renderStartTime,
-                      0
+                      yieldedFiber
                     ),
                     renderWasConcurrent
                   );
                   break a;
                 }
                 commitRootWhenReady(
-                  shouldTimeSlice,
                   forceSync,
+                  yieldEndTime,
                   workInProgressRootRecoverableErrors,
                   workInProgressTransitions,
                   workInProgressRootDidIncludeRecursiveRenderUpdate,
@@ -11727,10 +13243,10 @@ var require_react_dom_client_development = __commonJS({
                   workInProgressRootInterleavedUpdatedLanes,
                   workInProgressSuspendedRetryLanes,
                   workInProgressRootDidSkipSuspendedSiblings,
-                  exitStatus,
-                  IMMEDIATE_COMMIT,
+                  startTime,
+                  null,
                   renderStartTime,
-                  0
+                  yieldedFiber
                 );
               }
             }
@@ -11741,10 +13257,20 @@ var require_react_dom_client_development = __commonJS({
       }
       function commitRootWhenReady(root2, finishedWork, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, lanes, spawnedLane, updatedLanes, suspendedRetryLanes, didSkipSuspendedSiblings, exitStatus, suspendedCommitReason, completedRenderStartTime, completedRenderEndTime) {
         root2.timeoutHandle = noTimeout;
-        suspendedCommitReason = finishedWork.subtreeFlags;
-        if (suspendedCommitReason & 8192 || 16785408 === (suspendedCommitReason & 16785408)) {
-          if (suspendedState = { stylesheets: null, count: 0, unsuspend: noop }, accumulateSuspenseyCommitOnFiber(finishedWork), suspendedCommitReason = waitForCommitToBeReady(), null !== suspendedCommitReason) {
-            root2.cancelPendingCommit = suspendedCommitReason(
+        var subtreeFlags = finishedWork.subtreeFlags, suspendedState = null;
+        if (subtreeFlags & 8192 || 16785408 === (subtreeFlags & 16785408)) {
+          if (suspendedState = {
+            stylesheets: null,
+            count: 0,
+            imgCount: 0,
+            imgBytes: 0,
+            suspenseyImages: [],
+            waitingForImages: true,
+            waitingForViewTransition: false,
+            unsuspend: noop$1
+          }, accumulateSuspenseyCommitOnFiber(finishedWork, lanes, suspendedState), subtreeFlags = (lanes & 62914560) === lanes ? globalMostRecentFallbackTime - now$1() : (lanes & 4194048) === lanes ? globalMostRecentTransitionTime - now$1() : 0, subtreeFlags = waitForCommitToBeReady(suspendedState, subtreeFlags), null !== subtreeFlags) {
+            pendingEffectsLanes = lanes;
+            root2.cancelPendingCommit = subtreeFlags(
               commitRoot.bind(
                 null,
                 root2,
@@ -11757,7 +13283,8 @@ var require_react_dom_client_development = __commonJS({
                 updatedLanes,
                 suspendedRetryLanes,
                 exitStatus,
-                SUSPENDED_COMMIT,
+                suspendedState,
+                suspendedState.waitingForViewTransition ? "Waiting for the previous Animation" : 0 < suspendedState.count ? 0 < suspendedState.imgCount ? "Suspended on CSS and Images" : "Suspended on CSS" : 1 === suspendedState.imgCount ? "Suspended on an Image" : 0 < suspendedState.imgCount ? "Suspended on Images" : null,
                 completedRenderStartTime,
                 completedRenderEndTime
               )
@@ -11780,7 +13307,12 @@ var require_react_dom_client_development = __commonJS({
           didIncludeRenderPhaseUpdate,
           spawnedLane,
           updatedLanes,
-          suspendedRetryLanes
+          suspendedRetryLanes,
+          exitStatus,
+          suspendedState,
+          suspendedCommitReason,
+          completedRenderStartTime,
+          completedRenderEndTime
         );
       }
       function isRenderConsistentWithExternalStores(finishedWork) {
@@ -11833,20 +13365,226 @@ var require_react_dom_client_development = __commonJS({
           if (workInProgressSuspendedReason === NotSuspended)
             var interruptedWork = workInProgress.return;
           else
-            interruptedWork = workInProgress, resetContextDependencies(), resetHooksOnUnwind(interruptedWork), thenableState = null, thenableIndexCounter = 0, interruptedWork = workInProgress;
+            interruptedWork = workInProgress, resetContextDependencies(), resetHooksOnUnwind(interruptedWork), thenableState$1 = null, thenableIndexCounter$1 = 0, interruptedWork = workInProgress;
           for (; null !== interruptedWork; )
             unwindInterruptedWork(interruptedWork.alternate, interruptedWork), interruptedWork = interruptedWork.return;
           workInProgress = null;
         }
       }
+      function finalizeRender(lanes, finalizationTime) {
+        0 !== (lanes & 127) && (blockingClampTime = finalizationTime);
+        0 !== (lanes & 4194048) && (transitionClampTime = finalizationTime);
+        0 !== (lanes & 62914560) && (retryClampTime = finalizationTime);
+        0 !== (lanes & 2080374784) && (idleClampTime = finalizationTime);
+      }
       function prepareFreshStack(root2, lanes) {
-        var timeoutHandle = root2.timeoutHandle;
-        timeoutHandle !== noTimeout && (root2.timeoutHandle = noTimeout, cancelTimeout(timeoutHandle));
-        timeoutHandle = root2.cancelPendingCommit;
-        null !== timeoutHandle && (root2.cancelPendingCommit = null, timeoutHandle());
+        supportsUserTiming && (console.timeStamp(
+          "Blocking Track",
+          3e-3,
+          3e-3,
+          "Blocking",
+          LANES_TRACK_GROUP,
+          "primary-light"
+        ), console.timeStamp(
+          "Transition Track",
+          3e-3,
+          3e-3,
+          "Transition",
+          LANES_TRACK_GROUP,
+          "primary-light"
+        ), console.timeStamp(
+          "Suspense Track",
+          3e-3,
+          3e-3,
+          "Suspense",
+          LANES_TRACK_GROUP,
+          "primary-light"
+        ), console.timeStamp(
+          "Idle Track",
+          3e-3,
+          3e-3,
+          "Idle",
+          LANES_TRACK_GROUP,
+          "primary-light"
+        ));
+        var previousRenderStartTime = renderStartTime;
+        renderStartTime = now();
+        if (0 !== workInProgressRootRenderLanes && 0 < previousRenderStartTime) {
+          setCurrentTrackFromLanes(workInProgressRootRenderLanes);
+          if (workInProgressRootExitStatus === RootSuspended || workInProgressRootExitStatus === RootSuspendedWithDelay)
+            logSuspendedRenderPhase(
+              previousRenderStartTime,
+              renderStartTime,
+              lanes,
+              workInProgressUpdateTask
+            );
+          else {
+            var endTime = renderStartTime, debugTask = workInProgressUpdateTask;
+            if (supportsUserTiming && !(endTime <= previousRenderStartTime)) {
+              var color = (lanes & 738197653) === lanes ? "tertiary-dark" : "primary-dark", label = (lanes & 536870912) === lanes ? "Prewarm" : (lanes & 201326741) === lanes ? "Interrupted Hydration" : "Interrupted Render";
+              debugTask ? debugTask.run(
+                console.timeStamp.bind(
+                  console,
+                  label,
+                  previousRenderStartTime,
+                  endTime,
+                  currentTrack,
+                  LANES_TRACK_GROUP,
+                  color
+                )
+              ) : console.timeStamp(
+                label,
+                previousRenderStartTime,
+                endTime,
+                currentTrack,
+                LANES_TRACK_GROUP,
+                color
+              );
+            }
+          }
+          finalizeRender(workInProgressRootRenderLanes, renderStartTime);
+        }
+        previousRenderStartTime = workInProgressUpdateTask;
+        workInProgressUpdateTask = null;
+        if (0 !== (lanes & 127)) {
+          workInProgressUpdateTask = blockingUpdateTask;
+          debugTask = 0 <= blockingUpdateTime && blockingUpdateTime < blockingClampTime ? blockingClampTime : blockingUpdateTime;
+          endTime = 0 <= blockingEventTime && blockingEventTime < blockingClampTime ? blockingClampTime : blockingEventTime;
+          color = 0 <= endTime ? endTime : 0 <= debugTask ? debugTask : renderStartTime;
+          0 <= blockingSuspendedTime ? (setCurrentTrackFromLanes(2), logSuspendedWithDelayPhase(
+            blockingSuspendedTime,
+            color,
+            lanes,
+            previousRenderStartTime
+          )) : 0 !== (animatingLanes & 127);
+          previousRenderStartTime = debugTask;
+          var eventTime = endTime, eventType = blockingEventType, eventIsRepeat = 0 < blockingEventRepeatTime, isSpawnedUpdate = blockingUpdateType === SPAWNED_UPDATE, isPingedUpdate = blockingUpdateType === PINGED_UPDATE;
+          debugTask = renderStartTime;
+          endTime = blockingUpdateTask;
+          color = blockingUpdateMethodName;
+          label = blockingUpdateComponentName;
+          if (supportsUserTiming) {
+            currentTrack = "Blocking";
+            0 < previousRenderStartTime ? previousRenderStartTime > debugTask && (previousRenderStartTime = debugTask) : previousRenderStartTime = debugTask;
+            0 < eventTime ? eventTime > previousRenderStartTime && (eventTime = previousRenderStartTime) : eventTime = previousRenderStartTime;
+            if (null !== eventType && previousRenderStartTime > eventTime) {
+              var color$jscomp$0 = eventIsRepeat ? "secondary-light" : "warning";
+              endTime ? endTime.run(
+                console.timeStamp.bind(
+                  console,
+                  eventIsRepeat ? "Consecutive" : "Event: " + eventType,
+                  eventTime,
+                  previousRenderStartTime,
+                  currentTrack,
+                  LANES_TRACK_GROUP,
+                  color$jscomp$0
+                )
+              ) : console.timeStamp(
+                eventIsRepeat ? "Consecutive" : "Event: " + eventType,
+                eventTime,
+                previousRenderStartTime,
+                currentTrack,
+                LANES_TRACK_GROUP,
+                color$jscomp$0
+              );
+            }
+            debugTask > previousRenderStartTime && (eventTime = isSpawnedUpdate ? "error" : (lanes & 738197653) === lanes ? "tertiary-light" : "primary-light", isSpawnedUpdate = isPingedUpdate ? "Promise Resolved" : isSpawnedUpdate ? "Cascading Update" : 5 < debugTask - previousRenderStartTime ? "Update Blocked" : "Update", isPingedUpdate = [], null != label && isPingedUpdate.push(["Component name", label]), null != color && isPingedUpdate.push(["Method name", color]), previousRenderStartTime = {
+              start: previousRenderStartTime,
+              end: debugTask,
+              detail: {
+                devtools: {
+                  properties: isPingedUpdate,
+                  track: currentTrack,
+                  trackGroup: LANES_TRACK_GROUP,
+                  color: eventTime
+                }
+              }
+            }, endTime ? endTime.run(
+              performance.measure.bind(
+                performance,
+                isSpawnedUpdate,
+                previousRenderStartTime
+              )
+            ) : performance.measure(isSpawnedUpdate, previousRenderStartTime));
+          }
+          blockingUpdateTime = -1.1;
+          blockingUpdateType = 0;
+          blockingUpdateComponentName = blockingUpdateMethodName = null;
+          blockingSuspendedTime = -1.1;
+          blockingEventRepeatTime = blockingEventTime;
+          blockingEventTime = -1.1;
+          blockingClampTime = now();
+        }
+        0 !== (lanes & 4194048) && (workInProgressUpdateTask = transitionUpdateTask, debugTask = 0 <= transitionStartTime && transitionStartTime < transitionClampTime ? transitionClampTime : transitionStartTime, previousRenderStartTime = 0 <= transitionUpdateTime && transitionUpdateTime < transitionClampTime ? transitionClampTime : transitionUpdateTime, endTime = 0 <= transitionEventTime && transitionEventTime < transitionClampTime ? transitionClampTime : transitionEventTime, color = 0 <= endTime ? endTime : 0 <= previousRenderStartTime ? previousRenderStartTime : renderStartTime, 0 <= transitionSuspendedTime ? (setCurrentTrackFromLanes(256), logSuspendedWithDelayPhase(
+          transitionSuspendedTime,
+          color,
+          lanes,
+          workInProgressUpdateTask
+        )) : 0 !== (animatingLanes & 4194048), isPingedUpdate = endTime, eventTime = transitionEventType, eventType = 0 < transitionEventRepeatTime, eventIsRepeat = transitionUpdateType === PINGED_UPDATE, color = renderStartTime, endTime = transitionUpdateTask, label = transitionUpdateMethodName, isSpawnedUpdate = transitionUpdateComponentName, supportsUserTiming && (currentTrack = "Transition", 0 < previousRenderStartTime ? previousRenderStartTime > color && (previousRenderStartTime = color) : previousRenderStartTime = color, 0 < debugTask ? debugTask > previousRenderStartTime && (debugTask = previousRenderStartTime) : debugTask = previousRenderStartTime, 0 < isPingedUpdate ? isPingedUpdate > debugTask && (isPingedUpdate = debugTask) : isPingedUpdate = debugTask, debugTask > isPingedUpdate && null !== eventTime && (color$jscomp$0 = eventType ? "secondary-light" : "warning", endTime ? endTime.run(
+          console.timeStamp.bind(
+            console,
+            eventType ? "Consecutive" : "Event: " + eventTime,
+            isPingedUpdate,
+            debugTask,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            color$jscomp$0
+          )
+        ) : console.timeStamp(
+          eventType ? "Consecutive" : "Event: " + eventTime,
+          isPingedUpdate,
+          debugTask,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          color$jscomp$0
+        )), previousRenderStartTime > debugTask && (endTime ? endTime.run(
+          console.timeStamp.bind(
+            console,
+            "Action",
+            debugTask,
+            previousRenderStartTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            "primary-dark"
+          )
+        ) : console.timeStamp(
+          "Action",
+          debugTask,
+          previousRenderStartTime,
+          currentTrack,
+          LANES_TRACK_GROUP,
+          "primary-dark"
+        )), color > previousRenderStartTime && (debugTask = eventIsRepeat ? "Promise Resolved" : 5 < color - previousRenderStartTime ? "Update Blocked" : "Update", isPingedUpdate = [], null != isSpawnedUpdate && isPingedUpdate.push(["Component name", isSpawnedUpdate]), null != label && isPingedUpdate.push(["Method name", label]), previousRenderStartTime = {
+          start: previousRenderStartTime,
+          end: color,
+          detail: {
+            devtools: {
+              properties: isPingedUpdate,
+              track: currentTrack,
+              trackGroup: LANES_TRACK_GROUP,
+              color: "primary-light"
+            }
+          }
+        }, endTime ? endTime.run(
+          performance.measure.bind(
+            performance,
+            debugTask,
+            previousRenderStartTime
+          )
+        ) : performance.measure(debugTask, previousRenderStartTime))), transitionUpdateTime = transitionStartTime = -1.1, transitionUpdateType = 0, transitionSuspendedTime = -1.1, transitionEventRepeatTime = transitionEventTime, transitionEventTime = -1.1, transitionClampTime = now());
+        0 !== (lanes & 62914560) && 0 !== (animatingLanes & 62914560) && (setCurrentTrackFromLanes(4194304), logAnimatingPhase(retryClampTime, renderStartTime));
+        0 !== (lanes & 2080374784) && 0 !== (animatingLanes & 2080374784) && (setCurrentTrackFromLanes(268435456), logAnimatingPhase(idleClampTime, renderStartTime));
+        previousRenderStartTime = root2.timeoutHandle;
+        previousRenderStartTime !== noTimeout && (root2.timeoutHandle = noTimeout, cancelTimeout(previousRenderStartTime));
+        previousRenderStartTime = root2.cancelPendingCommit;
+        null !== previousRenderStartTime && (root2.cancelPendingCommit = null, previousRenderStartTime());
+        pendingEffectsLanes = 0;
         resetWorkInProgressStack();
         workInProgressRoot = root2;
-        workInProgress = timeoutHandle = createWorkInProgress(root2.current, null);
+        workInProgress = previousRenderStartTime = createWorkInProgress(
+          root2.current,
+          null
+        );
         workInProgressRootRenderLanes = lanes;
         workInProgressSuspendedReason = NotSuspended;
         workInProgressThrownValue = null;
@@ -11858,19 +13596,16 @@ var require_react_dom_client_development = __commonJS({
         workInProgressRootRecoverableErrors = workInProgressRootConcurrentErrors = null;
         workInProgressRootDidIncludeRecursiveRenderUpdate = false;
         0 !== (lanes & 8) && (lanes |= lanes & 32);
-        var allEntangledLanes = root2.entangledLanes;
-        if (0 !== allEntangledLanes)
-          for (root2 = root2.entanglements, allEntangledLanes &= lanes; 0 < allEntangledLanes; ) {
-            var index = 31 - clz32(allEntangledLanes), lane = 1 << index;
-            lanes |= root2[index];
-            allEntangledLanes &= ~lane;
-          }
+        endTime = root2.entangledLanes;
+        if (0 !== endTime)
+          for (root2 = root2.entanglements, endTime &= lanes; 0 < endTime; )
+            debugTask = 31 - clz32(endTime), color = 1 << debugTask, lanes |= root2[debugTask], endTime &= ~color;
         entangledRenderLanes = lanes;
         finishQueueingConcurrentUpdates();
-        lanes = getCurrentTime();
-        1e3 < lanes - lastResetTime && (ReactSharedInternals.recentlyCreatedOwnerStacks = 0, lastResetTime = lanes);
+        root2 = getCurrentTime();
+        1e3 < root2 - lastResetTime && (ReactSharedInternals.recentlyCreatedOwnerStacks = 0, lastResetTime = root2);
         ReactStrictModeWarnings.discardPendingWarnings();
-        return timeoutHandle;
+        return previousRenderStartTime;
       }
       function handleThrow(root2, thrownValue) {
         currentlyRenderingFiber = null;
@@ -11881,31 +13616,14 @@ var require_react_dom_client_development = __commonJS({
         thrownValue === SuspenseException || thrownValue === SuspenseActionException ? (thrownValue = getSuspendedThenable(), workInProgressSuspendedReason = SuspendedOnImmediate) : thrownValue === SuspenseyCommitException ? (thrownValue = getSuspendedThenable(), workInProgressSuspendedReason = SuspendedOnInstance) : workInProgressSuspendedReason = thrownValue === SelectiveHydrationException ? SuspendedOnHydration : null !== thrownValue && "object" === typeof thrownValue && "function" === typeof thrownValue.then ? SuspendedOnDeprecatedThrowPromise : SuspendedOnError;
         workInProgressThrownValue = thrownValue;
         var erroredWork = workInProgress;
-        if (null === erroredWork)
-          workInProgressRootExitStatus = RootFatalErrored, logUncaughtError(
-            root2,
-            createCapturedValueAtFiber(thrownValue, root2.current)
-          );
-        else
-          switch (erroredWork.mode & ProfileMode && stopProfilerTimerIfRunningAndRecordDuration(erroredWork), markComponentRenderStopped(), workInProgressSuspendedReason) {
-            case SuspendedOnError:
-              null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentErrored && injectedProfilingHooks.markComponentErrored(
-                erroredWork,
-                thrownValue,
-                workInProgressRootRenderLanes
-              );
-              break;
-            case SuspendedOnData:
-            case SuspendedOnAction:
-            case SuspendedOnImmediate:
-            case SuspendedOnDeprecatedThrowPromise:
-            case SuspendedAndReadyToContinue:
-              null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markComponentSuspended && injectedProfilingHooks.markComponentSuspended(
-                erroredWork,
-                thrownValue,
-                workInProgressRootRenderLanes
-              );
-          }
+        null === erroredWork ? (workInProgressRootExitStatus = RootFatalErrored, logUncaughtError(
+          root2,
+          createCapturedValueAtFiber(thrownValue, root2.current)
+        )) : erroredWork.mode & ProfileMode && stopProfilerTimerIfRunningAndRecordDuration(erroredWork);
+      }
+      function shouldRemainOnPreviousScreen() {
+        var handler = suspenseHandlerStackCursor.current;
+        return null === handler ? true : (workInProgressRootRenderLanes & 4194048) === workInProgressRootRenderLanes ? null === shellBoundary ? true : false : (workInProgressRootRenderLanes & 62914560) === workInProgressRootRenderLanes || 0 !== (workInProgressRootRenderLanes & 536870912) ? handler === shellBoundary : false;
       }
       function pushDispatcher() {
         var prevDispatcher = ReactSharedInternals.H;
@@ -11916,6 +13634,9 @@ var require_react_dom_client_development = __commonJS({
         var prevAsyncDispatcher = ReactSharedInternals.A;
         ReactSharedInternals.A = DefaultAsyncDispatcher;
         return prevAsyncDispatcher;
+      }
+      function markRenderDerivedCause(fiber) {
+        null === workInProgressUpdateTask && (workInProgressUpdateTask = null == fiber._debugTask ? null : fiber._debugTask);
       }
       function renderDidSuspendDelayIfPossible() {
         workInProgressRootExitStatus = RootSuspendedWithDelay;
@@ -11940,7 +13661,6 @@ var require_react_dom_client_development = __commonJS({
           workInProgressTransitions = null;
           prepareFreshStack(root2, lanes);
         }
-        markRenderStarted(lanes);
         lanes = false;
         memoizedUpdaters = workInProgressRootExitStatus;
         a: do
@@ -11982,7 +13702,6 @@ var require_react_dom_client_development = __commonJS({
         executionContext = prevExecutionContext;
         ReactSharedInternals.H = prevDispatcher;
         ReactSharedInternals.A = prevAsyncDispatcher;
-        markRenderStopped();
         null === workInProgress && (workInProgressRoot = null, workInProgressRootRenderLanes = 0, finishQueueingConcurrentUpdates());
         return memoizedUpdaters;
       }
@@ -12007,7 +13726,6 @@ var require_react_dom_client_development = __commonJS({
             root2,
             lanes
           );
-        markRenderStarted(lanes);
         a: do
           try {
             if (workInProgressSuspendedReason !== NotSuspended && null !== workInProgress)
@@ -12058,7 +13776,7 @@ var require_react_dom_client_development = __commonJS({
                     case 5:
                     case 27:
                       var hostFiber = workInProgress;
-                      if (resource ? preloadResource(resource) : 1) {
+                      if (resource ? preloadResource(resource) : hostFiber.stateNode.complete) {
                         workInProgressSuspendedReason = NotSuspended;
                         workInProgressThrownValue = null;
                         var sibling = hostFiber.sibling;
@@ -12113,9 +13831,7 @@ var require_react_dom_client_development = __commonJS({
         ReactSharedInternals.H = prevDispatcher;
         ReactSharedInternals.A = prevAsyncDispatcher;
         executionContext = prevExecutionContext;
-        if (null !== workInProgress)
-          return null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markRenderYielded && injectedProfilingHooks.markRenderYielded(), RootInProgress;
-        markRenderStopped();
+        if (null !== workInProgress) return RootInProgress;
         workInProgressRoot = null;
         workInProgressRootRenderLanes = 0;
         finishQueueingConcurrentUpdates();
@@ -12184,8 +13900,8 @@ var require_react_dom_client_development = __commonJS({
       function throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, suspendedReason) {
         resetContextDependencies();
         resetHooksOnUnwind(unitOfWork);
-        thenableState = null;
-        thenableIndexCounter = 0;
+        thenableState$1 = null;
+        thenableIndexCounter$1 = 0;
         var returnFiber = unitOfWork.return;
         try {
           if (throwException(
@@ -12282,7 +13998,7 @@ var require_react_dom_client_development = __commonJS({
         workInProgressRootExitStatus = RootSuspendedAtTheShell;
         workInProgress = null;
       }
-      function commitRoot(root2, finishedWork, lanes, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, spawnedLane, updatedLanes, suspendedRetryLanes) {
+      function commitRoot(root2, finishedWork, lanes, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, spawnedLane, updatedLanes, suspendedRetryLanes, exitStatus, suspendedState, suspendedCommitReason, completedRenderStartTime, completedRenderEndTime) {
         root2.cancelPendingCommit = null;
         do
           flushPendingEffects();
@@ -12291,9 +14007,26 @@ var require_react_dom_client_development = __commonJS({
         ReactStrictModeWarnings.flushPendingUnsafeLifecycleWarnings();
         if ((executionContext & (RenderContext | CommitContext)) !== NoContext)
           throw Error("Should not already be working.");
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markCommitStarted && injectedProfilingHooks.markCommitStarted(lanes);
-        if (null === finishedWork) markCommitStopped();
-        else {
+        setCurrentTrackFromLanes(lanes);
+        exitStatus === RootErrored ? logErroredRenderPhase(
+          completedRenderStartTime,
+          completedRenderEndTime,
+          lanes,
+          workInProgressUpdateTask
+        ) : null !== recoverableErrors ? logRecoveredRenderPhase(
+          completedRenderStartTime,
+          completedRenderEndTime,
+          lanes,
+          recoverableErrors,
+          null !== finishedWork && null !== finishedWork.alternate && finishedWork.alternate.memoizedState.isDehydrated && 0 !== (finishedWork.flags & 256),
+          workInProgressUpdateTask
+        ) : logRenderPhase(
+          completedRenderStartTime,
+          completedRenderEndTime,
+          lanes,
+          workInProgressUpdateTask
+        );
+        if (null !== finishedWork) {
           0 === lanes && console.error(
             "finishedLanes should not be empty during a commit. This is a bug in React."
           );
@@ -12318,11 +14051,24 @@ var require_react_dom_client_development = __commonJS({
           pendingEffectsRemainingLanes = didIncludeRenderPhaseUpdate;
           pendingPassiveTransitions = transitions;
           pendingRecoverableErrors = recoverableErrors;
-          0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? (root2.callbackNode = null, root2.callbackPriority = 0, scheduleCallback$1(NormalPriority$1, function() {
+          pendingEffectsRenderEndTime = completedRenderEndTime;
+          pendingSuspendedCommitReason = suspendedCommitReason;
+          pendingDelayedCommitReason = IMMEDIATE_COMMIT;
+          pendingSuspendedViewTransitionReason = null;
+          0 !== finishedWork.actualDuration || 0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? (root2.callbackNode = null, root2.callbackPriority = 0, scheduleCallback$1(NormalPriority$1, function() {
+            schedulerEvent = window.event;
+            pendingDelayedCommitReason === IMMEDIATE_COMMIT && (pendingDelayedCommitReason = DELAYED_PASSIVE_COMMIT);
             flushPassiveEffects();
             return null;
           })) : (root2.callbackNode = null, root2.callbackPriority = 0);
+          commitErrors = null;
           commitStartTime = now();
+          null !== suspendedCommitReason && logSuspendedCommitPhase(
+            completedRenderEndTime,
+            commitStartTime,
+            suspendedCommitReason,
+            workInProgressUpdateTask
+          );
           recoverableErrors = 0 !== (finishedWork.flags & 13878);
           if (0 !== (finishedWork.subtreeFlags & 13878) || recoverableErrors) {
             recoverableErrors = ReactSharedInternals.T;
@@ -12357,6 +14103,7 @@ var require_react_dom_client_development = __commonJS({
             try {
               inProgressLanes = lanes;
               inProgressRoot = root2;
+              resetComponentEffectTimers();
               commitMutationEffectsOnFiber(finishedWork, root2);
               inProgressRoot = inProgressLanes = null;
               lanes = selectionInformation;
@@ -12424,42 +14171,110 @@ var require_react_dom_client_development = __commonJS({
       function flushLayoutEffects() {
         if (pendingEffectsStatus === PENDING_LAYOUT_PHASE) {
           pendingEffectsStatus = NO_PENDING_EFFECTS;
-          var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, lanes = pendingEffectsLanes, rootHasLayoutEffect = 0 !== (finishedWork.flags & 8772);
-          if (0 !== (finishedWork.subtreeFlags & 8772) || rootHasLayoutEffect) {
+          var suspendedViewTransitionReason = pendingSuspendedViewTransitionReason;
+          if (null !== suspendedViewTransitionReason) {
+            commitStartTime = now();
+            var startTime = commitEndTime, endTime = commitStartTime;
+            !supportsUserTiming || endTime <= startTime || (console.timeStamp(
+              suspendedViewTransitionReason,
+              startTime,
+              endTime,
+              currentTrack,
+              LANES_TRACK_GROUP,
+              "secondary-light"
+            ));
+          }
+          suspendedViewTransitionReason = pendingEffectsRoot;
+          startTime = pendingFinishedWork;
+          endTime = pendingEffectsLanes;
+          var rootHasLayoutEffect = 0 !== (startTime.flags & 8772);
+          if (0 !== (startTime.subtreeFlags & 8772) || rootHasLayoutEffect) {
             rootHasLayoutEffect = ReactSharedInternals.T;
             ReactSharedInternals.T = null;
-            var previousPriority = ReactDOMSharedInternals.p;
+            var _previousPriority = ReactDOMSharedInternals.p;
             ReactDOMSharedInternals.p = DiscreteEventPriority;
-            var prevExecutionContext = executionContext;
+            var _prevExecutionContext = executionContext;
             executionContext |= CommitContext;
             try {
-              null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markLayoutEffectsStarted && injectedProfilingHooks.markLayoutEffectsStarted(lanes), inProgressLanes = lanes, inProgressRoot = root2, commitLayoutEffectOnFiber(
-                root2,
-                finishedWork.alternate,
-                finishedWork
-              ), inProgressRoot = inProgressLanes = null, null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markLayoutEffectsStopped && injectedProfilingHooks.markLayoutEffectsStopped();
+              inProgressLanes = endTime, inProgressRoot = suspendedViewTransitionReason, resetComponentEffectTimers(), commitLayoutEffectOnFiber(
+                suspendedViewTransitionReason,
+                startTime.alternate,
+                startTime
+              ), inProgressRoot = inProgressLanes = null;
             } finally {
-              executionContext = prevExecutionContext, ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = rootHasLayoutEffect;
+              executionContext = _prevExecutionContext, ReactDOMSharedInternals.p = _previousPriority, ReactSharedInternals.T = rootHasLayoutEffect;
             }
           }
+          suspendedViewTransitionReason = pendingEffectsRenderEndTime;
+          startTime = pendingSuspendedCommitReason;
+          commitEndTime = now();
+          suspendedViewTransitionReason = null === startTime ? suspendedViewTransitionReason : commitStartTime;
+          startTime = commitEndTime;
+          endTime = pendingDelayedCommitReason === ABORTED_VIEW_TRANSITION_COMMIT;
+          rootHasLayoutEffect = workInProgressUpdateTask;
+          null !== commitErrors ? logCommitErrored(
+            suspendedViewTransitionReason,
+            startTime,
+            commitErrors,
+            false,
+            rootHasLayoutEffect
+          ) : !supportsUserTiming || startTime <= suspendedViewTransitionReason || (rootHasLayoutEffect ? rootHasLayoutEffect.run(
+            console.timeStamp.bind(
+              console,
+              endTime ? "Commit Interrupted View Transition" : "Commit",
+              suspendedViewTransitionReason,
+              startTime,
+              currentTrack,
+              LANES_TRACK_GROUP,
+              endTime ? "error" : "secondary-dark"
+            )
+          ) : console.timeStamp(
+            endTime ? "Commit Interrupted View Transition" : "Commit",
+            suspendedViewTransitionReason,
+            startTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            endTime ? "error" : "secondary-dark"
+          ));
           pendingEffectsStatus = PENDING_AFTER_MUTATION_PHASE;
         }
       }
       function flushSpawnedWork() {
         if (pendingEffectsStatus === PENDING_SPAWNED_WORK || pendingEffectsStatus === PENDING_AFTER_MUTATION_PHASE) {
+          if (pendingEffectsStatus === PENDING_SPAWNED_WORK) {
+            var startViewTransitionStartTime = commitEndTime;
+            commitEndTime = now();
+            var endTime = commitEndTime, abortedViewTransition = pendingDelayedCommitReason === ABORTED_VIEW_TRANSITION_COMMIT;
+            !supportsUserTiming || endTime <= startViewTransitionStartTime || (console.timeStamp(
+              abortedViewTransition ? "Interrupted View Transition" : "Starting Animation",
+              startViewTransitionStartTime,
+              endTime,
+              currentTrack,
+              LANES_TRACK_GROUP,
+              abortedViewTransition ? " error" : "secondary-light"
+            ));
+            pendingDelayedCommitReason !== ABORTED_VIEW_TRANSITION_COMMIT && (pendingDelayedCommitReason = ANIMATION_STARTED_COMMIT);
+          }
           pendingEffectsStatus = NO_PENDING_EFFECTS;
           requestPaint();
-          var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, lanes = pendingEffectsLanes, recoverableErrors = pendingRecoverableErrors, rootDidHavePassiveEffects = 0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256);
-          rootDidHavePassiveEffects ? pendingEffectsStatus = PENDING_PASSIVE_PHASE : (pendingEffectsStatus = NO_PENDING_EFFECTS, pendingFinishedWork = pendingEffectsRoot = null, releaseRootPooledCache(root2, root2.pendingLanes), nestedPassiveUpdateCount = 0, rootWithPassiveNestedUpdates = null);
-          var remainingLanes = root2.pendingLanes;
+          startViewTransitionStartTime = pendingEffectsRoot;
+          var finishedWork = pendingFinishedWork;
+          endTime = pendingEffectsLanes;
+          abortedViewTransition = pendingRecoverableErrors;
+          var rootDidHavePassiveEffects = 0 !== finishedWork.actualDuration || 0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256);
+          rootDidHavePassiveEffects ? pendingEffectsStatus = PENDING_PASSIVE_PHASE : (pendingEffectsStatus = NO_PENDING_EFFECTS, pendingFinishedWork = pendingEffectsRoot = null, releaseRootPooledCache(
+            startViewTransitionStartTime,
+            startViewTransitionStartTime.pendingLanes
+          ), nestedPassiveUpdateCount = 0, rootWithPassiveNestedUpdates = null);
+          var remainingLanes = startViewTransitionStartTime.pendingLanes;
           0 === remainingLanes && (legacyErrorBoundariesThatAlreadyFailed = null);
-          rootDidHavePassiveEffects || commitDoubleInvokeEffectsInDEV(root2);
-          rootDidHavePassiveEffects = lanesToEventPriority(lanes);
+          rootDidHavePassiveEffects || commitDoubleInvokeEffectsInDEV(startViewTransitionStartTime);
+          remainingLanes = lanesToEventPriority(endTime);
           finishedWork = finishedWork.stateNode;
           if (injectedHook && "function" === typeof injectedHook.onCommitFiberRoot)
             try {
               var didError = 128 === (finishedWork.current.flags & 128);
-              switch (rootDidHavePassiveEffects) {
+              switch (remainingLanes) {
                 case DiscreteEventPriority:
                   var schedulerPriority = ImmediatePriority;
                   break;
@@ -12483,21 +14298,21 @@ var require_react_dom_client_development = __commonJS({
               );
             } catch (err) {
               hasLoggedError || (hasLoggedError = true, console.error(
-                "React instrumentation encountered an error: %s",
+                "React instrumentation encountered an error: %o",
                 err
               ));
             }
-          isDevToolsPresent && root2.memoizedUpdaters.clear();
+          isDevToolsPresent && startViewTransitionStartTime.memoizedUpdaters.clear();
           onCommitRoot();
-          if (null !== recoverableErrors) {
+          if (null !== abortedViewTransition) {
             didError = ReactSharedInternals.T;
             schedulerPriority = ReactDOMSharedInternals.p;
             ReactDOMSharedInternals.p = DiscreteEventPriority;
             ReactSharedInternals.T = null;
             try {
-              var onRecoverableError = root2.onRecoverableError;
-              for (finishedWork = 0; finishedWork < recoverableErrors.length; finishedWork++) {
-                var recoverableError = recoverableErrors[finishedWork], errorInfo = makeErrorInfo(recoverableError.stack);
+              var onRecoverableError = startViewTransitionStartTime.onRecoverableError;
+              for (finishedWork = 0; finishedWork < abortedViewTransition.length; finishedWork++) {
+                var recoverableError = abortedViewTransition[finishedWork], errorInfo = makeErrorInfo(recoverableError.stack);
                 runWithFiberInDEV(
                   recoverableError.source,
                   onRecoverableError,
@@ -12510,11 +14325,11 @@ var require_react_dom_client_development = __commonJS({
             }
           }
           0 !== (pendingEffectsLanes & 3) && flushPendingEffects();
-          ensureRootIsScheduled(root2);
-          remainingLanes = root2.pendingLanes;
-          0 !== (lanes & 4194090) && 0 !== (remainingLanes & 42) ? (nestedUpdateScheduled = true, root2 === rootWithNestedUpdates ? nestedUpdateCount++ : (nestedUpdateCount = 0, rootWithNestedUpdates = root2)) : nestedUpdateCount = 0;
+          ensureRootIsScheduled(startViewTransitionStartTime);
+          remainingLanes = startViewTransitionStartTime.pendingLanes;
+          0 !== (endTime & 261930) && 0 !== (remainingLanes & 42) ? (nestedUpdateScheduled = true, startViewTransitionStartTime === rootWithNestedUpdates ? nestedUpdateCount++ : (nestedUpdateCount = 0, rootWithNestedUpdates = startViewTransitionStartTime)) : nestedUpdateCount = 0;
+          rootDidHavePassiveEffects || finalizeRender(endTime, commitEndTime);
           flushSyncWorkAcrossRoots_impl(0);
-          markCommitStopped();
         }
       }
       function makeErrorInfo(componentStack) {
@@ -12531,7 +14346,7 @@ var require_react_dom_client_development = __commonJS({
       function releaseRootPooledCache(root2, remainingLanes) {
         0 === (root2.pooledCacheLanes &= remainingLanes) && (remainingLanes = root2.pooledCache, null != remainingLanes && (root2.pooledCache = null, releaseCache(remainingLanes)));
       }
-      function flushPendingEffects(wasDelayedCommit) {
+      function flushPendingEffects() {
         flushMutationEffects();
         flushLayoutEffects();
         flushSpawnedWork();
@@ -12547,42 +14362,106 @@ var require_react_dom_client_development = __commonJS({
         try {
           ReactDOMSharedInternals.p = priority;
           ReactSharedInternals.T = null;
-          priority = pendingPassiveTransitions;
+          var transitions = pendingPassiveTransitions;
           pendingPassiveTransitions = null;
-          var root$jscomp$0 = pendingEffectsRoot, lanes = pendingEffectsLanes;
+          priority = pendingEffectsRoot;
+          var lanes = pendingEffectsLanes;
           pendingEffectsStatus = NO_PENDING_EFFECTS;
           pendingFinishedWork = pendingEffectsRoot = null;
           pendingEffectsLanes = 0;
           if ((executionContext & (RenderContext | CommitContext)) !== NoContext)
             throw Error("Cannot flush passive effects while already rendering.");
+          setCurrentTrackFromLanes(lanes);
           isFlushingPassiveEffects = true;
           didScheduleUpdateDuringPassiveEffects = false;
-          null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markPassiveEffectsStarted && injectedProfilingHooks.markPassiveEffectsStarted(lanes);
-          var prevExecutionContext = executionContext;
+          var passiveEffectStartTime = 0;
+          commitErrors = null;
+          passiveEffectStartTime = now$1();
+          if (pendingDelayedCommitReason === ANIMATION_STARTED_COMMIT)
+            logAnimatingPhase(
+              commitEndTime,
+              passiveEffectStartTime,
+              animatingTask
+            );
+          else {
+            var startTime = commitEndTime, endTime = passiveEffectStartTime, delayedUntilPaint = pendingDelayedCommitReason === DELAYED_PASSIVE_COMMIT;
+            !supportsUserTiming || endTime <= startTime || (workInProgressUpdateTask ? workInProgressUpdateTask.run(
+              console.timeStamp.bind(
+                console,
+                delayedUntilPaint ? "Waiting for Paint" : "Waiting",
+                startTime,
+                endTime,
+                currentTrack,
+                LANES_TRACK_GROUP,
+                "secondary-light"
+              )
+            ) : console.timeStamp(
+              delayedUntilPaint ? "Waiting for Paint" : "Waiting",
+              startTime,
+              endTime,
+              currentTrack,
+              LANES_TRACK_GROUP,
+              "secondary-light"
+            ));
+          }
+          startTime = executionContext;
           executionContext |= CommitContext;
-          commitPassiveUnmountOnFiber(root$jscomp$0.current);
+          var finishedWork = priority.current;
+          resetComponentEffectTimers();
+          commitPassiveUnmountOnFiber(finishedWork);
+          var finishedWork$jscomp$0 = priority.current;
+          finishedWork = pendingEffectsRenderEndTime;
+          resetComponentEffectTimers();
           commitPassiveMountOnFiber(
-            root$jscomp$0,
-            root$jscomp$0.current,
+            priority,
+            finishedWork$jscomp$0,
             lanes,
-            priority
+            transitions,
+            finishedWork
           );
-          null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markPassiveEffectsStopped && injectedProfilingHooks.markPassiveEffectsStopped();
-          commitDoubleInvokeEffectsInDEV(root$jscomp$0);
-          executionContext = prevExecutionContext;
+          commitDoubleInvokeEffectsInDEV(priority);
+          executionContext = startTime;
+          var passiveEffectsEndTime = now$1();
+          finishedWork$jscomp$0 = passiveEffectStartTime;
+          finishedWork = workInProgressUpdateTask;
+          null !== commitErrors ? logCommitErrored(
+            finishedWork$jscomp$0,
+            passiveEffectsEndTime,
+            commitErrors,
+            true,
+            finishedWork
+          ) : !supportsUserTiming || passiveEffectsEndTime <= finishedWork$jscomp$0 || (finishedWork ? finishedWork.run(
+            console.timeStamp.bind(
+              console,
+              "Remaining Effects",
+              finishedWork$jscomp$0,
+              passiveEffectsEndTime,
+              currentTrack,
+              LANES_TRACK_GROUP,
+              "secondary-dark"
+            )
+          ) : console.timeStamp(
+            "Remaining Effects",
+            finishedWork$jscomp$0,
+            passiveEffectsEndTime,
+            currentTrack,
+            LANES_TRACK_GROUP,
+            "secondary-dark"
+          ));
+          finalizeRender(lanes, passiveEffectsEndTime);
           flushSyncWorkAcrossRoots_impl(0, false);
-          didScheduleUpdateDuringPassiveEffects ? root$jscomp$0 === rootWithPassiveNestedUpdates ? nestedPassiveUpdateCount++ : (nestedPassiveUpdateCount = 0, rootWithPassiveNestedUpdates = root$jscomp$0) : nestedPassiveUpdateCount = 0;
+          didScheduleUpdateDuringPassiveEffects ? priority === rootWithPassiveNestedUpdates ? nestedPassiveUpdateCount++ : (nestedPassiveUpdateCount = 0, rootWithPassiveNestedUpdates = priority) : nestedPassiveUpdateCount = 0;
           didScheduleUpdateDuringPassiveEffects = isFlushingPassiveEffects = false;
           if (injectedHook && "function" === typeof injectedHook.onPostCommitFiberRoot)
             try {
-              injectedHook.onPostCommitFiberRoot(rendererID, root$jscomp$0);
+              injectedHook.onPostCommitFiberRoot(rendererID, priority);
             } catch (err) {
               hasLoggedError || (hasLoggedError = true, console.error(
-                "React instrumentation encountered an error: %s",
+                "React instrumentation encountered an error: %o",
                 err
               ));
             }
-          var stateNode = root$jscomp$0.current.stateNode;
+          var stateNode = priority.current.stateNode;
           stateNode.effectDuration = 0;
           stateNode.passiveEffectDuration = 0;
           return true;
@@ -12592,6 +14471,7 @@ var require_react_dom_client_development = __commonJS({
       }
       function captureCommitPhaseErrorOnRoot(rootFiber, sourceFiber, error) {
         sourceFiber = createCapturedValueAtFiber(error, sourceFiber);
+        recordEffectError(sourceFiber);
         sourceFiber = createRootErrorUpdate(rootFiber.stateNode, sourceFiber, 2);
         rootFiber = enqueueUpdate(rootFiber, sourceFiber, 2);
         null !== rootFiber && (markRootUpdated$1(rootFiber, 2), ensureRootIsScheduled(rootFiber));
@@ -12614,6 +14494,7 @@ var require_react_dom_client_development = __commonJS({
               var instance = nearestMountedAncestor.stateNode;
               if ("function" === typeof nearestMountedAncestor.type.getDerivedStateFromError || "function" === typeof instance.componentDidCatch && (null === legacyErrorBoundariesThatAlreadyFailed || !legacyErrorBoundariesThatAlreadyFailed.has(instance))) {
                 sourceFiber = createCapturedValueAtFiber(error, sourceFiber);
+                recordEffectError(sourceFiber);
                 error = createClassErrorUpdate(2);
                 instance = enqueueUpdate(nearestMountedAncestor, error, 2);
                 null !== instance && (initializeClassErrorUpdate(
@@ -12648,6 +14529,7 @@ var require_react_dom_client_development = __commonJS({
         null !== pingCache && pingCache.delete(wakeable);
         root2.pingedLanes |= root2.suspendedLanes & pingedLanes;
         root2.warmLanes &= ~pingedLanes;
+        0 !== (pingedLanes & 127) ? 0 > blockingUpdateTime && (blockingClampTime = blockingUpdateTime = now(), blockingUpdateTask = createTask("Promise Resolved"), blockingUpdateType = PINGED_UPDATE) : 0 !== (pingedLanes & 4194048) && 0 > transitionUpdateTime && (transitionClampTime = transitionUpdateTime = now(), transitionUpdateTask = createTask("Promise Resolved"), transitionUpdateType = PINGED_UPDATE);
         isConcurrentActEnvironment() && null === ReactSharedInternals.actQueue && console.error(
           "A suspended resource finished loading inside a test, but the event was not wrapped in act(...).\n\nWhen testing, code that resolves suspended data should be wrapped into act(...):\n\nact(() => {\n  /* finish loading suspended data */\n});\n/* assert on the output */\n\nThis ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act"
         );
@@ -12667,6 +14549,7 @@ var require_react_dom_client_development = __commonJS({
       function resolveRetryWakeable(boundaryFiber, wakeable) {
         var retryLane = 0;
         switch (boundaryFiber.tag) {
+          case 31:
           case 13:
             var retryCache = boundaryFiber.stateNode;
             var suspenseState = boundaryFiber.memoizedState;
@@ -12695,8 +14578,7 @@ var require_react_dom_client_development = __commonJS({
               fiber,
               doubleInvokeEffectsOnFiber,
               root2,
-              fiber,
-              (fiber.mode & NoStrictPassiveEffectsMode) === NoMode
+              fiber
             ) : recursivelyTraverseAndDoubleInvokeEffectsInDEV(
               root2,
               fiber,
@@ -12717,10 +14599,9 @@ var require_react_dom_client_development = __commonJS({
           }
       }
       function doubleInvokeEffectsOnFiber(root2, fiber) {
-        var shouldDoubleInvokePassiveEffects = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : true;
         setIsStrictModeForDevtools(true);
         try {
-          disappearLayoutEffects(fiber), shouldDoubleInvokePassiveEffects && disconnectPassiveEffect(fiber), reappearLayoutEffects(root2, fiber.alternate, fiber, false), shouldDoubleInvokePassiveEffects && reconnectPassiveEffects(root2, fiber, 0, null, false, 0);
+          disappearLayoutEffects(fiber), disconnectPassiveEffect(fiber), reappearLayoutEffects(root2, fiber.alternate, fiber, false), reconnectPassiveEffects(root2, fiber, 0, null, false, 0);
         } finally {
           setIsStrictModeForDevtools(false);
         }
@@ -12745,7 +14626,7 @@ var require_react_dom_client_development = __commonJS({
             } else didWarnStateUpdateForNotYetMountedComponent = /* @__PURE__ */ new Set([tag]);
             runWithFiberInDEV(fiber, function() {
               console.error(
-                "Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously later calls tries to update the component. Move this work to useEffect instead."
+                "Can't perform a React state update on a component that hasn't mounted yet. This indicates that you have a side-effect in your render function that asynchronously tries to update the component. Move this work to useEffect instead."
               );
             });
           }
@@ -12802,12 +14683,13 @@ var require_react_dom_client_development = __commonJS({
         }
       }
       function processRootScheduleInImmediateTask() {
+        schedulerEvent = window.event;
         processRootScheduleInMicrotask();
       }
       function processRootScheduleInMicrotask() {
         mightHavePendingSyncWork = didScheduleMicrotask_act = didScheduleMicrotask = false;
         var syncTransitionLanes = 0;
-        0 !== currentEventTransitionLane && (shouldAttemptEagerTransition() && (syncTransitionLanes = currentEventTransitionLane), currentEventTransitionLane = 0);
+        0 !== currentEventTransitionLane && shouldAttemptEagerTransition() && (syncTransitionLanes = currentEventTransitionLane);
         for (var currentTime = now$1(), prev = null, root2 = firstScheduledRoot; null !== root2; ) {
           var next = root2.next, nextLanes = scheduleTaskForRootDuringMicrotask(root2, currentTime);
           if (0 === nextLanes)
@@ -12816,7 +14698,8 @@ var require_react_dom_client_development = __commonJS({
             mightHavePendingSyncWork = true;
           root2 = next;
         }
-        flushSyncWorkAcrossRoots_impl(syncTransitionLanes);
+        pendingEffectsStatus !== NO_PENDING_EFFECTS && pendingEffectsStatus !== PENDING_PASSIVE_PHASE || flushSyncWorkAcrossRoots_impl(syncTransitionLanes);
+        0 !== currentEventTransitionLane && (currentEventTransitionLane = 0);
       }
       function scheduleTaskForRootDuringMicrotask(root2, currentTime) {
         for (var suspendedLanes = root2.suspendedLanes, pingedLanes = root2.pingedLanes, expirationTimes = root2.expirationTimes, lanes = root2.pendingLanes & -62914561; 0 < lanes; ) {
@@ -12869,9 +14752,11 @@ var require_react_dom_client_development = __commonJS({
       }
       function performWorkOnRootViaSchedulerTask(root2, didTimeout) {
         nestedUpdateScheduled = currentUpdateIsNested = false;
+        schedulerEvent = window.event;
         if (pendingEffectsStatus !== NO_PENDING_EFFECTS && pendingEffectsStatus !== PENDING_PASSIVE_PHASE)
           return root2.callbackNode = null, root2.callbackPriority = 0, null;
         var originalCallbackNode = root2.callbackNode;
+        pendingDelayedCommitReason === IMMEDIATE_COMMIT && (pendingDelayedCommitReason = DELAYED_PASSIVE_COMMIT);
         if (flushPendingEffects() && root2.callbackNode !== originalCallbackNode)
           return null;
         var workInProgressRootRenderLanes$jscomp$0 = workInProgressRootRenderLanes;
@@ -12911,7 +14796,11 @@ var require_react_dom_client_development = __commonJS({
         });
       }
       function requestTransitionLane() {
-        0 === currentEventTransitionLane && (currentEventTransitionLane = claimNextTransitionLane());
+        if (0 === currentEventTransitionLane) {
+          var actionScopeLane = currentEntangledLane;
+          0 === actionScopeLane && (actionScopeLane = nextTransitionUpdateLane, nextTransitionUpdateLane <<= 1, 0 === (nextTransitionUpdateLane & 261888) && (nextTransitionUpdateLane = 256));
+          currentEventTransitionLane = actionScopeLane;
+        }
         return currentEventTransitionLane;
       }
       function coerceFormActionProp(actionProp) {
@@ -13291,23 +15180,26 @@ var require_react_dom_client_development = __commonJS({
                   accumulateTargetOnly = _instance2;
                   if (SyntheticEventCtor && reactEventType)
                     b: {
-                      inCapturePhase = SyntheticEventCtor;
-                      reactEventName = reactEventType;
-                      instance = 0;
-                      for (lastHostComponent = inCapturePhase; lastHostComponent; lastHostComponent = getParent(lastHostComponent))
-                        instance++;
+                      inCapturePhase = getParent;
+                      reactEventName = SyntheticEventCtor;
+                      instance = reactEventType;
                       lastHostComponent = 0;
-                      for (_instance2 = reactEventName; _instance2; _instance2 = getParent(_instance2))
+                      for (_instance2 = reactEventName; _instance2; _instance2 = inCapturePhase(_instance2))
                         lastHostComponent++;
-                      for (; 0 < instance - lastHostComponent; )
-                        inCapturePhase = getParent(inCapturePhase), instance--;
-                      for (; 0 < lastHostComponent - instance; )
-                        reactEventName = getParent(reactEventName), lastHostComponent--;
-                      for (; instance--; ) {
-                        if (inCapturePhase === reactEventName || null !== reactEventName && inCapturePhase === reactEventName.alternate)
+                      _instance2 = 0;
+                      for (var tempB = instance; tempB; tempB = inCapturePhase(tempB))
+                        _instance2++;
+                      for (; 0 < lastHostComponent - _instance2; )
+                        reactEventName = inCapturePhase(reactEventName), lastHostComponent--;
+                      for (; 0 < _instance2 - lastHostComponent; )
+                        instance = inCapturePhase(instance), _instance2--;
+                      for (; lastHostComponent--; ) {
+                        if (reactEventName === instance || null !== instance && reactEventName === instance.alternate) {
+                          inCapturePhase = reactEventName;
                           break b;
-                        inCapturePhase = getParent(inCapturePhase);
-                        reactEventName = getParent(reactEventName);
+                        }
+                        reactEventName = inCapturePhase(reactEventName);
+                        instance = inCapturePhase(instance);
                       }
                       inCapturePhase = null;
                     }
@@ -13541,8 +15433,6 @@ var require_react_dom_client_development = __commonJS({
       function checkForUnmatchedText(serverText, clientText) {
         clientText = normalizeMarkupForTextOrAttribute(clientText);
         return normalizeMarkupForTextOrAttribute(serverText) === clientText ? true : false;
-      }
-      function noop$1() {
       }
       function setProp(domElement, tag, key, value, props, prevValue) {
         switch (key) {
@@ -14012,7 +15902,6 @@ var require_react_dom_client_development = __commonJS({
               hasSrcSet,
               false
             );
-            track(domElement);
             return;
           case "select":
             checkControlledValueProps("select", props);
@@ -14079,7 +15968,6 @@ var require_react_dom_client_development = __commonJS({
                 }
             validateTextareaProps(domElement, props);
             initTextarea(domElement, hasSrc, hasSrcSet, propKey);
-            track(domElement);
             return;
           case "option":
             validateOptionProps(domElement, props);
@@ -15158,6 +17046,43 @@ var require_react_dom_client_development = __commonJS({
             return list.slice(0, -1).join(", ") + ", " + combinator + " " + list[list.length - 1];
         }
       }
+      function isLikelyStaticResource(initiatorType) {
+        switch (initiatorType) {
+          case "css":
+          case "script":
+          case "font":
+          case "img":
+          case "image":
+          case "input":
+          case "link":
+            return true;
+          default:
+            return false;
+        }
+      }
+      function estimateBandwidth() {
+        if ("function" === typeof performance.getEntriesByType) {
+          for (var count = 0, bits = 0, resourceEntries = performance.getEntriesByType("resource"), i = 0; i < resourceEntries.length; i++) {
+            var entry = resourceEntries[i], transferSize = entry.transferSize, initiatorType = entry.initiatorType, duration = entry.duration;
+            if (transferSize && duration && isLikelyStaticResource(initiatorType)) {
+              initiatorType = 0;
+              duration = entry.responseEnd;
+              for (i += 1; i < resourceEntries.length; i++) {
+                var overlapEntry = resourceEntries[i], overlapStartTime = overlapEntry.startTime;
+                if (overlapStartTime > duration) break;
+                var overlapTransferSize = overlapEntry.transferSize, overlapInitiatorType = overlapEntry.initiatorType;
+                overlapTransferSize && isLikelyStaticResource(overlapInitiatorType) && (overlapEntry = overlapEntry.responseEnd, initiatorType += overlapTransferSize * (overlapEntry < duration ? 1 : (duration - overlapStartTime) / (overlapEntry - overlapStartTime)));
+              }
+              --i;
+              bits += 8 * (transferSize + initiatorType) / (entry.duration / 1e3);
+              count++;
+              if (10 < count) break;
+            }
+          }
+          if (0 < count) return bits / count / 1e6;
+        }
+        return navigator.connection && (count = navigator.connection.downlink, "number" === typeof count) ? count : 5;
+      }
       function getOwnerDocumentFromRootContainer(rootContainerElement) {
         return 9 === rootContainerElement.nodeType ? rootContainerElement : rootContainerElement.ownerDocument;
       }
@@ -15196,6 +17121,14 @@ var require_react_dom_client_development = __commonJS({
         currentPopstateTransitionEvent = null;
         return false;
       }
+      function resolveEventType() {
+        var event = window.event;
+        return event && event !== schedulerEvent ? event.type : null;
+      }
+      function resolveEventTimeStamp() {
+        var event = window.event;
+        return event && event !== schedulerEvent ? event.timeStamp : -1.1;
+      }
       function handleErrorInNextTick(error) {
         setTimeout(function() {
           throw error;
@@ -15213,6 +17146,8 @@ var require_react_dom_client_development = __commonJS({
             newProps.src ? domElement.src = newProps.src : newProps.srcSet && (domElement.srcset = newProps.srcSet);
         }
       }
+      function commitHydratedInstance() {
+      }
       function commitUpdate(domElement, type, oldProps, newProps) {
         updateProperties(domElement, type, oldProps, newProps);
         domElement[internalPropsKey] = newProps;
@@ -15223,6 +17158,23 @@ var require_react_dom_client_development = __commonJS({
       function commitTextUpdate(textInstance, oldText, newText) {
         textInstance.nodeValue = newText;
       }
+      function warnForReactChildrenConflict(container) {
+        if (!container.__reactWarnedAboutChildrenConflict) {
+          var props = container[internalPropsKey] || null;
+          if (null !== props) {
+            var fiber = getInstanceFromNode(container);
+            null !== fiber && ("string" === typeof props.children || "number" === typeof props.children ? (container.__reactWarnedAboutChildrenConflict = true, runWithFiberInDEV(fiber, function() {
+              console.error(
+                'Cannot use a ref on a React element as a container to `createRoot` or `createPortal` if that element also sets "children" text content using React. It should be a leaf with no children. Otherwise it\'s ambiguous which children should be used.'
+              );
+            })) : null != props.dangerouslySetInnerHTML && (container.__reactWarnedAboutChildrenConflict = true, runWithFiberInDEV(fiber, function() {
+              console.error(
+                'Cannot use a ref on a React element as a container to `createRoot` or `createPortal` if that element also sets "dangerouslySetInnerHTML" using React. It should be a leaf with no children. Otherwise it\'s ambiguous which children should be used.'
+              );
+            })));
+          }
+        }
+      }
       function isSingletonScope(type) {
         return "head" === type;
       }
@@ -15232,37 +17184,56 @@ var require_react_dom_client_development = __commonJS({
       function removeChildFromContainer(container, child) {
         (9 === container.nodeType ? container.body : "HTML" === container.nodeName ? container.ownerDocument.body : container).removeChild(child);
       }
-      function clearSuspenseBoundary(parentInstance, suspenseInstance) {
-        var node = suspenseInstance, possiblePreambleContribution = 0, depth = 0;
+      function clearHydrationBoundary(parentInstance, hydrationInstance) {
+        var node = hydrationInstance, depth = 0;
         do {
           var nextNode = node.nextSibling;
           parentInstance.removeChild(node);
           if (nextNode && 8 === nextNode.nodeType)
-            if (node = nextNode.data, node === SUSPENSE_END_DATA) {
-              if (0 < possiblePreambleContribution && 8 > possiblePreambleContribution) {
-                node = possiblePreambleContribution;
-                var ownerDocument = parentInstance.ownerDocument;
-                node & PREAMBLE_CONTRIBUTION_HTML && releaseSingletonInstance(ownerDocument.documentElement);
-                node & PREAMBLE_CONTRIBUTION_BODY && releaseSingletonInstance(ownerDocument.body);
-                if (node & PREAMBLE_CONTRIBUTION_HEAD)
-                  for (node = ownerDocument.head, releaseSingletonInstance(node), ownerDocument = node.firstChild; ownerDocument; ) {
-                    var nextNode$jscomp$0 = ownerDocument.nextSibling, nodeName = ownerDocument.nodeName;
-                    ownerDocument[internalHoistableMarker] || "SCRIPT" === nodeName || "STYLE" === nodeName || "LINK" === nodeName && "stylesheet" === ownerDocument.rel.toLowerCase() || node.removeChild(ownerDocument);
-                    ownerDocument = nextNode$jscomp$0;
-                  }
-              }
+            if (node = nextNode.data, node === SUSPENSE_END_DATA || node === ACTIVITY_END_DATA) {
               if (0 === depth) {
                 parentInstance.removeChild(nextNode);
-                retryIfBlockedOn(suspenseInstance);
+                retryIfBlockedOn(hydrationInstance);
                 return;
               }
               depth--;
+            } else if (node === SUSPENSE_START_DATA || node === SUSPENSE_PENDING_START_DATA || node === SUSPENSE_QUEUED_START_DATA || node === SUSPENSE_FALLBACK_START_DATA || node === ACTIVITY_START_DATA)
+              depth++;
+            else if (node === PREAMBLE_CONTRIBUTION_HTML)
+              releaseSingletonInstance(
+                parentInstance.ownerDocument.documentElement
+              );
+            else if (node === PREAMBLE_CONTRIBUTION_HEAD) {
+              node = parentInstance.ownerDocument.head;
+              releaseSingletonInstance(node);
+              for (var node$jscomp$0 = node.firstChild; node$jscomp$0; ) {
+                var nextNode$jscomp$0 = node$jscomp$0.nextSibling, nodeName = node$jscomp$0.nodeName;
+                node$jscomp$0[internalHoistableMarker] || "SCRIPT" === nodeName || "STYLE" === nodeName || "LINK" === nodeName && "stylesheet" === node$jscomp$0.rel.toLowerCase() || node.removeChild(node$jscomp$0);
+                node$jscomp$0 = nextNode$jscomp$0;
+              }
             } else
-              node === SUSPENSE_START_DATA || node === SUSPENSE_PENDING_START_DATA || node === SUSPENSE_FALLBACK_START_DATA ? depth++ : possiblePreambleContribution = node.charCodeAt(0) - 48;
-          else possiblePreambleContribution = 0;
+              node === PREAMBLE_CONTRIBUTION_BODY && releaseSingletonInstance(parentInstance.ownerDocument.body);
           node = nextNode;
         } while (node);
-        retryIfBlockedOn(suspenseInstance);
+        retryIfBlockedOn(hydrationInstance);
+      }
+      function hideOrUnhideDehydratedBoundary(suspenseInstance, isHidden) {
+        var node = suspenseInstance;
+        suspenseInstance = 0;
+        do {
+          var nextNode = node.nextSibling;
+          1 === node.nodeType ? isHidden ? (node._stashedDisplay = node.style.display, node.style.display = "none") : (node.style.display = node._stashedDisplay || "", "" === node.getAttribute("style") && node.removeAttribute("style")) : 3 === node.nodeType && (isHidden ? (node._stashedText = node.nodeValue, node.nodeValue = "") : node.nodeValue = node._stashedText || "");
+          if (nextNode && 8 === nextNode.nodeType)
+            if (node = nextNode.data, node === SUSPENSE_END_DATA)
+              if (0 === suspenseInstance) break;
+              else suspenseInstance--;
+            else
+              node !== SUSPENSE_START_DATA && node !== SUSPENSE_PENDING_START_DATA && node !== SUSPENSE_QUEUED_START_DATA && node !== SUSPENSE_FALLBACK_START_DATA || suspenseInstance++;
+          node = nextNode;
+        } while (node);
+      }
+      function hideDehydratedBoundary(suspenseInstance) {
+        hideOrUnhideDehydratedBoundary(suspenseInstance, true);
       }
       function hideInstance(instance) {
         instance = instance.style;
@@ -15270,6 +17241,9 @@ var require_react_dom_client_development = __commonJS({
       }
       function hideTextInstance(textInstance) {
         textInstance.nodeValue = "";
+      }
+      function unhideDehydratedBoundary(dehydratedInstance) {
+        hideOrUnhideDehydratedBoundary(dehydratedInstance, false);
       }
       function unhideInstance(instance, props) {
         props = props[STYLE];
@@ -15352,12 +17326,26 @@ var require_react_dom_client_development = __commonJS({
         }
         return instance;
       }
+      function canHydrateHydrationBoundary(instance, inRootOrSingleton) {
+        for (; 8 !== instance.nodeType; ) {
+          if ((1 !== instance.nodeType || "INPUT" !== instance.nodeName || "hidden" !== instance.type) && !inRootOrSingleton)
+            return null;
+          instance = getNextHydratable(instance.nextSibling);
+          if (null === instance) return null;
+        }
+        return instance;
+      }
+      function isSuspenseInstancePending(instance) {
+        return instance.data === SUSPENSE_PENDING_START_DATA || instance.data === SUSPENSE_QUEUED_START_DATA;
+      }
       function isSuspenseInstanceFallback(instance) {
-        return instance.data === SUSPENSE_FALLBACK_START_DATA || instance.data === SUSPENSE_PENDING_START_DATA && instance.ownerDocument.readyState === DOCUMENT_READY_STATE_COMPLETE;
+        return instance.data === SUSPENSE_FALLBACK_START_DATA || instance.data === SUSPENSE_PENDING_START_DATA && instance.ownerDocument.readyState !== DOCUMENT_READY_STATE_LOADING;
       }
       function registerSuspenseInstanceRetry(instance, callback) {
         var ownerDocument = instance.ownerDocument;
-        if (instance.data !== SUSPENSE_PENDING_START_DATA || ownerDocument.readyState === DOCUMENT_READY_STATE_COMPLETE)
+        if (instance.data === SUSPENSE_QUEUED_START_DATA)
+          instance._reactRetry = callback;
+        else if (instance.data !== SUSPENSE_PENDING_START_DATA || ownerDocument.readyState !== DOCUMENT_READY_STATE_LOADING)
           callback();
         else {
           var listener = function() {
@@ -15374,9 +17362,10 @@ var require_react_dom_client_development = __commonJS({
           if (1 === nodeType || 3 === nodeType) break;
           if (8 === nodeType) {
             nodeType = node.data;
-            if (nodeType === SUSPENSE_START_DATA || nodeType === SUSPENSE_FALLBACK_START_DATA || nodeType === SUSPENSE_PENDING_START_DATA || nodeType === FORM_STATE_IS_MATCHING || nodeType === FORM_STATE_IS_NOT_MATCHING)
+            if (nodeType === SUSPENSE_START_DATA || nodeType === SUSPENSE_FALLBACK_START_DATA || nodeType === SUSPENSE_PENDING_START_DATA || nodeType === SUSPENSE_QUEUED_START_DATA || nodeType === ACTIVITY_START_DATA || nodeType === FORM_STATE_IS_MATCHING || nodeType === FORM_STATE_IS_NOT_MATCHING)
               break;
-            if (nodeType === SUSPENSE_END_DATA) return null;
+            if (nodeType === SUSPENSE_END_DATA || nodeType === ACTIVITY_END_DATA)
+              return null;
           }
         }
         return node;
@@ -15389,36 +17378,37 @@ var require_react_dom_client_development = __commonJS({
           }
           return { type: JSCompiler_temp_const, props: serverDifferences };
         }
-        return 8 === instance.nodeType ? { type: "Suspense", props: {} } : instance.nodeValue;
+        return 8 === instance.nodeType ? instance.data === ACTIVITY_START_DATA ? { type: "Activity", props: {} } : { type: "Suspense", props: {} } : instance.nodeValue;
       }
       function diffHydratedTextForDevWarnings(textInstance, text, parentProps) {
         return null === parentProps || true !== parentProps[SUPPRESS_HYDRATION_WARNING] ? (textInstance.nodeValue === text ? textInstance = null : (text = normalizeMarkupForTextOrAttribute(text), textInstance = normalizeMarkupForTextOrAttribute(textInstance.nodeValue) === text ? null : textInstance.nodeValue), textInstance) : null;
       }
-      function getNextHydratableInstanceAfterSuspenseInstance(suspenseInstance) {
-        suspenseInstance = suspenseInstance.nextSibling;
-        for (var depth = 0; suspenseInstance; ) {
-          if (8 === suspenseInstance.nodeType) {
-            var data = suspenseInstance.data;
-            if (data === SUSPENSE_END_DATA) {
+      function getNextHydratableInstanceAfterHydrationBoundary(hydrationInstance) {
+        hydrationInstance = hydrationInstance.nextSibling;
+        for (var depth = 0; hydrationInstance; ) {
+          if (8 === hydrationInstance.nodeType) {
+            var data = hydrationInstance.data;
+            if (data === SUSPENSE_END_DATA || data === ACTIVITY_END_DATA) {
               if (0 === depth)
-                return getNextHydratable(suspenseInstance.nextSibling);
+                return getNextHydratable(hydrationInstance.nextSibling);
               depth--;
             } else
-              data !== SUSPENSE_START_DATA && data !== SUSPENSE_FALLBACK_START_DATA && data !== SUSPENSE_PENDING_START_DATA || depth++;
+              data !== SUSPENSE_START_DATA && data !== SUSPENSE_FALLBACK_START_DATA && data !== SUSPENSE_PENDING_START_DATA && data !== SUSPENSE_QUEUED_START_DATA && data !== ACTIVITY_START_DATA || depth++;
           }
-          suspenseInstance = suspenseInstance.nextSibling;
+          hydrationInstance = hydrationInstance.nextSibling;
         }
         return null;
       }
-      function getParentSuspenseInstance(targetInstance) {
+      function getParentHydrationBoundary(targetInstance) {
         targetInstance = targetInstance.previousSibling;
         for (var depth = 0; targetInstance; ) {
           if (8 === targetInstance.nodeType) {
             var data = targetInstance.data;
-            if (data === SUSPENSE_START_DATA || data === SUSPENSE_FALLBACK_START_DATA || data === SUSPENSE_PENDING_START_DATA) {
+            if (data === SUSPENSE_START_DATA || data === SUSPENSE_FALLBACK_START_DATA || data === SUSPENSE_PENDING_START_DATA || data === SUSPENSE_QUEUED_START_DATA || data === ACTIVITY_START_DATA) {
               if (0 === depth) return targetInstance;
               depth--;
-            } else data === SUSPENSE_END_DATA && depth++;
+            } else
+              data !== SUSPENSE_END_DATA && data !== ACTIVITY_END_DATA || depth++;
           }
           targetInstance = targetInstance.previousSibling;
         }
@@ -15426,6 +17416,9 @@ var require_react_dom_client_development = __commonJS({
       }
       function commitHydratedContainer(container) {
         retryIfBlockedOn(container);
+      }
+      function commitHydratedActivityInstance(activityInstance) {
+        retryIfBlockedOn(activityInstance);
       }
       function commitHydratedSuspenseInstance(suspenseInstance) {
         retryIfBlockedOn(suspenseInstance);
@@ -15804,14 +17797,7 @@ var require_react_dom_client_development = __commonJS({
       function preloadResource(resource) {
         return "stylesheet" === resource.type && (resource.state.loading & Settled) === NotLoaded ? false : true;
       }
-      function noop() {
-      }
-      function suspendResource(hoistableRoot, resource, props) {
-        if (null === suspendedState)
-          throw Error(
-            "Internal React Error: suspendedState null when it was expected to exists. Please report this as a React bug."
-          );
-        var state = suspendedState;
+      function suspendResource(state, hoistableRoot, resource, props) {
         if ("stylesheet" === resource.type && ("string" !== typeof props.media || false !== matchMedia(props.media).matches) && (resource.state.loading & Inserted) === NotLoaded) {
           if (null === resource.instance) {
             var key = getStyleKey(props.href), instance = hoistableRoot.querySelector(
@@ -15843,14 +17829,9 @@ var require_react_dom_client_development = __commonJS({
           (hoistableRoot = resource.state.preload) && (resource.state.loading & Settled) === NotLoaded && (state.count++, resource = onUnsuspend.bind(state), hoistableRoot.addEventListener("load", resource), hoistableRoot.addEventListener("error", resource));
         }
       }
-      function waitForCommitToBeReady() {
-        if (null === suspendedState)
-          throw Error(
-            "Internal React Error: suspendedState null when it was expected to exists. Please report this as a React bug."
-          );
-        var state = suspendedState;
+      function waitForCommitToBeReady(state, timeoutOffset) {
         state.stylesheets && 0 === state.count && insertSuspendedStylesheets(state, state.stylesheets);
-        return 0 < state.count ? function(commit) {
+        return 0 < state.count || 0 < state.imgCount ? function(commit) {
           var stylesheetTimer = setTimeout(function() {
             state.stylesheets && insertSuspendedStylesheets(state, state.stylesheets);
             if (state.unsuspend) {
@@ -15858,17 +17839,30 @@ var require_react_dom_client_development = __commonJS({
               state.unsuspend = null;
               unsuspend();
             }
-          }, 6e4);
+          }, SUSPENSEY_STYLESHEET_TIMEOUT + timeoutOffset);
+          0 < state.imgBytes && 0 === estimatedBytesWithinLimit && (estimatedBytesWithinLimit = 125 * estimateBandwidth() * SUSPENSEY_IMAGE_TIME_ESTIMATE);
+          var imgTimer = setTimeout(
+            function() {
+              state.waitingForImages = false;
+              if (0 === state.count && (state.stylesheets && insertSuspendedStylesheets(state, state.stylesheets), state.unsuspend)) {
+                var unsuspend = state.unsuspend;
+                state.unsuspend = null;
+                unsuspend();
+              }
+            },
+            (state.imgBytes > estimatedBytesWithinLimit ? 50 : SUSPENSEY_IMAGE_TIMEOUT) + timeoutOffset
+          );
           state.unsuspend = commit;
           return function() {
             state.unsuspend = null;
             clearTimeout(stylesheetTimer);
+            clearTimeout(imgTimer);
           };
         } : null;
       }
       function onUnsuspend() {
         this.count--;
-        if (0 === this.count) {
+        if (0 === this.count && (0 === this.imgCount || !this.waitingForImages)) {
           if (this.stylesheets)
             insertSuspendedStylesheets(this, this.stylesheets);
           else if (this.unsuspend) {
@@ -15911,7 +17905,7 @@ var require_react_dom_client_development = __commonJS({
           resource.state.loading |= Inserted;
         }
       }
-      function FiberRootNode(containerInfo, tag, hydrate, identifierPrefix, onUncaughtError, onCaughtError, onRecoverableError, formState) {
+      function FiberRootNode(containerInfo, tag, hydrate, identifierPrefix, onUncaughtError, onCaughtError, onRecoverableError, onDefaultTransitionIndicator, formState) {
         this.tag = 1;
         this.containerInfo = containerInfo;
         this.pingCache = this.current = this.pendingChildren = null;
@@ -15936,7 +17930,7 @@ var require_react_dom_client_development = __commonJS({
         for (tag = 0; 31 > tag; tag++) containerInfo.push(/* @__PURE__ */ new Set());
         this._debugRootType = hydrate ? "hydrateRoot()" : "createRoot()";
       }
-      function createFiberRoot(containerInfo, tag, hydrate, initialChildren, hydrationCallbacks, isStrictMode, identifierPrefix, onUncaughtError, onCaughtError, onRecoverableError, transitionCallbacks, formState) {
+      function createFiberRoot(containerInfo, tag, hydrate, initialChildren, hydrationCallbacks, isStrictMode, identifierPrefix, formState, onUncaughtError, onCaughtError, onRecoverableError, onDefaultTransitionIndicator) {
         containerInfo = new FiberRootNode(
           containerInfo,
           tag,
@@ -15945,11 +17939,12 @@ var require_react_dom_client_development = __commonJS({
           onUncaughtError,
           onCaughtError,
           onRecoverableError,
+          onDefaultTransitionIndicator,
           formState
         );
         tag = ConcurrentMode;
         true === isStrictMode && (tag |= StrictLegacyMode | StrictEffectsMode);
-        isDevToolsPresent && (tag |= ProfileMode);
+        tag |= ProfileMode;
         isStrictMode = createFiber(3, null, null, tag);
         containerInfo.current = isStrictMode;
         isStrictMode.stateNode = containerInfo;
@@ -15976,11 +17971,10 @@ var require_react_dom_client_development = __commonJS({
             injectedHook.onScheduleFiberRoot(rendererID, container, element);
           } catch (err) {
             hasLoggedError || (hasLoggedError = true, console.error(
-              "React instrumentation encountered an error: %s",
+              "React instrumentation encountered an error: %o",
               err
             ));
           }
-        null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markRenderScheduled && injectedProfilingHooks.markRenderScheduled(lane);
         parentComponent = getContextForSubtree(parentComponent);
         null === container.context ? container.context = parentComponent : container.pendingContext = parentComponent;
         isRendering && null !== current && !didWarnAboutNestedUpdates && (didWarnAboutNestedUpdates = true, console.error(
@@ -15995,7 +17989,7 @@ var require_react_dom_client_development = __commonJS({
           callback
         ), container.callback = callback);
         element = enqueueUpdate(rootFiber, container, lane);
-        null !== element && (scheduleUpdateOnFiber(element, rootFiber, lane), entangleTransitions(element, rootFiber, lane));
+        null !== element && (startUpdateTimerByLane(lane, "root.render()", null), scheduleUpdateOnFiber(element, rootFiber, lane), entangleTransitions(element, rootFiber, lane));
       }
       function markRetryLaneImpl(fiber, retryLane) {
         fiber = fiber.memoizedState;
@@ -16009,22 +18003,23 @@ var require_react_dom_client_development = __commonJS({
         (fiber = fiber.alternate) && markRetryLaneImpl(fiber, retryLane);
       }
       function attemptContinuousHydration(fiber) {
-        if (13 === fiber.tag) {
+        if (13 === fiber.tag || 31 === fiber.tag) {
           var root2 = enqueueConcurrentRenderForLane(fiber, 67108864);
           null !== root2 && scheduleUpdateOnFiber(root2, fiber, 67108864);
           markRetryLaneIfNotHydrated(fiber, 67108864);
         }
       }
+      function attemptHydrationAtCurrentPriority(fiber) {
+        if (13 === fiber.tag || 31 === fiber.tag) {
+          var lane = requestUpdateLane(fiber);
+          lane = getBumpedLaneForHydrationByLane(lane);
+          var root2 = enqueueConcurrentRenderForLane(fiber, lane);
+          null !== root2 && scheduleUpdateOnFiber(root2, fiber, lane);
+          markRetryLaneIfNotHydrated(fiber, lane);
+        }
+      }
       function getCurrentFiberForDevTools() {
         return current;
-      }
-      function getLaneLabelMap() {
-        for (var map = /* @__PURE__ */ new Map(), lane = 1, index = 0; 31 > index; index++) {
-          var label = getLabelForLane(lane);
-          map.set(lane, label);
-          lane *= 2;
-        }
-        return map;
       }
       function dispatchDiscreteEvent(domEventName, eventSystemFlags, container, nativeEvent) {
         var prevTransition = ReactSharedInternals.T;
@@ -16087,6 +18082,7 @@ var require_react_dom_client_development = __commonJS({
                       }
                     }
                     break;
+                  case 31:
                   case 13:
                     root2 = enqueueConcurrentRenderForLane(fiber, 2), null !== root2 && scheduleUpdateOnFiber(root2, fiber, 2), flushSyncWork$1(), markRetryLaneIfNotHydrated(fiber, 2);
                 }
@@ -16126,6 +18122,10 @@ var require_react_dom_client_development = __commonJS({
             var tag = nearestMounted.tag;
             if (13 === tag) {
               targetNode = getSuspenseInstanceFromFiber(nearestMounted);
+              if (null !== targetNode) return targetNode;
+              targetNode = null;
+            } else if (31 === tag) {
+              targetNode = getActivityInstanceFromFiber(nearestMounted);
               if (null !== targetNode) return targetNode;
               targetNode = null;
             } else if (3 === tag) {
@@ -16335,16 +18335,15 @@ var require_react_dom_client_development = __commonJS({
               if (targetInst = getSuspenseInstanceFromFiber(nearestMounted), null !== targetInst) {
                 queuedTarget.blockedOn = targetInst;
                 runWithPriority(queuedTarget.priority, function() {
-                  if (13 === nearestMounted.tag) {
-                    var lane = requestUpdateLane(nearestMounted);
-                    lane = getBumpedLaneForHydrationByLane(lane);
-                    var root2 = enqueueConcurrentRenderForLane(
-                      nearestMounted,
-                      lane
-                    );
-                    null !== root2 && scheduleUpdateOnFiber(root2, nearestMounted, lane);
-                    markRetryLaneIfNotHydrated(nearestMounted, lane);
-                  }
+                  attemptHydrationAtCurrentPriority(nearestMounted);
+                });
+                return;
+              }
+            } else if (31 === targetInst) {
+              if (targetInst = getActivityInstanceFromFiber(nearestMounted), null !== targetInst) {
+                queuedTarget.blockedOn = targetInst;
+                runWithPriority(queuedTarget.priority, function() {
+                  attemptHydrationAtCurrentPriority(nearestMounted);
                 });
                 return;
               }
@@ -16460,6 +18459,53 @@ var require_react_dom_client_development = __commonJS({
             }
           }
       }
+      function defaultOnDefaultTransitionIndicator() {
+        function handleNavigate(event) {
+          event.canIntercept && "react-transition" === event.info && event.intercept({
+            handler: function() {
+              return new Promise(function(resolve) {
+                return pendingResolve = resolve;
+              });
+            },
+            focusReset: "manual",
+            scroll: "manual"
+          });
+        }
+        function handleNavigateComplete() {
+          null !== pendingResolve && (pendingResolve(), pendingResolve = null);
+          isCancelled || setTimeout(startFakeNavigation, 20);
+        }
+        function startFakeNavigation() {
+          if (!isCancelled && !navigation.transition) {
+            var currentEntry = navigation.currentEntry;
+            currentEntry && null != currentEntry.url && navigation.navigate(currentEntry.url, {
+              state: currentEntry.getState(),
+              info: "react-transition",
+              history: "replace"
+            });
+          }
+        }
+        if ("object" === typeof navigation) {
+          var isCancelled = false, pendingResolve = null;
+          navigation.addEventListener("navigate", handleNavigate);
+          navigation.addEventListener("navigatesuccess", handleNavigateComplete);
+          navigation.addEventListener("navigateerror", handleNavigateComplete);
+          setTimeout(startFakeNavigation, 100);
+          return function() {
+            isCancelled = true;
+            navigation.removeEventListener("navigate", handleNavigate);
+            navigation.removeEventListener(
+              "navigatesuccess",
+              handleNavigateComplete
+            );
+            navigation.removeEventListener(
+              "navigateerror",
+              handleNavigateComplete
+            );
+            null !== pendingResolve && (pendingResolve(), pendingResolve = null);
+          };
+        }
+      }
       function ReactDOMRoot(internalRoot) {
         this._internalRoot = internalRoot;
       }
@@ -16474,7 +18520,7 @@ var require_react_dom_client_development = __commonJS({
         ));
       }
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var Scheduler = require_scheduler(), React2 = require_react(), ReactDOM2 = require_react_dom(), assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = Symbol.for("react.element"), REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_PROVIDER_TYPE = Symbol.for("react.provider"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy");
+      var Scheduler = require_scheduler(), React2 = require_react(), ReactDOM2 = require_react_dom(), assign = Object.assign, REACT_LEGACY_ELEMENT_TYPE = Symbol.for("react.element"), REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy");
       var REACT_ACTIVITY_TYPE = Symbol.for("react.activity");
       var REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");
       var MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM2.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
@@ -16484,7 +18530,11 @@ var require_react_dom_client_development = __commonJS({
         action: null
       }), valueStack = [];
       var fiberStack = [];
-      var index$jscomp$0 = -1, contextStackCursor = createCursor(null), contextFiberStackCursor = createCursor(null), rootInstanceStackCursor = createCursor(null), hostTransitionProviderCursor = createCursor(null), hasOwnProperty = Object.prototype.hasOwnProperty, scheduleCallback$3 = Scheduler.unstable_scheduleCallback, cancelCallback$1 = Scheduler.unstable_cancelCallback, shouldYield = Scheduler.unstable_shouldYield, requestPaint = Scheduler.unstable_requestPaint, now$1 = Scheduler.unstable_now, getCurrentPriorityLevel = Scheduler.unstable_getCurrentPriorityLevel, ImmediatePriority = Scheduler.unstable_ImmediatePriority, UserBlockingPriority = Scheduler.unstable_UserBlockingPriority, NormalPriority$1 = Scheduler.unstable_NormalPriority, LowPriority = Scheduler.unstable_LowPriority, IdlePriority = Scheduler.unstable_IdlePriority, log$1 = Scheduler.log, unstable_setDisableYieldValue = Scheduler.unstable_setDisableYieldValue, rendererID = null, injectedHook = null, injectedProfilingHooks = null, hasLoggedError = false, isDevToolsPresent = "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__, clz32 = Math.clz32 ? Math.clz32 : clz32Fallback, log = Math.log, LN2 = Math.LN2, nextTransitionLane = 256, nextRetryLane = 4194304, DiscreteEventPriority = 2, ContinuousEventPriority = 8, DefaultEventPriority = 32, IdleEventPriority = 268435456, randomKey = Math.random().toString(36).slice(2), internalInstanceKey = "__reactFiber$" + randomKey, internalPropsKey = "__reactProps$" + randomKey, internalContainerInstanceKey = "__reactContainer$" + randomKey, internalEventHandlersKey = "__reactEvents$" + randomKey, internalEventHandlerListenersKey = "__reactListeners$" + randomKey, internalEventHandlesSetKey = "__reactHandles$" + randomKey, internalRootNodeResourcesKey = "__reactResources$" + randomKey, internalHoistableMarker = "__reactMarker$" + randomKey, allNativeEvents = /* @__PURE__ */ new Set(), registrationNameDependencies = {}, possibleRegistrationNames = {}, hasReadOnlyValue = {
+      var index$jscomp$0 = -1, contextStackCursor = createCursor(null), contextFiberStackCursor = createCursor(null), rootInstanceStackCursor = createCursor(null), hostTransitionProviderCursor = createCursor(null), disabledDepth = 0, prevLog, prevInfo, prevWarn, prevError, prevGroup, prevGroupCollapsed, prevGroupEnd;
+      disabledLog.__reactDisabledLog = true;
+      var prefix, suffix, reentry = false;
+      var componentFrameCache = new ("function" === typeof WeakMap ? WeakMap : Map)();
+      var current = null, isRendering = false, hasOwnProperty = Object.prototype.hasOwnProperty, scheduleCallback$3 = Scheduler.unstable_scheduleCallback, cancelCallback$1 = Scheduler.unstable_cancelCallback, shouldYield = Scheduler.unstable_shouldYield, requestPaint = Scheduler.unstable_requestPaint, now$1 = Scheduler.unstable_now, getCurrentPriorityLevel = Scheduler.unstable_getCurrentPriorityLevel, ImmediatePriority = Scheduler.unstable_ImmediatePriority, UserBlockingPriority = Scheduler.unstable_UserBlockingPriority, NormalPriority$1 = Scheduler.unstable_NormalPriority, LowPriority = Scheduler.unstable_LowPriority, IdlePriority = Scheduler.unstable_IdlePriority, log$1 = Scheduler.log, unstable_setDisableYieldValue = Scheduler.unstable_setDisableYieldValue, rendererID = null, injectedHook = null, hasLoggedError = false, isDevToolsPresent = "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__, clz32 = Math.clz32 ? Math.clz32 : clz32Fallback, log = Math.log, LN2 = Math.LN2, nextTransitionUpdateLane = 256, nextTransitionDeferredLane = 262144, nextRetryLane = 4194304, DiscreteEventPriority = 2, ContinuousEventPriority = 8, DefaultEventPriority = 32, IdleEventPriority = 268435456, randomKey = Math.random().toString(36).slice(2), internalInstanceKey = "__reactFiber$" + randomKey, internalPropsKey = "__reactProps$" + randomKey, internalContainerInstanceKey = "__reactContainer$" + randomKey, internalEventHandlersKey = "__reactEvents$" + randomKey, internalEventHandlerListenersKey = "__reactListeners$" + randomKey, internalEventHandlesSetKey = "__reactHandles$" + randomKey, internalRootNodeResourcesKey = "__reactResources$" + randomKey, internalHoistableMarker = "__reactMarker$" + randomKey, allNativeEvents = /* @__PURE__ */ new Set(), registrationNameDependencies = {}, possibleRegistrationNames = {}, hasReadOnlyValue = {
         button: true,
         checkbox: true,
         image: true,
@@ -16494,11 +18544,7 @@ var require_react_dom_client_development = __commonJS({
         submit: true
       }, VALID_ATTRIBUTE_NAME_REGEX = RegExp(
         "^[:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD][:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$"
-      ), illegalAttributeNameCache = {}, validatedAttributeNameCache = {}, disabledDepth = 0, prevLog, prevInfo, prevWarn, prevError, prevGroup, prevGroupCollapsed, prevGroupEnd;
-      disabledLog.__reactDisabledLog = true;
-      var prefix, suffix, reentry = false;
-      var componentFrameCache = new ("function" === typeof WeakMap ? WeakMap : Map)();
-      var current = null, isRendering = false, escapeSelectorAttributeValueInsideDoubleQuotesRegex = /[\n"\\]/g, didWarnValueDefaultValue$1 = false, didWarnCheckedDefaultChecked = false, didWarnSelectedSetOnOption = false, didWarnInvalidChild = false, didWarnInvalidInnerHTML = false;
+      ), illegalAttributeNameCache = {}, validatedAttributeNameCache = {}, escapeSelectorAttributeValueInsideDoubleQuotesRegex = /[\n"\\]/g, didWarnValueDefaultValue$1 = false, didWarnCheckedDefaultChecked = false, didWarnSelectedSetOnOption = false, didWarnInvalidChild = false, didWarnInvalidInnerHTML = false;
       var didWarnValueDefaultValue = false;
       var valuePropNames = ["value", "defaultValue"], didWarnValDefaultVal = false, needsEscaping = /["'&<>\n\t]|^\s|\s$/, specialTags = "address applet area article aside base basefont bgsound blockquote body br button caption center col colgroup dd details dir div dl dt embed fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html iframe img input isindex li link listing main marquee menu menuitem meta nav noembed noframes noscript object ol p param plaintext pre script section select source style summary table tbody td template textarea tfoot th thead title tr track ul wbr xmp".split(
         " "
@@ -17270,7 +19316,11 @@ var require_react_dom_client_development = __commonJS({
         "aria-rowcount": 0,
         "aria-rowindex": 0,
         "aria-rowspan": 0,
-        "aria-setsize": 0
+        "aria-setsize": 0,
+        "aria-braillelabel": 0,
+        "aria-brailleroledescription": 0,
+        "aria-colindextext": 0,
+        "aria-rowindextext": 0
       }, warnedProperties$1 = {}, rARIA$1 = RegExp(
         "^(aria)-[:A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$"
       ), rARIACamel$1 = RegExp(
@@ -17488,20 +19538,7 @@ var require_react_dom_client_development = __commonJS({
         " "
       );
       simpleEventPluginEvents.push("scrollEnd");
-      var CapturedStacks = /* @__PURE__ */ new WeakMap(), OffscreenVisible = 1, OffscreenPassiveEffectsConnected = 2, concurrentQueues = [], concurrentQueuesIndex = 0, concurrentlyUpdatedLanes = 0, emptyContextObject = {};
-      Object.freeze(emptyContextObject);
-      var resolveFamily = null, failedBoundaries = null, NoMode = 0, ConcurrentMode = 1, ProfileMode = 2, StrictLegacyMode = 8, StrictEffectsMode = 16, NoStrictPassiveEffectsMode = 64;
-      var hasBadMapPolyfill = false;
-      try {
-        var nonExtensibleObject = Object.preventExtensions({});
-        /* @__PURE__ */ new Map([[nonExtensibleObject, null]]);
-        /* @__PURE__ */ new Set([nonExtensibleObject]);
-      } catch (e$3) {
-        hasBadMapPolyfill = true;
-      }
-      var forkStack = [], forkStackIndex = 0, treeForkProvider = null, treeForkCount = 0, idStack = [], idStackIndex = 0, treeContextProvider = null, treeContextId = 1, treeContextOverflow = "", hydrationParentFiber = null, nextHydratableInstance = null, isHydrating = false, didSuspendOrErrorDEV = false, hydrationDiffRootDEV = null, hydrationErrors = null, rootOrSingletonContext = false, HydrationMismatchException = Error(
-        "Hydration Mismatch Exception: This is not a real error, and should not leak into userspace. If you're seeing this, it's likely a bug in React."
-      ), lastResetTime = 0;
+      var lastResetTime = 0;
       if ("object" === typeof performance && "function" === typeof performance.now) {
         var localPerformance = performance;
         var getCurrentTime = function() {
@@ -17513,7 +19550,43 @@ var require_react_dom_client_development = __commonJS({
           return localDate.now();
         };
       }
-      var valueCursor = createCursor(null);
+      var reportGlobalError = "function" === typeof reportError ? reportError : function(error) {
+        if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
+          var event = new window.ErrorEvent("error", {
+            bubbles: true,
+            cancelable: true,
+            message: "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error),
+            error
+          });
+          if (!window.dispatchEvent(event)) return;
+        } else if ("object" === typeof process && "function" === typeof process.emit) {
+          process.emit("uncaughtException", error);
+          return;
+        }
+        console.error(error);
+      }, OMITTED_PROP_ERROR = "This object has been omitted by React in the console log to avoid sending too much data from the server. Try logging smaller or more specific objects.", EMPTY_ARRAY = 0, COMPLEX_ARRAY = 1, PRIMITIVE_ARRAY = 2, ENTRIES_ARRAY = 3, REMOVED = "\u2013\xA0", ADDED = "+\xA0", UNCHANGED = "\u2007\xA0", supportsUserTiming = "undefined" !== typeof console && "function" === typeof console.timeStamp && "undefined" !== typeof performance && "function" === typeof performance.measure, COMPONENTS_TRACK = "Components \u269B", LANES_TRACK_GROUP = "Scheduler \u269B", currentTrack = "Blocking", alreadyWarnedForDeepEquality = false, reusableComponentDevToolDetails = {
+        color: "primary",
+        properties: null,
+        tooltipText: "",
+        track: COMPONENTS_TRACK
+      }, reusableComponentOptions = {
+        start: -0,
+        end: -0,
+        detail: { devtools: reusableComponentDevToolDetails }
+      }, resuableChangedPropsEntry = ["Changed Props", ""], DEEP_EQUALITY_WARNING = "This component received deeply equal props. It might benefit from useMemo or the React Compiler in its owner.", reusableDeeplyEqualPropsEntry = ["Changed Props", DEEP_EQUALITY_WARNING], OffscreenVisible = 1, OffscreenPassiveEffectsConnected = 2, concurrentQueues = [], concurrentQueuesIndex = 0, concurrentlyUpdatedLanes = 0, emptyContextObject = {};
+      Object.freeze(emptyContextObject);
+      var resolveFamily = null, failedBoundaries = null, NoMode = 0, ConcurrentMode = 1, ProfileMode = 2, StrictLegacyMode = 8, StrictEffectsMode = 16, SuspenseyImagesMode = 32;
+      var hasBadMapPolyfill = false;
+      try {
+        var nonExtensibleObject = Object.preventExtensions({});
+        /* @__PURE__ */ new Map([[nonExtensibleObject, null]]);
+        /* @__PURE__ */ new Set([nonExtensibleObject]);
+      } catch (e$3) {
+        hasBadMapPolyfill = true;
+      }
+      var CapturedStacks = /* @__PURE__ */ new WeakMap(), forkStack = [], forkStackIndex = 0, treeForkProvider = null, treeForkCount = 0, idStack = [], idStackIndex = 0, treeContextProvider = null, treeContextId = 1, treeContextOverflow = "", hydrationParentFiber = null, nextHydratableInstance = null, isHydrating = false, didSuspendOrErrorDEV = false, hydrationDiffRootDEV = null, hydrationErrors = null, rootOrSingletonContext = false, HydrationMismatchException = Error(
+        "Hydration Mismatch Exception: This is not a real error, and should not leak into userspace. If you're seeing this, it's likely a bug in React."
+      ), valueCursor = createCursor(null);
       var rendererCursorDEV = createCursor(null);
       var rendererSigil = {};
       var currentlyRenderingFiber$1 = null, lastContextDependency = null, isDisallowedContextReadInDEV = false, AbortControllerLocal = "undefined" !== typeof AbortController ? AbortController : function() {
@@ -17538,9 +19611,22 @@ var require_react_dom_client_development = __commonJS({
         _threadCount: 0,
         _currentRenderer: null,
         _currentRenderer2: null
-      }, now = Scheduler.unstable_now, renderStartTime = -0, commitStartTime = -0, profilerStartTime = -1.1, profilerEffectDuration = -0, currentUpdateIsNested = false, nestedUpdateScheduled = false, currentEntangledListeners = null, currentEntangledPendingCount = 0, currentEntangledLane = 0, currentEntangledActionThenable = null, prevOnStartTransitionFinish = ReactSharedInternals.S;
+      }, now = Scheduler.unstable_now, createTask = console.createTask ? console.createTask : function() {
+        return null;
+      }, SPAWNED_UPDATE = 1, PINGED_UPDATE = 2, renderStartTime = -0, commitStartTime = -0, commitEndTime = -0, commitErrors = null, profilerStartTime = -1.1, profilerEffectDuration = -0, componentEffectDuration = -0, componentEffectStartTime = -1.1, componentEffectEndTime = -1.1, componentEffectErrors = null, componentEffectSpawnedUpdate = false, blockingClampTime = -0, blockingUpdateTime = -1.1, blockingUpdateTask = null, blockingUpdateType = 0, blockingUpdateMethodName = null, blockingUpdateComponentName = null, blockingEventTime = -1.1, blockingEventType = null, blockingEventRepeatTime = -1.1, blockingSuspendedTime = -1.1, transitionClampTime = -0, transitionStartTime = -1.1, transitionUpdateTime = -1.1, transitionUpdateType = 0, transitionUpdateTask = null, transitionUpdateMethodName = null, transitionUpdateComponentName = null, transitionEventTime = -1.1, transitionEventType = null, transitionEventRepeatTime = -1.1, transitionSuspendedTime = -1.1, retryClampTime = -0, idleClampTime = -0, animatingLanes = 0, animatingTask = null, yieldReason = 0, yieldStartTime = -1.1, currentUpdateIsNested = false, nestedUpdateScheduled = false, currentEntangledListeners = null, currentEntangledPendingCount = 0, currentEntangledLane = 0, currentEntangledActionThenable = null, prevOnStartTransitionFinish = ReactSharedInternals.S;
       ReactSharedInternals.S = function(transition, returnValue) {
-        "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && entangleAsyncAction(transition, returnValue);
+        globalMostRecentTransitionTime = now$1();
+        if ("object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then) {
+          if (0 > transitionStartTime && 0 > transitionUpdateTime) {
+            transitionStartTime = now();
+            var newEventTime = resolveEventTimeStamp(), newEventType = resolveEventType();
+            if (newEventTime !== transitionEventRepeatTime || newEventType !== transitionEventType)
+              transitionEventRepeatTime = -1.1;
+            transitionEventTime = newEventTime;
+            transitionEventType = newEventType;
+          }
+          entangleAsyncAction(transition, returnValue);
+        }
         null !== prevOnStartTransitionFinish && prevOnStartTransitionFinish(transition, returnValue);
       };
       var resumedCache = createCursor(null), ReactStrictModeWarnings = {
@@ -17675,7 +19761,86 @@ var require_react_dom_client_development = __commonJS({
         pendingUNSAFE_ComponentWillUpdateWarnings = [];
         pendingLegacyContextWarning = /* @__PURE__ */ new Map();
       };
-      var SuspenseException = Error(
+      var callComponent = {
+        react_stack_bottom_frame: function(Component, props, secondArg) {
+          var wasRendering = isRendering;
+          isRendering = true;
+          try {
+            return Component(props, secondArg);
+          } finally {
+            isRendering = wasRendering;
+          }
+        }
+      }, callComponentInDEV = callComponent.react_stack_bottom_frame.bind(callComponent), callRender = {
+        react_stack_bottom_frame: function(instance) {
+          var wasRendering = isRendering;
+          isRendering = true;
+          try {
+            return instance.render();
+          } finally {
+            isRendering = wasRendering;
+          }
+        }
+      }, callRenderInDEV = callRender.react_stack_bottom_frame.bind(callRender), callComponentDidMount = {
+        react_stack_bottom_frame: function(finishedWork, instance) {
+          try {
+            instance.componentDidMount();
+          } catch (error) {
+            captureCommitPhaseError(finishedWork, finishedWork.return, error);
+          }
+        }
+      }, callComponentDidMountInDEV = callComponentDidMount.react_stack_bottom_frame.bind(
+        callComponentDidMount
+      ), callComponentDidUpdate = {
+        react_stack_bottom_frame: function(finishedWork, instance, prevProps, prevState, snapshot) {
+          try {
+            instance.componentDidUpdate(prevProps, prevState, snapshot);
+          } catch (error) {
+            captureCommitPhaseError(finishedWork, finishedWork.return, error);
+          }
+        }
+      }, callComponentDidUpdateInDEV = callComponentDidUpdate.react_stack_bottom_frame.bind(
+        callComponentDidUpdate
+      ), callComponentDidCatch = {
+        react_stack_bottom_frame: function(instance, errorInfo) {
+          var stack = errorInfo.stack;
+          instance.componentDidCatch(errorInfo.value, {
+            componentStack: null !== stack ? stack : ""
+          });
+        }
+      }, callComponentDidCatchInDEV = callComponentDidCatch.react_stack_bottom_frame.bind(
+        callComponentDidCatch
+      ), callComponentWillUnmount = {
+        react_stack_bottom_frame: function(current2, nearestMountedAncestor, instance) {
+          try {
+            instance.componentWillUnmount();
+          } catch (error) {
+            captureCommitPhaseError(current2, nearestMountedAncestor, error);
+          }
+        }
+      }, callComponentWillUnmountInDEV = callComponentWillUnmount.react_stack_bottom_frame.bind(
+        callComponentWillUnmount
+      ), callCreate = {
+        react_stack_bottom_frame: function(effect) {
+          var create = effect.create;
+          effect = effect.inst;
+          create = create();
+          return effect.destroy = create;
+        }
+      }, callCreateInDEV = callCreate.react_stack_bottom_frame.bind(callCreate), callDestroy = {
+        react_stack_bottom_frame: function(current2, nearestMountedAncestor, destroy) {
+          try {
+            destroy();
+          } catch (error) {
+            captureCommitPhaseError(current2, nearestMountedAncestor, error);
+          }
+        }
+      }, callDestroyInDEV = callDestroy.react_stack_bottom_frame.bind(callDestroy), callLazyInit = {
+        react_stack_bottom_frame: function(lazy) {
+          var init = lazy._init;
+          return init(lazy._payload);
+        }
+      }, callLazyInitInDEV = callLazyInit.react_stack_bottom_frame.bind(callLazyInit), SuspenseException = Error(
         "Suspense Exception: This is not a real error! It's an implementation detail of `use` to interrupt the current render. You must either rethrow it immediately, or move the `use` call outside of the `try/catch` block. Capturing without rethrowing will lead to unexpected behavior.\n\nTo handle async errors, wrap your component in an error boundary, or call the promise's `.catch` method and pass the result to `use`."
       ), SuspenseyCommitException = Error(
         "Suspense Exception: This is not a real error, and should not leak into userspace. If you're seeing this, it's likely a bug in React."
@@ -17687,1068 +19852,7 @@ var require_react_dom_client_development = __commonJS({
             'Internal React error: A listener was unexpectedly attached to a "noop" thenable. This is a bug in React. Please file an issue.'
           );
         }
-      }, suspendedThenable = null, needsToResetSuspendedThenableDEV = false, NoFlags = 0, HasEffect = 1, Insertion = 2, Layout = 4, Passive = 8, UpdateState = 0, ReplaceState = 1, ForceUpdate = 2, CaptureUpdate = 3, hasForceUpdate = false;
-      var didWarnUpdateInsideUpdate = false;
-      var currentlyProcessingQueue = null;
-      var didReadFromEntangledAsyncAction = false, currentTreeHiddenStackCursor = createCursor(null), prevEntangledRenderLanesCursor = createCursor(0), didWarnUncachedGetSnapshot;
-      var didWarnAboutMismatchedHooksForComponent = /* @__PURE__ */ new Set();
-      var didWarnAboutUseWrappedInTryCatch = /* @__PURE__ */ new Set();
-      var didWarnAboutAsyncClientComponent = /* @__PURE__ */ new Set();
-      var didWarnAboutUseFormState = /* @__PURE__ */ new Set();
-      var renderLanes = 0, currentlyRenderingFiber = null, currentHook = null, workInProgressHook = null, didScheduleRenderPhaseUpdate = false, didScheduleRenderPhaseUpdateDuringThisPass = false, shouldDoubleInvokeUserFnsInHooksDEV = false, localIdCounter = 0, thenableIndexCounter$1 = 0, thenableState$1 = null, globalClientIdCounter = 0, RE_RENDER_LIMIT = 25, currentHookNameInDev = null, hookTypesDev = null, hookTypesUpdateIndexDev = -1, ignorePreviousDependencies = false, ContextOnlyDispatcher = {
-        readContext,
-        use,
-        useCallback: throwInvalidHookError,
-        useContext: throwInvalidHookError,
-        useEffect: throwInvalidHookError,
-        useImperativeHandle: throwInvalidHookError,
-        useLayoutEffect: throwInvalidHookError,
-        useInsertionEffect: throwInvalidHookError,
-        useMemo: throwInvalidHookError,
-        useReducer: throwInvalidHookError,
-        useRef: throwInvalidHookError,
-        useState: throwInvalidHookError,
-        useDebugValue: throwInvalidHookError,
-        useDeferredValue: throwInvalidHookError,
-        useTransition: throwInvalidHookError,
-        useSyncExternalStore: throwInvalidHookError,
-        useId: throwInvalidHookError,
-        useHostTransitionStatus: throwInvalidHookError,
-        useFormState: throwInvalidHookError,
-        useActionState: throwInvalidHookError,
-        useOptimistic: throwInvalidHookError,
-        useMemoCache: throwInvalidHookError,
-        useCacheRefresh: throwInvalidHookError
-      }, HooksDispatcherOnMountInDEV = null, HooksDispatcherOnMountWithHookTypesInDEV = null, HooksDispatcherOnUpdateInDEV = null, HooksDispatcherOnRerenderInDEV = null, InvalidNestedHooksDispatcherOnMountInDEV = null, InvalidNestedHooksDispatcherOnUpdateInDEV = null, InvalidNestedHooksDispatcherOnRerenderInDEV = null;
-      HooksDispatcherOnMountInDEV = {
-        readContext: function(context) {
-          return readContext(context);
-        },
-        use,
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          mountHookTypesDev();
-          checkDepsAreArrayDev(deps);
-          return mountCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          mountHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          mountHookTypesDev();
-          checkDepsAreArrayDev(createDeps);
-          return mountEffect(create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          mountHookTypesDev();
-          checkDepsAreArrayDev(deps);
-          return mountImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          mountHookTypesDev();
-          checkDepsAreArrayDev(deps);
-          mountEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          mountHookTypesDev();
-          checkDepsAreArrayDev(deps);
-          return mountLayoutEffect(create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          mountHookTypesDev();
-          checkDepsAreArrayDev(deps);
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          mountHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function(initialValue) {
-          currentHookNameInDev = "useRef";
-          mountHookTypesDev();
-          return mountRef(initialValue);
-        },
-        useState: function(initialState) {
-          currentHookNameInDev = "useState";
-          mountHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountState(initialState);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          mountHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          mountHookTypesDev();
-          return mountDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          mountHookTypesDev();
-          return mountTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          mountHookTypesDev();
-          return mountSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          mountHookTypesDev();
-          return mountId();
-        },
-        useFormState: function(action, initialState) {
-          currentHookNameInDev = "useFormState";
-          mountHookTypesDev();
-          warnOnUseFormStateInDev();
-          return mountActionState(action, initialState);
-        },
-        useActionState: function(action, initialState) {
-          currentHookNameInDev = "useActionState";
-          mountHookTypesDev();
-          return mountActionState(action, initialState);
-        },
-        useOptimistic: function(passthrough) {
-          currentHookNameInDev = "useOptimistic";
-          mountHookTypesDev();
-          return mountOptimistic(passthrough);
-        },
-        useHostTransitionStatus,
-        useMemoCache,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          mountHookTypesDev();
-          return mountRefresh();
-        }
-      };
-      HooksDispatcherOnMountWithHookTypesInDEV = {
-        readContext: function(context) {
-          return readContext(context);
-        },
-        use,
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          updateHookTypesDev();
-          return mountCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          updateHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          updateHookTypesDev();
-          return mountEffect(create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          updateHookTypesDev();
-          return mountImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          updateHookTypesDev();
-          mountEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          updateHookTypesDev();
-          return mountLayoutEffect(create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function(initialValue) {
-          currentHookNameInDev = "useRef";
-          updateHookTypesDev();
-          return mountRef(initialValue);
-        },
-        useState: function(initialState) {
-          currentHookNameInDev = "useState";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountState(initialState);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          updateHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          updateHookTypesDev();
-          return mountDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          updateHookTypesDev();
-          return mountTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          updateHookTypesDev();
-          return mountSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          updateHookTypesDev();
-          return mountId();
-        },
-        useActionState: function(action, initialState) {
-          currentHookNameInDev = "useActionState";
-          updateHookTypesDev();
-          return mountActionState(action, initialState);
-        },
-        useFormState: function(action, initialState) {
-          currentHookNameInDev = "useFormState";
-          updateHookTypesDev();
-          warnOnUseFormStateInDev();
-          return mountActionState(action, initialState);
-        },
-        useOptimistic: function(passthrough) {
-          currentHookNameInDev = "useOptimistic";
-          updateHookTypesDev();
-          return mountOptimistic(passthrough);
-        },
-        useHostTransitionStatus,
-        useMemoCache,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          updateHookTypesDev();
-          return mountRefresh();
-        }
-      };
-      HooksDispatcherOnUpdateInDEV = {
-        readContext: function(context) {
-          return readContext(context);
-        },
-        use,
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          updateHookTypesDev();
-          return updateCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          updateHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          updateHookTypesDev();
-          updateEffectImpl(2048, Passive, create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          updateHookTypesDev();
-          return updateImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          updateHookTypesDev();
-          return updateEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          updateHookTypesDev();
-          return updateEffectImpl(4, Layout, create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function() {
-          currentHookNameInDev = "useRef";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useState: function() {
-          currentHookNameInDev = "useState";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateReducer(basicStateReducer);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          updateHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          updateHookTypesDev();
-          return updateDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          updateHookTypesDev();
-          return updateTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          updateHookTypesDev();
-          return updateSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useFormState: function(action) {
-          currentHookNameInDev = "useFormState";
-          updateHookTypesDev();
-          warnOnUseFormStateInDev();
-          return updateActionState(action);
-        },
-        useActionState: function(action) {
-          currentHookNameInDev = "useActionState";
-          updateHookTypesDev();
-          return updateActionState(action);
-        },
-        useOptimistic: function(passthrough, reducer) {
-          currentHookNameInDev = "useOptimistic";
-          updateHookTypesDev();
-          return updateOptimistic(passthrough, reducer);
-        },
-        useHostTransitionStatus,
-        useMemoCache,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        }
-      };
-      HooksDispatcherOnRerenderInDEV = {
-        readContext: function(context) {
-          return readContext(context);
-        },
-        use,
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          updateHookTypesDev();
-          return updateCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          updateHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          updateHookTypesDev();
-          updateEffectImpl(2048, Passive, create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          updateHookTypesDev();
-          return updateImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          updateHookTypesDev();
-          return updateEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          updateHookTypesDev();
-          return updateEffectImpl(4, Layout, create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnRerenderInDEV;
-          try {
-            return updateMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnRerenderInDEV;
-          try {
-            return rerenderReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function() {
-          currentHookNameInDev = "useRef";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useState: function() {
-          currentHookNameInDev = "useState";
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnRerenderInDEV;
-          try {
-            return rerenderReducer(basicStateReducer);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          updateHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          updateHookTypesDev();
-          return rerenderDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          updateHookTypesDev();
-          return rerenderTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          updateHookTypesDev();
-          return updateSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useFormState: function(action) {
-          currentHookNameInDev = "useFormState";
-          updateHookTypesDev();
-          warnOnUseFormStateInDev();
-          return rerenderActionState(action);
-        },
-        useActionState: function(action) {
-          currentHookNameInDev = "useActionState";
-          updateHookTypesDev();
-          return rerenderActionState(action);
-        },
-        useOptimistic: function(passthrough, reducer) {
-          currentHookNameInDev = "useOptimistic";
-          updateHookTypesDev();
-          return rerenderOptimistic(passthrough, reducer);
-        },
-        useHostTransitionStatus,
-        useMemoCache,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        }
-      };
-      InvalidNestedHooksDispatcherOnMountInDEV = {
-        readContext: function(context) {
-          warnInvalidContextAccess();
-          return readContext(context);
-        },
-        use: function(usable) {
-          warnInvalidHookAccess();
-          return use(usable);
-        },
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountEffect(create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          mountEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountLayoutEffect(create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function(initialValue) {
-          currentHookNameInDev = "useRef";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountRef(initialValue);
-        },
-        useState: function(initialState) {
-          currentHookNameInDev = "useState";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
-          try {
-            return mountState(initialState);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountId();
-        },
-        useFormState: function(action, initialState) {
-          currentHookNameInDev = "useFormState";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountActionState(action, initialState);
-        },
-        useActionState: function(action, initialState) {
-          currentHookNameInDev = "useActionState";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountActionState(action, initialState);
-        },
-        useOptimistic: function(passthrough) {
-          currentHookNameInDev = "useOptimistic";
-          warnInvalidHookAccess();
-          mountHookTypesDev();
-          return mountOptimistic(passthrough);
-        },
-        useMemoCache: function(size) {
-          warnInvalidHookAccess();
-          return useMemoCache(size);
-        },
-        useHostTransitionStatus,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          mountHookTypesDev();
-          return mountRefresh();
-        }
-      };
-      InvalidNestedHooksDispatcherOnUpdateInDEV = {
-        readContext: function(context) {
-          warnInvalidContextAccess();
-          return readContext(context);
-        },
-        use: function(usable) {
-          warnInvalidHookAccess();
-          return use(usable);
-        },
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          updateEffectImpl(2048, Passive, create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateEffectImpl(4, Layout, create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function() {
-          currentHookNameInDev = "useRef";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useState: function() {
-          currentHookNameInDev = "useState";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateReducer(basicStateReducer);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useFormState: function(action) {
-          currentHookNameInDev = "useFormState";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateActionState(action);
-        },
-        useActionState: function(action) {
-          currentHookNameInDev = "useActionState";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateActionState(action);
-        },
-        useOptimistic: function(passthrough, reducer) {
-          currentHookNameInDev = "useOptimistic";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateOptimistic(passthrough, reducer);
-        },
-        useMemoCache: function(size) {
-          warnInvalidHookAccess();
-          return useMemoCache(size);
-        },
-        useHostTransitionStatus,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        }
-      };
-      InvalidNestedHooksDispatcherOnRerenderInDEV = {
-        readContext: function(context) {
-          warnInvalidContextAccess();
-          return readContext(context);
-        },
-        use: function(usable) {
-          warnInvalidHookAccess();
-          return use(usable);
-        },
-        useCallback: function(callback, deps) {
-          currentHookNameInDev = "useCallback";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateCallback(callback, deps);
-        },
-        useContext: function(context) {
-          currentHookNameInDev = "useContext";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return readContext(context);
-        },
-        useEffect: function(create, createDeps) {
-          currentHookNameInDev = "useEffect";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          updateEffectImpl(2048, Passive, create, createDeps);
-        },
-        useImperativeHandle: function(ref, create, deps) {
-          currentHookNameInDev = "useImperativeHandle";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateImperativeHandle(ref, create, deps);
-        },
-        useInsertionEffect: function(create, deps) {
-          currentHookNameInDev = "useInsertionEffect";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateEffectImpl(4, Insertion, create, deps);
-        },
-        useLayoutEffect: function(create, deps) {
-          currentHookNameInDev = "useLayoutEffect";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateEffectImpl(4, Layout, create, deps);
-        },
-        useMemo: function(create, deps) {
-          currentHookNameInDev = "useMemo";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return updateMemo(create, deps);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useReducer: function(reducer, initialArg, init) {
-          currentHookNameInDev = "useReducer";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return rerenderReducer(reducer, initialArg, init);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useRef: function() {
-          currentHookNameInDev = "useRef";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useState: function() {
-          currentHookNameInDev = "useState";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          var prevDispatcher = ReactSharedInternals.H;
-          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
-          try {
-            return rerenderReducer(basicStateReducer);
-          } finally {
-            ReactSharedInternals.H = prevDispatcher;
-          }
-        },
-        useDebugValue: function() {
-          currentHookNameInDev = "useDebugValue";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-        },
-        useDeferredValue: function(value, initialValue) {
-          currentHookNameInDev = "useDeferredValue";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return rerenderDeferredValue(value, initialValue);
-        },
-        useTransition: function() {
-          currentHookNameInDev = "useTransition";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return rerenderTransition();
-        },
-        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
-          currentHookNameInDev = "useSyncExternalStore";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateSyncExternalStore(
-            subscribe,
-            getSnapshot,
-            getServerSnapshot
-          );
-        },
-        useId: function() {
-          currentHookNameInDev = "useId";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        },
-        useFormState: function(action) {
-          currentHookNameInDev = "useFormState";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return rerenderActionState(action);
-        },
-        useActionState: function(action) {
-          currentHookNameInDev = "useActionState";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return rerenderActionState(action);
-        },
-        useOptimistic: function(passthrough, reducer) {
-          currentHookNameInDev = "useOptimistic";
-          warnInvalidHookAccess();
-          updateHookTypesDev();
-          return rerenderOptimistic(passthrough, reducer);
-        },
-        useMemoCache: function(size) {
-          warnInvalidHookAccess();
-          return useMemoCache(size);
-        },
-        useHostTransitionStatus,
-        useCacheRefresh: function() {
-          currentHookNameInDev = "useCacheRefresh";
-          updateHookTypesDev();
-          return updateWorkInProgressHook().memoizedState;
-        }
-      };
-      var callComponent = {
-        "react-stack-bottom-frame": function(Component, props, secondArg) {
-          var wasRendering = isRendering;
-          isRendering = true;
-          try {
-            return Component(props, secondArg);
-          } finally {
-            isRendering = wasRendering;
-          }
-        }
-      }, callComponentInDEV = callComponent["react-stack-bottom-frame"].bind(callComponent), callRender = {
-        "react-stack-bottom-frame": function(instance) {
-          var wasRendering = isRendering;
-          isRendering = true;
-          try {
-            return instance.render();
-          } finally {
-            isRendering = wasRendering;
-          }
-        }
-      }, callRenderInDEV = callRender["react-stack-bottom-frame"].bind(callRender), callComponentDidMount = {
-        "react-stack-bottom-frame": function(finishedWork, instance) {
-          try {
-            instance.componentDidMount();
-          } catch (error) {
-            captureCommitPhaseError(finishedWork, finishedWork.return, error);
-          }
-        }
-      }, callComponentDidMountInDEV = callComponentDidMount["react-stack-bottom-frame"].bind(callComponentDidMount), callComponentDidUpdate = {
-        "react-stack-bottom-frame": function(finishedWork, instance, prevProps, prevState, snapshot) {
-          try {
-            instance.componentDidUpdate(prevProps, prevState, snapshot);
-          } catch (error) {
-            captureCommitPhaseError(finishedWork, finishedWork.return, error);
-          }
-        }
-      }, callComponentDidUpdateInDEV = callComponentDidUpdate["react-stack-bottom-frame"].bind(callComponentDidUpdate), callComponentDidCatch = {
-        "react-stack-bottom-frame": function(instance, errorInfo) {
-          var stack = errorInfo.stack;
-          instance.componentDidCatch(errorInfo.value, {
-            componentStack: null !== stack ? stack : ""
-          });
-        }
-      }, callComponentDidCatchInDEV = callComponentDidCatch["react-stack-bottom-frame"].bind(callComponentDidCatch), callComponentWillUnmount = {
-        "react-stack-bottom-frame": function(current2, nearestMountedAncestor, instance) {
-          try {
-            instance.componentWillUnmount();
-          } catch (error) {
-            captureCommitPhaseError(current2, nearestMountedAncestor, error);
-          }
-        }
-      }, callComponentWillUnmountInDEV = callComponentWillUnmount["react-stack-bottom-frame"].bind(callComponentWillUnmount), callCreate = {
-        "react-stack-bottom-frame": function(effect) {
-          null != effect.resourceKind && console.error(
-            "Expected only SimpleEffects when enableUseEffectCRUDOverload is disabled, got %s",
-            effect.resourceKind
-          );
-          var create = effect.create;
-          effect = effect.inst;
-          create = create();
-          return effect.destroy = create;
-        }
-      }, callCreateInDEV = callCreate["react-stack-bottom-frame"].bind(callCreate), callDestroy = {
-        "react-stack-bottom-frame": function(current2, nearestMountedAncestor, destroy) {
-          try {
-            destroy();
-          } catch (error) {
-            captureCommitPhaseError(current2, nearestMountedAncestor, error);
-          }
-        }
-      }, callDestroyInDEV = callDestroy["react-stack-bottom-frame"].bind(callDestroy), callLazyInit = {
-        "react-stack-bottom-frame": function(lazy) {
-          var init = lazy._init;
-          return init(lazy._payload);
-        }
-      }, callLazyInitInDEV = callLazyInit["react-stack-bottom-frame"].bind(callLazyInit), thenableState = null, thenableIndexCounter = 0, currentDebugInfo = null, didWarnAboutMaps;
+      }, suspendedThenable = null, needsToResetSuspendedThenableDEV = false, thenableState$1 = null, thenableIndexCounter$1 = 0, currentDebugInfo = null, didWarnAboutMaps;
       var didWarnAboutGenerators = didWarnAboutMaps = false;
       var ownerHasKeyUseWarning = {};
       var ownerHasFunctionTypeWarning = {};
@@ -18780,7 +19884,1033 @@ var require_react_dom_client_development = __commonJS({
           }
         }
       };
-      var reconcileChildFibers = createChildReconciler(true), mountChildFibers = createChildReconciler(false), suspenseHandlerStackCursor = createCursor(null), shellBoundary = null, SubtreeSuspenseContextMask = 1, ForceSuspenseFallback = 2, suspenseStackCursor = createCursor(0), fakeInternalInstance = {};
+      var reconcileChildFibers = createChildReconciler(true), mountChildFibers = createChildReconciler(false), UpdateState = 0, ReplaceState = 1, ForceUpdate = 2, CaptureUpdate = 3, hasForceUpdate = false;
+      var didWarnUpdateInsideUpdate = false;
+      var currentlyProcessingQueue = null;
+      var didReadFromEntangledAsyncAction = false, currentTreeHiddenStackCursor = createCursor(null), prevEntangledRenderLanesCursor = createCursor(0), suspenseHandlerStackCursor = createCursor(null), shellBoundary = null, SubtreeSuspenseContextMask = 1, ForceSuspenseFallback = 2, suspenseStackCursor = createCursor(0), NoFlags = 0, HasEffect = 1, Insertion = 2, Layout = 4, Passive = 8, didWarnUncachedGetSnapshot;
+      var didWarnAboutMismatchedHooksForComponent = /* @__PURE__ */ new Set();
+      var didWarnAboutUseWrappedInTryCatch = /* @__PURE__ */ new Set();
+      var didWarnAboutAsyncClientComponent = /* @__PURE__ */ new Set();
+      var didWarnAboutUseFormState = /* @__PURE__ */ new Set();
+      var renderLanes = 0, currentlyRenderingFiber = null, currentHook = null, workInProgressHook = null, didScheduleRenderPhaseUpdate = false, didScheduleRenderPhaseUpdateDuringThisPass = false, shouldDoubleInvokeUserFnsInHooksDEV = false, localIdCounter = 0, thenableIndexCounter = 0, thenableState = null, globalClientIdCounter = 0, RE_RENDER_LIMIT = 25, currentHookNameInDev = null, hookTypesDev = null, hookTypesUpdateIndexDev = -1, ignorePreviousDependencies = false, ContextOnlyDispatcher = {
+        readContext,
+        use,
+        useCallback: throwInvalidHookError,
+        useContext: throwInvalidHookError,
+        useEffect: throwInvalidHookError,
+        useImperativeHandle: throwInvalidHookError,
+        useLayoutEffect: throwInvalidHookError,
+        useInsertionEffect: throwInvalidHookError,
+        useMemo: throwInvalidHookError,
+        useReducer: throwInvalidHookError,
+        useRef: throwInvalidHookError,
+        useState: throwInvalidHookError,
+        useDebugValue: throwInvalidHookError,
+        useDeferredValue: throwInvalidHookError,
+        useTransition: throwInvalidHookError,
+        useSyncExternalStore: throwInvalidHookError,
+        useId: throwInvalidHookError,
+        useHostTransitionStatus: throwInvalidHookError,
+        useFormState: throwInvalidHookError,
+        useActionState: throwInvalidHookError,
+        useOptimistic: throwInvalidHookError,
+        useMemoCache: throwInvalidHookError,
+        useCacheRefresh: throwInvalidHookError
+      };
+      ContextOnlyDispatcher.useEffectEvent = throwInvalidHookError;
+      var HooksDispatcherOnMountInDEV = null, HooksDispatcherOnMountWithHookTypesInDEV = null, HooksDispatcherOnUpdateInDEV = null, HooksDispatcherOnRerenderInDEV = null, InvalidNestedHooksDispatcherOnMountInDEV = null, InvalidNestedHooksDispatcherOnUpdateInDEV = null, InvalidNestedHooksDispatcherOnRerenderInDEV = null;
+      HooksDispatcherOnMountInDEV = {
+        readContext: function(context) {
+          return readContext(context);
+        },
+        use,
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          mountHookTypesDev();
+          checkDepsAreArrayDev(deps);
+          return mountCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          mountHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          mountHookTypesDev();
+          checkDepsAreArrayDev(deps);
+          return mountEffect(create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          mountHookTypesDev();
+          checkDepsAreArrayDev(deps);
+          return mountImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          mountHookTypesDev();
+          checkDepsAreArrayDev(deps);
+          mountEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          mountHookTypesDev();
+          checkDepsAreArrayDev(deps);
+          return mountLayoutEffect(create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          mountHookTypesDev();
+          checkDepsAreArrayDev(deps);
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          mountHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function(initialValue) {
+          currentHookNameInDev = "useRef";
+          mountHookTypesDev();
+          return mountRef(initialValue);
+        },
+        useState: function(initialState) {
+          currentHookNameInDev = "useState";
+          mountHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountState(initialState);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          mountHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          mountHookTypesDev();
+          return mountDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          mountHookTypesDev();
+          return mountTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          mountHookTypesDev();
+          return mountSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          mountHookTypesDev();
+          return mountId();
+        },
+        useFormState: function(action, initialState) {
+          currentHookNameInDev = "useFormState";
+          mountHookTypesDev();
+          warnOnUseFormStateInDev();
+          return mountActionState(action, initialState);
+        },
+        useActionState: function(action, initialState) {
+          currentHookNameInDev = "useActionState";
+          mountHookTypesDev();
+          return mountActionState(action, initialState);
+        },
+        useOptimistic: function(passthrough) {
+          currentHookNameInDev = "useOptimistic";
+          mountHookTypesDev();
+          return mountOptimistic(passthrough);
+        },
+        useHostTransitionStatus,
+        useMemoCache,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          mountHookTypesDev();
+          return mountRefresh();
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          mountHookTypesDev();
+          return mountEvent(callback);
+        }
+      };
+      HooksDispatcherOnMountWithHookTypesInDEV = {
+        readContext: function(context) {
+          return readContext(context);
+        },
+        use,
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          updateHookTypesDev();
+          return mountCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          updateHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          updateHookTypesDev();
+          return mountEffect(create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          updateHookTypesDev();
+          return mountImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          updateHookTypesDev();
+          mountEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          updateHookTypesDev();
+          return mountLayoutEffect(create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function(initialValue) {
+          currentHookNameInDev = "useRef";
+          updateHookTypesDev();
+          return mountRef(initialValue);
+        },
+        useState: function(initialState) {
+          currentHookNameInDev = "useState";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountState(initialState);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          updateHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          updateHookTypesDev();
+          return mountDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          updateHookTypesDev();
+          return mountTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          updateHookTypesDev();
+          return mountSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          updateHookTypesDev();
+          return mountId();
+        },
+        useActionState: function(action, initialState) {
+          currentHookNameInDev = "useActionState";
+          updateHookTypesDev();
+          return mountActionState(action, initialState);
+        },
+        useFormState: function(action, initialState) {
+          currentHookNameInDev = "useFormState";
+          updateHookTypesDev();
+          warnOnUseFormStateInDev();
+          return mountActionState(action, initialState);
+        },
+        useOptimistic: function(passthrough) {
+          currentHookNameInDev = "useOptimistic";
+          updateHookTypesDev();
+          return mountOptimistic(passthrough);
+        },
+        useHostTransitionStatus,
+        useMemoCache,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          updateHookTypesDev();
+          return mountRefresh();
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          updateHookTypesDev();
+          return mountEvent(callback);
+        }
+      };
+      HooksDispatcherOnUpdateInDEV = {
+        readContext: function(context) {
+          return readContext(context);
+        },
+        use,
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          updateHookTypesDev();
+          return updateCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          updateHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          updateHookTypesDev();
+          updateEffectImpl(2048, Passive, create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          updateHookTypesDev();
+          return updateImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          updateHookTypesDev();
+          return updateEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          updateHookTypesDev();
+          return updateEffectImpl(4, Layout, create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function() {
+          currentHookNameInDev = "useRef";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useState: function() {
+          currentHookNameInDev = "useState";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateReducer(basicStateReducer);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          updateHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          updateHookTypesDev();
+          return updateDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          updateHookTypesDev();
+          return updateTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          updateHookTypesDev();
+          return updateSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useFormState: function(action) {
+          currentHookNameInDev = "useFormState";
+          updateHookTypesDev();
+          warnOnUseFormStateInDev();
+          return updateActionState(action);
+        },
+        useActionState: function(action) {
+          currentHookNameInDev = "useActionState";
+          updateHookTypesDev();
+          return updateActionState(action);
+        },
+        useOptimistic: function(passthrough, reducer) {
+          currentHookNameInDev = "useOptimistic";
+          updateHookTypesDev();
+          return updateOptimistic(passthrough, reducer);
+        },
+        useHostTransitionStatus,
+        useMemoCache,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          updateHookTypesDev();
+          return updateEvent(callback);
+        }
+      };
+      HooksDispatcherOnRerenderInDEV = {
+        readContext: function(context) {
+          return readContext(context);
+        },
+        use,
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          updateHookTypesDev();
+          return updateCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          updateHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          updateHookTypesDev();
+          updateEffectImpl(2048, Passive, create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          updateHookTypesDev();
+          return updateImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          updateHookTypesDev();
+          return updateEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          updateHookTypesDev();
+          return updateEffectImpl(4, Layout, create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnRerenderInDEV;
+          try {
+            return updateMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnRerenderInDEV;
+          try {
+            return rerenderReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function() {
+          currentHookNameInDev = "useRef";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useState: function() {
+          currentHookNameInDev = "useState";
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnRerenderInDEV;
+          try {
+            return rerenderReducer(basicStateReducer);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          updateHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          updateHookTypesDev();
+          return rerenderDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          updateHookTypesDev();
+          return rerenderTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          updateHookTypesDev();
+          return updateSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useFormState: function(action) {
+          currentHookNameInDev = "useFormState";
+          updateHookTypesDev();
+          warnOnUseFormStateInDev();
+          return rerenderActionState(action);
+        },
+        useActionState: function(action) {
+          currentHookNameInDev = "useActionState";
+          updateHookTypesDev();
+          return rerenderActionState(action);
+        },
+        useOptimistic: function(passthrough, reducer) {
+          currentHookNameInDev = "useOptimistic";
+          updateHookTypesDev();
+          return rerenderOptimistic(passthrough, reducer);
+        },
+        useHostTransitionStatus,
+        useMemoCache,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          updateHookTypesDev();
+          return updateEvent(callback);
+        }
+      };
+      InvalidNestedHooksDispatcherOnMountInDEV = {
+        readContext: function(context) {
+          warnInvalidContextAccess();
+          return readContext(context);
+        },
+        use: function(usable) {
+          warnInvalidHookAccess();
+          return use(usable);
+        },
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountEffect(create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          mountEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountLayoutEffect(create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function(initialValue) {
+          currentHookNameInDev = "useRef";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountRef(initialValue);
+        },
+        useState: function(initialState) {
+          currentHookNameInDev = "useState";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnMountInDEV;
+          try {
+            return mountState(initialState);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountId();
+        },
+        useFormState: function(action, initialState) {
+          currentHookNameInDev = "useFormState";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountActionState(action, initialState);
+        },
+        useActionState: function(action, initialState) {
+          currentHookNameInDev = "useActionState";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountActionState(action, initialState);
+        },
+        useOptimistic: function(passthrough) {
+          currentHookNameInDev = "useOptimistic";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountOptimistic(passthrough);
+        },
+        useMemoCache: function(size) {
+          warnInvalidHookAccess();
+          return useMemoCache(size);
+        },
+        useHostTransitionStatus,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          mountHookTypesDev();
+          return mountRefresh();
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          warnInvalidHookAccess();
+          mountHookTypesDev();
+          return mountEvent(callback);
+        }
+      };
+      InvalidNestedHooksDispatcherOnUpdateInDEV = {
+        readContext: function(context) {
+          warnInvalidContextAccess();
+          return readContext(context);
+        },
+        use: function(usable) {
+          warnInvalidHookAccess();
+          return use(usable);
+        },
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          updateEffectImpl(2048, Passive, create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateEffectImpl(4, Layout, create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function() {
+          currentHookNameInDev = "useRef";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useState: function() {
+          currentHookNameInDev = "useState";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateReducer(basicStateReducer);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useFormState: function(action) {
+          currentHookNameInDev = "useFormState";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateActionState(action);
+        },
+        useActionState: function(action) {
+          currentHookNameInDev = "useActionState";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateActionState(action);
+        },
+        useOptimistic: function(passthrough, reducer) {
+          currentHookNameInDev = "useOptimistic";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateOptimistic(passthrough, reducer);
+        },
+        useMemoCache: function(size) {
+          warnInvalidHookAccess();
+          return useMemoCache(size);
+        },
+        useHostTransitionStatus,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateEvent(callback);
+        }
+      };
+      InvalidNestedHooksDispatcherOnRerenderInDEV = {
+        readContext: function(context) {
+          warnInvalidContextAccess();
+          return readContext(context);
+        },
+        use: function(usable) {
+          warnInvalidHookAccess();
+          return use(usable);
+        },
+        useCallback: function(callback, deps) {
+          currentHookNameInDev = "useCallback";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateCallback(callback, deps);
+        },
+        useContext: function(context) {
+          currentHookNameInDev = "useContext";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return readContext(context);
+        },
+        useEffect: function(create, deps) {
+          currentHookNameInDev = "useEffect";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          updateEffectImpl(2048, Passive, create, deps);
+        },
+        useImperativeHandle: function(ref, create, deps) {
+          currentHookNameInDev = "useImperativeHandle";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateImperativeHandle(ref, create, deps);
+        },
+        useInsertionEffect: function(create, deps) {
+          currentHookNameInDev = "useInsertionEffect";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateEffectImpl(4, Insertion, create, deps);
+        },
+        useLayoutEffect: function(create, deps) {
+          currentHookNameInDev = "useLayoutEffect";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateEffectImpl(4, Layout, create, deps);
+        },
+        useMemo: function(create, deps) {
+          currentHookNameInDev = "useMemo";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return updateMemo(create, deps);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useReducer: function(reducer, initialArg, init) {
+          currentHookNameInDev = "useReducer";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return rerenderReducer(reducer, initialArg, init);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useRef: function() {
+          currentHookNameInDev = "useRef";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useState: function() {
+          currentHookNameInDev = "useState";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          var prevDispatcher = ReactSharedInternals.H;
+          ReactSharedInternals.H = InvalidNestedHooksDispatcherOnUpdateInDEV;
+          try {
+            return rerenderReducer(basicStateReducer);
+          } finally {
+            ReactSharedInternals.H = prevDispatcher;
+          }
+        },
+        useDebugValue: function() {
+          currentHookNameInDev = "useDebugValue";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+        },
+        useDeferredValue: function(value, initialValue) {
+          currentHookNameInDev = "useDeferredValue";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return rerenderDeferredValue(value, initialValue);
+        },
+        useTransition: function() {
+          currentHookNameInDev = "useTransition";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return rerenderTransition();
+        },
+        useSyncExternalStore: function(subscribe, getSnapshot, getServerSnapshot) {
+          currentHookNameInDev = "useSyncExternalStore";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateSyncExternalStore(
+            subscribe,
+            getSnapshot,
+            getServerSnapshot
+          );
+        },
+        useId: function() {
+          currentHookNameInDev = "useId";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useFormState: function(action) {
+          currentHookNameInDev = "useFormState";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return rerenderActionState(action);
+        },
+        useActionState: function(action) {
+          currentHookNameInDev = "useActionState";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return rerenderActionState(action);
+        },
+        useOptimistic: function(passthrough, reducer) {
+          currentHookNameInDev = "useOptimistic";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return rerenderOptimistic(passthrough, reducer);
+        },
+        useMemoCache: function(size) {
+          warnInvalidHookAccess();
+          return useMemoCache(size);
+        },
+        useHostTransitionStatus,
+        useCacheRefresh: function() {
+          currentHookNameInDev = "useCacheRefresh";
+          updateHookTypesDev();
+          return updateWorkInProgressHook().memoizedState;
+        },
+        useEffectEvent: function(callback) {
+          currentHookNameInDev = "useEffectEvent";
+          warnInvalidHookAccess();
+          updateHookTypesDev();
+          return updateEvent(callback);
+        }
+      };
+      var fakeInternalInstance = {};
       var didWarnAboutStateAssignmentForComponent = /* @__PURE__ */ new Set();
       var didWarnAboutUninitializedState = /* @__PURE__ */ new Set();
       var didWarnAboutGetSnapshotBeforeUpdateWithoutDidUpdate = /* @__PURE__ */ new Set();
@@ -18799,8 +20929,7 @@ var require_react_dom_client_development = __commonJS({
           update.payload = payload;
           void 0 !== callback && null !== callback && (warnOnInvalidCallback(callback), update.callback = callback);
           payload = enqueueUpdate(inst, update, lane);
-          null !== payload && (scheduleUpdateOnFiber(payload, inst, lane), entangleTransitions(payload, inst, lane));
-          markStateUpdateScheduled(inst, lane);
+          null !== payload && (startUpdateTimerByLane(lane, "this.setState()", inst), scheduleUpdateOnFiber(payload, inst, lane), entangleTransitions(payload, inst, lane));
         },
         enqueueReplaceState: function(inst, payload, callback) {
           inst = inst._reactInternals;
@@ -18809,8 +20938,7 @@ var require_react_dom_client_development = __commonJS({
           update.payload = payload;
           void 0 !== callback && null !== callback && (warnOnInvalidCallback(callback), update.callback = callback);
           payload = enqueueUpdate(inst, update, lane);
-          null !== payload && (scheduleUpdateOnFiber(payload, inst, lane), entangleTransitions(payload, inst, lane));
-          markStateUpdateScheduled(inst, lane);
+          null !== payload && (startUpdateTimerByLane(lane, "this.replaceState()", inst), scheduleUpdateOnFiber(payload, inst, lane), entangleTransitions(payload, inst, lane));
         },
         enqueueForceUpdate: function(inst, callback) {
           inst = inst._reactInternals;
@@ -18818,23 +20946,8 @@ var require_react_dom_client_development = __commonJS({
           update.tag = ForceUpdate;
           void 0 !== callback && null !== callback && (warnOnInvalidCallback(callback), update.callback = callback);
           callback = enqueueUpdate(inst, update, lane);
-          null !== callback && (scheduleUpdateOnFiber(callback, inst, lane), entangleTransitions(callback, inst, lane));
-          null !== injectedProfilingHooks && "function" === typeof injectedProfilingHooks.markForceUpdateScheduled && injectedProfilingHooks.markForceUpdateScheduled(inst, lane);
+          null !== callback && (startUpdateTimerByLane(lane, "this.forceUpdate()", inst), scheduleUpdateOnFiber(callback, inst, lane), entangleTransitions(callback, inst, lane));
         }
-      }, reportGlobalError = "function" === typeof reportError ? reportError : function(error) {
-        if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
-          var event = new window.ErrorEvent("error", {
-            bubbles: true,
-            cancelable: true,
-            message: "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error),
-            error
-          });
-          if (!window.dispatchEvent(event)) return;
-        } else if ("object" === typeof process && "function" === typeof process.emit) {
-          process.emit("uncaughtException", error);
-          return;
-        }
-        console.error(error);
       }, componentName = null, errorBoundaryName = null, SelectiveHydrationException = Error(
         "This is not a real error. It's an implementation detail of React's selective hydration feature. If this leaks into userspace, it's a bug in React. Please file an issue."
       ), didReceiveUpdate = false;
@@ -18852,11 +20965,14 @@ var require_react_dom_client_development = __commonJS({
         hydrationErrors: null
       }, hasWarnedAboutUsingNoValuePropOnContextProvider = false, didWarnAboutUndefinedSnapshotBeforeUpdate = null;
       didWarnAboutUndefinedSnapshotBeforeUpdate = /* @__PURE__ */ new Set();
-      var offscreenSubtreeIsHidden = false, offscreenSubtreeWasHidden = false, needsFormReset = false, PossiblyWeakSet = "function" === typeof WeakSet ? WeakSet : Set, nextEffect = null, inProgressLanes = null, inProgressRoot = null, hostParent = null, hostParentIsContainer = false, currentHoistableRoot = null, suspenseyCommitFlag = 8192, DefaultAsyncDispatcher = {
+      var offscreenSubtreeIsHidden = false, offscreenSubtreeWasHidden = false, needsFormReset = false, PossiblyWeakSet = "function" === typeof WeakSet ? WeakSet : Set, nextEffect = null, inProgressLanes = null, inProgressRoot = null, hostParent = null, hostParentIsContainer = false, currentHoistableRoot = null, inHydratedSubtree = false, suspenseyCommitFlag = 8192, DefaultAsyncDispatcher = {
         getCacheForType: function(resourceType) {
           var cache = readContext(CacheContext), cacheForType = cache.data.get(resourceType);
           void 0 === cacheForType && (cacheForType = resourceType(), cache.data.set(resourceType, cacheForType));
           return cacheForType;
+        },
+        cacheSignal: function() {
+          return readContext(CacheContext).controller.signal;
         },
         getOwner: function() {
           return current;
@@ -18870,7 +20986,7 @@ var require_react_dom_client_development = __commonJS({
         symbolFor("selector.test_id");
         symbolFor("selector.text");
       }
-      var commitHooks = [], PossiblyWeakMap = "function" === typeof WeakMap ? WeakMap : Map, NoContext = 0, RenderContext = 2, CommitContext = 4, RootInProgress = 0, RootFatalErrored = 1, RootErrored = 2, RootSuspended = 3, RootSuspendedWithDelay = 4, RootSuspendedAtTheShell = 6, RootCompleted = 5, executionContext = NoContext, workInProgressRoot = null, workInProgress = null, workInProgressRootRenderLanes = 0, NotSuspended = 0, SuspendedOnError = 1, SuspendedOnData = 2, SuspendedOnImmediate = 3, SuspendedOnInstance = 4, SuspendedOnInstanceAndReadyToContinue = 5, SuspendedOnDeprecatedThrowPromise = 6, SuspendedAndReadyToContinue = 7, SuspendedOnHydration = 8, SuspendedOnAction = 9, workInProgressSuspendedReason = NotSuspended, workInProgressThrownValue = null, workInProgressRootDidSkipSuspendedSiblings = false, workInProgressRootIsPrerendering = false, workInProgressRootDidAttachPingListener = false, entangledRenderLanes = 0, workInProgressRootExitStatus = RootInProgress, workInProgressRootSkippedLanes = 0, workInProgressRootInterleavedUpdatedLanes = 0, workInProgressRootPingedLanes = 0, workInProgressDeferredLane = 0, workInProgressSuspendedRetryLanes = 0, workInProgressRootConcurrentErrors = null, workInProgressRootRecoverableErrors = null, workInProgressRootDidIncludeRecursiveRenderUpdate = false, globalMostRecentFallbackTime = 0, FALLBACK_THROTTLE_MS = 300, workInProgressRootRenderTargetTime = Infinity, RENDER_TIMEOUT_MS = 500, workInProgressTransitions = null, legacyErrorBoundariesThatAlreadyFailed = null, IMMEDIATE_COMMIT = 0, SUSPENDED_COMMIT = 1, THROTTLED_COMMIT = 2, NO_PENDING_EFFECTS = 0, PENDING_MUTATION_PHASE = 1, PENDING_LAYOUT_PHASE = 2, PENDING_AFTER_MUTATION_PHASE = 3, PENDING_SPAWNED_WORK = 4, PENDING_PASSIVE_PHASE = 5, pendingEffectsStatus = 0, pendingEffectsRoot = null, pendingFinishedWork = null, pendingEffectsLanes = 0, pendingEffectsRemainingLanes = 0, pendingPassiveTransitions = null, pendingRecoverableErrors = null, NESTED_UPDATE_LIMIT = 50, nestedUpdateCount = 0, rootWithNestedUpdates = null, isFlushingPassiveEffects = false, didScheduleUpdateDuringPassiveEffects = false, NESTED_PASSIVE_UPDATE_LIMIT = 50, nestedPassiveUpdateCount = 0, rootWithPassiveNestedUpdates = null, isRunningInsertionEffect = false, didWarnStateUpdateForNotYetMountedComponent = null, didWarnAboutUpdateInRender = false;
+      var commitHooks = [], PossiblyWeakMap = "function" === typeof WeakMap ? WeakMap : Map, NoContext = 0, RenderContext = 2, CommitContext = 4, RootInProgress = 0, RootFatalErrored = 1, RootErrored = 2, RootSuspended = 3, RootSuspendedWithDelay = 4, RootSuspendedAtTheShell = 6, RootCompleted = 5, executionContext = NoContext, workInProgressRoot = null, workInProgress = null, workInProgressRootRenderLanes = 0, NotSuspended = 0, SuspendedOnError = 1, SuspendedOnData = 2, SuspendedOnImmediate = 3, SuspendedOnInstance = 4, SuspendedOnInstanceAndReadyToContinue = 5, SuspendedOnDeprecatedThrowPromise = 6, SuspendedAndReadyToContinue = 7, SuspendedOnHydration = 8, SuspendedOnAction = 9, workInProgressSuspendedReason = NotSuspended, workInProgressThrownValue = null, workInProgressRootDidSkipSuspendedSiblings = false, workInProgressRootIsPrerendering = false, workInProgressRootDidAttachPingListener = false, entangledRenderLanes = 0, workInProgressRootExitStatus = RootInProgress, workInProgressRootSkippedLanes = 0, workInProgressRootInterleavedUpdatedLanes = 0, workInProgressRootPingedLanes = 0, workInProgressDeferredLane = 0, workInProgressSuspendedRetryLanes = 0, workInProgressRootConcurrentErrors = null, workInProgressRootRecoverableErrors = null, workInProgressRootDidIncludeRecursiveRenderUpdate = false, globalMostRecentFallbackTime = 0, globalMostRecentTransitionTime = 0, FALLBACK_THROTTLE_MS = 300, workInProgressRootRenderTargetTime = Infinity, RENDER_TIMEOUT_MS = 500, workInProgressTransitions = null, workInProgressUpdateTask = null, legacyErrorBoundariesThatAlreadyFailed = null, IMMEDIATE_COMMIT = 0, ABORTED_VIEW_TRANSITION_COMMIT = 1, DELAYED_PASSIVE_COMMIT = 2, ANIMATION_STARTED_COMMIT = 3, NO_PENDING_EFFECTS = 0, PENDING_MUTATION_PHASE = 1, PENDING_LAYOUT_PHASE = 2, PENDING_AFTER_MUTATION_PHASE = 3, PENDING_SPAWNED_WORK = 4, PENDING_PASSIVE_PHASE = 5, pendingEffectsStatus = 0, pendingEffectsRoot = null, pendingFinishedWork = null, pendingEffectsLanes = 0, pendingEffectsRemainingLanes = 0, pendingEffectsRenderEndTime = -0, pendingPassiveTransitions = null, pendingRecoverableErrors = null, pendingSuspendedCommitReason = null, pendingDelayedCommitReason = IMMEDIATE_COMMIT, pendingSuspendedViewTransitionReason = null, NESTED_UPDATE_LIMIT = 50, nestedUpdateCount = 0, rootWithNestedUpdates = null, isFlushingPassiveEffects = false, didScheduleUpdateDuringPassiveEffects = false, NESTED_PASSIVE_UPDATE_LIMIT = 50, nestedPassiveUpdateCount = 0, rootWithPassiveNestedUpdates = null, isRunningInsertionEffect = false, didWarnStateUpdateForNotYetMountedComponent = null, didWarnAboutUpdateInRender = false;
       var didWarnAboutUpdateInRenderForAnotherComponent = /* @__PURE__ */ new Set();
       var fakeActCallbackNode$1 = {}, firstScheduledRoot = null, lastScheduledRoot = null, didScheduleMicrotask = false, didScheduleMicrotask_act = false, mightHavePendingSyncWork = false, isFlushingWork = false, currentEventTransitionLane = 0, fakeActCallbackNode = {};
       (function() {
@@ -18930,7 +21046,7 @@ var require_react_dom_client_development = __commonJS({
         "beforetoggle cancel close invalid load scroll scrollend toggle".split(" ").concat(mediaEventTypes)
       ), listeningMarker = "_reactListening" + Math.random().toString(36).slice(2), didWarnControlledToUncontrolled = false, didWarnUncontrolledToControlled = false, didWarnFormActionType = false, didWarnFormActionName = false, didWarnFormActionTarget = false, didWarnFormActionMethod = false, didWarnPopoverTargetObject = false;
       var didWarnForNewBooleanPropsWithEmptyValue = {};
-      var NORMALIZE_NEWLINES_REGEX = /\r\n?/g, NORMALIZE_NULL_AND_REPLACEMENT_REGEX = /\u0000|\uFFFD/g, xlinkNamespace = "http://www.w3.org/1999/xlink", xmlNamespace = "http://www.w3.org/XML/1998/namespace", EXPECTED_FORM_ACTION_URL = "javascript:throw new Error('React form unexpectedly submitted.')", SUPPRESS_HYDRATION_WARNING = "suppressHydrationWarning", SUSPENSE_START_DATA = "$", SUSPENSE_END_DATA = "/$", SUSPENSE_PENDING_START_DATA = "$?", SUSPENSE_FALLBACK_START_DATA = "$!", PREAMBLE_CONTRIBUTION_HTML = 1, PREAMBLE_CONTRIBUTION_BODY = 2, PREAMBLE_CONTRIBUTION_HEAD = 4, FORM_STATE_IS_MATCHING = "F!", FORM_STATE_IS_NOT_MATCHING = "F", DOCUMENT_READY_STATE_COMPLETE = "complete", STYLE = "style", HostContextNamespaceNone = 0, HostContextNamespaceSvg = 1, HostContextNamespaceMath = 2, eventsEnabled = null, selectionInformation = null, warnedUnknownTags = { dialog: true, webview: true }, currentPopstateTransitionEvent = null, scheduleTimeout = "function" === typeof setTimeout ? setTimeout : void 0, cancelTimeout = "function" === typeof clearTimeout ? clearTimeout : void 0, noTimeout = -1, localPromise = "function" === typeof Promise ? Promise : void 0, scheduleMicrotask = "function" === typeof queueMicrotask ? queueMicrotask : "undefined" !== typeof localPromise ? function(callback) {
+      var NORMALIZE_NEWLINES_REGEX = /\r\n?/g, NORMALIZE_NULL_AND_REPLACEMENT_REGEX = /\u0000|\uFFFD/g, xlinkNamespace = "http://www.w3.org/1999/xlink", xmlNamespace = "http://www.w3.org/XML/1998/namespace", EXPECTED_FORM_ACTION_URL = "javascript:throw new Error('React form unexpectedly submitted.')", SUPPRESS_HYDRATION_WARNING = "suppressHydrationWarning", ACTIVITY_START_DATA = "&", ACTIVITY_END_DATA = "/&", SUSPENSE_START_DATA = "$", SUSPENSE_END_DATA = "/$", SUSPENSE_PENDING_START_DATA = "$?", SUSPENSE_QUEUED_START_DATA = "$~", SUSPENSE_FALLBACK_START_DATA = "$!", PREAMBLE_CONTRIBUTION_HTML = "html", PREAMBLE_CONTRIBUTION_BODY = "body", PREAMBLE_CONTRIBUTION_HEAD = "head", FORM_STATE_IS_MATCHING = "F!", FORM_STATE_IS_NOT_MATCHING = "F", DOCUMENT_READY_STATE_LOADING = "loading", STYLE = "style", HostContextNamespaceNone = 0, HostContextNamespaceSvg = 1, HostContextNamespaceMath = 2, eventsEnabled = null, selectionInformation = null, warnedUnknownTags = { dialog: true, webview: true }, currentPopstateTransitionEvent = null, schedulerEvent = void 0, scheduleTimeout = "function" === typeof setTimeout ? setTimeout : void 0, cancelTimeout = "function" === typeof clearTimeout ? clearTimeout : void 0, noTimeout = -1, localPromise = "function" === typeof Promise ? Promise : void 0, scheduleMicrotask = "function" === typeof queueMicrotask ? queueMicrotask : "undefined" !== typeof localPromise ? function(callback) {
         return localPromise.resolve(null).then(callback).catch(handleErrorInNextTick);
       } : scheduleTimeout, previousHydratableOnEnteringScopedSingleton = null, NotLoaded = 0, Loaded = 1, Errored = 2, Settled = 3, Inserted = 4, preloadPropsMap = /* @__PURE__ */ new Map(), preconnectsSet = /* @__PURE__ */ new Set(), previousDispatcher = ReactDOMSharedInternals.d;
       ReactDOMSharedInternals.d = {
@@ -19092,16 +21208,16 @@ var require_react_dom_client_development = __commonJS({
           }
         }
       };
-      var globalDocument = "undefined" === typeof document ? null : document, tagCaches = null, suspendedState = null, LAST_PRECEDENCE = null, precedencesByRoot = null, NotPendingTransition = NotPending, HostTransitionContext = {
+      var globalDocument = "undefined" === typeof document ? null : document, tagCaches = null, SUSPENSEY_STYLESHEET_TIMEOUT = 6e4, SUSPENSEY_IMAGE_TIMEOUT = 800, SUSPENSEY_IMAGE_TIME_ESTIMATE = 500, estimatedBytesWithinLimit = 0, LAST_PRECEDENCE = null, precedencesByRoot = null, NotPendingTransition = NotPending, HostTransitionContext = {
         $$typeof: REACT_CONTEXT_TYPE,
         Provider: null,
         Consumer: null,
         _currentValue: NotPendingTransition,
         _currentValue2: NotPendingTransition,
         _threadCount: 0
-      }, badgeFormat = "%c%s%c ", badgeStyle = "background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px", resetStyle = "", pad = " ", bind = Function.prototype.bind;
+      }, badgeFormat = "%c%s%c", badgeStyle = "background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px", resetStyle = "", pad = " ", bind = Function.prototype.bind;
       var didWarnAboutNestedUpdates = false;
-      var overrideHookState = null, overrideHookStateDeletePath = null, overrideHookStateRenamePath = null, overrideProps = null, overridePropsDeletePath = null, overridePropsRenamePath = null, scheduleUpdate = null, setErrorHandler = null, setSuspenseHandler = null;
+      var overrideHookState = null, overrideHookStateDeletePath = null, overrideHookStateRenamePath = null, overrideProps = null, overridePropsDeletePath = null, overridePropsRenamePath = null, scheduleUpdate = null, scheduleRetry = null, setErrorHandler = null, setSuspenseHandler = null;
       overrideHookState = function(fiber, id, path, value) {
         id = findHook(fiber, id);
         null !== id && (path = copyWithSetImpl(id.memoizedState, path, 0, value), id.memoizedState = path, id.baseState = path, fiber.memoizedProps = assign({}, fiber.memoizedProps), path = enqueueConcurrentRenderForLane(fiber, 2), null !== path && scheduleUpdateOnFiber(path, fiber, 2));
@@ -19139,6 +21255,10 @@ var require_react_dom_client_development = __commonJS({
       scheduleUpdate = function(fiber) {
         var root2 = enqueueConcurrentRenderForLane(fiber, 2);
         null !== root2 && scheduleUpdateOnFiber(root2, fiber, 2);
+      };
+      scheduleRetry = function(fiber) {
+        var lane = claimNextRetryLane(), root2 = enqueueConcurrentRenderForLane(fiber, lane);
+        null !== root2 && scheduleUpdateOnFiber(root2, fiber, lane);
       };
       setErrorHandler = function(newShouldErrorImpl) {
         shouldErrorImpl = newShouldErrorImpl;
@@ -19192,9 +21312,9 @@ var require_react_dom_client_development = __commonJS({
       };
       (function() {
         var isomorphicReactPackageVersion = React2.version;
-        if ("19.1.0" !== isomorphicReactPackageVersion)
+        if ("19.2.7" !== isomorphicReactPackageVersion)
           throw Error(
-            'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.1.0\nLearn more: https://react.dev/warnings/version-mismatch")
+            'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.2.7\nLearn more: https://react.dev/warnings/version-mismatch")
           );
       })();
       "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
@@ -19218,10 +21338,10 @@ var require_react_dom_client_development = __commonJS({
       if (!function() {
         var internals = {
           bundleType: 1,
-          version: "19.1.0",
+          version: "19.2.7",
           rendererPackageName: "react-dom",
           currentDispatcherRef: ReactSharedInternals,
-          reconcilerVersion: "19.1.0"
+          reconcilerVersion: "19.2.7"
         };
         internals.overrideHookState = overrideHookState;
         internals.overrideHookStateDeletePath = overrideHookStateDeletePath;
@@ -19230,14 +21350,13 @@ var require_react_dom_client_development = __commonJS({
         internals.overridePropsDeletePath = overridePropsDeletePath;
         internals.overridePropsRenamePath = overridePropsRenamePath;
         internals.scheduleUpdate = scheduleUpdate;
+        internals.scheduleRetry = scheduleRetry;
         internals.setErrorHandler = setErrorHandler;
         internals.setSuspenseHandler = setSuspenseHandler;
         internals.scheduleRefresh = scheduleRefresh;
         internals.scheduleRoot = scheduleRoot;
         internals.setRefreshHandler = setRefreshHandler;
         internals.getCurrentFiber = getCurrentFiberForDevTools;
-        internals.getLaneLabelMap = getLaneLabelMap;
-        internals.injectProfilingHooks = injectProfilingHooks;
         return injectInternals(internals);
       }() && canUseDOM && window.top === window.self && (-1 < navigator.userAgent.indexOf("Chrome") && -1 === navigator.userAgent.indexOf("Edge") || -1 < navigator.userAgent.indexOf("Firefox"))) {
         var protocol = window.location.protocol;
@@ -19250,12 +21369,12 @@ var require_react_dom_client_development = __commonJS({
         if (!isValidContainer(container))
           throw Error("Target container is not a DOM element.");
         warnIfReactDOMContainerInDEV(container);
-        var isStrictMode = false, identifierPrefix = "", onUncaughtError = defaultOnUncaughtError, onCaughtError = defaultOnCaughtError, onRecoverableError = defaultOnRecoverableError, transitionCallbacks = null;
+        var isStrictMode = false, identifierPrefix = "", onUncaughtError = defaultOnUncaughtError, onCaughtError = defaultOnCaughtError, onRecoverableError = defaultOnRecoverableError;
         null !== options && void 0 !== options && (options.hydrate ? console.warn(
           "hydrate through createRoot is deprecated. Use ReactDOMClient.hydrateRoot(container, <App />) instead."
         ) : "object" === typeof options && null !== options && options.$$typeof === REACT_ELEMENT_TYPE && console.error(
           "You passed a JSX element to createRoot. You probably meant to call root.render instead. Example usage:\n\n  let root = createRoot(domContainer);\n  root.render(<App />);"
-        ), true === options.unstable_strictMode && (isStrictMode = true), void 0 !== options.identifierPrefix && (identifierPrefix = options.identifierPrefix), void 0 !== options.onUncaughtError && (onUncaughtError = options.onUncaughtError), void 0 !== options.onCaughtError && (onCaughtError = options.onCaughtError), void 0 !== options.onRecoverableError && (onRecoverableError = options.onRecoverableError), void 0 !== options.unstable_transitionCallbacks && (transitionCallbacks = options.unstable_transitionCallbacks));
+        ), true === options.unstable_strictMode && (isStrictMode = true), void 0 !== options.identifierPrefix && (identifierPrefix = options.identifierPrefix), void 0 !== options.onUncaughtError && (onUncaughtError = options.onUncaughtError), void 0 !== options.onCaughtError && (onCaughtError = options.onCaughtError), void 0 !== options.onRecoverableError && (onRecoverableError = options.onRecoverableError));
         options = createFiberRoot(
           container,
           1,
@@ -19264,11 +21383,11 @@ var require_react_dom_client_development = __commonJS({
           null,
           isStrictMode,
           identifierPrefix,
+          null,
           onUncaughtError,
           onCaughtError,
           onRecoverableError,
-          transitionCallbacks,
-          null
+          defaultOnDefaultTransitionIndicator
         );
         container[internalContainerInstanceKey] = options.current;
         listenToAllSupportedEvents(container);
@@ -19281,8 +21400,8 @@ var require_react_dom_client_development = __commonJS({
         void 0 === initialChildren && console.error(
           "Must provide initial children as second argument to hydrateRoot. Example usage: hydrateRoot(domContainer, <App />)"
         );
-        var isStrictMode = false, identifierPrefix = "", onUncaughtError = defaultOnUncaughtError, onCaughtError = defaultOnCaughtError, onRecoverableError = defaultOnRecoverableError, transitionCallbacks = null, formState = null;
-        null !== options && void 0 !== options && (true === options.unstable_strictMode && (isStrictMode = true), void 0 !== options.identifierPrefix && (identifierPrefix = options.identifierPrefix), void 0 !== options.onUncaughtError && (onUncaughtError = options.onUncaughtError), void 0 !== options.onCaughtError && (onCaughtError = options.onCaughtError), void 0 !== options.onRecoverableError && (onRecoverableError = options.onRecoverableError), void 0 !== options.unstable_transitionCallbacks && (transitionCallbacks = options.unstable_transitionCallbacks), void 0 !== options.formState && (formState = options.formState));
+        var isStrictMode = false, identifierPrefix = "", onUncaughtError = defaultOnUncaughtError, onCaughtError = defaultOnCaughtError, onRecoverableError = defaultOnRecoverableError, formState = null;
+        null !== options && void 0 !== options && (true === options.unstable_strictMode && (isStrictMode = true), void 0 !== options.identifierPrefix && (identifierPrefix = options.identifierPrefix), void 0 !== options.onUncaughtError && (onUncaughtError = options.onUncaughtError), void 0 !== options.onCaughtError && (onCaughtError = options.onCaughtError), void 0 !== options.onRecoverableError && (onRecoverableError = options.onRecoverableError), void 0 !== options.formState && (formState = options.formState));
         initialChildren = createFiberRoot(
           container,
           1,
@@ -19291,11 +21410,11 @@ var require_react_dom_client_development = __commonJS({
           null != options ? options : null,
           isStrictMode,
           identifierPrefix,
+          formState,
           onUncaughtError,
           onCaughtError,
           onRecoverableError,
-          transitionCallbacks,
-          formState
+          defaultOnDefaultTransitionIndicator
         );
         initialChildren.context = getContextForSubtree(null);
         options = initialChildren.current;
@@ -19304,6 +21423,7 @@ var require_react_dom_client_development = __commonJS({
         identifierPrefix = createUpdate(isStrictMode);
         identifierPrefix.callback = null;
         enqueueUpdate(options, identifierPrefix, isStrictMode);
+        startUpdateTimerByLane(isStrictMode, "hydrateRoot()", null);
         options = isStrictMode;
         initialChildren.current.lanes = options;
         markRootUpdated$1(initialChildren, options);
@@ -19312,7 +21432,7 @@ var require_react_dom_client_development = __commonJS({
         listenToAllSupportedEvents(container);
         return new ReactDOMHydrationRoot(initialChildren);
       };
-      exports.version = "19.1.0";
+      exports.version = "19.2.7";
       "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
     })();
   }
@@ -19357,7 +21477,7 @@ var require_react_jsx_runtime_development = __commonJS({
             case REACT_PORTAL_TYPE:
               return "Portal";
             case REACT_CONTEXT_TYPE:
-              return (type.displayName || "Context") + ".Provider";
+              return type.displayName || "Context";
             case REACT_CONSUMER_TYPE:
               return (type._context.displayName || "Context") + ".Consumer";
             case REACT_FORWARD_REF_TYPE:
@@ -19445,8 +21565,8 @@ var require_react_jsx_runtime_development = __commonJS({
         componentName = this.props.ref;
         return void 0 !== componentName ? componentName : null;
       }
-      function ReactElement(type, key, self, source, owner, props, debugStack, debugTask) {
-        self = props.ref;
+      function ReactElement(type, key, props, owner, debugStack, debugTask) {
+        var refProp = props.ref;
         type = {
           $$typeof: REACT_ELEMENT_TYPE,
           type,
@@ -19454,7 +21574,7 @@ var require_react_jsx_runtime_development = __commonJS({
           props,
           _owner: owner
         };
-        null !== (void 0 !== self ? self : null) ? Object.defineProperty(type, "ref", {
+        null !== (void 0 !== refProp ? refProp : null) ? Object.defineProperty(type, "ref", {
           enumerable: false,
           get: elementRefGetterWithDeprecationWarning
         }) : Object.defineProperty(type, "ref", { enumerable: false, value: null });
@@ -19486,7 +21606,7 @@ var require_react_jsx_runtime_development = __commonJS({
         Object.freeze && (Object.freeze(type.props), Object.freeze(type));
         return type;
       }
-      function jsxDEVImpl(type, config, maybeKey, isStaticChildren, source, self, debugStack, debugTask) {
+      function jsxDEVImpl(type, config, maybeKey, isStaticChildren, debugStack, debugTask) {
         var children = config.children;
         if (void 0 !== children)
           if (isStaticChildren)
@@ -19528,57 +21648,53 @@ var require_react_jsx_runtime_development = __commonJS({
         return ReactElement(
           type,
           children,
-          self,
-          source,
-          getOwner(),
           maybeKey,
+          getOwner(),
           debugStack,
           debugTask
         );
       }
       function validateChildKeys(node) {
-        "object" === typeof node && null !== node && node.$$typeof === REACT_ELEMENT_TYPE && node._store && (node._store.validated = 1);
+        isValidElement(node) ? node._store && (node._store.validated = 1) : "object" === typeof node && null !== node && node.$$typeof === REACT_LAZY_TYPE && ("fulfilled" === node._payload.status ? isValidElement(node._payload.value) && node._payload.value._store && (node._payload.value._store.validated = 1) : node._store && (node._store.validated = 1));
       }
-      var React2 = require_react(), REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler");
-      var REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+      function isValidElement(object) {
+        return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE;
+      }
+      var React2 = require_react(), REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
         return null;
       };
       React2 = {
-        "react-stack-bottom-frame": function(callStackForError) {
+        react_stack_bottom_frame: function(callStackForError) {
           return callStackForError();
         }
       };
       var specialPropKeyWarningShown;
       var didWarnAboutElementRef = {};
-      var unknownOwnerDebugStack = React2["react-stack-bottom-frame"].bind(
+      var unknownOwnerDebugStack = React2.react_stack_bottom_frame.bind(
         React2,
         UnknownOwner
       )();
       var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
       var didWarnAboutKeySpread = {};
       exports.Fragment = REACT_FRAGMENT_TYPE;
-      exports.jsx = function(type, config, maybeKey, source, self) {
+      exports.jsx = function(type, config, maybeKey) {
         var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
         return jsxDEVImpl(
           type,
           config,
           maybeKey,
           false,
-          source,
-          self,
           trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack,
           trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
         );
       };
-      exports.jsxs = function(type, config, maybeKey, source, self) {
+      exports.jsxs = function(type, config, maybeKey) {
         var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
         return jsxDEVImpl(
           type,
           config,
           maybeKey,
           true,
-          source,
-          self,
           trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack,
           trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
         );
@@ -19899,7 +22015,7 @@ function styleInject(css, { insertAt } = {}) {
 }
 
 // src2/styles.css
-styleInject('.void-scope {\n}\n.void-scope *,\n.void-scope ::before,\n.void-scope ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x: ;\n  --tw-pan-y: ;\n  --tw-pinch-zoom: ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position: ;\n  --tw-gradient-via-position: ;\n  --tw-gradient-to-position: ;\n  --tw-ordinal: ;\n  --tw-slashed-zero: ;\n  --tw-numeric-figure: ;\n  --tw-numeric-spacing: ;\n  --tw-numeric-fraction: ;\n  --tw-ring-inset: ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur: ;\n  --tw-brightness: ;\n  --tw-contrast: ;\n  --tw-grayscale: ;\n  --tw-hue-rotate: ;\n  --tw-invert: ;\n  --tw-saturate: ;\n  --tw-sepia: ;\n  --tw-drop-shadow: ;\n  --tw-backdrop-blur: ;\n  --tw-backdrop-brightness: ;\n  --tw-backdrop-contrast: ;\n  --tw-backdrop-grayscale: ;\n  --tw-backdrop-hue-rotate: ;\n  --tw-backdrop-invert: ;\n  --tw-backdrop-opacity: ;\n  --tw-backdrop-saturate: ;\n  --tw-backdrop-sepia: ;\n  --tw-contain-size: ;\n  --tw-contain-layout: ;\n  --tw-contain-paint: ;\n  --tw-contain-style: ;\n}\n.void-scope ::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x: ;\n  --tw-pan-y: ;\n  --tw-pinch-zoom: ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position: ;\n  --tw-gradient-via-position: ;\n  --tw-gradient-to-position: ;\n  --tw-ordinal: ;\n  --tw-slashed-zero: ;\n  --tw-numeric-figure: ;\n  --tw-numeric-spacing: ;\n  --tw-numeric-fraction: ;\n  --tw-ring-inset: ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur: ;\n  --tw-brightness: ;\n  --tw-contrast: ;\n  --tw-grayscale: ;\n  --tw-hue-rotate: ;\n  --tw-invert: ;\n  --tw-saturate: ;\n  --tw-sepia: ;\n  --tw-drop-shadow: ;\n  --tw-backdrop-blur: ;\n  --tw-backdrop-brightness: ;\n  --tw-backdrop-contrast: ;\n  --tw-backdrop-grayscale: ;\n  --tw-backdrop-hue-rotate: ;\n  --tw-backdrop-invert: ;\n  --tw-backdrop-opacity: ;\n  --tw-backdrop-saturate: ;\n  --tw-backdrop-sepia: ;\n  --tw-contain-size: ;\n  --tw-contain-layout: ;\n  --tw-contain-paint: ;\n  --tw-contain-style: ;\n}\n.void-scope *,\n.void-scope ::before,\n.void-scope ::after {\n  box-sizing: border-box;\n  border-width: 0;\n  border-style: solid;\n  border-color: #e5e7eb;\n}\n.void-scope ::before,\n.void-scope ::after {\n  --tw-content: "";\n}\n.void-scope html,\n.void-scope :host {\n  line-height: 1.5;\n  -webkit-text-size-adjust: 100%;\n  -moz-tab-size: 4;\n  -o-tab-size: 4;\n  tab-size: 4;\n  font-family:\n    ui-sans-serif,\n    system-ui,\n    sans-serif,\n    "Apple Color Emoji",\n    "Segoe UI Emoji",\n    "Segoe UI Symbol",\n    "Noto Color Emoji";\n  font-feature-settings: normal;\n  font-variation-settings: normal;\n  -webkit-tap-highlight-color: transparent;\n}\n.void-scope body {\n  margin: 0;\n  line-height: inherit;\n}\n.void-scope hr {\n  height: 0;\n  color: inherit;\n  border-top-width: 1px;\n}\n.void-scope abbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n  text-decoration: underline dotted;\n}\n.void-scope h1,\n.void-scope h2,\n.void-scope h3,\n.void-scope h4,\n.void-scope h5,\n.void-scope h6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n.void-scope a {\n  color: inherit;\n  text-decoration: inherit;\n}\n.void-scope b,\n.void-scope strong {\n  font-weight: bolder;\n}\n.void-scope code,\n.void-scope kbd,\n.void-scope samp,\n.void-scope pre {\n  font-family:\n    ui-monospace,\n    SFMono-Regular,\n    Menlo,\n    Monaco,\n    Consolas,\n    "Liberation Mono",\n    "Courier New",\n    monospace;\n  font-feature-settings: normal;\n  font-variation-settings: normal;\n  font-size: 1em;\n}\n.void-scope small {\n  font-size: 80%;\n}\n.void-scope sub,\n.void-scope sup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n.void-scope sub {\n  bottom: -0.25em;\n}\n.void-scope sup {\n  top: -0.5em;\n}\n.void-scope table {\n  text-indent: 0;\n  border-color: inherit;\n  border-collapse: collapse;\n}\n.void-scope button,\n.void-scope input,\n.void-scope optgroup,\n.void-scope select,\n.void-scope textarea {\n  font-family: inherit;\n  font-feature-settings: inherit;\n  font-variation-settings: inherit;\n  font-size: 100%;\n  font-weight: inherit;\n  line-height: inherit;\n  letter-spacing: inherit;\n  color: inherit;\n  margin: 0;\n  padding: 0;\n}\n.void-scope button,\n.void-scope select {\n  text-transform: none;\n}\n.void-scope button,\n.void-scope input:where([type=button]),\n.void-scope input:where([type=reset]),\n.void-scope input:where([type=submit]) {\n  -webkit-appearance: button;\n  background-color: transparent;\n  background-image: none;\n}\n.void-scope :-moz-focusring {\n  outline: auto;\n}\n.void-scope :-moz-ui-invalid {\n  box-shadow: none;\n}\n.void-scope progress {\n  vertical-align: baseline;\n}\n.void-scope ::-webkit-inner-spin-button,\n.void-scope ::-webkit-outer-spin-button {\n  height: auto;\n}\n.void-scope [type=search] {\n  -webkit-appearance: textfield;\n  outline-offset: -2px;\n}\n.void-scope ::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n.void-scope ::-webkit-file-upload-button {\n  -webkit-appearance: button;\n  font: inherit;\n}\n.void-scope summary {\n  display: list-item;\n}\n.void-scope blockquote,\n.void-scope dl,\n.void-scope dd,\n.void-scope h1,\n.void-scope h2,\n.void-scope h3,\n.void-scope h4,\n.void-scope h5,\n.void-scope h6,\n.void-scope hr,\n.void-scope figure,\n.void-scope p,\n.void-scope pre {\n  margin: 0;\n}\n.void-scope fieldset {\n  margin: 0;\n  padding: 0;\n}\n.void-scope legend {\n  padding: 0;\n}\n.void-scope ol,\n.void-scope ul,\n.void-scope menu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.void-scope dialog {\n  padding: 0;\n}\n.void-scope textarea {\n  resize: vertical;\n}\n.void-scope input::-moz-placeholder,\n.void-scope textarea::-moz-placeholder {\n  opacity: 1;\n  color: #9ca3af;\n}\n.void-scope input::placeholder,\n.void-scope textarea::placeholder {\n  opacity: 1;\n  color: #9ca3af;\n}\n.void-scope button,\n.void-scope [role=button] {\n  cursor: pointer;\n}\n.void-scope :disabled {\n  cursor: default;\n}\n.void-scope img,\n.void-scope svg,\n.void-scope video,\n.void-scope canvas,\n.void-scope audio,\n.void-scope iframe,\n.void-scope embed,\n.void-scope object {\n  display: block;\n  vertical-align: middle;\n}\n.void-scope img,\n.void-scope video {\n  max-width: 100%;\n  height: auto;\n}\n.void-scope [hidden]:where(:not([hidden=until-found])) {\n  display: none;\n}\n.void-scope .void-prose {\n  color: var(--tw-prose-body);\n  max-width: 65ch;\n}\n.void-scope .void-prose :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-lead);\n  font-size: 1.25em;\n  line-height: 1.6;\n  margin-top: 1.2em;\n  margin-bottom: 1.2em;\n}\n.void-scope .void-prose :where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-links);\n  text-decoration: underline;\n  font-weight: 500;\n}\n.void-scope .void-prose :where(strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-bold);\n  font-weight: 600;\n}\n.void-scope .void-prose :where(a strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(blockquote strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(thead th strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: decimal;\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose :where(ol[type=A]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-alpha;\n}\n.void-scope .void-prose :where(ol[type=a]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-alpha;\n}\n.void-scope .void-prose :where(ol[type=A s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-alpha;\n}\n.void-scope .void-prose :where(ol[type=a s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-alpha;\n}\n.void-scope .void-prose :where(ol[type=I]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-roman;\n}\n.void-scope .void-prose :where(ol[type=i]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-roman;\n}\n.void-scope .void-prose :where(ol[type=I s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-roman;\n}\n.void-scope .void-prose :where(ol[type=i s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-roman;\n}\n.void-scope .void-prose :where(ol[type="1"]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: decimal;\n}\n.void-scope .void-prose :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: disc;\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::marker {\n  font-weight: 400;\n  color: var(--tw-prose-counters);\n}\n.void-scope .void-prose :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::marker {\n  color: var(--tw-prose-bullets);\n}\n.void-scope .void-prose :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  margin-top: 1.25em;\n}\n.void-scope .void-prose :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-color: var(--tw-prose-hr);\n  border-top-width: 1px;\n  margin-top: 3em;\n  margin-bottom: 3em;\n}\n.void-scope .void-prose :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 500;\n  font-style: italic;\n  color: var(--tw-prose-quotes);\n  border-inline-start-width: 0.25rem;\n  border-inline-start-color: var(--tw-prose-quote-borders);\n  quotes: "\\201c""\\201d""\\2018""\\2019";\n  margin-top: 1.6em;\n  margin-bottom: 1.6em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose :where(blockquote p:first-of-type):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::before {\n  content: open-quote;\n}\n.void-scope .void-prose :where(blockquote p:last-of-type):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::after {\n  content: close-quote;\n}\n.void-scope .void-prose :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 800;\n  font-size: 2.25em;\n  margin-top: 0;\n  margin-bottom: 0.8888889em;\n  line-height: 1.1111111;\n}\n.void-scope .void-prose :where(h1 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 900;\n  color: inherit;\n}\n.void-scope .void-prose :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 700;\n  font-size: 1.5em;\n  margin-top: 2em;\n  margin-bottom: 1em;\n  line-height: 1.3333333;\n}\n.void-scope .void-prose :where(h2 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 800;\n  color: inherit;\n}\n.void-scope .void-prose :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  font-size: 1.25em;\n  margin-top: 1.6em;\n  margin-bottom: 0.6em;\n  line-height: 1.6;\n}\n.void-scope .void-prose :where(h3 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 700;\n  color: inherit;\n}\n.void-scope .void-prose :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  margin-top: 1.5em;\n  margin-bottom: 0.5em;\n  line-height: 1.5;\n}\n.void-scope .void-prose :where(h4 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 700;\n  color: inherit;\n}\n.void-scope .void-prose :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  display: block;\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 500;\n  font-family: inherit;\n  color: var(--tw-prose-kbd);\n  box-shadow: 0 0 0 1px rgb(var(--tw-prose-kbd-shadows) / 10%), 0 3px 0 rgb(var(--tw-prose-kbd-shadows) / 10%);\n  font-size: 0.875em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1875em;\n  padding-inline-end: 0.375em;\n  padding-bottom: 0.1875em;\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-code);\n  font-weight: 600;\n  font-size: 0.875em;\n}\n.void-scope .void-prose :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::before {\n  content: "`";\n}\n.void-scope .void-prose :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::after {\n  content: "`";\n}\n.void-scope .void-prose :where(a code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(h1 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n  font-size: 0.875em;\n}\n.void-scope .void-prose :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n  font-size: 0.9em;\n}\n.void-scope .void-prose :where(h4 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(blockquote code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(thead th code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-pre-code);\n  background-color: var(--tw-prose-pre-bg);\n  overflow-x: auto;\n  font-weight: 400;\n  font-size: 0.875em;\n  line-height: 1.7142857;\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n  border-radius: 0.375rem;\n  padding-top: 0.8571429em;\n  padding-inline-end: 1.1428571em;\n  padding-bottom: 0.8571429em;\n  padding-inline-start: 1.1428571em;\n}\n.void-scope .void-prose :where(pre code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  background-color: transparent;\n  border-width: 0;\n  border-radius: 0;\n  padding: 0;\n  font-weight: inherit;\n  color: inherit;\n  font-size: inherit;\n  font-family: inherit;\n  line-height: inherit;\n}\n.void-scope .void-prose :where(pre code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::before {\n  content: none;\n}\n.void-scope .void-prose :where(pre code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::after {\n  content: none;\n}\n.void-scope .void-prose :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  width: 100%;\n  table-layout: auto;\n  margin-top: 2em;\n  margin-bottom: 2em;\n  font-size: 0.875em;\n  line-height: 1.7142857;\n}\n.void-scope .void-prose :where(thead):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-bottom-width: 1px;\n  border-bottom-color: var(--tw-prose-th-borders);\n}\n.void-scope .void-prose :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  vertical-align: bottom;\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose :where(tbody tr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-bottom-width: 1px;\n  border-bottom-color: var(--tw-prose-td-borders);\n}\n.void-scope .void-prose :where(tbody tr:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-bottom-width: 0;\n}\n.void-scope .void-prose :where(tbody td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  vertical-align: baseline;\n}\n.void-scope .void-prose :where(tfoot):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-top-width: 1px;\n  border-top-color: var(--tw-prose-th-borders);\n}\n.void-scope .void-prose :where(tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  vertical-align: top;\n}\n.void-scope .void-prose :where(th, td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  text-align: start;\n}\n.void-scope .void-prose :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-captions);\n  font-size: 0.875em;\n  line-height: 1.4285714;\n  margin-top: 0.8571429em;\n}\n.void-scope .void-prose {\n  --tw-prose-body: var(--void-fg-1);\n  --tw-prose-headings: var(--void-fg-1);\n  --tw-prose-lead: var(--void-fg-2);\n  --tw-prose-links: var(--void-link-color);\n  --tw-prose-bold: var(--void-fg-1);\n  --tw-prose-counters: var(--void-fg-3);\n  --tw-prose-bullets: var(--void-fg-3);\n  --tw-prose-hr: var(--void-border-4);\n  --tw-prose-quotes: var(--void-fg-1);\n  --tw-prose-quote-borders: var(--void-border-2);\n  --tw-prose-captions: var(--void-fg-3);\n  --tw-prose-kbd: #111827;\n  --tw-prose-kbd-shadows: 17 24 39;\n  --tw-prose-code: var(--void-fg-0);\n  --tw-prose-pre-code: var(--void-fg-0);\n  --tw-prose-pre-bg: var(--void-bg-1);\n  --tw-prose-th-borders: var(--void-border-4);\n  --tw-prose-td-borders: var(--void-border-4);\n  --tw-prose-invert-body: #d1d5db;\n  --tw-prose-invert-headings: #fff;\n  --tw-prose-invert-lead: #9ca3af;\n  --tw-prose-invert-links: #fff;\n  --tw-prose-invert-bold: #fff;\n  --tw-prose-invert-counters: #9ca3af;\n  --tw-prose-invert-bullets: #4b5563;\n  --tw-prose-invert-hr: #374151;\n  --tw-prose-invert-quotes: #f3f4f6;\n  --tw-prose-invert-quote-borders: #374151;\n  --tw-prose-invert-captions: #9ca3af;\n  --tw-prose-invert-kbd: #fff;\n  --tw-prose-invert-kbd-shadows: 255 255 255;\n  --tw-prose-invert-code: #fff;\n  --tw-prose-invert-pre-code: #d1d5db;\n  --tw-prose-invert-pre-bg: rgb(0 0 0 / 50%);\n  --tw-prose-invert-th-borders: #4b5563;\n  --tw-prose-invert-td-borders: #374151;\n  font-size: 1rem;\n  line-height: 1.75;\n}\n.void-scope .void-prose :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  margin-bottom: 0.5em;\n}\n.void-scope .void-prose :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose :where(.void-prose > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose :where(.void-prose > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose :where(.void-prose > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where(.void-prose > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose :where(.void-prose > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.5714286em;\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(.void-prose > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(.void-prose > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .void-prose-sm {\n  font-size: 0.875rem;\n  line-height: 1.7142857;\n}\n.void-scope .void-prose-sm :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  line-height: 1.5555556;\n  margin-top: 0.8888889em;\n  margin-bottom: 0.8888889em;\n}\n.void-scope .void-prose-sm :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.3333333em;\n  margin-bottom: 1.3333333em;\n  padding-inline-start: 1.1111111em;\n}\n.void-scope .void-prose-sm :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 2.1428571em;\n  margin-top: 0;\n  margin-bottom: 0.8em;\n  line-height: 1.2;\n}\n.void-scope .void-prose-sm :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.4285714em;\n  margin-top: 1.6em;\n  margin-bottom: 0.8em;\n  line-height: 1.4;\n}\n.void-scope .void-prose-sm :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  margin-top: 1.5555556em;\n  margin-bottom: 0.4444444em;\n  line-height: 1.5555556;\n}\n.void-scope .void-prose-sm :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.4285714em;\n  margin-bottom: 0.5714286em;\n  line-height: 1.4285714;\n}\n.void-scope .void-prose-sm :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-sm :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1428571em;\n  padding-inline-end: 0.3571429em;\n  padding-bottom: 0.1428571em;\n  padding-inline-start: 0.3571429em;\n}\n.void-scope .void-prose-sm :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n}\n.void-scope .void-prose-sm :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.9em;\n}\n.void-scope .void-prose-sm :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8888889em;\n}\n.void-scope .void-prose-sm :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.6666667;\n  margin-top: 1.6666667em;\n  margin-bottom: 1.6666667em;\n  border-radius: 0.25rem;\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-sm :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .void-prose-sm :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .void-prose-sm :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  margin-bottom: 0.2857143em;\n}\n.void-scope .void-prose-sm :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .void-prose-sm :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .void-prose-sm :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .void-prose-sm :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2.8571429em;\n  margin-bottom: 2.8571429em;\n}\n.void-scope .void-prose-sm :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.5;\n}\n.void-scope .void-prose-sm :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-sm :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-sm :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-sm :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-sm :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-sm :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-sm :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-sm :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.3333333;\n  margin-top: 0.6666667em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .void-prose-base {\n  font-size: 1rem;\n  line-height: 1.75;\n}\n.void-scope .void-prose-base :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.25em;\n  line-height: 1.6;\n  margin-top: 1.2em;\n  margin-bottom: 1.2em;\n}\n.void-scope .void-prose-base :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.6em;\n  margin-bottom: 1.6em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-base :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 2.25em;\n  margin-top: 0;\n  margin-bottom: 0.8888889em;\n  line-height: 1.1111111;\n}\n.void-scope .void-prose-base :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.5em;\n  margin-top: 2em;\n  margin-bottom: 1em;\n  line-height: 1.3333333;\n}\n.void-scope .void-prose-base :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.25em;\n  margin-top: 1.6em;\n  margin-bottom: 0.6em;\n  line-height: 1.6;\n}\n.void-scope .void-prose-base :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.5em;\n  margin-bottom: 0.5em;\n  line-height: 1.5;\n}\n.void-scope .void-prose-base :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-base :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1875em;\n  padding-inline-end: 0.375em;\n  padding-bottom: 0.1875em;\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose-base :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n}\n.void-scope .void-prose-base :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n}\n.void-scope .void-prose-base :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.9em;\n}\n.void-scope .void-prose-base :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  line-height: 1.7142857;\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n  border-radius: 0.375rem;\n  padding-top: 0.8571429em;\n  padding-inline-end: 1.1428571em;\n  padding-bottom: 0.8571429em;\n  padding-inline-start: 1.1428571em;\n}\n.void-scope .void-prose-base :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose-base :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose-base :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  margin-bottom: 0.5em;\n}\n.void-scope .void-prose-base :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose-base :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose-base :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose-base :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose-base :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 3em;\n  margin-bottom: 3em;\n}\n.void-scope .void-prose-base :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  line-height: 1.7142857;\n}\n.void-scope .void-prose-base :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose-base :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-base :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-base :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.5714286em;\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose-base :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-base :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-base :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-base :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  line-height: 1.4285714;\n  margin-top: 0.8571429em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(.void-prose-base > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .void-prose-invert {\n  --tw-prose-body: var(--tw-prose-invert-body);\n  --tw-prose-headings: var(--tw-prose-invert-headings);\n  --tw-prose-lead: var(--tw-prose-invert-lead);\n  --tw-prose-links: var(--tw-prose-invert-links);\n  --tw-prose-bold: var(--tw-prose-invert-bold);\n  --tw-prose-counters: var(--tw-prose-invert-counters);\n  --tw-prose-bullets: var(--tw-prose-invert-bullets);\n  --tw-prose-hr: var(--tw-prose-invert-hr);\n  --tw-prose-quotes: var(--tw-prose-invert-quotes);\n  --tw-prose-quote-borders: var(--tw-prose-invert-quote-borders);\n  --tw-prose-captions: var(--tw-prose-invert-captions);\n  --tw-prose-kbd: var(--tw-prose-invert-kbd);\n  --tw-prose-kbd-shadows: var(--tw-prose-invert-kbd-shadows);\n  --tw-prose-code: var(--tw-prose-invert-code);\n  --tw-prose-pre-code: var(--tw-prose-invert-pre-code);\n  --tw-prose-pre-bg: var(--tw-prose-invert-pre-bg);\n  --tw-prose-th-borders: var(--tw-prose-invert-th-borders);\n  --tw-prose-td-borders: var(--tw-prose-invert-td-borders);\n}\n.void-scope .void-pointer-events-none {\n  pointer-events: none;\n}\n.void-scope .void-pointer-events-auto {\n  pointer-events: auto;\n}\n.void-scope .void-fixed {\n  position: fixed;\n}\n.void-scope .void-absolute {\n  position: absolute;\n}\n.void-scope .void-relative {\n  position: relative;\n}\n.void-scope .void-sticky {\n  position: sticky;\n}\n.void-scope .void-inset-0 {\n  inset: 0px;\n}\n.void-scope .-void-left-\\[999999px\\] {\n  left: -999999px;\n}\n.void-scope .-void-right-1 {\n  right: -0.25rem;\n}\n.void-scope .-void-top-1 {\n  top: -0.25rem;\n}\n.void-scope .-void-top-\\[999999px\\] {\n  top: -999999px;\n}\n.void-scope .void-bottom-0 {\n  bottom: 0px;\n}\n.void-scope .void-left-0 {\n  left: 0px;\n}\n.void-scope .void-right-0 {\n  right: 0px;\n}\n.void-scope .void-top-0 {\n  top: 0px;\n}\n.void-scope .void-top-1\\/2 {\n  top: 50%;\n}\n.void-scope .void-z-0 {\n  z-index: 0;\n}\n.void-scope .void-z-10 {\n  z-index: 10;\n}\n.void-scope .void-z-50 {\n  z-index: 50;\n}\n.void-scope .void-z-\\[1000\\] {\n  z-index: 1000;\n}\n.void-scope .void-z-\\[100\\] {\n  z-index: 100;\n}\n.void-scope .void-z-\\[9999999\\] {\n  z-index: 9999999;\n}\n.void-scope .void-z-\\[99999\\] {\n  z-index: 99999;\n}\n.void-scope .void-m-0 {\n  margin: 0px;\n}\n.void-scope .-void-mx-1 {\n  margin-left: -0.25rem;\n  margin-right: -0.25rem;\n}\n.void-scope .void-mx-0\\.5 {\n  margin-left: 0.125rem;\n  margin-right: 0.125rem;\n}\n.void-scope .void-mx-1 {\n  margin-left: 0.25rem;\n  margin-right: 0.25rem;\n}\n.void-scope .void-mx-2 {\n  margin-left: 0.5rem;\n  margin-right: 0.5rem;\n}\n.void-scope .void-mx-4 {\n  margin-left: 1rem;\n  margin-right: 1rem;\n}\n.void-scope .void-mx-auto {\n  margin-left: auto;\n  margin-right: auto;\n}\n.void-scope .void-my-0\\.5 {\n  margin-top: 0.125rem;\n  margin-bottom: 0.125rem;\n}\n.void-scope .void-my-1 {\n  margin-top: 0.25rem;\n  margin-bottom: 0.25rem;\n}\n.void-scope .void-my-1\\.5 {\n  margin-top: 0.375rem;\n  margin-bottom: 0.375rem;\n}\n.void-scope .void-my-2 {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .void-my-4 {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .void-my-auto {\n  margin-top: auto;\n  margin-bottom: auto;\n}\n.void-scope .void-mb-0\\.5 {\n  margin-bottom: 0.125rem;\n}\n.void-scope .void-mb-1 {\n  margin-bottom: 0.25rem;\n}\n.void-scope .void-mb-1\\.5 {\n  margin-bottom: 0.375rem;\n}\n.void-scope .void-mb-10 {\n  margin-bottom: 2.5rem;\n}\n.void-scope .void-mb-2 {\n  margin-bottom: 0.5rem;\n}\n.void-scope .void-mb-3 {\n  margin-bottom: 0.75rem;\n}\n.void-scope .void-mb-32 {\n  margin-bottom: 8rem;\n}\n.void-scope .void-mb-4 {\n  margin-bottom: 1rem;\n}\n.void-scope .void-mb-auto {\n  margin-bottom: auto;\n}\n.void-scope .void-ml-0\\.5 {\n  margin-left: 0.125rem;\n}\n.void-scope .void-ml-1 {\n  margin-left: 0.25rem;\n}\n.void-scope .void-ml-1\\.5 {\n  margin-left: 0.375rem;\n}\n.void-scope .void-ml-2 {\n  margin-left: 0.5rem;\n}\n.void-scope .void-ml-3 {\n  margin-left: 0.75rem;\n}\n.void-scope .void-ml-6 {\n  margin-left: 1.5rem;\n}\n.void-scope .void-ml-auto {\n  margin-left: auto;\n}\n.void-scope .void-mr-1 {\n  margin-right: 0.25rem;\n}\n.void-scope .void-mr-1\\.5 {\n  margin-right: 0.375rem;\n}\n.void-scope .void-mr-4 {\n  margin-right: 1rem;\n}\n.void-scope .void-mt-0\\.5 {\n  margin-top: 0.125rem;\n}\n.void-scope .void-mt-1 {\n  margin-top: 0.25rem;\n}\n.void-scope .void-mt-12 {\n  margin-top: 3rem;\n}\n.void-scope .void-mt-2 {\n  margin-top: 0.5rem;\n}\n.void-scope .void-mt-2\\.5 {\n  margin-top: 0.625rem;\n}\n.void-scope .void-mt-3 {\n  margin-top: 0.75rem;\n}\n.void-scope .void-mt-4 {\n  margin-top: 1rem;\n}\n.void-scope .void-mt-6 {\n  margin-top: 1.5rem;\n}\n.void-scope .void-mt-8 {\n  margin-top: 2rem;\n}\n.void-scope .void-mt-auto {\n  margin-top: auto;\n}\n.void-scope .void-mt-px {\n  margin-top: 1px;\n}\n.void-scope .void-block {\n  display: block;\n}\n.void-scope .void-inline-block {\n  display: inline-block;\n}\n.void-scope .void-flex {\n  display: flex;\n}\n.void-scope .void-inline-flex {\n  display: inline-flex;\n}\n.void-scope .void-grid {\n  display: grid;\n}\n.void-scope .void-hidden {\n  display: none;\n}\n.void-scope .void-size-1\\.5 {\n  width: 0.375rem;\n  height: 0.375rem;\n}\n.void-scope .void-size-2 {\n  width: 0.5rem;\n  height: 0.5rem;\n}\n.void-scope .void-size-3 {\n  width: 0.75rem;\n  height: 0.75rem;\n}\n.void-scope .void-size-3\\.5 {\n  width: 0.875rem;\n  height: 0.875rem;\n}\n.void-scope .void-size-4 {\n  width: 1rem;\n  height: 1rem;\n}\n.void-scope .void-size-5 {\n  width: 1.25rem;\n  height: 1.25rem;\n}\n.void-scope .void-size-\\[11px\\] {\n  width: 11px;\n  height: 11px;\n}\n.void-scope .void-size-\\[18px\\] {\n  width: 18px;\n  height: 18px;\n}\n.void-scope .void-h-0\\.5 {\n  height: 0.125rem;\n}\n.void-scope .void-h-1 {\n  height: 0.25rem;\n}\n.void-scope .void-h-1\\.5 {\n  height: 0.375rem;\n}\n.void-scope .void-h-1\\/3 {\n  height: 33.333333%;\n}\n.void-scope .void-h-16 {\n  height: 4rem;\n}\n.void-scope .void-h-2 {\n  height: 0.5rem;\n}\n.void-scope .void-h-2\\.5 {\n  height: 0.625rem;\n}\n.void-scope .void-h-3 {\n  height: 0.75rem;\n}\n.void-scope .void-h-3\\.5 {\n  height: 0.875rem;\n}\n.void-scope .void-h-4 {\n  height: 1rem;\n}\n.void-scope .void-h-5 {\n  height: 1.25rem;\n}\n.void-scope .void-h-6 {\n  height: 1.5rem;\n}\n.void-scope .void-h-9 {\n  height: 2.25rem;\n}\n.void-scope .void-h-\\[1px\\] {\n  height: 1px;\n}\n.void-scope .void-h-\\[200px\\] {\n  height: 200px;\n}\n.void-scope .void-h-\\[30vh\\] {\n  height: 30vh;\n}\n.void-scope .void-h-\\[4px\\] {\n  height: 4px;\n}\n.void-scope .void-h-\\[5px\\] {\n  height: 5px;\n}\n.void-scope .void-h-\\[6px\\] {\n  height: 6px;\n}\n.void-scope .void-h-\\[80vh\\] {\n  height: 80vh;\n}\n.void-scope .void-h-fit {\n  height: -moz-fit-content;\n  height: fit-content;\n}\n.void-scope .void-h-full {\n  height: 100%;\n}\n.void-scope .void-max-h-0 {\n  max-height: 0px;\n}\n.void-scope .void-max-h-24 {\n  max-height: 6rem;\n}\n.void-scope .void-max-h-32 {\n  max-height: 8rem;\n}\n.void-scope .void-max-h-80 {\n  max-height: 20rem;\n}\n.void-scope .void-max-h-\\[150px\\] {\n  max-height: 150px;\n}\n.void-scope .void-max-h-\\[160px\\] {\n  max-height: 160px;\n}\n.void-scope .void-max-h-\\[200px\\] {\n  max-height: 200px;\n}\n.void-scope .void-max-h-\\[300px\\] {\n  max-height: 300px;\n}\n.void-scope .void-max-h-\\[400px\\] {\n  max-height: 400px;\n}\n.void-scope .void-max-h-\\[5000px\\] {\n  max-height: 5000px;\n}\n.void-scope .void-max-h-\\[500px\\] {\n  max-height: 500px;\n}\n.void-scope .void-max-h-\\[70vh\\] {\n  max-height: 70vh;\n}\n.void-scope .void-max-h-\\[90vh\\] {\n  max-height: 90vh;\n}\n.void-scope .void-max-h-full {\n  max-height: 100%;\n}\n.void-scope .void-min-h-0 {\n  min-height: 0px;\n}\n.void-scope .void-min-h-\\[100px\\] {\n  min-height: 100px;\n}\n.void-scope .void-min-h-\\[200px\\] {\n  min-height: 200px;\n}\n.void-scope .void-min-h-\\[20px\\] {\n  min-height: 20px;\n}\n.void-scope .void-min-h-\\[22px\\] {\n  min-height: 22px;\n}\n.void-scope .void-min-h-\\[81px\\] {\n  min-height: 81px;\n}\n.void-scope .void-w-1 {\n  width: 0.25rem;\n}\n.void-scope .void-w-10 {\n  width: 2.5rem;\n}\n.void-scope .void-w-11 {\n  width: 2.75rem;\n}\n.void-scope .void-w-2 {\n  width: 0.5rem;\n}\n.void-scope .void-w-2\\.5 {\n  width: 0.625rem;\n}\n.void-scope .void-w-3 {\n  width: 0.75rem;\n}\n.void-scope .void-w-3\\.5 {\n  width: 0.875rem;\n}\n.void-scope .void-w-4 {\n  width: 1rem;\n}\n.void-scope .void-w-48 {\n  width: 12rem;\n}\n.void-scope .void-w-5 {\n  width: 1.25rem;\n}\n.void-scope .void-w-7 {\n  width: 1.75rem;\n}\n.void-scope .void-w-9 {\n  width: 2.25rem;\n}\n.void-scope .void-w-\\[0\\.5px\\] {\n  width: 0.5px;\n}\n.void-scope .void-w-\\[1px\\] {\n  width: 1px;\n}\n.void-scope .void-w-\\[4px\\] {\n  width: 4px;\n}\n.void-scope .void-w-\\[5px\\] {\n  width: 5px;\n}\n.void-scope .void-w-\\[6px\\] {\n  width: 6px;\n}\n.void-scope .void-w-fit {\n  width: -moz-fit-content;\n  width: fit-content;\n}\n.void-scope .void-w-full {\n  width: 100%;\n}\n.void-scope .void-w-max {\n  width: -moz-max-content;\n  width: max-content;\n}\n.void-scope .void-min-w-0 {\n  min-width: 0px;\n}\n.void-scope .void-min-w-\\[1\\.5rem\\] {\n  min-width: 1.5rem;\n}\n.void-scope .void-min-w-\\[130px\\] {\n  min-width: 130px;\n}\n.void-scope .void-min-w-\\[3rem\\] {\n  min-width: 3rem;\n}\n.void-scope .void-min-w-\\[4rem\\] {\n  min-width: 4rem;\n}\n.void-scope .void-min-w-full {\n  min-width: 100%;\n}\n.void-scope .void-max-w-32 {\n  max-width: 8rem;\n}\n.void-scope .void-max-w-3xl {\n  max-width: 48rem;\n}\n.void-scope .void-max-w-48 {\n  max-width: 12rem;\n}\n.void-scope .void-max-w-\\[1000px\\] {\n  max-width: 1000px;\n}\n.void-scope .void-max-w-\\[200px\\] {\n  max-width: 200px;\n}\n.void-scope .void-max-w-\\[20px\\] {\n  max-width: 20px;\n}\n.void-scope .void-max-w-\\[220px\\] {\n  max-width: 220px;\n}\n.void-scope .void-max-w-\\[260px\\] {\n  max-width: 260px;\n}\n.void-scope .void-max-w-\\[300px\\] {\n  max-width: 300px;\n}\n.void-scope .void-max-w-\\[400px\\] {\n  max-width: 400px;\n}\n.void-scope .void-max-w-\\[480px\\] {\n  max-width: 480px;\n}\n.void-scope .void-max-w-\\[520px\\] {\n  max-width: 520px;\n}\n.void-scope .void-max-w-\\[600px\\] {\n  max-width: 600px;\n}\n.void-scope .void-max-w-\\[85\\%\\] {\n  max-width: 85%;\n}\n.void-scope .void-max-w-\\[900px\\] {\n  max-width: 900px;\n}\n.void-scope .void-max-w-\\[95\\%\\] {\n  max-width: 95%;\n}\n.void-scope .void-max-w-full {\n  max-width: 100%;\n}\n.void-scope .void-max-w-md {\n  max-width: 28rem;\n}\n.void-scope .void-max-w-none {\n  max-width: none;\n}\n.void-scope .void-max-w-sm {\n  max-width: 24rem;\n}\n.void-scope .void-max-w-xl {\n  max-width: 36rem;\n}\n.void-scope .void-flex-1 {\n  flex: 1 1 0%;\n}\n.void-scope .void-flex-shrink-0 {\n  flex-shrink: 0;\n}\n.void-scope .void-shrink-0 {\n  flex-shrink: 0;\n}\n.void-scope .void-flex-grow {\n  flex-grow: 1;\n}\n.void-scope .void-flex-grow-0 {\n  flex-grow: 0;\n}\n.void-scope .void-grow {\n  flex-grow: 1;\n}\n.void-scope .-void-translate-x-1\\/2 {\n  --tw-translate-x: -50%;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .-void-translate-y-0 {\n  --tw-translate-y: -0px;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .-void-translate-y-1\\/2 {\n  --tw-translate-y: -50%;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-0 {\n  --tw-translate-x: 0px;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-0\\.5 {\n  --tw-translate-x: 0.125rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-1 {\n  --tw-translate-x: 0.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-2\\.5 {\n  --tw-translate-x: 0.625rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-3\\.5 {\n  --tw-translate-x: 0.875rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-5 {\n  --tw-translate-x: 1.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-6 {\n  --tw-translate-x: 1.5rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-rotate-90 {\n  --tw-rotate: 90deg;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-transform {\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n@keyframes void-pulse {\n  50% {\n    opacity: .5;\n  }\n}\n.void-scope .void-animate-pulse {\n  animation: void-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;\n}\n@keyframes void-spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.void-scope .void-animate-spin {\n  animation: void-spin 1s linear infinite;\n}\n.void-scope .void-cursor-auto {\n  cursor: auto;\n}\n.void-scope .void-cursor-default {\n  cursor: default;\n}\n.void-scope .void-cursor-grab {\n  cursor: grab;\n}\n.void-scope .void-cursor-not-allowed {\n  cursor: not-allowed;\n}\n.void-scope .void-cursor-pointer {\n  cursor: pointer;\n}\n.void-scope .void-select-none {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  user-select: none;\n}\n.void-scope .\\!void-select-text {\n  -webkit-user-select: text !important;\n  -moz-user-select: text !important;\n  user-select: text !important;\n}\n.void-scope .void-select-text {\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  user-select: text;\n}\n.void-scope .void-resize-none {\n  resize: none;\n}\n.void-scope .void-list-decimal {\n  list-style-type: decimal;\n}\n.void-scope .void-grid-cols-2 {\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.void-scope .void-flex-row {\n  flex-direction: row;\n}\n.void-scope .void-flex-col {\n  flex-direction: column;\n}\n.void-scope .void-flex-wrap {\n  flex-wrap: wrap;\n}\n.void-scope .void-flex-nowrap {\n  flex-wrap: nowrap;\n}\n.void-scope .void-items-start {\n  align-items: flex-start;\n}\n.void-scope .void-items-end {\n  align-items: flex-end;\n}\n.void-scope .void-items-center {\n  align-items: center;\n}\n.void-scope .void-justify-start {\n  justify-content: flex-start;\n}\n.void-scope .void-justify-end {\n  justify-content: flex-end;\n}\n.void-scope .void-justify-center {\n  justify-content: center;\n}\n.void-scope .void-justify-between {\n  justify-content: space-between;\n}\n.void-scope .void-gap-0 {\n  gap: 0px;\n}\n.void-scope .void-gap-0\\.5 {\n  gap: 0.125rem;\n}\n.void-scope .void-gap-1 {\n  gap: 0.25rem;\n}\n.void-scope .void-gap-1\\.5 {\n  gap: 0.375rem;\n}\n.void-scope .void-gap-12 {\n  gap: 3rem;\n}\n.void-scope .void-gap-2 {\n  gap: 0.5rem;\n}\n.void-scope .void-gap-3 {\n  gap: 0.75rem;\n}\n.void-scope .void-gap-4 {\n  gap: 1rem;\n}\n.void-scope .void-gap-6 {\n  gap: 1.5rem;\n}\n.void-scope .void-gap-8 {\n  gap: 2rem;\n}\n.void-scope .void-gap-x-0 {\n  -moz-column-gap: 0px;\n  column-gap: 0px;\n}\n.void-scope .void-gap-x-0\\.5 {\n  -moz-column-gap: 0.125rem;\n  column-gap: 0.125rem;\n}\n.void-scope .void-gap-x-1 {\n  -moz-column-gap: 0.25rem;\n  column-gap: 0.25rem;\n}\n.void-scope .void-gap-x-1\\.5 {\n  -moz-column-gap: 0.375rem;\n  column-gap: 0.375rem;\n}\n.void-scope .void-gap-x-2 {\n  -moz-column-gap: 0.5rem;\n  column-gap: 0.5rem;\n}\n.void-scope .void-gap-y-0\\.5 {\n  row-gap: 0.125rem;\n}\n.void-scope .void-gap-y-1 {\n  row-gap: 0.25rem;\n}\n.void-scope .void-gap-y-8 {\n  row-gap: 2rem;\n}\n.void-scope .void-space-x-1 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.25rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.25rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.void-scope .void-space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.void-scope .void-space-y-0\\.5 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.125rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.125rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-1 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-1\\.5 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-3 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-4 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(1rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-\\[1px\\] > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(1px * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(1px * var(--tw-space-y-reverse));\n}\n.void-scope .void-self-end {\n  align-self: flex-end;\n}\n.void-scope .void-self-stretch {\n  align-self: stretch;\n}\n.void-scope .void-overflow-auto {\n  overflow: auto;\n}\n.void-scope .void-overflow-hidden {\n  overflow: hidden;\n}\n.void-scope .void-overflow-x-auto {\n  overflow-x: auto;\n}\n.void-scope .void-overflow-y-auto {\n  overflow-y: auto;\n}\n.void-scope .void-overflow-x-hidden {\n  overflow-x: hidden;\n}\n.void-scope .void-truncate {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.void-scope .void-text-ellipsis {\n  text-overflow: ellipsis;\n}\n.void-scope .void-whitespace-normal {\n  white-space: normal;\n}\n.void-scope .void-whitespace-nowrap {\n  white-space: nowrap;\n}\n.void-scope .void-whitespace-pre {\n  white-space: pre;\n}\n.void-scope .void-whitespace-pre-wrap {\n  white-space: pre-wrap;\n}\n.void-scope .void-text-nowrap {\n  text-wrap: nowrap;\n}\n.void-scope .void-break-words {\n  overflow-wrap: break-word;\n}\n.void-scope .void-break-all {\n  word-break: break-all;\n}\n.void-scope .void-rounded {\n  border-radius: 0.25rem;\n}\n.void-scope .void-rounded-full {\n  border-radius: 9999px;\n}\n.void-scope .void-rounded-lg {\n  border-radius: 0.5rem;\n}\n.void-scope .void-rounded-md {\n  border-radius: 0.375rem;\n}\n.void-scope .void-rounded-none {\n  border-radius: 0px;\n}\n.void-scope .void-rounded-sm {\n  border-radius: 0.125rem;\n}\n.void-scope .void-rounded-xl {\n  border-radius: 0.75rem;\n}\n.void-scope .void-rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.void-scope .void-border {\n  border-width: 1px;\n}\n.void-scope .void-border-x {\n  border-left-width: 1px;\n  border-right-width: 1px;\n}\n.void-scope .void-border-b {\n  border-bottom-width: 1px;\n}\n.void-scope .void-border-l {\n  border-left-width: 1px;\n}\n.void-scope .void-border-l-2 {\n  border-left-width: 2px;\n}\n.void-scope .void-border-r {\n  border-right-width: 1px;\n}\n.void-scope .void-border-t {\n  border-top-width: 1px;\n}\n.void-scope .void-border-solid {\n  border-style: solid;\n}\n.void-scope .void-border-none {\n  border-style: none;\n}\n.void-scope .void-border-\\[var\\(--vscode-keybindingLabel-border\\)\\] {\n  border-color: var(--vscode-keybindingLabel-border);\n}\n.void-scope .void-border-\\[var\\(--vscode-panel-border\\)\\] {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .void-border-amber-800\\/40 {\n  border-color: rgb(146 64 14 / 0.4);\n}\n.void-scope .void-border-blue-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-blue-500\\/20 {\n  border-color: rgb(59 130 246 / 0.2);\n}\n.void-scope .void-border-blue-500\\/30 {\n  border-color: rgb(59 130 246 / 0.3);\n}\n.void-scope .void-border-green-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(34 197 94 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-green-500\\/30 {\n  border-color: rgb(34 197 94 / 0.3);\n}\n.void-scope .void-border-green-800\\/40 {\n  border-color: rgb(22 101 52 / 0.4);\n}\n.void-scope .void-border-orange-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(249 115 22 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-orange-500\\/30 {\n  border-color: rgb(249 115 22 / 0.3);\n}\n.void-scope .void-border-red-500\\/30 {\n  border-color: rgb(239 68 68 / 0.3);\n}\n.void-scope .void-border-red-500\\/40 {\n  border-color: rgb(239 68 68 / 0.4);\n}\n.void-scope .void-border-transparent {\n  border-color: transparent;\n}\n.void-scope .void-border-void-border-1 {\n  border-color: var(--void-border-1);\n}\n.void-scope .void-border-void-border-2 {\n  border-color: var(--void-border-2);\n}\n.void-scope .void-border-void-border-3 {\n  border-color: var(--void-border-3);\n}\n.void-scope .void-border-void-border-4 {\n  border-color: var(--void-border-4);\n}\n.void-scope .void-border-void-fg-1 {\n  border-color: var(--void-fg-1);\n}\n.void-scope .void-border-void-warning {\n  border-color: var(--void-warning);\n}\n.void-scope .void-border-white\\/10 {\n  border-color: rgb(255 255 255 / 0.1);\n}\n.void-scope .void-border-white\\/20 {\n  border-color: rgb(255 255 255 / 0.2);\n}\n.void-scope .void-border-yellow-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(234 179 8 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-zinc-300\\/10 {\n  border-color: rgb(212 212 216 / 0.1);\n}\n.void-scope .void-bg-\\[\\#0e70c0\\] {\n  --tw-bg-opacity: 1;\n  background-color: rgb(14 112 192 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-\\[\\#0e70c0\\]\\/80 {\n  background-color: rgb(14 112 192 / 0.8);\n}\n.void-scope .void-bg-\\[rgba\\(0\\,0\\,0\\,0\\)\\] {\n  background-color: rgba(0, 0, 0, 0);\n}\n.void-scope .void-bg-\\[var\\(--vscode-button-background\\)\\] {\n  background-color: var(--vscode-button-background);\n}\n.void-scope .void-bg-\\[var\\(--vscode-button-secondaryBackground\\)\\] {\n  background-color: var(--vscode-button-secondaryBackground);\n}\n.void-scope .void-bg-\\[var\\(--vscode-editor-background\\)\\] {\n  background-color: var(--vscode-editor-background);\n}\n.void-scope .void-bg-\\[var\\(--vscode-keybindingLabel-background\\)\\] {\n  background-color: var(--vscode-keybindingLabel-background);\n}\n.void-scope .void-bg-amber-400 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(251 191 36 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-amber-500\\/20 {\n  background-color: rgb(245 158 11 / 0.2);\n}\n.void-scope .void-bg-amber-950\\/30 {\n  background-color: rgb(69 26 3 / 0.3);\n}\n.void-scope .void-bg-black\\/10 {\n  background-color: rgb(0 0 0 / 0.1);\n}\n.void-scope .void-bg-black\\/20 {\n  background-color: rgb(0 0 0 / 0.2);\n}\n.void-scope .void-bg-black\\/50 {\n  background-color: rgb(0 0 0 / 0.5);\n}\n.void-scope .void-bg-black\\/90 {\n  background-color: rgb(0 0 0 / 0.9);\n}\n.void-scope .void-bg-blue-400\\/80 {\n  background-color: rgb(96 165 250 / 0.8);\n}\n.void-scope .void-bg-blue-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-blue-500\\/10 {\n  background-color: rgb(59 130 246 / 0.1);\n}\n.void-scope .void-bg-blue-500\\/20 {\n  background-color: rgb(59 130 246 / 0.2);\n}\n.void-scope .void-bg-blue-600 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-blue-900\\/30 {\n  background-color: rgb(30 58 138 / 0.3);\n}\n.void-scope .void-bg-blue-950\\/10 {\n  background-color: rgb(23 37 84 / 0.1);\n}\n.void-scope .void-bg-green-400\\/80 {\n  background-color: rgb(74 222 128 / 0.8);\n}\n.void-scope .void-bg-green-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(34 197 94 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-green-500\\/10 {\n  background-color: rgb(34 197 94 / 0.1);\n}\n.void-scope .void-bg-green-500\\/20 {\n  background-color: rgb(34 197 94 / 0.2);\n}\n.void-scope .void-bg-green-600 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(22 163 74 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-green-950\\/30 {\n  background-color: rgb(5 46 22 / 0.3);\n}\n.void-scope .void-bg-orange-50 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-orange-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(249 115 22 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-orange-500\\/20 {\n  background-color: rgb(249 115 22 / 0.2);\n}\n.void-scope .void-bg-red-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 68 68 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-red-500\\/10 {\n  background-color: rgb(239 68 68 / 0.1);\n}\n.void-scope .void-bg-red-900\\/30 {\n  background-color: rgb(127 29 29 / 0.3);\n}\n.void-scope .void-bg-transparent {\n  background-color: transparent;\n}\n.void-scope .void-bg-void-bg-1 {\n  background-color: var(--void-bg-1);\n}\n.void-scope .void-bg-void-bg-2 {\n  background-color: var(--void-bg-2);\n}\n.void-scope .void-bg-void-bg-2-alt {\n  background-color: var(--void-bg-2-alt);\n}\n.void-scope .void-bg-void-bg-3 {\n  background-color: var(--void-bg-3);\n}\n.void-scope .void-bg-void-border-1 {\n  background-color: var(--void-border-1);\n}\n.void-scope .void-bg-void-border-3 {\n  background-color: var(--void-border-3);\n}\n.void-scope .void-bg-void-fg-1 {\n  background-color: var(--void-fg-1);\n}\n.void-scope .void-bg-void-fg-3 {\n  background-color: var(--void-fg-3);\n}\n.void-scope .void-bg-void-fg-4 {\n  background-color: var(--void-fg-4);\n}\n.void-scope .void-bg-void-warning {\n  background-color: var(--void-warning);\n}\n.void-scope .void-bg-vscode-disabled-fg {\n  background-color: var(--vscode-disabledForeground);\n}\n.void-scope .void-bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-white\\/10 {\n  background-color: rgb(255 255 255 / 0.1);\n}\n.void-scope .void-bg-white\\/70 {\n  background-color: rgb(255 255 255 / 0.7);\n}\n.void-scope .void-bg-yellow-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-zinc-100 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(244 244 245 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-zinc-100\\/40 {\n  background-color: rgb(244 244 245 / 0.4);\n}\n.void-scope .void-bg-zinc-900 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-opacity-70 {\n  --tw-bg-opacity: 0.7;\n}\n.void-scope .void-bg-gradient-to-r {\n  background-image: linear-gradient(to right, var(--tw-gradient-stops));\n}\n.void-scope .void-bg-none {\n  background-image: none;\n}\n.void-scope .void-from-green-600 {\n  --tw-gradient-from: #16a34a var(--tw-gradient-from-position);\n  --tw-gradient-to: rgb(22 163 74 / 0) var(--tw-gradient-to-position);\n  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);\n}\n.void-scope .void-to-green-500 {\n  --tw-gradient-to: #22c55e var(--tw-gradient-to-position);\n}\n.void-scope .void-fill-current {\n  fill: currentColor;\n}\n.void-scope .void-stroke-green-500 {\n  stroke: #22c55e;\n}\n.void-scope .void-stroke-red-500 {\n  stroke: #ef4444;\n}\n.void-scope .void-stroke-\\[2\\] {\n  stroke-width: 2;\n}\n.void-scope .void-stroke-\\[3\\] {\n  stroke-width: 3;\n}\n.void-scope .void-p-0\\.5 {\n  padding: 0.125rem;\n}\n.void-scope .void-p-1 {\n  padding: 0.25rem;\n}\n.void-scope .void-p-2 {\n  padding: 0.5rem;\n}\n.void-scope .void-p-3 {\n  padding: 0.75rem;\n}\n.void-scope .void-p-4 {\n  padding: 1rem;\n}\n.void-scope .void-p-6 {\n  padding: 1.5rem;\n}\n.void-scope .void-p-\\[2px\\] {\n  padding: 2px;\n}\n.void-scope .void-p-\\[4px\\] {\n  padding: 4px;\n}\n.void-scope .void-p-\\[7px\\] {\n  padding: 7px;\n}\n.void-scope .\\!void-px-0 {\n  padding-left: 0px !important;\n  padding-right: 0px !important;\n}\n.void-scope .\\!void-py-0 {\n  padding-top: 0px !important;\n  padding-bottom: 0px !important;\n}\n.void-scope .void-px-0 {\n  padding-left: 0px;\n  padding-right: 0px;\n}\n.void-scope .void-px-0\\.5 {\n  padding-left: 0.125rem;\n  padding-right: 0.125rem;\n}\n.void-scope .void-px-1 {\n  padding-left: 0.25rem;\n  padding-right: 0.25rem;\n}\n.void-scope .void-px-1\\.5 {\n  padding-left: 0.375rem;\n  padding-right: 0.375rem;\n}\n.void-scope .void-px-12 {\n  padding-left: 3rem;\n  padding-right: 3rem;\n}\n.void-scope .void-px-16 {\n  padding-left: 4rem;\n  padding-right: 4rem;\n}\n.void-scope .void-px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.void-scope .void-px-2\\.5 {\n  padding-left: 0.625rem;\n  padding-right: 0.625rem;\n}\n.void-scope .void-px-3 {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .void-px-4 {\n  padding-left: 1rem;\n  padding-right: 1rem;\n}\n.void-scope .void-px-5 {\n  padding-left: 1.25rem;\n  padding-right: 1.25rem;\n}\n.void-scope .void-px-6 {\n  padding-left: 1.5rem;\n  padding-right: 1.5rem;\n}\n.void-scope .void-py-0\\.5 {\n  padding-top: 0.125rem;\n  padding-bottom: 0.125rem;\n}\n.void-scope .void-py-1 {\n  padding-top: 0.25rem;\n  padding-bottom: 0.25rem;\n}\n.void-scope .void-py-1\\.5 {\n  padding-top: 0.375rem;\n  padding-bottom: 0.375rem;\n}\n.void-scope .void-py-2 {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.void-scope .void-py-2\\.5 {\n  padding-top: 0.625rem;\n  padding-bottom: 0.625rem;\n}\n.void-scope .void-py-3 {\n  padding-top: 0.75rem;\n  padding-bottom: 0.75rem;\n}\n.void-scope .void-py-3\\.5 {\n  padding-top: 0.875rem;\n  padding-bottom: 0.875rem;\n}\n.void-scope .void-py-4 {\n  padding-top: 1rem;\n  padding-bottom: 1rem;\n}\n.void-scope .void-py-5 {\n  padding-top: 1.25rem;\n  padding-bottom: 1.25rem;\n}\n.void-scope .void-py-8 {\n  padding-top: 2rem;\n  padding-bottom: 2rem;\n}\n.void-scope .void-py-px {\n  padding-top: 1px;\n  padding-bottom: 1px;\n}\n.void-scope .void-pb-0\\.5 {\n  padding-bottom: 0.125rem;\n}\n.void-scope .void-pb-1 {\n  padding-bottom: 0.25rem;\n}\n.void-scope .void-pb-2 {\n  padding-bottom: 0.5rem;\n}\n.void-scope .void-pb-4 {\n  padding-bottom: 1rem;\n}\n.void-scope .void-pb-8 {\n  padding-bottom: 2rem;\n}\n.void-scope .void-pl-0 {\n  padding-left: 0px;\n}\n.void-scope .void-pl-1 {\n  padding-left: 0.25rem;\n}\n.void-scope .void-pl-2 {\n  padding-left: 0.5rem;\n}\n.void-scope .void-pl-2\\.5 {\n  padding-left: 0.625rem;\n}\n.void-scope .void-pl-3 {\n  padding-left: 0.75rem;\n}\n.void-scope .void-pl-4 {\n  padding-left: 1rem;\n}\n.void-scope .void-pl-6 {\n  padding-left: 1.5rem;\n}\n.void-scope .void-pr-1 {\n  padding-right: 0.25rem;\n}\n.void-scope .void-pr-4 {\n  padding-right: 1rem;\n}\n.void-scope .void-pt-0\\.5 {\n  padding-top: 0.125rem;\n}\n.void-scope .void-pt-1\\.5 {\n  padding-top: 0.375rem;\n}\n.void-scope .void-pt-16 {\n  padding-top: 4rem;\n}\n.void-scope .void-pt-2 {\n  padding-top: 0.5rem;\n}\n.void-scope .void-pt-8 {\n  padding-top: 2rem;\n}\n.void-scope .void-pt-\\[3px\\] {\n  padding-top: 3px;\n}\n.void-scope .void-text-left {\n  text-align: left;\n}\n.void-scope .void-text-center {\n  text-align: center;\n}\n.void-scope .void-text-right {\n  text-align: right;\n}\n.void-scope .void-align-top {\n  vertical-align: top;\n}\n.void-scope .void-align-text-top {\n  vertical-align: text-top;\n}\n.void-scope .void-font-mono {\n  font-family:\n    ui-monospace,\n    SFMono-Regular,\n    Menlo,\n    Monaco,\n    Consolas,\n    "Liberation Mono",\n    "Courier New",\n    monospace;\n}\n.void-scope .void-font-sans {\n  font-family:\n    ui-sans-serif,\n    system-ui,\n    sans-serif,\n    "Apple Color Emoji",\n    "Segoe UI Emoji",\n    "Segoe UI Symbol",\n    "Noto Color Emoji";\n}\n.void-scope .void-text-2xl {\n  font-size: 18px;\n}\n.void-scope .void-text-3xl {\n  font-size: 20px;\n}\n.void-scope .void-text-4xl {\n  font-size: 24px;\n}\n.void-scope .void-text-5xl {\n  font-size: 30px;\n}\n.void-scope .void-text-\\[10px\\] {\n  font-size: 10px;\n}\n.void-scope .void-text-\\[11\\.5px\\] {\n  font-size: 11.5px;\n}\n.void-scope .void-text-\\[11px\\] {\n  font-size: 11px;\n}\n.void-scope .void-text-\\[12px\\] {\n  font-size: 12px;\n}\n.void-scope .void-text-\\[13px\\] {\n  font-size: 13px;\n}\n.void-scope .void-text-\\[32px\\] {\n  font-size: 32px;\n}\n.void-scope .void-text-\\[8px\\] {\n  font-size: 8px;\n}\n.void-scope .void-text-\\[9px\\] {\n  font-size: 9px;\n}\n.void-scope .void-text-base {\n  font-size: 1rem;\n  line-height: 1.5rem;\n}\n.void-scope .void-text-lg {\n  font-size: 14px;\n}\n.void-scope .void-text-root {\n  font-size: 13px;\n}\n.void-scope .void-text-sm {\n  font-size: 11px;\n}\n.void-scope .void-text-xl {\n  font-size: 16px;\n}\n.void-scope .void-text-xs {\n  font-size: 10px;\n}\n.void-scope .void-font-bold {\n  font-weight: 700;\n}\n.void-scope .void-font-light {\n  font-weight: 300;\n}\n.void-scope .void-font-medium {\n  font-weight: 500;\n}\n.void-scope .void-font-normal {\n  font-weight: 400;\n}\n.void-scope .void-font-semibold {\n  font-weight: 600;\n}\n.void-scope .void-uppercase {\n  text-transform: uppercase;\n}\n.void-scope .void-capitalize {\n  text-transform: capitalize;\n}\n.void-scope .void-italic {\n  font-style: italic;\n}\n.void-scope .void-not-italic {\n  font-style: normal;\n}\n.void-scope .void-leading-none {\n  line-height: 1;\n}\n.void-scope .void-leading-relaxed {\n  line-height: 1.625;\n}\n.void-scope .void-leading-snug {\n  line-height: 1.375;\n}\n.void-scope .void-leading-tight {\n  line-height: 1.25;\n}\n.void-scope .void-tracking-wide {\n  letter-spacing: 0.025em;\n}\n.void-scope .void-tracking-wider {\n  letter-spacing: 0.05em;\n}\n.void-scope .\\!void-text-void-fg-3 {\n  color: var(--void-fg-3) !important;\n}\n.void-scope .void-text-\\[\\#0e70c0\\] {\n  --tw-text-opacity: 1;\n  color: rgb(14 112 192 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-\\[var\\(--vscode-button-foreground\\)\\] {\n  color: var(--vscode-button-foreground);\n}\n.void-scope .void-text-\\[var\\(--vscode-button-secondaryForeground\\)\\] {\n  color: var(--vscode-button-secondaryForeground);\n}\n.void-scope .void-text-\\[var\\(--vscode-descriptionForeground\\)\\] {\n  color: var(--vscode-descriptionForeground);\n}\n.void-scope .void-text-\\[var\\(--vscode-editor-foreground\\)\\] {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .void-text-\\[var\\(--vscode-foreground\\)\\] {\n  color: var(--vscode-foreground);\n}\n.void-scope .void-text-\\[var\\(--vscode-keybindingLabel-foreground\\)\\] {\n  color: var(--vscode-keybindingLabel-foreground);\n}\n.void-scope .void-text-amber-300 {\n  --tw-text-opacity: 1;\n  color: rgb(252 211 77 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-amber-400 {\n  --tw-text-opacity: 1;\n  color: rgb(251 191 36 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-black {\n  --tw-text-opacity: 1;\n  color: rgb(0 0 0 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-blue-300 {\n  --tw-text-opacity: 1;\n  color: rgb(147 197 253 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-blue-400 {\n  --tw-text-opacity: 1;\n  color: rgb(96 165 250 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-blue-500 {\n  --tw-text-opacity: 1;\n  color: rgb(59 130 246 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-emerald-500 {\n  --tw-text-opacity: 1;\n  color: rgb(16 185 129 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-green-300 {\n  --tw-text-opacity: 1;\n  color: rgb(134 239 172 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-green-400 {\n  --tw-text-opacity: 1;\n  color: rgb(74 222 128 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-green-500 {\n  --tw-text-opacity: 1;\n  color: rgb(34 197 94 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-orange-400 {\n  --tw-text-opacity: 1;\n  color: rgb(251 146 60 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-orange-500 {\n  --tw-text-opacity: 1;\n  color: rgb(249 115 22 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-red-300 {\n  --tw-text-opacity: 1;\n  color: rgb(252 165 165 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-red-400 {\n  --tw-text-opacity: 1;\n  color: rgb(248 113 113 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-red-400\\/90 {\n  color: rgb(248 113 113 / 0.9);\n}\n.void-scope .void-text-red-500 {\n  --tw-text-opacity: 1;\n  color: rgb(239 68 68 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-rose-600 {\n  --tw-text-opacity: 1;\n  color: rgb(225 29 72 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-void-fg-1 {\n  color: var(--void-fg-1);\n}\n.void-scope .void-text-void-fg-2 {\n  color: var(--void-fg-2);\n}\n.void-scope .void-text-void-fg-3 {\n  color: var(--void-fg-3);\n}\n.void-scope .void-text-void-fg-4 {\n  color: var(--void-fg-4);\n}\n.void-scope .void-text-void-warning {\n  color: var(--void-warning);\n}\n.void-scope .void-text-white {\n  --tw-text-opacity: 1;\n  color: rgb(255 255 255 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-white\\/80 {\n  color: rgb(255 255 255 / 0.8);\n}\n.void-scope .void-text-yellow-400\\/70 {\n  color: rgb(250 204 21 / 0.7);\n}\n.void-scope .void-text-zinc-900 {\n  --tw-text-opacity: 1;\n  color: rgb(24 24 27 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-underline {\n  text-decoration-line: underline;\n}\n.void-scope .void-line-through {\n  text-decoration-line: line-through;\n}\n.void-scope .void-accent-blue-500 {\n  accent-color: #3b82f6;\n}\n.void-scope .void-opacity-0 {\n  opacity: 0;\n}\n.void-scope .void-opacity-100 {\n  opacity: 1;\n}\n.void-scope .void-opacity-20 {\n  opacity: 0.2;\n}\n.void-scope .void-opacity-25 {\n  opacity: 0.25;\n}\n.void-scope .void-opacity-30 {\n  opacity: 0.3;\n}\n.void-scope .void-opacity-40 {\n  opacity: 0.4;\n}\n.void-scope .void-opacity-50 {\n  opacity: 0.5;\n}\n.void-scope .void-opacity-60 {\n  opacity: 0.6;\n}\n.void-scope .void-opacity-70 {\n  opacity: 0.7;\n}\n.void-scope .void-opacity-80 {\n  opacity: 0.8;\n}\n.void-scope .void-opacity-90 {\n  opacity: 0.9;\n}\n.void-scope .void-shadow {\n  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-\\[0_0_4px_0px_rgba\\(22\\,163\\,74\\,0\\.6\\)\\] {\n  --tw-shadow: 0 0 4px 0px rgba(22,163,74,0.6);\n  --tw-shadow-colored: 0 0 4px 0px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-\\[0_0_4px_0px_rgba\\(234\\,88\\,12\\,0\\.6\\)\\] {\n  --tw-shadow: 0 0 4px 0px rgba(234,88,12,0.6);\n  --tw-shadow-colored: 0 0 4px 0px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-lg {\n  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-md {\n  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-sm {\n  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-xl {\n  --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-outline-none {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.void-scope .void-brightness-90 {\n  --tw-brightness: brightness(.9);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .void-transition-all {\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-transition-colors {\n  transition-property:\n    color,\n    background-color,\n    border-color,\n    text-decoration-color,\n    fill,\n    stroke;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-transition-opacity {\n  transition-property: opacity;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-transition-transform {\n  transition-property: transform;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-duration-100 {\n  transition-duration: 100ms;\n}\n.void-scope .void-duration-1000 {\n  transition-duration: 1000ms;\n}\n.void-scope .void-duration-150 {\n  transition-duration: 150ms;\n}\n.void-scope .void-duration-200 {\n  transition-duration: 200ms;\n}\n.void-scope .void-duration-300 {\n  transition-duration: 300ms;\n}\n.void-scope .void-ease-in-out {\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n.void-scope {\n  --void-bg-1: var(--vscode-input-background);\n  --void-bg-1-alt: var(--vscode-badge-background);\n  --void-bg-2: var(--vscode-sideBar-background);\n  --void-bg-2-alt: color-mix(in srgb, var(--vscode-editor-background) 30%, var(--vscode-sideBar-background) 70%);\n  --void-bg-2-hover: color-mix(in srgb, var(--vscode-editor-foreground) 2%, var(--vscode-sideBar-background) 98%);\n  --void-bg-3: var(--vscode-editor-background);\n  --void-fg-0: color-mix(in srgb, var(--vscode-tab-activeForeground) 90%, black 10%);\n  --void-fg-1: var(--vscode-editor-foreground);\n  --void-fg-2: var(--vscode-input-foreground);\n  --void-fg-3: var(--vscode-input-placeholderForeground);\n  --void-fg-4: var(--vscode-list-deemphasizedForeground);\n  --void-warning: var(--vscode-charts-yellow);\n  --void-border-1: var(--vscode-commandCenter-activeBorder);\n  --void-border-2: var(--vscode-commandCenter-border);\n  --void-border-3: var(--vscode-commandCenter-inactiveBorder);\n  --void-border-4: var(--vscode-editorGroup-border);\n  --void-ring-color: #007FD4;\n  --void-link-color: #007FD4;\n}\n.void-scope .select-child-restyle select {\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  padding-right: 24px;\n}\n.void-scope .void-force-child-placeholder-void-fg-1 ::-moz-placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope .void-force-child-placeholder-void-fg-1 ::placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope * {\n  outline: none !important;\n}\n.void-scope .inherit-bg-all-restyle > * {\n  background-color: inherit !important;\n}\n.void-scope .bg-editor-style-override {\n  --vscode-sideBar-background: var(--vscode-editor-background);\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 0.875rem;\n  line-height: 1.7142857;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  line-height: 1.5555556;\n  margin-top: 0.8888889em;\n  margin-bottom: 0.8888889em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.3333333em;\n  margin-bottom: 1.3333333em;\n  padding-inline-start: 1.1111111em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 2.1428571em;\n  margin-top: 0;\n  margin-bottom: 0.8em;\n  line-height: 1.2;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.4285714em;\n  margin-top: 1.6em;\n  margin-bottom: 0.8em;\n  line-height: 1.4;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  margin-top: 1.5555556em;\n  margin-bottom: 0.4444444em;\n  line-height: 1.5555556;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.4285714em;\n  margin-bottom: 0.5714286em;\n  line-height: 1.4285714;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1428571em;\n  padding-inline-end: 0.3571429em;\n  padding-bottom: 0.1428571em;\n  padding-inline-start: 0.3571429em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.9em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8888889em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.6666667;\n  margin-top: 1.6666667em;\n  margin-bottom: 1.6666667em;\n  border-radius: 0.25rem;\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  margin-bottom: 0.2857143em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2.8571429em;\n  margin-bottom: 2.8571429em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.5;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.3333333;\n  margin-top: 0.6666667em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .marker\\:void-text-inherit *::marker {\n  color: inherit;\n}\n.void-scope .marker\\:void-text-inherit::marker {\n  color: inherit;\n}\n.void-scope .placeholder\\:void-text-void-fg-3::-moz-placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope .placeholder\\:void-text-void-fg-3::placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope .focus-within\\:void-border-void-border-1:focus-within {\n  border-color: var(--void-border-1);\n}\n.void-scope .hover\\:void-cursor-pointer:hover {\n  cursor: pointer;\n}\n.void-scope .hover\\:void-border-void-border-1:hover {\n  border-color: var(--void-border-1);\n}\n.void-scope .hover\\:void-border-void-fg-3:hover {\n  border-color: var(--void-fg-3);\n}\n.void-scope .hover\\:void-bg-\\[\\#1177cb\\]:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(17 119 203 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-\\[var\\(--vscode-button-hoverBackground\\)\\]:hover {\n  background-color: var(--vscode-button-hoverBackground);\n}\n.void-scope .hover\\:void-bg-\\[var\\(--vscode-button-secondaryHoverBackground\\)\\]:hover {\n  background-color: var(--vscode-button-secondaryHoverBackground);\n}\n.void-scope .hover\\:void-bg-\\[var\\(--vscode-toolbar-hoverBackground\\)\\]:hover {\n  background-color: var(--vscode-toolbar-hoverBackground);\n}\n.void-scope .hover\\:void-bg-black\\/10:hover {\n  background-color: rgb(0 0 0 / 0.1);\n}\n.void-scope .hover\\:void-bg-blue-500:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-blue-700:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(29 78 216 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-blue-900\\/50:hover {\n  background-color: rgb(30 58 138 / 0.5);\n}\n.void-scope .hover\\:void-bg-green-700:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(21 128 61 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-red-900\\/50:hover {\n  background-color: rgb(127 29 29 / 0.5);\n}\n.void-scope .hover\\:void-bg-void-bg-1:hover {\n  background-color: var(--void-bg-1);\n}\n.void-scope .hover\\:void-bg-void-bg-2:hover {\n  background-color: var(--void-bg-2);\n}\n.void-scope .hover\\:void-bg-void-bg-3:hover {\n  background-color: var(--void-bg-3);\n}\n.void-scope .hover\\:void-bg-white\\/20:hover {\n  background-color: rgb(255 255 255 / 0.2);\n}\n.void-scope .hover\\:void-bg-white\\/5:hover {\n  background-color: rgb(255 255 255 / 0.05);\n}\n.void-scope .hover\\:void-bg-zinc-100:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(244 244 245 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-text-blue-400:hover {\n  --tw-text-opacity: 1;\n  color: rgb(96 165 250 / var(--tw-text-opacity, 1));\n}\n.void-scope .hover\\:void-text-red-400:hover {\n  --tw-text-opacity: 1;\n  color: rgb(248 113 113 / var(--tw-text-opacity, 1));\n}\n.void-scope .hover\\:void-text-void-fg-1:hover {\n  color: var(--void-fg-1);\n}\n.void-scope .hover\\:void-text-void-fg-2:hover {\n  color: var(--void-fg-2);\n}\n.void-scope .hover\\:void-text-void-fg-3:hover {\n  color: var(--void-fg-3);\n}\n.void-scope .hover\\:void-opacity-100:hover {\n  opacity: 1;\n}\n.void-scope .hover\\:void-opacity-80:hover {\n  opacity: 0.8;\n}\n.void-scope .hover\\:void-opacity-90:hover {\n  opacity: 0.9;\n}\n.void-scope .hover\\:void-brightness-110:hover {\n  --tw-brightness: brightness(1.1);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-125:hover {\n  --tw-brightness: brightness(1.25);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-75:hover {\n  --tw-brightness: brightness(.75);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-90:hover {\n  --tw-brightness: brightness(.9);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-95:hover {\n  --tw-brightness: brightness(.95);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .focus\\:void-border-blue-500:focus {\n  --tw-border-opacity: 1;\n  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));\n}\n.void-scope .focus\\:void-border-void-border-1:focus {\n  border-color: var(--void-border-1);\n}\n.void-scope .focus\\:void-border-white\\/50:focus {\n  border-color: rgb(255 255 255 / 0.5);\n}\n.void-scope .focus\\:void-outline-none:focus {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.void-scope .active\\:void-cursor-grabbing:active {\n  cursor: grabbing;\n}\n.void-scope .disabled\\:void-cursor-not-allowed:disabled {\n  cursor: not-allowed;\n}\n.void-scope .disabled\\:void-opacity-50:disabled {\n  opacity: 0.5;\n}\n.void-scope .void-group:hover .group-hover\\:void-translate-x-1 {\n  --tw-translate-x: 0.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-group:hover .group-hover\\:void-text-void-fg-1 {\n  color: var(--void-fg-1);\n}\n.void-scope .void-group:hover .group-hover\\:void-text-void-fg-2 {\n  color: var(--void-fg-2);\n}\n.void-scope .void-group:hover .group-hover\\:void-text-void-fg-3 {\n  color: var(--void-fg-3);\n}\n.void-scope .void-group:hover .group-hover\\:void-opacity-100 {\n  opacity: 1;\n}\n.void-scope .void-group:hover .group-hover\\:void-opacity-70 {\n  opacity: 0.7;\n}\n.void-scope .void-group:hover .group-hover\\:void-opacity-80 {\n  opacity: 0.8;\n}\n.void-scope .void-group:active .group-active\\:void-translate-x-1 {\n  --tw-translate-x: 0.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .prose-headings\\:void-font-bold :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 700;\n}\n.void-scope .prose-headings\\:void-font-medium :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-headings\\:void-tracking-tight :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  letter-spacing: -0.025em;\n}\n.void-scope .prose-headings\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-h1\\:void-my-4 :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-h1\\:void-mb-6 :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 1.5rem;\n}\n.void-scope .prose-h1\\:void-mt-0 :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n}\n.void-scope .prose-h1\\:void-text-2xl :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 18px;\n}\n.void-scope .prose-h1\\:void-text-\\[14px\\] :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-h1\\:void-font-semibold :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 600;\n}\n.void-scope .prose-h2\\:void-my-4 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-h2\\:void-mb-3 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-h2\\:void-mt-8 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 2rem;\n}\n.void-scope .prose-h2\\:void-border-b :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-bottom-width: 1px;\n}\n.void-scope .prose-h2\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-h2\\:void-pb-2 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-bottom: 0.5rem;\n}\n.void-scope .prose-h2\\:void-text-\\[13px\\] :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-h2\\:void-text-lg :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-h3\\:void-my-3 :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-h3\\:void-mb-2\\.5 :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 0.625rem;\n}\n.void-scope .prose-h3\\:void-mt-6 :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1.5rem;\n}\n.void-scope .prose-h3\\:void-text-\\[13px\\] :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-h3\\:void-text-base :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 1rem;\n  line-height: 1.5rem;\n}\n.void-scope .prose-h3\\:void-font-medium :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-h4\\:void-my-2 :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-h4\\:void-mb-2 :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-h4\\:void-mt-5 :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1.25rem;\n}\n.void-scope .prose-h4\\:void-text-\\[13px\\] :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-h4\\:void-text-sm :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 11px;\n}\n.void-scope .prose-h4\\:void-font-medium :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-h4\\:void-uppercase :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-transform: uppercase;\n}\n.void-scope .prose-h4\\:void-tracking-wide :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  letter-spacing: 0.025em;\n}\n.void-scope .prose-h4\\:void-text-\\[var\\(--vscode-descriptionForeground\\)\\] :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-descriptionForeground);\n}\n.void-scope .prose-p\\:void-my-0 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n  margin-bottom: 0px;\n}\n.void-scope .prose-p\\:void-my-2 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-p\\:void-my-3 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-p\\:void-block :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  display: block;\n}\n.void-scope .prose-p\\:void-py-0 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0px;\n  padding-bottom: 0px;\n}\n.void-scope .prose-p\\:void-text-\\[14px\\] :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-p\\:void-leading-\\[1\\.65\\] :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.65;\n}\n.void-scope .prose-p\\:void-leading-normal :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.5;\n}\n.void-scope .prose-p\\:void-leading-snug :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.375;\n}\n.void-scope .prose-p\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-a\\:void-text-\\[var\\(--vscode-textLink-foreground\\)\\] :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-textLink-foreground);\n}\n.void-scope .prose-a\\:void-no-underline :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-decoration-line: none;\n}\n.void-scope .prose-a\\:void-transition-all :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .hover\\:prose-a\\:void-underline :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))):hover {\n  text-decoration-line: underline;\n}\n.void-scope .prose-blockquote\\:void-my-2 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-blockquote\\:void-border-l-2 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-left-width: 2px;\n}\n.void-scope .prose-blockquote\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-blockquote\\:void-pl-2 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.5rem;\n}\n.void-scope .prose-blockquote\\:void-pl-4 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1rem;\n}\n.void-scope .prose-blockquote\\:void-italic :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-style: italic;\n}\n.void-scope .prose-blockquote\\:void-opacity-70 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  opacity: 0.7;\n}\n.void-scope .prose-strong\\:void-font-semibold :is(:where(strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 600;\n}\n.void-scope .prose-strong\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-em\\:void-italic :is(:where(em):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-style: italic;\n}\n.void-scope .prose-em\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(em):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-code\\:void-rounded :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-radius: 0.25rem;\n}\n.void-scope .prose-code\\:void-bg-\\[var\\(--vscode-textCodeBlock-background\\)\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  background-color: var(--vscode-textCodeBlock-background);\n}\n.void-scope .prose-code\\:void-px-1\\.5 :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.375rem;\n  padding-right: 0.375rem;\n}\n.void-scope .prose-code\\:void-py-0\\.5 :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0.125rem;\n  padding-bottom: 0.125rem;\n}\n.void-scope .prose-code\\:void-font-mono :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-family:\n    ui-monospace,\n    SFMono-Regular,\n    Menlo,\n    Monaco,\n    Consolas,\n    "Liberation Mono",\n    "Courier New",\n    monospace;\n}\n.void-scope .prose-code\\:void-text-\\[12px\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 12px;\n}\n.void-scope .prose-code\\:void-text-\\[13px\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-code\\:void-font-normal :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 400;\n}\n.void-scope .prose-code\\:void-text-\\[var\\(--vscode-textPreformat-foreground\\)\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-textPreformat-foreground);\n}\n.void-scope .prose-code\\:void-text-void-fg-3 :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--void-fg-3);\n}\n.void-scope .prose-code\\:before\\:void-content-none :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)))::before {\n  --tw-content: none;\n  content: var(--tw-content);\n}\n.void-scope .prose-code\\:after\\:void-content-none :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)))::after {\n  --tw-content: none;\n  content: var(--tw-content);\n}\n.void-scope .prose-pre\\:void-my-2 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-pre\\:void-my-4 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-pre\\:void-rounded :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-radius: 0.25rem;\n}\n.void-scope .prose-pre\\:void-border :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-width: 1px;\n}\n.void-scope .prose-pre\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-pre\\:void-bg-\\[var\\(--vscode-textCodeBlock-background\\)\\] :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  background-color: var(--vscode-textCodeBlock-background);\n}\n.void-scope .prose-pre\\:void-p-2 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding: 0.5rem;\n}\n.void-scope .prose-pre\\:void-p-4 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding: 1rem;\n}\n.void-scope .prose-pre\\:void-text-\\[12px\\] :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 12px;\n}\n.void-scope .prose-ol\\:void-my-0 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n  margin-bottom: 0px;\n}\n.void-scope .prose-ol\\:void-my-2 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-ol\\:void-my-3 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-ol\\:void-list-outside :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-position: outside;\n}\n.void-scope .prose-ol\\:void-list-decimal :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-type: decimal;\n}\n.void-scope .prose-ol\\:void-py-0 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0px;\n  padding-bottom: 0px;\n}\n.void-scope .prose-ol\\:void-pl-4 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1rem;\n}\n.void-scope .prose-ol\\:void-pl-5 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1.25rem;\n}\n.void-scope .prose-ol\\:void-leading-normal :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.5;\n}\n.void-scope .prose-ol\\:void-leading-snug :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.375;\n}\n.void-scope .prose-ul\\:void-my-2 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-ul\\:void-my-3 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-ul\\:void-list-outside :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-position: outside;\n}\n.void-scope .prose-ul\\:void-list-disc :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-type: disc;\n}\n.void-scope .prose-ul\\:void-pl-4 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1rem;\n}\n.void-scope .prose-ul\\:void-pl-5 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1.25rem;\n}\n.void-scope .prose-ul\\:void-leading-normal :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.5;\n}\n.void-scope .prose-ul\\:void-leading-snug :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.375;\n}\n.void-scope .prose-li\\:void-my-0 :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n  margin-bottom: 0px;\n}\n.void-scope .prose-li\\:void-my-1 :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.25rem;\n  margin-bottom: 0.25rem;\n}\n.void-scope .prose-li\\:void-text-\\[14px\\] :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-li\\:void-leading-\\[1\\.65\\] :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.65;\n}\n.void-scope .prose-li\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-table\\:void-w-full :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  width: 100%;\n}\n.void-scope .prose-table\\:void-border-collapse :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-collapse: collapse;\n}\n.void-scope .prose-table\\:void-text-\\[13px\\] :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-table\\:void-text-sm :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 11px;\n}\n.void-scope .prose-th\\:void-border :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-width: 1px;\n}\n.void-scope .prose-th\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-th\\:void-bg-\\[var\\(--vscode-editor-background\\)\\] :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  background-color: var(--vscode-editor-background);\n}\n.void-scope .prose-th\\:void-px-3 :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .prose-th\\:void-py-2 :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.void-scope .prose-th\\:void-text-left :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-align: left;\n}\n.void-scope .prose-th\\:void-text-xs :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 10px;\n}\n.void-scope .prose-th\\:void-font-medium :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-th\\:void-uppercase :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-transform: uppercase;\n}\n.void-scope .prose-th\\:void-tracking-wide :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  letter-spacing: 0.025em;\n}\n.void-scope .prose-td\\:void-border :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-width: 1px;\n}\n.void-scope .prose-td\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-td\\:void-px-3 :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .prose-td\\:void-py-2 :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.void-scope .prose-td\\:void-text-\\[14px\\] :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-hr\\:void-my-2 :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-hr\\:void-my-4 :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-hr\\:void-my-6 :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1.5rem;\n  margin-bottom: 1.5rem;\n}\n.void-scope .prose-hr\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n@media (min-width: 768px) {\n  .void-scope .md\\:void-w-1\\/4 {\n    width: 25%;\n  }\n  .void-scope .md\\:void-flex-row {\n    flex-direction: row;\n  }\n  .void-scope .md\\:void-flex-col {\n    flex-direction: column;\n  }\n}\n.void-scope .dark\\:void-bg-white:where(.void-dark, .void-dark *) {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));\n}\n.void-scope .dark\\:void-bg-white\\/10:where(.void-dark, .void-dark *) {\n  background-color: rgb(255 255 255 / 0.1);\n}\n.void-scope .dark\\:void-bg-white\\/90:where(.void-dark, .void-dark *) {\n  background-color: rgb(255 255 255 / 0.9);\n}\n.void-scope .dark\\:void-bg-zinc-600:where(.void-dark, .void-dark *) {\n  --tw-bg-opacity: 1;\n  background-color: rgb(82 82 91 / var(--tw-bg-opacity, 1));\n}\n.void-scope .dark\\:void-bg-zinc-900:where(.void-dark, .void-dark *) {\n  --tw-bg-opacity: 1;\n  background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1));\n}\n.void-scope .dark\\:void-text-black:where(.void-dark, .void-dark *) {\n  --tw-text-opacity: 1;\n  color: rgb(0 0 0 / var(--tw-text-opacity, 1));\n}\n.void-scope .dark\\:hover\\:void-bg-gray-300\\/10:hover:where(.void-dark, .void-dark *) {\n  background-color: rgb(209 213 219 / 0.1);\n}\n.void-scope .\\[\\&\\>\\*\\:first-child\\]\\:void-pl-3 > *:first-child {\n  padding-left: 0.75rem;\n}\n.void-scope .\\[\\&\\>\\*\\:last-child\\]\\:void-border-r-0 > *:last-child {\n  border-right-width: 0px;\n}\n.void-scope .\\[\\&\\>\\*\\:last-child\\]\\:void-pr-3 > *:last-child {\n  padding-right: 0.75rem;\n}\n.void-scope .\\[\\&\\>\\*\\]\\:void-border-r > * {\n  border-right-width: 1px;\n}\n.void-scope .\\[\\&\\>\\*\\]\\:void-border-void-border-2 > * {\n  border-color: var(--void-border-2);\n}\n.void-scope .\\[\\&\\>\\*\\]\\:void-px-3 > * {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .\\[\\&\\>\\:first-child\\]\\:\\!void-mt-0 > :first-child {\n  margin-top: 0px !important;\n}\n.void-scope .\\[\\&\\>\\:last-child\\]\\:\\!void-mb-0 > :last-child {\n  margin-bottom: 0px !important;\n}\n.void-scope .\\[\\&_select\\]\\:\\!void-text-xs select {\n  font-size: 10px !important;\n}\n.void-scope .\\[\\&_select\\]\\:\\!void-text-void-fg-3 select {\n  color: var(--void-fg-3) !important;\n}\n');
+styleInject('.void-scope {\n}\n.void-scope *,\n.void-scope ::before,\n.void-scope ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x: ;\n  --tw-pan-y: ;\n  --tw-pinch-zoom: ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position: ;\n  --tw-gradient-via-position: ;\n  --tw-gradient-to-position: ;\n  --tw-ordinal: ;\n  --tw-slashed-zero: ;\n  --tw-numeric-figure: ;\n  --tw-numeric-spacing: ;\n  --tw-numeric-fraction: ;\n  --tw-ring-inset: ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur: ;\n  --tw-brightness: ;\n  --tw-contrast: ;\n  --tw-grayscale: ;\n  --tw-hue-rotate: ;\n  --tw-invert: ;\n  --tw-saturate: ;\n  --tw-sepia: ;\n  --tw-drop-shadow: ;\n  --tw-backdrop-blur: ;\n  --tw-backdrop-brightness: ;\n  --tw-backdrop-contrast: ;\n  --tw-backdrop-grayscale: ;\n  --tw-backdrop-hue-rotate: ;\n  --tw-backdrop-invert: ;\n  --tw-backdrop-opacity: ;\n  --tw-backdrop-saturate: ;\n  --tw-backdrop-sepia: ;\n  --tw-contain-size: ;\n  --tw-contain-layout: ;\n  --tw-contain-paint: ;\n  --tw-contain-style: ;\n}\n.void-scope ::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x: ;\n  --tw-pan-y: ;\n  --tw-pinch-zoom: ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position: ;\n  --tw-gradient-via-position: ;\n  --tw-gradient-to-position: ;\n  --tw-ordinal: ;\n  --tw-slashed-zero: ;\n  --tw-numeric-figure: ;\n  --tw-numeric-spacing: ;\n  --tw-numeric-fraction: ;\n  --tw-ring-inset: ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur: ;\n  --tw-brightness: ;\n  --tw-contrast: ;\n  --tw-grayscale: ;\n  --tw-hue-rotate: ;\n  --tw-invert: ;\n  --tw-saturate: ;\n  --tw-sepia: ;\n  --tw-drop-shadow: ;\n  --tw-backdrop-blur: ;\n  --tw-backdrop-brightness: ;\n  --tw-backdrop-contrast: ;\n  --tw-backdrop-grayscale: ;\n  --tw-backdrop-hue-rotate: ;\n  --tw-backdrop-invert: ;\n  --tw-backdrop-opacity: ;\n  --tw-backdrop-saturate: ;\n  --tw-backdrop-sepia: ;\n  --tw-contain-size: ;\n  --tw-contain-layout: ;\n  --tw-contain-paint: ;\n  --tw-contain-style: ;\n}\n.void-scope *,\n.void-scope ::before,\n.void-scope ::after {\n  box-sizing: border-box;\n  border-width: 0;\n  border-style: solid;\n  border-color: #e5e7eb;\n}\n.void-scope ::before,\n.void-scope ::after {\n  --tw-content: "";\n}\n.void-scope html,\n.void-scope :host {\n  line-height: 1.5;\n  -webkit-text-size-adjust: 100%;\n  -moz-tab-size: 4;\n  -o-tab-size: 4;\n  tab-size: 4;\n  font-family:\n    ui-sans-serif,\n    system-ui,\n    sans-serif,\n    "Apple Color Emoji",\n    "Segoe UI Emoji",\n    "Segoe UI Symbol",\n    "Noto Color Emoji";\n  font-feature-settings: normal;\n  font-variation-settings: normal;\n  -webkit-tap-highlight-color: transparent;\n}\n.void-scope body {\n  margin: 0;\n  line-height: inherit;\n}\n.void-scope hr {\n  height: 0;\n  color: inherit;\n  border-top-width: 1px;\n}\n.void-scope abbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n  text-decoration: underline dotted;\n}\n.void-scope h1,\n.void-scope h2,\n.void-scope h3,\n.void-scope h4,\n.void-scope h5,\n.void-scope h6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n.void-scope a {\n  color: inherit;\n  text-decoration: inherit;\n}\n.void-scope b,\n.void-scope strong {\n  font-weight: bolder;\n}\n.void-scope code,\n.void-scope kbd,\n.void-scope samp,\n.void-scope pre {\n  font-family:\n    ui-monospace,\n    SFMono-Regular,\n    Menlo,\n    Monaco,\n    Consolas,\n    "Liberation Mono",\n    "Courier New",\n    monospace;\n  font-feature-settings: normal;\n  font-variation-settings: normal;\n  font-size: 1em;\n}\n.void-scope small {\n  font-size: 80%;\n}\n.void-scope sub,\n.void-scope sup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n.void-scope sub {\n  bottom: -0.25em;\n}\n.void-scope sup {\n  top: -0.5em;\n}\n.void-scope table {\n  text-indent: 0;\n  border-color: inherit;\n  border-collapse: collapse;\n}\n.void-scope button,\n.void-scope input,\n.void-scope optgroup,\n.void-scope select,\n.void-scope textarea {\n  font-family: inherit;\n  font-feature-settings: inherit;\n  font-variation-settings: inherit;\n  font-size: 100%;\n  font-weight: inherit;\n  line-height: inherit;\n  letter-spacing: inherit;\n  color: inherit;\n  margin: 0;\n  padding: 0;\n}\n.void-scope button,\n.void-scope select {\n  text-transform: none;\n}\n.void-scope button,\n.void-scope input:where([type=button]),\n.void-scope input:where([type=reset]),\n.void-scope input:where([type=submit]) {\n  -webkit-appearance: button;\n  background-color: transparent;\n  background-image: none;\n}\n.void-scope :-moz-focusring {\n  outline: auto;\n}\n.void-scope :-moz-ui-invalid {\n  box-shadow: none;\n}\n.void-scope progress {\n  vertical-align: baseline;\n}\n.void-scope ::-webkit-inner-spin-button,\n.void-scope ::-webkit-outer-spin-button {\n  height: auto;\n}\n.void-scope [type=search] {\n  -webkit-appearance: textfield;\n  outline-offset: -2px;\n}\n.void-scope ::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n.void-scope ::-webkit-file-upload-button {\n  -webkit-appearance: button;\n  font: inherit;\n}\n.void-scope summary {\n  display: list-item;\n}\n.void-scope blockquote,\n.void-scope dl,\n.void-scope dd,\n.void-scope h1,\n.void-scope h2,\n.void-scope h3,\n.void-scope h4,\n.void-scope h5,\n.void-scope h6,\n.void-scope hr,\n.void-scope figure,\n.void-scope p,\n.void-scope pre {\n  margin: 0;\n}\n.void-scope fieldset {\n  margin: 0;\n  padding: 0;\n}\n.void-scope legend {\n  padding: 0;\n}\n.void-scope ol,\n.void-scope ul,\n.void-scope menu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.void-scope dialog {\n  padding: 0;\n}\n.void-scope textarea {\n  resize: vertical;\n}\n.void-scope input::-moz-placeholder,\n.void-scope textarea::-moz-placeholder {\n  opacity: 1;\n  color: #9ca3af;\n}\n.void-scope input::placeholder,\n.void-scope textarea::placeholder {\n  opacity: 1;\n  color: #9ca3af;\n}\n.void-scope button,\n.void-scope [role=button] {\n  cursor: pointer;\n}\n.void-scope :disabled {\n  cursor: default;\n}\n.void-scope img,\n.void-scope svg,\n.void-scope video,\n.void-scope canvas,\n.void-scope audio,\n.void-scope iframe,\n.void-scope embed,\n.void-scope object {\n  display: block;\n  vertical-align: middle;\n}\n.void-scope img,\n.void-scope video {\n  max-width: 100%;\n  height: auto;\n}\n.void-scope [hidden]:where(:not([hidden=until-found])) {\n  display: none;\n}\n.void-scope .void-prose {\n  color: var(--tw-prose-body);\n  max-width: 65ch;\n}\n.void-scope .void-prose :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-lead);\n  font-size: 1.25em;\n  line-height: 1.6;\n  margin-top: 1.2em;\n  margin-bottom: 1.2em;\n}\n.void-scope .void-prose :where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-links);\n  text-decoration: underline;\n  font-weight: 500;\n}\n.void-scope .void-prose :where(strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-bold);\n  font-weight: 600;\n}\n.void-scope .void-prose :where(a strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(blockquote strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(thead th strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: decimal;\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose :where(ol[type=A]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-alpha;\n}\n.void-scope .void-prose :where(ol[type=a]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-alpha;\n}\n.void-scope .void-prose :where(ol[type=A s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-alpha;\n}\n.void-scope .void-prose :where(ol[type=a s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-alpha;\n}\n.void-scope .void-prose :where(ol[type=I]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-roman;\n}\n.void-scope .void-prose :where(ol[type=i]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-roman;\n}\n.void-scope .void-prose :where(ol[type=I s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: upper-roman;\n}\n.void-scope .void-prose :where(ol[type=i s]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: lower-roman;\n}\n.void-scope .void-prose :where(ol[type="1"]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: decimal;\n}\n.void-scope .void-prose :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  list-style-type: disc;\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::marker {\n  font-weight: 400;\n  color: var(--tw-prose-counters);\n}\n.void-scope .void-prose :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::marker {\n  color: var(--tw-prose-bullets);\n}\n.void-scope .void-prose :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  margin-top: 1.25em;\n}\n.void-scope .void-prose :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-color: var(--tw-prose-hr);\n  border-top-width: 1px;\n  margin-top: 3em;\n  margin-bottom: 3em;\n}\n.void-scope .void-prose :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 500;\n  font-style: italic;\n  color: var(--tw-prose-quotes);\n  border-inline-start-width: 0.25rem;\n  border-inline-start-color: var(--tw-prose-quote-borders);\n  quotes: "\\201c""\\201d""\\2018""\\2019";\n  margin-top: 1.6em;\n  margin-bottom: 1.6em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose :where(blockquote p:first-of-type):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::before {\n  content: open-quote;\n}\n.void-scope .void-prose :where(blockquote p:last-of-type):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::after {\n  content: close-quote;\n}\n.void-scope .void-prose :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 800;\n  font-size: 2.25em;\n  margin-top: 0;\n  margin-bottom: 0.8888889em;\n  line-height: 1.1111111;\n}\n.void-scope .void-prose :where(h1 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 900;\n  color: inherit;\n}\n.void-scope .void-prose :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 700;\n  font-size: 1.5em;\n  margin-top: 2em;\n  margin-bottom: 1em;\n  line-height: 1.3333333;\n}\n.void-scope .void-prose :where(h2 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 800;\n  color: inherit;\n}\n.void-scope .void-prose :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  font-size: 1.25em;\n  margin-top: 1.6em;\n  margin-bottom: 0.6em;\n  line-height: 1.6;\n}\n.void-scope .void-prose :where(h3 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 700;\n  color: inherit;\n}\n.void-scope .void-prose :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  margin-top: 1.5em;\n  margin-bottom: 0.5em;\n  line-height: 1.5;\n}\n.void-scope .void-prose :where(h4 strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 700;\n  color: inherit;\n}\n.void-scope .void-prose :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  display: block;\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-weight: 500;\n  font-family: inherit;\n  color: var(--tw-prose-kbd);\n  box-shadow: 0 0 0 1px var(--tw-prose-kbd-shadows), 0 3px 0 var(--tw-prose-kbd-shadows);\n  font-size: 0.875em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1875em;\n  padding-inline-end: 0.375em;\n  padding-bottom: 0.1875em;\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-code);\n  font-weight: 600;\n  font-size: 0.875em;\n}\n.void-scope .void-prose :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::before {\n  content: "`";\n}\n.void-scope .void-prose :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::after {\n  content: "`";\n}\n.void-scope .void-prose :where(a code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(h1 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n  font-size: 0.875em;\n}\n.void-scope .void-prose :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n  font-size: 0.9em;\n}\n.void-scope .void-prose :where(h4 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(blockquote code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(thead th code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: inherit;\n}\n.void-scope .void-prose :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-pre-code);\n  background-color: var(--tw-prose-pre-bg);\n  overflow-x: auto;\n  font-weight: 400;\n  font-size: 0.875em;\n  line-height: 1.7142857;\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n  border-radius: 0.375rem;\n  padding-top: 0.8571429em;\n  padding-inline-end: 1.1428571em;\n  padding-bottom: 0.8571429em;\n  padding-inline-start: 1.1428571em;\n}\n.void-scope .void-prose :where(pre code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  background-color: transparent;\n  border-width: 0;\n  border-radius: 0;\n  padding: 0;\n  font-weight: inherit;\n  color: inherit;\n  font-size: inherit;\n  font-family: inherit;\n  line-height: inherit;\n}\n.void-scope .void-prose :where(pre code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::before {\n  content: none;\n}\n.void-scope .void-prose :where(pre code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))::after {\n  content: none;\n}\n.void-scope .void-prose :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  width: 100%;\n  table-layout: auto;\n  margin-top: 2em;\n  margin-bottom: 2em;\n  font-size: 0.875em;\n  line-height: 1.7142857;\n}\n.void-scope .void-prose :where(thead):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-bottom-width: 1px;\n  border-bottom-color: var(--tw-prose-th-borders);\n}\n.void-scope .void-prose :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-headings);\n  font-weight: 600;\n  vertical-align: bottom;\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose :where(tbody tr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-bottom-width: 1px;\n  border-bottom-color: var(--tw-prose-td-borders);\n}\n.void-scope .void-prose :where(tbody tr:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-bottom-width: 0;\n}\n.void-scope .void-prose :where(tbody td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  vertical-align: baseline;\n}\n.void-scope .void-prose :where(tfoot):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  border-top-width: 1px;\n  border-top-color: var(--tw-prose-th-borders);\n}\n.void-scope .void-prose :where(tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  vertical-align: top;\n}\n.void-scope .void-prose :where(th, td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  text-align: start;\n}\n.void-scope .void-prose :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  color: var(--tw-prose-captions);\n  font-size: 0.875em;\n  line-height: 1.4285714;\n  margin-top: 0.8571429em;\n}\n.void-scope .void-prose {\n  --tw-prose-body: var(--void-fg-1);\n  --tw-prose-headings: var(--void-fg-1);\n  --tw-prose-lead: var(--void-fg-2);\n  --tw-prose-links: var(--void-link-color);\n  --tw-prose-bold: var(--void-fg-1);\n  --tw-prose-counters: var(--void-fg-3);\n  --tw-prose-bullets: var(--void-fg-3);\n  --tw-prose-hr: var(--void-border-4);\n  --tw-prose-quotes: var(--void-fg-1);\n  --tw-prose-quote-borders: var(--void-border-2);\n  --tw-prose-captions: var(--void-fg-3);\n  --tw-prose-kbd: #111827;\n  --tw-prose-kbd-shadows: rgb(17 24 39 / 10%);\n  --tw-prose-code: var(--void-fg-0);\n  --tw-prose-pre-code: var(--void-fg-0);\n  --tw-prose-pre-bg: var(--void-bg-1);\n  --tw-prose-th-borders: var(--void-border-4);\n  --tw-prose-td-borders: var(--void-border-4);\n  --tw-prose-invert-body: #d1d5db;\n  --tw-prose-invert-headings: #fff;\n  --tw-prose-invert-lead: #9ca3af;\n  --tw-prose-invert-links: #fff;\n  --tw-prose-invert-bold: #fff;\n  --tw-prose-invert-counters: #9ca3af;\n  --tw-prose-invert-bullets: #4b5563;\n  --tw-prose-invert-hr: #374151;\n  --tw-prose-invert-quotes: #f3f4f6;\n  --tw-prose-invert-quote-borders: #374151;\n  --tw-prose-invert-captions: #9ca3af;\n  --tw-prose-invert-kbd: #fff;\n  --tw-prose-invert-kbd-shadows: rgb(255 255 255 / 10%);\n  --tw-prose-invert-code: #fff;\n  --tw-prose-invert-pre-code: #d1d5db;\n  --tw-prose-invert-pre-bg: rgb(0 0 0 / 50%);\n  --tw-prose-invert-th-borders: #4b5563;\n  --tw-prose-invert-td-borders: #374151;\n  font-size: 1rem;\n  line-height: 1.75;\n}\n.void-scope .void-prose :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  margin-bottom: 0.5em;\n}\n.void-scope .void-prose :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose :where(.void-prose > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose :where(.void-prose > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose :where(.void-prose > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where(.void-prose > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose :where(.void-prose > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.5714286em;\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose :where(.void-prose > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose :where(.void-prose > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .void-prose-sm {\n  font-size: 0.875rem;\n  line-height: 1.7142857;\n}\n.void-scope .void-prose-sm :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  line-height: 1.5555556;\n  margin-top: 0.8888889em;\n  margin-bottom: 0.8888889em;\n}\n.void-scope .void-prose-sm :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.3333333em;\n  margin-bottom: 1.3333333em;\n  padding-inline-start: 1.1111111em;\n}\n.void-scope .void-prose-sm :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 2.1428571em;\n  margin-top: 0;\n  margin-bottom: 0.8em;\n  line-height: 1.2;\n}\n.void-scope .void-prose-sm :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.4285714em;\n  margin-top: 1.6em;\n  margin-bottom: 0.8em;\n  line-height: 1.4;\n}\n.void-scope .void-prose-sm :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  margin-top: 1.5555556em;\n  margin-bottom: 0.4444444em;\n  line-height: 1.5555556;\n}\n.void-scope .void-prose-sm :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.4285714em;\n  margin-bottom: 0.5714286em;\n  line-height: 1.4285714;\n}\n.void-scope .void-prose-sm :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-sm :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1428571em;\n  padding-inline-end: 0.3571429em;\n  padding-bottom: 0.1428571em;\n  padding-inline-start: 0.3571429em;\n}\n.void-scope .void-prose-sm :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n}\n.void-scope .void-prose-sm :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.9em;\n}\n.void-scope .void-prose-sm :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8888889em;\n}\n.void-scope .void-prose-sm :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.6666667;\n  margin-top: 1.6666667em;\n  margin-bottom: 1.6666667em;\n  border-radius: 0.25rem;\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-sm :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .void-prose-sm :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .void-prose-sm :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  margin-bottom: 0.2857143em;\n}\n.void-scope .void-prose-sm :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .void-prose-sm :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .void-prose-sm :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .void-prose-sm :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .void-prose-sm :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2.8571429em;\n  margin-bottom: 2.8571429em;\n}\n.void-scope .void-prose-sm :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.5;\n}\n.void-scope .void-prose-sm :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-sm :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-sm :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-sm :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-sm :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-sm :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-sm :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .void-prose-sm :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-sm :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.3333333;\n  margin-top: 0.6666667em;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-sm :where(.void-prose-sm > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .void-prose-base {\n  font-size: 1rem;\n  line-height: 1.75;\n}\n.void-scope .void-prose-base :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.25em;\n  line-height: 1.6;\n  margin-top: 1.2em;\n  margin-bottom: 1.2em;\n}\n.void-scope .void-prose-base :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.6em;\n  margin-bottom: 1.6em;\n  padding-inline-start: 1em;\n}\n.void-scope .void-prose-base :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 2.25em;\n  margin-top: 0;\n  margin-bottom: 0.8888889em;\n  line-height: 1.1111111;\n}\n.void-scope .void-prose-base :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.5em;\n  margin-top: 2em;\n  margin-bottom: 1em;\n  line-height: 1.3333333;\n}\n.void-scope .void-prose-base :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.25em;\n  margin-top: 1.6em;\n  margin-bottom: 0.6em;\n  line-height: 1.6;\n}\n.void-scope .void-prose-base :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.5em;\n  margin-bottom: 0.5em;\n  line-height: 1.5;\n}\n.void-scope .void-prose-base :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-base :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1875em;\n  padding-inline-end: 0.375em;\n  padding-bottom: 0.1875em;\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose-base :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n}\n.void-scope .void-prose-base :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n}\n.void-scope .void-prose-base :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.9em;\n}\n.void-scope .void-prose-base :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  line-height: 1.7142857;\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n  border-radius: 0.375rem;\n  padding-top: 0.8571429em;\n  padding-inline-end: 1.1428571em;\n  padding-bottom: 0.8571429em;\n  padding-inline-start: 1.1428571em;\n}\n.void-scope .void-prose-base :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose-base :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose-base :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  margin-bottom: 0.5em;\n}\n.void-scope .void-prose-base :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose-base :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.375em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.75em;\n  margin-bottom: 0.75em;\n}\n.void-scope .void-prose-base :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n  margin-bottom: 1.25em;\n}\n.void-scope .void-prose-base :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.25em;\n}\n.void-scope .void-prose-base :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5em;\n  padding-inline-start: 1.625em;\n}\n.void-scope .void-prose-base :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 3em;\n  margin-bottom: 3em;\n}\n.void-scope .void-prose-base :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  line-height: 1.7142857;\n}\n.void-scope .void-prose-base :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose-base :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-base :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-base :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.5714286em;\n  padding-inline-end: 0.5714286em;\n  padding-bottom: 0.5714286em;\n  padding-inline-start: 0.5714286em;\n}\n.void-scope .void-prose-base :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .void-prose-base :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .void-prose-base :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.void-scope .void-prose-base :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .void-prose-base :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.875em;\n  line-height: 1.4285714;\n  margin-top: 0.8571429em;\n}\n.void-scope .void-prose-base :where(.void-prose-base > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .void-prose-base :where(.void-prose-base > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .void-prose-invert {\n  --tw-prose-body: var(--tw-prose-invert-body);\n  --tw-prose-headings: var(--tw-prose-invert-headings);\n  --tw-prose-lead: var(--tw-prose-invert-lead);\n  --tw-prose-links: var(--tw-prose-invert-links);\n  --tw-prose-bold: var(--tw-prose-invert-bold);\n  --tw-prose-counters: var(--tw-prose-invert-counters);\n  --tw-prose-bullets: var(--tw-prose-invert-bullets);\n  --tw-prose-hr: var(--tw-prose-invert-hr);\n  --tw-prose-quotes: var(--tw-prose-invert-quotes);\n  --tw-prose-quote-borders: var(--tw-prose-invert-quote-borders);\n  --tw-prose-captions: var(--tw-prose-invert-captions);\n  --tw-prose-kbd: var(--tw-prose-invert-kbd);\n  --tw-prose-kbd-shadows: var(--tw-prose-invert-kbd-shadows);\n  --tw-prose-code: var(--tw-prose-invert-code);\n  --tw-prose-pre-code: var(--tw-prose-invert-pre-code);\n  --tw-prose-pre-bg: var(--tw-prose-invert-pre-bg);\n  --tw-prose-th-borders: var(--tw-prose-invert-th-borders);\n  --tw-prose-td-borders: var(--tw-prose-invert-td-borders);\n}\n.void-scope .void-pointer-events-none {\n  pointer-events: none;\n}\n.void-scope .void-pointer-events-auto {\n  pointer-events: auto;\n}\n.void-scope .void-fixed {\n  position: fixed;\n}\n.void-scope .void-absolute {\n  position: absolute;\n}\n.void-scope .void-relative {\n  position: relative;\n}\n.void-scope .void-sticky {\n  position: sticky;\n}\n.void-scope .void-inset-0 {\n  inset: 0px;\n}\n.void-scope .-void-left-\\[999999px\\] {\n  left: -999999px;\n}\n.void-scope .-void-right-1 {\n  right: -0.25rem;\n}\n.void-scope .-void-top-1 {\n  top: -0.25rem;\n}\n.void-scope .-void-top-\\[999999px\\] {\n  top: -999999px;\n}\n.void-scope .void-bottom-0 {\n  bottom: 0px;\n}\n.void-scope .void-left-0 {\n  left: 0px;\n}\n.void-scope .void-right-0 {\n  right: 0px;\n}\n.void-scope .void-top-0 {\n  top: 0px;\n}\n.void-scope .void-top-1\\/2 {\n  top: 50%;\n}\n.void-scope .void-z-0 {\n  z-index: 0;\n}\n.void-scope .void-z-10 {\n  z-index: 10;\n}\n.void-scope .void-z-50 {\n  z-index: 50;\n}\n.void-scope .void-z-\\[1000\\] {\n  z-index: 1000;\n}\n.void-scope .void-z-\\[100\\] {\n  z-index: 100;\n}\n.void-scope .void-z-\\[9999999\\] {\n  z-index: 9999999;\n}\n.void-scope .void-z-\\[99999\\] {\n  z-index: 99999;\n}\n.void-scope .void-m-0 {\n  margin: 0px;\n}\n.void-scope .-void-mx-1 {\n  margin-left: -0.25rem;\n  margin-right: -0.25rem;\n}\n.void-scope .void-mx-0\\.5 {\n  margin-left: 0.125rem;\n  margin-right: 0.125rem;\n}\n.void-scope .void-mx-1 {\n  margin-left: 0.25rem;\n  margin-right: 0.25rem;\n}\n.void-scope .void-mx-2 {\n  margin-left: 0.5rem;\n  margin-right: 0.5rem;\n}\n.void-scope .void-mx-4 {\n  margin-left: 1rem;\n  margin-right: 1rem;\n}\n.void-scope .void-mx-auto {\n  margin-left: auto;\n  margin-right: auto;\n}\n.void-scope .void-my-0\\.5 {\n  margin-top: 0.125rem;\n  margin-bottom: 0.125rem;\n}\n.void-scope .void-my-1 {\n  margin-top: 0.25rem;\n  margin-bottom: 0.25rem;\n}\n.void-scope .void-my-1\\.5 {\n  margin-top: 0.375rem;\n  margin-bottom: 0.375rem;\n}\n.void-scope .void-my-2 {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .void-my-4 {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .void-my-auto {\n  margin-top: auto;\n  margin-bottom: auto;\n}\n.void-scope .void-mb-0\\.5 {\n  margin-bottom: 0.125rem;\n}\n.void-scope .void-mb-1 {\n  margin-bottom: 0.25rem;\n}\n.void-scope .void-mb-1\\.5 {\n  margin-bottom: 0.375rem;\n}\n.void-scope .void-mb-10 {\n  margin-bottom: 2.5rem;\n}\n.void-scope .void-mb-2 {\n  margin-bottom: 0.5rem;\n}\n.void-scope .void-mb-3 {\n  margin-bottom: 0.75rem;\n}\n.void-scope .void-mb-32 {\n  margin-bottom: 8rem;\n}\n.void-scope .void-mb-4 {\n  margin-bottom: 1rem;\n}\n.void-scope .void-mb-auto {\n  margin-bottom: auto;\n}\n.void-scope .void-ml-0\\.5 {\n  margin-left: 0.125rem;\n}\n.void-scope .void-ml-1 {\n  margin-left: 0.25rem;\n}\n.void-scope .void-ml-1\\.5 {\n  margin-left: 0.375rem;\n}\n.void-scope .void-ml-2 {\n  margin-left: 0.5rem;\n}\n.void-scope .void-ml-3 {\n  margin-left: 0.75rem;\n}\n.void-scope .void-ml-6 {\n  margin-left: 1.5rem;\n}\n.void-scope .void-ml-auto {\n  margin-left: auto;\n}\n.void-scope .void-mr-1 {\n  margin-right: 0.25rem;\n}\n.void-scope .void-mr-1\\.5 {\n  margin-right: 0.375rem;\n}\n.void-scope .void-mr-4 {\n  margin-right: 1rem;\n}\n.void-scope .void-mt-0\\.5 {\n  margin-top: 0.125rem;\n}\n.void-scope .void-mt-1 {\n  margin-top: 0.25rem;\n}\n.void-scope .void-mt-12 {\n  margin-top: 3rem;\n}\n.void-scope .void-mt-2 {\n  margin-top: 0.5rem;\n}\n.void-scope .void-mt-2\\.5 {\n  margin-top: 0.625rem;\n}\n.void-scope .void-mt-3 {\n  margin-top: 0.75rem;\n}\n.void-scope .void-mt-4 {\n  margin-top: 1rem;\n}\n.void-scope .void-mt-6 {\n  margin-top: 1.5rem;\n}\n.void-scope .void-mt-8 {\n  margin-top: 2rem;\n}\n.void-scope .void-mt-auto {\n  margin-top: auto;\n}\n.void-scope .void-mt-px {\n  margin-top: 1px;\n}\n.void-scope .void-block {\n  display: block;\n}\n.void-scope .void-inline-block {\n  display: inline-block;\n}\n.void-scope .void-flex {\n  display: flex;\n}\n.void-scope .void-inline-flex {\n  display: inline-flex;\n}\n.void-scope .void-grid {\n  display: grid;\n}\n.void-scope .void-hidden {\n  display: none;\n}\n.void-scope .void-size-1\\.5 {\n  width: 0.375rem;\n  height: 0.375rem;\n}\n.void-scope .void-size-2 {\n  width: 0.5rem;\n  height: 0.5rem;\n}\n.void-scope .void-size-3 {\n  width: 0.75rem;\n  height: 0.75rem;\n}\n.void-scope .void-size-3\\.5 {\n  width: 0.875rem;\n  height: 0.875rem;\n}\n.void-scope .void-size-4 {\n  width: 1rem;\n  height: 1rem;\n}\n.void-scope .void-size-5 {\n  width: 1.25rem;\n  height: 1.25rem;\n}\n.void-scope .void-size-\\[11px\\] {\n  width: 11px;\n  height: 11px;\n}\n.void-scope .void-size-\\[18px\\] {\n  width: 18px;\n  height: 18px;\n}\n.void-scope .void-h-0\\.5 {\n  height: 0.125rem;\n}\n.void-scope .void-h-1 {\n  height: 0.25rem;\n}\n.void-scope .void-h-1\\.5 {\n  height: 0.375rem;\n}\n.void-scope .void-h-1\\/3 {\n  height: 33.333333%;\n}\n.void-scope .void-h-16 {\n  height: 4rem;\n}\n.void-scope .void-h-2 {\n  height: 0.5rem;\n}\n.void-scope .void-h-2\\.5 {\n  height: 0.625rem;\n}\n.void-scope .void-h-3 {\n  height: 0.75rem;\n}\n.void-scope .void-h-3\\.5 {\n  height: 0.875rem;\n}\n.void-scope .void-h-4 {\n  height: 1rem;\n}\n.void-scope .void-h-5 {\n  height: 1.25rem;\n}\n.void-scope .void-h-6 {\n  height: 1.5rem;\n}\n.void-scope .void-h-9 {\n  height: 2.25rem;\n}\n.void-scope .void-h-\\[1px\\] {\n  height: 1px;\n}\n.void-scope .void-h-\\[200px\\] {\n  height: 200px;\n}\n.void-scope .void-h-\\[30vh\\] {\n  height: 30vh;\n}\n.void-scope .void-h-\\[4px\\] {\n  height: 4px;\n}\n.void-scope .void-h-\\[5px\\] {\n  height: 5px;\n}\n.void-scope .void-h-\\[6px\\] {\n  height: 6px;\n}\n.void-scope .void-h-\\[80vh\\] {\n  height: 80vh;\n}\n.void-scope .void-h-fit {\n  height: -moz-fit-content;\n  height: fit-content;\n}\n.void-scope .void-h-full {\n  height: 100%;\n}\n.void-scope .void-max-h-0 {\n  max-height: 0px;\n}\n.void-scope .void-max-h-24 {\n  max-height: 6rem;\n}\n.void-scope .void-max-h-32 {\n  max-height: 8rem;\n}\n.void-scope .void-max-h-80 {\n  max-height: 20rem;\n}\n.void-scope .void-max-h-\\[150px\\] {\n  max-height: 150px;\n}\n.void-scope .void-max-h-\\[160px\\] {\n  max-height: 160px;\n}\n.void-scope .void-max-h-\\[200px\\] {\n  max-height: 200px;\n}\n.void-scope .void-max-h-\\[300px\\] {\n  max-height: 300px;\n}\n.void-scope .void-max-h-\\[400px\\] {\n  max-height: 400px;\n}\n.void-scope .void-max-h-\\[5000px\\] {\n  max-height: 5000px;\n}\n.void-scope .void-max-h-\\[500px\\] {\n  max-height: 500px;\n}\n.void-scope .void-max-h-\\[70vh\\] {\n  max-height: 70vh;\n}\n.void-scope .void-max-h-\\[90vh\\] {\n  max-height: 90vh;\n}\n.void-scope .void-max-h-full {\n  max-height: 100%;\n}\n.void-scope .void-min-h-0 {\n  min-height: 0px;\n}\n.void-scope .void-min-h-\\[100px\\] {\n  min-height: 100px;\n}\n.void-scope .void-min-h-\\[200px\\] {\n  min-height: 200px;\n}\n.void-scope .void-min-h-\\[20px\\] {\n  min-height: 20px;\n}\n.void-scope .void-min-h-\\[22px\\] {\n  min-height: 22px;\n}\n.void-scope .void-min-h-\\[81px\\] {\n  min-height: 81px;\n}\n.void-scope .void-w-1 {\n  width: 0.25rem;\n}\n.void-scope .void-w-10 {\n  width: 2.5rem;\n}\n.void-scope .void-w-11 {\n  width: 2.75rem;\n}\n.void-scope .void-w-2 {\n  width: 0.5rem;\n}\n.void-scope .void-w-2\\.5 {\n  width: 0.625rem;\n}\n.void-scope .void-w-3 {\n  width: 0.75rem;\n}\n.void-scope .void-w-3\\.5 {\n  width: 0.875rem;\n}\n.void-scope .void-w-4 {\n  width: 1rem;\n}\n.void-scope .void-w-48 {\n  width: 12rem;\n}\n.void-scope .void-w-5 {\n  width: 1.25rem;\n}\n.void-scope .void-w-7 {\n  width: 1.75rem;\n}\n.void-scope .void-w-9 {\n  width: 2.25rem;\n}\n.void-scope .void-w-\\[0\\.5px\\] {\n  width: 0.5px;\n}\n.void-scope .void-w-\\[1px\\] {\n  width: 1px;\n}\n.void-scope .void-w-\\[4px\\] {\n  width: 4px;\n}\n.void-scope .void-w-\\[5px\\] {\n  width: 5px;\n}\n.void-scope .void-w-\\[6px\\] {\n  width: 6px;\n}\n.void-scope .void-w-fit {\n  width: -moz-fit-content;\n  width: fit-content;\n}\n.void-scope .void-w-full {\n  width: 100%;\n}\n.void-scope .void-w-max {\n  width: -moz-max-content;\n  width: max-content;\n}\n.void-scope .void-min-w-0 {\n  min-width: 0px;\n}\n.void-scope .void-min-w-\\[1\\.5rem\\] {\n  min-width: 1.5rem;\n}\n.void-scope .void-min-w-\\[130px\\] {\n  min-width: 130px;\n}\n.void-scope .void-min-w-\\[3rem\\] {\n  min-width: 3rem;\n}\n.void-scope .void-min-w-\\[4rem\\] {\n  min-width: 4rem;\n}\n.void-scope .void-min-w-full {\n  min-width: 100%;\n}\n.void-scope .void-max-w-32 {\n  max-width: 8rem;\n}\n.void-scope .void-max-w-3xl {\n  max-width: 48rem;\n}\n.void-scope .void-max-w-48 {\n  max-width: 12rem;\n}\n.void-scope .void-max-w-\\[1000px\\] {\n  max-width: 1000px;\n}\n.void-scope .void-max-w-\\[200px\\] {\n  max-width: 200px;\n}\n.void-scope .void-max-w-\\[20px\\] {\n  max-width: 20px;\n}\n.void-scope .void-max-w-\\[220px\\] {\n  max-width: 220px;\n}\n.void-scope .void-max-w-\\[260px\\] {\n  max-width: 260px;\n}\n.void-scope .void-max-w-\\[300px\\] {\n  max-width: 300px;\n}\n.void-scope .void-max-w-\\[400px\\] {\n  max-width: 400px;\n}\n.void-scope .void-max-w-\\[480px\\] {\n  max-width: 480px;\n}\n.void-scope .void-max-w-\\[520px\\] {\n  max-width: 520px;\n}\n.void-scope .void-max-w-\\[600px\\] {\n  max-width: 600px;\n}\n.void-scope .void-max-w-\\[85\\%\\] {\n  max-width: 85%;\n}\n.void-scope .void-max-w-\\[900px\\] {\n  max-width: 900px;\n}\n.void-scope .void-max-w-\\[95\\%\\] {\n  max-width: 95%;\n}\n.void-scope .void-max-w-full {\n  max-width: 100%;\n}\n.void-scope .void-max-w-md {\n  max-width: 28rem;\n}\n.void-scope .void-max-w-none {\n  max-width: none;\n}\n.void-scope .void-max-w-sm {\n  max-width: 24rem;\n}\n.void-scope .void-max-w-xl {\n  max-width: 36rem;\n}\n.void-scope .void-flex-1 {\n  flex: 1 1 0%;\n}\n.void-scope .void-flex-shrink-0 {\n  flex-shrink: 0;\n}\n.void-scope .void-shrink-0 {\n  flex-shrink: 0;\n}\n.void-scope .void-flex-grow {\n  flex-grow: 1;\n}\n.void-scope .void-flex-grow-0 {\n  flex-grow: 0;\n}\n.void-scope .void-grow {\n  flex-grow: 1;\n}\n.void-scope .-void-translate-x-1\\/2 {\n  --tw-translate-x: -50%;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .-void-translate-y-0 {\n  --tw-translate-y: -0px;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .-void-translate-y-1\\/2 {\n  --tw-translate-y: -50%;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-0 {\n  --tw-translate-x: 0px;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-0\\.5 {\n  --tw-translate-x: 0.125rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-1 {\n  --tw-translate-x: 0.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-2\\.5 {\n  --tw-translate-x: 0.625rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-3\\.5 {\n  --tw-translate-x: 0.875rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-5 {\n  --tw-translate-x: 1.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-translate-x-6 {\n  --tw-translate-x: 1.5rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-rotate-90 {\n  --tw-rotate: 90deg;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-transform {\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n@keyframes void-pulse {\n  50% {\n    opacity: .5;\n  }\n}\n.void-scope .void-animate-pulse {\n  animation: void-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;\n}\n@keyframes void-spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.void-scope .void-animate-spin {\n  animation: void-spin 1s linear infinite;\n}\n.void-scope .void-cursor-auto {\n  cursor: auto;\n}\n.void-scope .void-cursor-default {\n  cursor: default;\n}\n.void-scope .void-cursor-grab {\n  cursor: grab;\n}\n.void-scope .void-cursor-not-allowed {\n  cursor: not-allowed;\n}\n.void-scope .void-cursor-pointer {\n  cursor: pointer;\n}\n.void-scope .void-select-none {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  user-select: none;\n}\n.void-scope .\\!void-select-text {\n  -webkit-user-select: text !important;\n  -moz-user-select: text !important;\n  user-select: text !important;\n}\n.void-scope .void-select-text {\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  user-select: text;\n}\n.void-scope .void-resize-none {\n  resize: none;\n}\n.void-scope .void-list-decimal {\n  list-style-type: decimal;\n}\n.void-scope .void-grid-cols-2 {\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n}\n.void-scope .void-flex-row {\n  flex-direction: row;\n}\n.void-scope .void-flex-col {\n  flex-direction: column;\n}\n.void-scope .void-flex-wrap {\n  flex-wrap: wrap;\n}\n.void-scope .void-flex-nowrap {\n  flex-wrap: nowrap;\n}\n.void-scope .void-items-start {\n  align-items: flex-start;\n}\n.void-scope .void-items-end {\n  align-items: flex-end;\n}\n.void-scope .void-items-center {\n  align-items: center;\n}\n.void-scope .void-justify-start {\n  justify-content: flex-start;\n}\n.void-scope .void-justify-end {\n  justify-content: flex-end;\n}\n.void-scope .void-justify-center {\n  justify-content: center;\n}\n.void-scope .void-justify-between {\n  justify-content: space-between;\n}\n.void-scope .void-gap-0 {\n  gap: 0px;\n}\n.void-scope .void-gap-0\\.5 {\n  gap: 0.125rem;\n}\n.void-scope .void-gap-1 {\n  gap: 0.25rem;\n}\n.void-scope .void-gap-1\\.5 {\n  gap: 0.375rem;\n}\n.void-scope .void-gap-12 {\n  gap: 3rem;\n}\n.void-scope .void-gap-2 {\n  gap: 0.5rem;\n}\n.void-scope .void-gap-3 {\n  gap: 0.75rem;\n}\n.void-scope .void-gap-4 {\n  gap: 1rem;\n}\n.void-scope .void-gap-6 {\n  gap: 1.5rem;\n}\n.void-scope .void-gap-8 {\n  gap: 2rem;\n}\n.void-scope .void-gap-x-0 {\n  -moz-column-gap: 0px;\n  column-gap: 0px;\n}\n.void-scope .void-gap-x-0\\.5 {\n  -moz-column-gap: 0.125rem;\n  column-gap: 0.125rem;\n}\n.void-scope .void-gap-x-1 {\n  -moz-column-gap: 0.25rem;\n  column-gap: 0.25rem;\n}\n.void-scope .void-gap-x-1\\.5 {\n  -moz-column-gap: 0.375rem;\n  column-gap: 0.375rem;\n}\n.void-scope .void-gap-x-2 {\n  -moz-column-gap: 0.5rem;\n  column-gap: 0.5rem;\n}\n.void-scope .void-gap-y-0\\.5 {\n  row-gap: 0.125rem;\n}\n.void-scope .void-gap-y-1 {\n  row-gap: 0.25rem;\n}\n.void-scope .void-gap-y-8 {\n  row-gap: 2rem;\n}\n.void-scope .void-space-x-1 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.25rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.25rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.void-scope .void-space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.void-scope .void-space-y-0\\.5 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.125rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.125rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-1 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-1\\.5 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-3 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-4 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(1rem * var(--tw-space-y-reverse));\n}\n.void-scope .void-space-y-\\[1px\\] > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-y-reverse: 0;\n  margin-top: calc(1px * calc(1 - var(--tw-space-y-reverse)));\n  margin-bottom: calc(1px * var(--tw-space-y-reverse));\n}\n.void-scope .void-self-end {\n  align-self: flex-end;\n}\n.void-scope .void-self-stretch {\n  align-self: stretch;\n}\n.void-scope .void-overflow-auto {\n  overflow: auto;\n}\n.void-scope .void-overflow-hidden {\n  overflow: hidden;\n}\n.void-scope .void-overflow-x-auto {\n  overflow-x: auto;\n}\n.void-scope .void-overflow-y-auto {\n  overflow-y: auto;\n}\n.void-scope .void-overflow-x-hidden {\n  overflow-x: hidden;\n}\n.void-scope .void-truncate {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.void-scope .void-text-ellipsis {\n  text-overflow: ellipsis;\n}\n.void-scope .void-whitespace-normal {\n  white-space: normal;\n}\n.void-scope .void-whitespace-nowrap {\n  white-space: nowrap;\n}\n.void-scope .void-whitespace-pre {\n  white-space: pre;\n}\n.void-scope .void-whitespace-pre-wrap {\n  white-space: pre-wrap;\n}\n.void-scope .void-text-nowrap {\n  text-wrap: nowrap;\n}\n.void-scope .void-break-words {\n  overflow-wrap: break-word;\n}\n.void-scope .void-break-all {\n  word-break: break-all;\n}\n.void-scope .void-rounded {\n  border-radius: 0.25rem;\n}\n.void-scope .void-rounded-full {\n  border-radius: 9999px;\n}\n.void-scope .void-rounded-lg {\n  border-radius: 0.5rem;\n}\n.void-scope .void-rounded-md {\n  border-radius: 0.375rem;\n}\n.void-scope .void-rounded-none {\n  border-radius: 0px;\n}\n.void-scope .void-rounded-sm {\n  border-radius: 0.125rem;\n}\n.void-scope .void-rounded-xl {\n  border-radius: 0.75rem;\n}\n.void-scope .void-rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.void-scope .void-border {\n  border-width: 1px;\n}\n.void-scope .void-border-x {\n  border-left-width: 1px;\n  border-right-width: 1px;\n}\n.void-scope .void-border-b {\n  border-bottom-width: 1px;\n}\n.void-scope .void-border-l {\n  border-left-width: 1px;\n}\n.void-scope .void-border-l-2 {\n  border-left-width: 2px;\n}\n.void-scope .void-border-r {\n  border-right-width: 1px;\n}\n.void-scope .void-border-t {\n  border-top-width: 1px;\n}\n.void-scope .void-border-solid {\n  border-style: solid;\n}\n.void-scope .void-border-none {\n  border-style: none;\n}\n.void-scope .void-border-\\[var\\(--vscode-keybindingLabel-border\\)\\] {\n  border-color: var(--vscode-keybindingLabel-border);\n}\n.void-scope .void-border-\\[var\\(--vscode-panel-border\\)\\] {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .void-border-amber-800\\/40 {\n  border-color: rgb(146 64 14 / 0.4);\n}\n.void-scope .void-border-blue-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-blue-500\\/20 {\n  border-color: rgb(59 130 246 / 0.2);\n}\n.void-scope .void-border-blue-500\\/30 {\n  border-color: rgb(59 130 246 / 0.3);\n}\n.void-scope .void-border-green-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(34 197 94 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-green-500\\/30 {\n  border-color: rgb(34 197 94 / 0.3);\n}\n.void-scope .void-border-green-800\\/40 {\n  border-color: rgb(22 101 52 / 0.4);\n}\n.void-scope .void-border-orange-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(249 115 22 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-orange-500\\/30 {\n  border-color: rgb(249 115 22 / 0.3);\n}\n.void-scope .void-border-red-500\\/30 {\n  border-color: rgb(239 68 68 / 0.3);\n}\n.void-scope .void-border-red-500\\/40 {\n  border-color: rgb(239 68 68 / 0.4);\n}\n.void-scope .void-border-transparent {\n  border-color: transparent;\n}\n.void-scope .void-border-void-border-1 {\n  border-color: var(--void-border-1);\n}\n.void-scope .void-border-void-border-2 {\n  border-color: var(--void-border-2);\n}\n.void-scope .void-border-void-border-3 {\n  border-color: var(--void-border-3);\n}\n.void-scope .void-border-void-border-4 {\n  border-color: var(--void-border-4);\n}\n.void-scope .void-border-void-fg-1 {\n  border-color: var(--void-fg-1);\n}\n.void-scope .void-border-void-warning {\n  border-color: var(--void-warning);\n}\n.void-scope .void-border-white\\/10 {\n  border-color: rgb(255 255 255 / 0.1);\n}\n.void-scope .void-border-white\\/20 {\n  border-color: rgb(255 255 255 / 0.2);\n}\n.void-scope .void-border-yellow-500 {\n  --tw-border-opacity: 1;\n  border-color: rgb(234 179 8 / var(--tw-border-opacity, 1));\n}\n.void-scope .void-border-zinc-300\\/10 {\n  border-color: rgb(212 212 216 / 0.1);\n}\n.void-scope .void-bg-\\[\\#0e70c0\\] {\n  --tw-bg-opacity: 1;\n  background-color: rgb(14 112 192 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-\\[\\#0e70c0\\]\\/80 {\n  background-color: rgb(14 112 192 / 0.8);\n}\n.void-scope .void-bg-\\[rgba\\(0\\,0\\,0\\,0\\)\\] {\n  background-color: rgba(0, 0, 0, 0);\n}\n.void-scope .void-bg-\\[var\\(--vscode-button-background\\)\\] {\n  background-color: var(--vscode-button-background);\n}\n.void-scope .void-bg-\\[var\\(--vscode-button-secondaryBackground\\)\\] {\n  background-color: var(--vscode-button-secondaryBackground);\n}\n.void-scope .void-bg-\\[var\\(--vscode-editor-background\\)\\] {\n  background-color: var(--vscode-editor-background);\n}\n.void-scope .void-bg-\\[var\\(--vscode-keybindingLabel-background\\)\\] {\n  background-color: var(--vscode-keybindingLabel-background);\n}\n.void-scope .void-bg-amber-400 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(251 191 36 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-amber-500\\/20 {\n  background-color: rgb(245 158 11 / 0.2);\n}\n.void-scope .void-bg-amber-950\\/30 {\n  background-color: rgb(69 26 3 / 0.3);\n}\n.void-scope .void-bg-black\\/10 {\n  background-color: rgb(0 0 0 / 0.1);\n}\n.void-scope .void-bg-black\\/20 {\n  background-color: rgb(0 0 0 / 0.2);\n}\n.void-scope .void-bg-black\\/50 {\n  background-color: rgb(0 0 0 / 0.5);\n}\n.void-scope .void-bg-black\\/90 {\n  background-color: rgb(0 0 0 / 0.9);\n}\n.void-scope .void-bg-blue-400\\/80 {\n  background-color: rgb(96 165 250 / 0.8);\n}\n.void-scope .void-bg-blue-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-blue-500\\/10 {\n  background-color: rgb(59 130 246 / 0.1);\n}\n.void-scope .void-bg-blue-500\\/20 {\n  background-color: rgb(59 130 246 / 0.2);\n}\n.void-scope .void-bg-blue-600 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-blue-900\\/30 {\n  background-color: rgb(30 58 138 / 0.3);\n}\n.void-scope .void-bg-blue-950\\/10 {\n  background-color: rgb(23 37 84 / 0.1);\n}\n.void-scope .void-bg-green-400\\/80 {\n  background-color: rgb(74 222 128 / 0.8);\n}\n.void-scope .void-bg-green-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(34 197 94 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-green-500\\/10 {\n  background-color: rgb(34 197 94 / 0.1);\n}\n.void-scope .void-bg-green-500\\/20 {\n  background-color: rgb(34 197 94 / 0.2);\n}\n.void-scope .void-bg-green-600 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(22 163 74 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-green-950\\/30 {\n  background-color: rgb(5 46 22 / 0.3);\n}\n.void-scope .void-bg-orange-50 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-orange-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(249 115 22 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-orange-500\\/20 {\n  background-color: rgb(249 115 22 / 0.2);\n}\n.void-scope .void-bg-red-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 68 68 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-red-500\\/10 {\n  background-color: rgb(239 68 68 / 0.1);\n}\n.void-scope .void-bg-red-900\\/30 {\n  background-color: rgb(127 29 29 / 0.3);\n}\n.void-scope .void-bg-transparent {\n  background-color: transparent;\n}\n.void-scope .void-bg-void-bg-1 {\n  background-color: var(--void-bg-1);\n}\n.void-scope .void-bg-void-bg-2 {\n  background-color: var(--void-bg-2);\n}\n.void-scope .void-bg-void-bg-2-alt {\n  background-color: var(--void-bg-2-alt);\n}\n.void-scope .void-bg-void-bg-3 {\n  background-color: var(--void-bg-3);\n}\n.void-scope .void-bg-void-border-1 {\n  background-color: var(--void-border-1);\n}\n.void-scope .void-bg-void-border-3 {\n  background-color: var(--void-border-3);\n}\n.void-scope .void-bg-void-fg-1 {\n  background-color: var(--void-fg-1);\n}\n.void-scope .void-bg-void-fg-3 {\n  background-color: var(--void-fg-3);\n}\n.void-scope .void-bg-void-fg-4 {\n  background-color: var(--void-fg-4);\n}\n.void-scope .void-bg-void-warning {\n  background-color: var(--void-warning);\n}\n.void-scope .void-bg-vscode-disabled-fg {\n  background-color: var(--vscode-disabledForeground);\n}\n.void-scope .void-bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-white\\/10 {\n  background-color: rgb(255 255 255 / 0.1);\n}\n.void-scope .void-bg-white\\/70 {\n  background-color: rgb(255 255 255 / 0.7);\n}\n.void-scope .void-bg-yellow-500 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-zinc-100 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(244 244 245 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-zinc-100\\/40 {\n  background-color: rgb(244 244 245 / 0.4);\n}\n.void-scope .void-bg-zinc-900 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1));\n}\n.void-scope .void-bg-opacity-70 {\n  --tw-bg-opacity: 0.7;\n}\n.void-scope .void-bg-gradient-to-r {\n  background-image: linear-gradient(to right, var(--tw-gradient-stops));\n}\n.void-scope .void-bg-none {\n  background-image: none;\n}\n.void-scope .void-from-green-600 {\n  --tw-gradient-from: #16a34a var(--tw-gradient-from-position);\n  --tw-gradient-to: rgb(22 163 74 / 0) var(--tw-gradient-to-position);\n  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);\n}\n.void-scope .void-to-green-500 {\n  --tw-gradient-to: #22c55e var(--tw-gradient-to-position);\n}\n.void-scope .void-fill-current {\n  fill: currentColor;\n}\n.void-scope .void-stroke-green-500 {\n  stroke: #22c55e;\n}\n.void-scope .void-stroke-red-500 {\n  stroke: #ef4444;\n}\n.void-scope .void-stroke-\\[2\\] {\n  stroke-width: 2;\n}\n.void-scope .void-stroke-\\[3\\] {\n  stroke-width: 3;\n}\n.void-scope .void-p-0\\.5 {\n  padding: 0.125rem;\n}\n.void-scope .void-p-1 {\n  padding: 0.25rem;\n}\n.void-scope .void-p-2 {\n  padding: 0.5rem;\n}\n.void-scope .void-p-3 {\n  padding: 0.75rem;\n}\n.void-scope .void-p-4 {\n  padding: 1rem;\n}\n.void-scope .void-p-6 {\n  padding: 1.5rem;\n}\n.void-scope .void-p-\\[2px\\] {\n  padding: 2px;\n}\n.void-scope .void-p-\\[4px\\] {\n  padding: 4px;\n}\n.void-scope .void-p-\\[7px\\] {\n  padding: 7px;\n}\n.void-scope .\\!void-px-0 {\n  padding-left: 0px !important;\n  padding-right: 0px !important;\n}\n.void-scope .\\!void-py-0 {\n  padding-top: 0px !important;\n  padding-bottom: 0px !important;\n}\n.void-scope .void-px-0 {\n  padding-left: 0px;\n  padding-right: 0px;\n}\n.void-scope .void-px-0\\.5 {\n  padding-left: 0.125rem;\n  padding-right: 0.125rem;\n}\n.void-scope .void-px-1 {\n  padding-left: 0.25rem;\n  padding-right: 0.25rem;\n}\n.void-scope .void-px-1\\.5 {\n  padding-left: 0.375rem;\n  padding-right: 0.375rem;\n}\n.void-scope .void-px-12 {\n  padding-left: 3rem;\n  padding-right: 3rem;\n}\n.void-scope .void-px-16 {\n  padding-left: 4rem;\n  padding-right: 4rem;\n}\n.void-scope .void-px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.void-scope .void-px-2\\.5 {\n  padding-left: 0.625rem;\n  padding-right: 0.625rem;\n}\n.void-scope .void-px-3 {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .void-px-4 {\n  padding-left: 1rem;\n  padding-right: 1rem;\n}\n.void-scope .void-px-5 {\n  padding-left: 1.25rem;\n  padding-right: 1.25rem;\n}\n.void-scope .void-px-6 {\n  padding-left: 1.5rem;\n  padding-right: 1.5rem;\n}\n.void-scope .void-py-0\\.5 {\n  padding-top: 0.125rem;\n  padding-bottom: 0.125rem;\n}\n.void-scope .void-py-1 {\n  padding-top: 0.25rem;\n  padding-bottom: 0.25rem;\n}\n.void-scope .void-py-1\\.5 {\n  padding-top: 0.375rem;\n  padding-bottom: 0.375rem;\n}\n.void-scope .void-py-2 {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.void-scope .void-py-2\\.5 {\n  padding-top: 0.625rem;\n  padding-bottom: 0.625rem;\n}\n.void-scope .void-py-3 {\n  padding-top: 0.75rem;\n  padding-bottom: 0.75rem;\n}\n.void-scope .void-py-3\\.5 {\n  padding-top: 0.875rem;\n  padding-bottom: 0.875rem;\n}\n.void-scope .void-py-4 {\n  padding-top: 1rem;\n  padding-bottom: 1rem;\n}\n.void-scope .void-py-5 {\n  padding-top: 1.25rem;\n  padding-bottom: 1.25rem;\n}\n.void-scope .void-py-8 {\n  padding-top: 2rem;\n  padding-bottom: 2rem;\n}\n.void-scope .void-py-px {\n  padding-top: 1px;\n  padding-bottom: 1px;\n}\n.void-scope .void-pb-0\\.5 {\n  padding-bottom: 0.125rem;\n}\n.void-scope .void-pb-1 {\n  padding-bottom: 0.25rem;\n}\n.void-scope .void-pb-2 {\n  padding-bottom: 0.5rem;\n}\n.void-scope .void-pb-4 {\n  padding-bottom: 1rem;\n}\n.void-scope .void-pb-8 {\n  padding-bottom: 2rem;\n}\n.void-scope .void-pl-0 {\n  padding-left: 0px;\n}\n.void-scope .void-pl-1 {\n  padding-left: 0.25rem;\n}\n.void-scope .void-pl-2 {\n  padding-left: 0.5rem;\n}\n.void-scope .void-pl-2\\.5 {\n  padding-left: 0.625rem;\n}\n.void-scope .void-pl-3 {\n  padding-left: 0.75rem;\n}\n.void-scope .void-pl-4 {\n  padding-left: 1rem;\n}\n.void-scope .void-pl-6 {\n  padding-left: 1.5rem;\n}\n.void-scope .void-pr-1 {\n  padding-right: 0.25rem;\n}\n.void-scope .void-pr-4 {\n  padding-right: 1rem;\n}\n.void-scope .void-pt-0\\.5 {\n  padding-top: 0.125rem;\n}\n.void-scope .void-pt-1\\.5 {\n  padding-top: 0.375rem;\n}\n.void-scope .void-pt-16 {\n  padding-top: 4rem;\n}\n.void-scope .void-pt-2 {\n  padding-top: 0.5rem;\n}\n.void-scope .void-pt-8 {\n  padding-top: 2rem;\n}\n.void-scope .void-pt-\\[3px\\] {\n  padding-top: 3px;\n}\n.void-scope .void-text-left {\n  text-align: left;\n}\n.void-scope .void-text-center {\n  text-align: center;\n}\n.void-scope .void-text-right {\n  text-align: right;\n}\n.void-scope .void-align-top {\n  vertical-align: top;\n}\n.void-scope .void-align-text-top {\n  vertical-align: text-top;\n}\n.void-scope .void-font-mono {\n  font-family:\n    ui-monospace,\n    SFMono-Regular,\n    Menlo,\n    Monaco,\n    Consolas,\n    "Liberation Mono",\n    "Courier New",\n    monospace;\n}\n.void-scope .void-font-sans {\n  font-family:\n    ui-sans-serif,\n    system-ui,\n    sans-serif,\n    "Apple Color Emoji",\n    "Segoe UI Emoji",\n    "Segoe UI Symbol",\n    "Noto Color Emoji";\n}\n.void-scope .void-text-2xl {\n  font-size: 18px;\n}\n.void-scope .void-text-3xl {\n  font-size: 20px;\n}\n.void-scope .void-text-4xl {\n  font-size: 24px;\n}\n.void-scope .void-text-5xl {\n  font-size: 30px;\n}\n.void-scope .void-text-\\[10px\\] {\n  font-size: 10px;\n}\n.void-scope .void-text-\\[11\\.5px\\] {\n  font-size: 11.5px;\n}\n.void-scope .void-text-\\[11px\\] {\n  font-size: 11px;\n}\n.void-scope .void-text-\\[12px\\] {\n  font-size: 12px;\n}\n.void-scope .void-text-\\[13px\\] {\n  font-size: 13px;\n}\n.void-scope .void-text-\\[32px\\] {\n  font-size: 32px;\n}\n.void-scope .void-text-\\[8px\\] {\n  font-size: 8px;\n}\n.void-scope .void-text-\\[9px\\] {\n  font-size: 9px;\n}\n.void-scope .void-text-base {\n  font-size: 1rem;\n  line-height: 1.5rem;\n}\n.void-scope .void-text-lg {\n  font-size: 14px;\n}\n.void-scope .void-text-root {\n  font-size: 13px;\n}\n.void-scope .void-text-sm {\n  font-size: 11px;\n}\n.void-scope .void-text-xl {\n  font-size: 16px;\n}\n.void-scope .void-text-xs {\n  font-size: 10px;\n}\n.void-scope .void-font-bold {\n  font-weight: 700;\n}\n.void-scope .void-font-light {\n  font-weight: 300;\n}\n.void-scope .void-font-medium {\n  font-weight: 500;\n}\n.void-scope .void-font-normal {\n  font-weight: 400;\n}\n.void-scope .void-font-semibold {\n  font-weight: 600;\n}\n.void-scope .void-uppercase {\n  text-transform: uppercase;\n}\n.void-scope .void-capitalize {\n  text-transform: capitalize;\n}\n.void-scope .void-italic {\n  font-style: italic;\n}\n.void-scope .void-not-italic {\n  font-style: normal;\n}\n.void-scope .void-leading-none {\n  line-height: 1;\n}\n.void-scope .void-leading-relaxed {\n  line-height: 1.625;\n}\n.void-scope .void-leading-snug {\n  line-height: 1.375;\n}\n.void-scope .void-leading-tight {\n  line-height: 1.25;\n}\n.void-scope .void-tracking-wide {\n  letter-spacing: 0.025em;\n}\n.void-scope .void-tracking-wider {\n  letter-spacing: 0.05em;\n}\n.void-scope .\\!void-text-void-fg-3 {\n  color: var(--void-fg-3) !important;\n}\n.void-scope .void-text-\\[\\#0e70c0\\] {\n  --tw-text-opacity: 1;\n  color: rgb(14 112 192 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-\\[var\\(--vscode-button-foreground\\)\\] {\n  color: var(--vscode-button-foreground);\n}\n.void-scope .void-text-\\[var\\(--vscode-button-secondaryForeground\\)\\] {\n  color: var(--vscode-button-secondaryForeground);\n}\n.void-scope .void-text-\\[var\\(--vscode-descriptionForeground\\)\\] {\n  color: var(--vscode-descriptionForeground);\n}\n.void-scope .void-text-\\[var\\(--vscode-editor-foreground\\)\\] {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .void-text-\\[var\\(--vscode-foreground\\)\\] {\n  color: var(--vscode-foreground);\n}\n.void-scope .void-text-\\[var\\(--vscode-keybindingLabel-foreground\\)\\] {\n  color: var(--vscode-keybindingLabel-foreground);\n}\n.void-scope .void-text-amber-300 {\n  --tw-text-opacity: 1;\n  color: rgb(252 211 77 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-amber-400 {\n  --tw-text-opacity: 1;\n  color: rgb(251 191 36 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-black {\n  --tw-text-opacity: 1;\n  color: rgb(0 0 0 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-blue-300 {\n  --tw-text-opacity: 1;\n  color: rgb(147 197 253 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-blue-400 {\n  --tw-text-opacity: 1;\n  color: rgb(96 165 250 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-blue-500 {\n  --tw-text-opacity: 1;\n  color: rgb(59 130 246 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-emerald-500 {\n  --tw-text-opacity: 1;\n  color: rgb(16 185 129 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-green-300 {\n  --tw-text-opacity: 1;\n  color: rgb(134 239 172 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-green-400 {\n  --tw-text-opacity: 1;\n  color: rgb(74 222 128 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-green-500 {\n  --tw-text-opacity: 1;\n  color: rgb(34 197 94 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-orange-400 {\n  --tw-text-opacity: 1;\n  color: rgb(251 146 60 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-orange-500 {\n  --tw-text-opacity: 1;\n  color: rgb(249 115 22 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-red-300 {\n  --tw-text-opacity: 1;\n  color: rgb(252 165 165 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-red-400 {\n  --tw-text-opacity: 1;\n  color: rgb(248 113 113 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-red-400\\/90 {\n  color: rgb(248 113 113 / 0.9);\n}\n.void-scope .void-text-red-500 {\n  --tw-text-opacity: 1;\n  color: rgb(239 68 68 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-rose-600 {\n  --tw-text-opacity: 1;\n  color: rgb(225 29 72 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-void-fg-1 {\n  color: var(--void-fg-1);\n}\n.void-scope .void-text-void-fg-2 {\n  color: var(--void-fg-2);\n}\n.void-scope .void-text-void-fg-3 {\n  color: var(--void-fg-3);\n}\n.void-scope .void-text-void-fg-4 {\n  color: var(--void-fg-4);\n}\n.void-scope .void-text-void-warning {\n  color: var(--void-warning);\n}\n.void-scope .void-text-white {\n  --tw-text-opacity: 1;\n  color: rgb(255 255 255 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-text-white\\/80 {\n  color: rgb(255 255 255 / 0.8);\n}\n.void-scope .void-text-yellow-400\\/70 {\n  color: rgb(250 204 21 / 0.7);\n}\n.void-scope .void-text-zinc-900 {\n  --tw-text-opacity: 1;\n  color: rgb(24 24 27 / var(--tw-text-opacity, 1));\n}\n.void-scope .void-underline {\n  text-decoration-line: underline;\n}\n.void-scope .void-line-through {\n  text-decoration-line: line-through;\n}\n.void-scope .void-accent-blue-500 {\n  accent-color: #3b82f6;\n}\n.void-scope .void-opacity-0 {\n  opacity: 0;\n}\n.void-scope .void-opacity-100 {\n  opacity: 1;\n}\n.void-scope .void-opacity-20 {\n  opacity: 0.2;\n}\n.void-scope .void-opacity-25 {\n  opacity: 0.25;\n}\n.void-scope .void-opacity-30 {\n  opacity: 0.3;\n}\n.void-scope .void-opacity-40 {\n  opacity: 0.4;\n}\n.void-scope .void-opacity-50 {\n  opacity: 0.5;\n}\n.void-scope .void-opacity-60 {\n  opacity: 0.6;\n}\n.void-scope .void-opacity-70 {\n  opacity: 0.7;\n}\n.void-scope .void-opacity-80 {\n  opacity: 0.8;\n}\n.void-scope .void-opacity-90 {\n  opacity: 0.9;\n}\n.void-scope .void-shadow {\n  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-\\[0_0_4px_0px_rgba\\(22\\,163\\,74\\,0\\.6\\)\\] {\n  --tw-shadow: 0 0 4px 0px rgba(22,163,74,0.6);\n  --tw-shadow-colored: 0 0 4px 0px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-\\[0_0_4px_0px_rgba\\(234\\,88\\,12\\,0\\.6\\)\\] {\n  --tw-shadow: 0 0 4px 0px rgba(234,88,12,0.6);\n  --tw-shadow-colored: 0 0 4px 0px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-lg {\n  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-md {\n  --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-sm {\n  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-shadow-xl {\n  --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);\n  --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);\n  box-shadow:\n    var(--tw-ring-offset-shadow, 0 0 #0000),\n    var(--tw-ring-shadow, 0 0 #0000),\n    var(--tw-shadow);\n}\n.void-scope .void-outline-none {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.void-scope .void-brightness-90 {\n  --tw-brightness: brightness(.9);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .void-transition-all {\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-transition-colors {\n  transition-property:\n    color,\n    background-color,\n    border-color,\n    text-decoration-color,\n    fill,\n    stroke;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-transition-opacity {\n  transition-property: opacity;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-transition-transform {\n  transition-property: transform;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .void-duration-100 {\n  transition-duration: 100ms;\n}\n.void-scope .void-duration-1000 {\n  transition-duration: 1000ms;\n}\n.void-scope .void-duration-150 {\n  transition-duration: 150ms;\n}\n.void-scope .void-duration-200 {\n  transition-duration: 200ms;\n}\n.void-scope .void-duration-300 {\n  transition-duration: 300ms;\n}\n.void-scope .void-ease-in-out {\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n}\n.void-scope {\n  --void-bg-1: var(--vscode-input-background);\n  --void-bg-1-alt: var(--vscode-badge-background);\n  --void-bg-2: var(--vscode-sideBar-background);\n  --void-bg-2-alt: color-mix(in srgb, var(--vscode-editor-background) 30%, var(--vscode-sideBar-background) 70%);\n  --void-bg-2-hover: color-mix(in srgb, var(--vscode-editor-foreground) 2%, var(--vscode-sideBar-background) 98%);\n  --void-bg-3: var(--vscode-editor-background);\n  --void-fg-0: color-mix(in srgb, var(--vscode-tab-activeForeground) 90%, black 10%);\n  --void-fg-1: var(--vscode-editor-foreground);\n  --void-fg-2: var(--vscode-input-foreground);\n  --void-fg-3: var(--vscode-input-placeholderForeground);\n  --void-fg-4: var(--vscode-list-deemphasizedForeground);\n  --void-warning: var(--vscode-charts-yellow);\n  --void-border-1: var(--vscode-commandCenter-activeBorder);\n  --void-border-2: var(--vscode-commandCenter-border);\n  --void-border-3: var(--vscode-commandCenter-inactiveBorder);\n  --void-border-4: var(--vscode-editorGroup-border);\n  --void-ring-color: #007FD4;\n  --void-link-color: #007FD4;\n}\n.void-scope .select-child-restyle select {\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  padding-right: 24px;\n}\n.void-scope .void-force-child-placeholder-void-fg-1 ::-moz-placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope .void-force-child-placeholder-void-fg-1 ::placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope * {\n  outline: none !important;\n}\n.void-scope .inherit-bg-all-restyle > * {\n  background-color: inherit !important;\n}\n.void-scope .bg-editor-style-override {\n  --vscode-sideBar-background: var(--vscode-editor-background);\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 0.875rem;\n  line-height: 1.7142857;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where([class~=lead]):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  line-height: 1.5555556;\n  margin-top: 0.8888889em;\n  margin-bottom: 0.8888889em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.3333333em;\n  margin-bottom: 1.3333333em;\n  padding-inline-start: 1.1111111em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 2.1428571em;\n  margin-top: 0;\n  margin-bottom: 0.8em;\n  line-height: 1.2;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.4285714em;\n  margin-top: 1.6em;\n  margin-bottom: 0.8em;\n  line-height: 1.4;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 1.2857143em;\n  margin-top: 1.5555556em;\n  margin-bottom: 0.4444444em;\n  line-height: 1.5555556;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.4285714em;\n  margin-bottom: 0.5714286em;\n  line-height: 1.4285714;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(picture):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(picture > img):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(video):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(kbd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  border-radius: 0.3125rem;\n  padding-top: 0.1428571em;\n  padding-inline-end: 0.3571429em;\n  padding-bottom: 0.1428571em;\n  padding-inline-start: 0.3571429em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h2 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.9em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h3 code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8888889em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.6666667;\n  margin-top: 1.6666667em;\n  margin-bottom: 1.6666667em;\n  border-radius: 0.25rem;\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  margin-bottom: 0.2857143em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ol > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ul > li):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0.4285714em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ul > li p):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ul > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ul > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ol > li > p:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > ol > li > p:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.5714286em;\n  margin-bottom: 0.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(dl):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n  margin-bottom: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(dt):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.1428571em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(dd):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0.2857143em;\n  padding-inline-start: 1.5714286em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 2.8571429em;\n  margin-bottom: 2.8571429em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(hr + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h2 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h3 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(h4 + *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.5;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(thead th):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(thead th:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(thead th:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(tbody td, tfoot td):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-top: 0.6666667em;\n  padding-inline-end: 1em;\n  padding-bottom: 0.6666667em;\n  padding-inline-start: 1em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(tbody td:first-child, tfoot td:first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-start: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(tbody td:last-child, tfoot td:last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  padding-inline-end: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(figure):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 1.7142857em;\n  margin-bottom: 1.7142857em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(figure > *):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n  margin-bottom: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(figcaption):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  font-size: 0.8571429em;\n  line-height: 1.3333333;\n  margin-top: 0.6666667em;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > :first-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-top: 0;\n}\n.void-scope .prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) :where(.prose-headings\\:void-prose-sm :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) > :last-child):not(:where([class~=void-not-prose], [class~=void-not-prose] *)) {\n  margin-bottom: 0;\n}\n.void-scope .marker\\:void-text-inherit *::marker {\n  color: inherit;\n}\n.void-scope .marker\\:void-text-inherit::marker {\n  color: inherit;\n}\n.void-scope .placeholder\\:void-text-void-fg-3::-moz-placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope .placeholder\\:void-text-void-fg-3::placeholder {\n  color: var(--void-fg-3);\n}\n.void-scope .focus-within\\:void-border-void-border-1:focus-within {\n  border-color: var(--void-border-1);\n}\n.void-scope .hover\\:void-cursor-pointer:hover {\n  cursor: pointer;\n}\n.void-scope .hover\\:void-border-void-border-1:hover {\n  border-color: var(--void-border-1);\n}\n.void-scope .hover\\:void-border-void-fg-3:hover {\n  border-color: var(--void-fg-3);\n}\n.void-scope .hover\\:void-bg-\\[\\#1177cb\\]:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(17 119 203 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-\\[var\\(--vscode-button-hoverBackground\\)\\]:hover {\n  background-color: var(--vscode-button-hoverBackground);\n}\n.void-scope .hover\\:void-bg-\\[var\\(--vscode-button-secondaryHoverBackground\\)\\]:hover {\n  background-color: var(--vscode-button-secondaryHoverBackground);\n}\n.void-scope .hover\\:void-bg-\\[var\\(--vscode-toolbar-hoverBackground\\)\\]:hover {\n  background-color: var(--vscode-toolbar-hoverBackground);\n}\n.void-scope .hover\\:void-bg-black\\/10:hover {\n  background-color: rgb(0 0 0 / 0.1);\n}\n.void-scope .hover\\:void-bg-blue-500:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-blue-700:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(29 78 216 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-blue-900\\/50:hover {\n  background-color: rgb(30 58 138 / 0.5);\n}\n.void-scope .hover\\:void-bg-green-700:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(21 128 61 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-bg-red-900\\/50:hover {\n  background-color: rgb(127 29 29 / 0.5);\n}\n.void-scope .hover\\:void-bg-void-bg-1:hover {\n  background-color: var(--void-bg-1);\n}\n.void-scope .hover\\:void-bg-void-bg-2:hover {\n  background-color: var(--void-bg-2);\n}\n.void-scope .hover\\:void-bg-void-bg-3:hover {\n  background-color: var(--void-bg-3);\n}\n.void-scope .hover\\:void-bg-white\\/20:hover {\n  background-color: rgb(255 255 255 / 0.2);\n}\n.void-scope .hover\\:void-bg-white\\/5:hover {\n  background-color: rgb(255 255 255 / 0.05);\n}\n.void-scope .hover\\:void-bg-zinc-100:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(244 244 245 / var(--tw-bg-opacity, 1));\n}\n.void-scope .hover\\:void-text-blue-400:hover {\n  --tw-text-opacity: 1;\n  color: rgb(96 165 250 / var(--tw-text-opacity, 1));\n}\n.void-scope .hover\\:void-text-red-400:hover {\n  --tw-text-opacity: 1;\n  color: rgb(248 113 113 / var(--tw-text-opacity, 1));\n}\n.void-scope .hover\\:void-text-void-fg-1:hover {\n  color: var(--void-fg-1);\n}\n.void-scope .hover\\:void-text-void-fg-2:hover {\n  color: var(--void-fg-2);\n}\n.void-scope .hover\\:void-text-void-fg-3:hover {\n  color: var(--void-fg-3);\n}\n.void-scope .hover\\:void-opacity-100:hover {\n  opacity: 1;\n}\n.void-scope .hover\\:void-opacity-80:hover {\n  opacity: 0.8;\n}\n.void-scope .hover\\:void-opacity-90:hover {\n  opacity: 0.9;\n}\n.void-scope .hover\\:void-brightness-110:hover {\n  --tw-brightness: brightness(1.1);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-125:hover {\n  --tw-brightness: brightness(1.25);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-75:hover {\n  --tw-brightness: brightness(.75);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-90:hover {\n  --tw-brightness: brightness(.9);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .hover\\:void-brightness-95:hover {\n  --tw-brightness: brightness(.95);\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.void-scope .focus\\:void-border-blue-500:focus {\n  --tw-border-opacity: 1;\n  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));\n}\n.void-scope .focus\\:void-border-void-border-1:focus {\n  border-color: var(--void-border-1);\n}\n.void-scope .focus\\:void-border-white\\/50:focus {\n  border-color: rgb(255 255 255 / 0.5);\n}\n.void-scope .focus\\:void-outline-none:focus {\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n.void-scope .active\\:void-cursor-grabbing:active {\n  cursor: grabbing;\n}\n.void-scope .disabled\\:void-cursor-not-allowed:disabled {\n  cursor: not-allowed;\n}\n.void-scope .disabled\\:void-opacity-50:disabled {\n  opacity: 0.5;\n}\n.void-scope .void-group:hover .group-hover\\:void-translate-x-1 {\n  --tw-translate-x: 0.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .void-group:hover .group-hover\\:void-text-void-fg-1 {\n  color: var(--void-fg-1);\n}\n.void-scope .void-group:hover .group-hover\\:void-text-void-fg-2 {\n  color: var(--void-fg-2);\n}\n.void-scope .void-group:hover .group-hover\\:void-text-void-fg-3 {\n  color: var(--void-fg-3);\n}\n.void-scope .void-group:hover .group-hover\\:void-opacity-100 {\n  opacity: 1;\n}\n.void-scope .void-group:hover .group-hover\\:void-opacity-70 {\n  opacity: 0.7;\n}\n.void-scope .void-group:hover .group-hover\\:void-opacity-80 {\n  opacity: 0.8;\n}\n.void-scope .void-group:active .group-active\\:void-translate-x-1 {\n  --tw-translate-x: 0.25rem;\n  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));\n}\n.void-scope .prose-headings\\:void-font-bold :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 700;\n}\n.void-scope .prose-headings\\:void-font-medium :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-headings\\:void-tracking-tight :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  letter-spacing: -0.025em;\n}\n.void-scope .prose-headings\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-h1\\:void-my-4 :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-h1\\:void-mb-6 :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 1.5rem;\n}\n.void-scope .prose-h1\\:void-mt-0 :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n}\n.void-scope .prose-h1\\:void-text-2xl :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 18px;\n}\n.void-scope .prose-h1\\:void-text-\\[14px\\] :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-h1\\:void-font-semibold :is(:where(h1):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 600;\n}\n.void-scope .prose-h2\\:void-my-4 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-h2\\:void-mb-3 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-h2\\:void-mt-8 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 2rem;\n}\n.void-scope .prose-h2\\:void-border-b :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-bottom-width: 1px;\n}\n.void-scope .prose-h2\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-h2\\:void-pb-2 :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-bottom: 0.5rem;\n}\n.void-scope .prose-h2\\:void-text-\\[13px\\] :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-h2\\:void-text-lg :is(:where(h2):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-h3\\:void-my-3 :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-h3\\:void-mb-2\\.5 :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 0.625rem;\n}\n.void-scope .prose-h3\\:void-mt-6 :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1.5rem;\n}\n.void-scope .prose-h3\\:void-text-\\[13px\\] :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-h3\\:void-text-base :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 1rem;\n  line-height: 1.5rem;\n}\n.void-scope .prose-h3\\:void-font-medium :is(:where(h3):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-h4\\:void-my-2 :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-h4\\:void-mb-2 :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-h4\\:void-mt-5 :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1.25rem;\n}\n.void-scope .prose-h4\\:void-text-\\[13px\\] :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-h4\\:void-text-sm :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 11px;\n}\n.void-scope .prose-h4\\:void-font-medium :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-h4\\:void-uppercase :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-transform: uppercase;\n}\n.void-scope .prose-h4\\:void-tracking-wide :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  letter-spacing: 0.025em;\n}\n.void-scope .prose-h4\\:void-text-\\[var\\(--vscode-descriptionForeground\\)\\] :is(:where(h4):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-descriptionForeground);\n}\n.void-scope .prose-p\\:void-my-0 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n  margin-bottom: 0px;\n}\n.void-scope .prose-p\\:void-my-2 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-p\\:void-my-3 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-p\\:void-block :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  display: block;\n}\n.void-scope .prose-p\\:void-py-0 :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0px;\n  padding-bottom: 0px;\n}\n.void-scope .prose-p\\:void-text-\\[14px\\] :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-p\\:void-leading-\\[1\\.65\\] :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.65;\n}\n.void-scope .prose-p\\:void-leading-normal :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.5;\n}\n.void-scope .prose-p\\:void-leading-snug :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.375;\n}\n.void-scope .prose-p\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(p):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-a\\:void-text-\\[var\\(--vscode-textLink-foreground\\)\\] :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-textLink-foreground);\n}\n.void-scope .prose-a\\:void-no-underline :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-decoration-line: none;\n}\n.void-scope .prose-a\\:void-transition-all :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  transition-property: all;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.void-scope .hover\\:prose-a\\:void-underline :is(:where(a):not(:where([class~=void-not-prose], [class~=void-not-prose] *))):hover {\n  text-decoration-line: underline;\n}\n.void-scope .prose-blockquote\\:void-my-2 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-blockquote\\:void-border-l-2 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-left-width: 2px;\n}\n.void-scope .prose-blockquote\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-blockquote\\:void-pl-2 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.5rem;\n}\n.void-scope .prose-blockquote\\:void-pl-4 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1rem;\n}\n.void-scope .prose-blockquote\\:void-italic :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-style: italic;\n}\n.void-scope .prose-blockquote\\:void-opacity-70 :is(:where(blockquote):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  opacity: 0.7;\n}\n.void-scope .prose-strong\\:void-font-semibold :is(:where(strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 600;\n}\n.void-scope .prose-strong\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(strong):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-em\\:void-italic :is(:where(em):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-style: italic;\n}\n.void-scope .prose-em\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(em):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-code\\:void-rounded :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-radius: 0.25rem;\n}\n.void-scope .prose-code\\:void-bg-\\[var\\(--vscode-textCodeBlock-background\\)\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  background-color: var(--vscode-textCodeBlock-background);\n}\n.void-scope .prose-code\\:void-px-1\\.5 :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.375rem;\n  padding-right: 0.375rem;\n}\n.void-scope .prose-code\\:void-py-0\\.5 :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0.125rem;\n  padding-bottom: 0.125rem;\n}\n.void-scope .prose-code\\:void-font-mono :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-family:\n    ui-monospace,\n    SFMono-Regular,\n    Menlo,\n    Monaco,\n    Consolas,\n    "Liberation Mono",\n    "Courier New",\n    monospace;\n}\n.void-scope .prose-code\\:void-text-\\[12px\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 12px;\n}\n.void-scope .prose-code\\:void-text-\\[13px\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-code\\:void-font-normal :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 400;\n}\n.void-scope .prose-code\\:void-text-\\[var\\(--vscode-textPreformat-foreground\\)\\] :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-textPreformat-foreground);\n}\n.void-scope .prose-code\\:void-text-void-fg-3 :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--void-fg-3);\n}\n.void-scope .prose-code\\:before\\:void-content-none :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)))::before {\n  --tw-content: none;\n  content: var(--tw-content);\n}\n.void-scope .prose-code\\:after\\:void-content-none :is(:where(code):not(:where([class~=void-not-prose], [class~=void-not-prose] *)))::after {\n  --tw-content: none;\n  content: var(--tw-content);\n}\n.void-scope .prose-pre\\:void-my-2 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-pre\\:void-my-4 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-pre\\:void-rounded :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-radius: 0.25rem;\n}\n.void-scope .prose-pre\\:void-border :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-width: 1px;\n}\n.void-scope .prose-pre\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-pre\\:void-bg-\\[var\\(--vscode-textCodeBlock-background\\)\\] :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  background-color: var(--vscode-textCodeBlock-background);\n}\n.void-scope .prose-pre\\:void-p-2 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding: 0.5rem;\n}\n.void-scope .prose-pre\\:void-p-4 :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding: 1rem;\n}\n.void-scope .prose-pre\\:void-text-\\[12px\\] :is(:where(pre):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 12px;\n}\n.void-scope .prose-ol\\:void-my-0 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n  margin-bottom: 0px;\n}\n.void-scope .prose-ol\\:void-my-2 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-ol\\:void-my-3 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-ol\\:void-list-outside :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-position: outside;\n}\n.void-scope .prose-ol\\:void-list-decimal :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-type: decimal;\n}\n.void-scope .prose-ol\\:void-py-0 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0px;\n  padding-bottom: 0px;\n}\n.void-scope .prose-ol\\:void-pl-4 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1rem;\n}\n.void-scope .prose-ol\\:void-pl-5 :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1.25rem;\n}\n.void-scope .prose-ol\\:void-leading-normal :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.5;\n}\n.void-scope .prose-ol\\:void-leading-snug :is(:where(ol):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.375;\n}\n.void-scope .prose-ul\\:void-my-2 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-ul\\:void-my-3 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.75rem;\n  margin-bottom: 0.75rem;\n}\n.void-scope .prose-ul\\:void-list-outside :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-position: outside;\n}\n.void-scope .prose-ul\\:void-list-disc :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  list-style-type: disc;\n}\n.void-scope .prose-ul\\:void-pl-4 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1rem;\n}\n.void-scope .prose-ul\\:void-pl-5 :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 1.25rem;\n}\n.void-scope .prose-ul\\:void-leading-normal :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.5;\n}\n.void-scope .prose-ul\\:void-leading-snug :is(:where(ul):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.375;\n}\n.void-scope .prose-li\\:void-my-0 :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0px;\n  margin-bottom: 0px;\n}\n.void-scope .prose-li\\:void-my-1 :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.25rem;\n  margin-bottom: 0.25rem;\n}\n.void-scope .prose-li\\:void-text-\\[14px\\] :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-li\\:void-leading-\\[1\\.65\\] :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  line-height: 1.65;\n}\n.void-scope .prose-li\\:void-text-\\[var\\(--vscode-editor-foreground\\)\\] :is(:where(li):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  color: var(--vscode-editor-foreground);\n}\n.void-scope .prose-table\\:void-w-full :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  width: 100%;\n}\n.void-scope .prose-table\\:void-border-collapse :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-collapse: collapse;\n}\n.void-scope .prose-table\\:void-text-\\[13px\\] :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 13px;\n}\n.void-scope .prose-table\\:void-text-sm :is(:where(table):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 11px;\n}\n.void-scope .prose-th\\:void-border :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-width: 1px;\n}\n.void-scope .prose-th\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-th\\:void-bg-\\[var\\(--vscode-editor-background\\)\\] :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  background-color: var(--vscode-editor-background);\n}\n.void-scope .prose-th\\:void-px-3 :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .prose-th\\:void-py-2 :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.void-scope .prose-th\\:void-text-left :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-align: left;\n}\n.void-scope .prose-th\\:void-text-xs :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 10px;\n}\n.void-scope .prose-th\\:void-font-medium :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-weight: 500;\n}\n.void-scope .prose-th\\:void-uppercase :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  text-transform: uppercase;\n}\n.void-scope .prose-th\\:void-tracking-wide :is(:where(th):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  letter-spacing: 0.025em;\n}\n.void-scope .prose-td\\:void-border :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-width: 1px;\n}\n.void-scope .prose-td\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n.void-scope .prose-td\\:void-px-3 :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .prose-td\\:void-py-2 :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  padding-top: 0.5rem;\n  padding-bottom: 0.5rem;\n}\n.void-scope .prose-td\\:void-text-\\[14px\\] :is(:where(td):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  font-size: 14px;\n}\n.void-scope .prose-hr\\:void-my-2 :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 0.5rem;\n  margin-bottom: 0.5rem;\n}\n.void-scope .prose-hr\\:void-my-4 :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1rem;\n  margin-bottom: 1rem;\n}\n.void-scope .prose-hr\\:void-my-6 :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  margin-top: 1.5rem;\n  margin-bottom: 1.5rem;\n}\n.void-scope .prose-hr\\:void-border-\\[var\\(--vscode-panel-border\\)\\] :is(:where(hr):not(:where([class~=void-not-prose], [class~=void-not-prose] *))) {\n  border-color: var(--vscode-panel-border);\n}\n@media (min-width: 768px) {\n  .void-scope .md\\:void-w-1\\/4 {\n    width: 25%;\n  }\n  .void-scope .md\\:void-flex-row {\n    flex-direction: row;\n  }\n  .void-scope .md\\:void-flex-col {\n    flex-direction: column;\n  }\n}\n.void-scope .dark\\:void-bg-white:where(.void-dark, .void-dark *) {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));\n}\n.void-scope .dark\\:void-bg-white\\/10:where(.void-dark, .void-dark *) {\n  background-color: rgb(255 255 255 / 0.1);\n}\n.void-scope .dark\\:void-bg-white\\/90:where(.void-dark, .void-dark *) {\n  background-color: rgb(255 255 255 / 0.9);\n}\n.void-scope .dark\\:void-bg-zinc-600:where(.void-dark, .void-dark *) {\n  --tw-bg-opacity: 1;\n  background-color: rgb(82 82 91 / var(--tw-bg-opacity, 1));\n}\n.void-scope .dark\\:void-bg-zinc-900:where(.void-dark, .void-dark *) {\n  --tw-bg-opacity: 1;\n  background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1));\n}\n.void-scope .dark\\:void-text-black:where(.void-dark, .void-dark *) {\n  --tw-text-opacity: 1;\n  color: rgb(0 0 0 / var(--tw-text-opacity, 1));\n}\n.void-scope .dark\\:hover\\:void-bg-gray-300\\/10:hover:where(.void-dark, .void-dark *) {\n  background-color: rgb(209 213 219 / 0.1);\n}\n.void-scope .\\[\\&\\>\\*\\:first-child\\]\\:void-pl-3 > *:first-child {\n  padding-left: 0.75rem;\n}\n.void-scope .\\[\\&\\>\\*\\:last-child\\]\\:void-border-r-0 > *:last-child {\n  border-right-width: 0px;\n}\n.void-scope .\\[\\&\\>\\*\\:last-child\\]\\:void-pr-3 > *:last-child {\n  padding-right: 0.75rem;\n}\n.void-scope .\\[\\&\\>\\*\\]\\:void-border-r > * {\n  border-right-width: 1px;\n}\n.void-scope .\\[\\&\\>\\*\\]\\:void-border-void-border-2 > * {\n  border-color: var(--void-border-2);\n}\n.void-scope .\\[\\&\\>\\*\\]\\:void-px-3 > * {\n  padding-left: 0.75rem;\n  padding-right: 0.75rem;\n}\n.void-scope .\\[\\&\\>\\:first-child\\]\\:\\!void-mt-0 > :first-child {\n  margin-top: 0px !important;\n}\n.void-scope .\\[\\&\\>\\:last-child\\]\\:\\!void-mb-0 > :last-child {\n  margin-bottom: 0px !important;\n}\n.void-scope .\\[\\&_select\\]\\:\\!void-text-xs select {\n  font-size: 10px !important;\n}\n.void-scope .\\[\\&_select\\]\\:\\!void-text-void-fg-3 select {\n  color: var(--void-fg-3) !important;\n}\n');
 
 // src2/void-editor-widgets-tsx/VoidCommandBar.tsx
 var import_react4 = __toESM(require_react(), 1);
@@ -19907,25 +22023,24 @@ var import_react4 = __toESM(require_react(), 1);
 // ../../../../../../../node_modules/lucide-react/dist/esm/createLucideIcon.js
 var import_react3 = __toESM(require_react());
 
-// ../../../../../../../node_modules/lucide-react/dist/esm/shared/src/utils.js
+// ../../../../../../../node_modules/lucide-react/dist/esm/shared/src/utils/mergeClasses.js
+var mergeClasses = (...classes) => classes.filter((className, index, array) => {
+  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
+}).join(" ").trim();
+
+// ../../../../../../../node_modules/lucide-react/dist/esm/shared/src/utils/toKebabCase.js
 var toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+
+// ../../../../../../../node_modules/lucide-react/dist/esm/shared/src/utils/toCamelCase.js
 var toCamelCase = (string) => string.replace(
   /^([A-Z])|[\s-_]+(\w)/g,
   (match, p1, p2) => p2 ? p2.toUpperCase() : p1.toLowerCase()
 );
+
+// ../../../../../../../node_modules/lucide-react/dist/esm/shared/src/utils/toPascalCase.js
 var toPascalCase = (string) => {
   const camelCase = toCamelCase(string);
   return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
-};
-var mergeClasses = (...classes) => classes.filter((className, index, array) => {
-  return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
-}).join(" ").trim();
-var hasA11yProp = (props) => {
-  for (const prop in props) {
-    if (prop.startsWith("aria-") || prop === "role" || prop === "title") {
-      return true;
-    }
-  }
 };
 
 // ../../../../../../../node_modules/lucide-react/dist/esm/Icon.js
@@ -19944,6 +22059,16 @@ var defaultAttributes = {
   strokeLinejoin: "round"
 };
 
+// ../../../../../../../node_modules/lucide-react/dist/esm/shared/src/utils/hasA11yProp.js
+var hasA11yProp = (props) => {
+  for (const prop in props) {
+    if (prop.startsWith("aria-") || prop === "role" || prop === "title") {
+      return true;
+    }
+  }
+  return false;
+};
+
 // ../../../../../../../node_modules/lucide-react/dist/esm/Icon.js
 var Icon = (0, import_react2.forwardRef)(
   ({
@@ -19955,26 +22080,24 @@ var Icon = (0, import_react2.forwardRef)(
     children,
     iconNode,
     ...rest
-  }, ref) => {
-    return (0, import_react2.createElement)(
-      "svg",
-      {
-        ref,
-        ...defaultAttributes,
-        width: size,
-        height: size,
-        stroke: color,
-        strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
-        className: mergeClasses("lucide", className),
-        ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
-        ...rest
-      },
-      [
-        ...iconNode.map(([tag, attrs]) => (0, import_react2.createElement)(tag, attrs)),
-        ...Array.isArray(children) ? children : [children]
-      ]
-    );
-  }
+  }, ref) => (0, import_react2.createElement)(
+    "svg",
+    {
+      ref,
+      ...defaultAttributes,
+      width: size,
+      height: size,
+      stroke: color,
+      strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
+      className: mergeClasses("lucide", className),
+      ...!children && !hasA11yProp(rest) && { "aria-hidden": "true" },
+      ...rest
+    },
+    [
+      ...iconNode.map(([tag, attrs]) => (0, import_react2.createElement)(tag, attrs)),
+      ...Array.isArray(children) ? children : [children]
+    ]
+  )
 );
 
 // ../../../../../../../node_modules/lucide-react/dist/esm/createLucideIcon.js
@@ -20492,8 +22615,12 @@ react/cjs/react-jsx-runtime.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 
-lucide-react/dist/esm/shared/src/utils.js:
+lucide-react/dist/esm/shared/src/utils/mergeClasses.js:
+lucide-react/dist/esm/shared/src/utils/toKebabCase.js:
+lucide-react/dist/esm/shared/src/utils/toCamelCase.js:
+lucide-react/dist/esm/shared/src/utils/toPascalCase.js:
 lucide-react/dist/esm/defaultAttributes.js:
+lucide-react/dist/esm/shared/src/utils/hasA11yProp.js:
 lucide-react/dist/esm/Icon.js:
 lucide-react/dist/esm/createLucideIcon.js:
 lucide-react/dist/esm/icons/check.js:
@@ -20505,7 +22632,7 @@ lucide-react/dist/esm/icons/move-up.js:
 lucide-react/dist/esm/icons/x.js:
 lucide-react/dist/esm/lucide-react.js:
   (**
-   * @license lucide-react v0.503.0 - ISC
+   * @license lucide-react v0.577.0 - ISC
    *
    * This source code is licensed under the ISC license.
    * See the LICENSE file in the root directory of this source tree.
