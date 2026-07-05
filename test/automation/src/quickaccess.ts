@@ -20,6 +20,7 @@ export class QuickAccess {
 
 	async openFileQuickAccessAndWait(searchValue: string, expectedFirstElementNameOrExpectedResultCount: string | number): Promise<void> {
 
+		// Removing this logic just for this release... after this release, all versions should have the `workbench.action.clearEditorHistoryWithoutConfirm` command.
 		// make sure the file quick access is not "polluted"
 		// with entries from the editor history when opening
 		await this.runCommand('workbench.action.clearEditorHistory');

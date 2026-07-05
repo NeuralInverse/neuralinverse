@@ -54,6 +54,16 @@
 		"--vscode-chat-avatarForeground",
 		"--vscode-chat-checkpointSeparator",
 		"--vscode-chat-editedFileForeground",
+<<<<<<< HEAD
+=======
+		"--vscode-chat-font-family",
+		"--vscode-chat-font-size-body-l",
+		"--vscode-chat-font-size-body-m",
+		"--vscode-chat-font-size-body-s",
+		"--vscode-chat-font-size-body-xl",
+		"--vscode-chat-font-size-body-xs",
+		"--vscode-chat-font-size-body-xxl",
+>>>>>>> 1.104.0
 		"--vscode-chat-linesAddedForeground",
 		"--vscode-chat-linesRemovedForeground",
 		"--vscode-chat-requestBackground",
@@ -456,6 +466,7 @@
 		"--vscode-listFilterWidget-noMatchesOutline",
 		"--vscode-listFilterWidget-outline",
 		"--vscode-listFilterWidget-shadow",
+		"--vscode-mcpIcon-starForeground",
 		"--vscode-menu-background",
 		"--vscode-menu-border",
 		"--vscode-menu-foreground",
@@ -800,6 +811,8 @@
 		"--vscode-terminalStickyScrollHover-background",
 		"--vscode-terminalSymbolIcon-aliasForeground",
 		"--vscode-terminalSymbolIcon-argumentForeground",
+		"--vscode-terminalSymbolIcon-branchForeground",
+		"--vscode-terminalSymbolIcon-commitForeground",
 		"--vscode-terminalSymbolIcon-fileForeground",
 		"--vscode-terminalSymbolIcon-flagForeground",
 		"--vscode-terminalSymbolIcon-folderForeground",
@@ -807,8 +820,18 @@
 		"--vscode-terminalSymbolIcon-methodForeground",
 		"--vscode-terminalSymbolIcon-optionForeground",
 		"--vscode-terminalSymbolIcon-optionValueForeground",
+<<<<<<< HEAD
 		"--vscode-terminalSymbolIcon-symbolicLinkFileForeground",
 		"--vscode-terminalSymbolIcon-symbolicLinkFolderForeground",
+=======
+		"--vscode-terminalSymbolIcon-pullRequestDoneForeground",
+		"--vscode-terminalSymbolIcon-pullRequestForeground",
+		"--vscode-terminalSymbolIcon-remoteForeground",
+		"--vscode-terminalSymbolIcon-stashForeground",
+		"--vscode-terminalSymbolIcon-symbolicLinkFileForeground",
+		"--vscode-terminalSymbolIcon-symbolicLinkFolderForeground",
+		"--vscode-terminalSymbolIcon-tagForeground",
+>>>>>>> 1.104.0
 		"--vscode-testing-coverCountBadgeBackground",
 		"--vscode-testing-coverCountBadgeForeground",
 		"--vscode-testing-coveredBackground",

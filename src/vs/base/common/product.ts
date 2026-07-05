@@ -37,6 +37,14 @@ export interface IFeaturedExtension {
 	readonly imagePath: string;
 }
 
+export interface IChatSessionRecommendation {
+	readonly extensionId: string;
+	readonly extensionName: string;
+	readonly displayName: string;
+	readonly name: string;
+	readonly description: string;
+}
+
 export type ConfigurationSyncStore = {
 	url: string;
 	insidersUrl: string;
@@ -106,6 +114,10 @@ export interface IProductConfiguration {
 		readonly resourceUrlTemplate: string;
 		readonly nlsBaseUrl: string;
 		readonly accessSKUs?: string[];
+	};
+
+	readonly mcpGallery?: {
+		readonly serviceUrl: string;
 	};
 
 	readonly extensionPublisherOrgs?: readonly string[];
@@ -203,6 +215,7 @@ export interface IProductConfiguration {
 		};
 		readonly tokenEntitlementUrl: string;
 		readonly chatEntitlementUrl: string;
+		readonly mcpRegistryDataUrl: string;
 	};
 
 	readonly 'configurationSync.store'?: ConfigurationSyncStore;
@@ -217,7 +230,7 @@ export interface IProductConfiguration {
 
 	readonly defaultChatAgent?: IDefaultChatAgent;
 	readonly chatParticipantRegistry?: string;
-
+	readonly chatSessionRecommendations?: IChatSessionRecommendation[];
 	readonly emergencyAlertUrl?: string;
 
 	readonly remoteDefaultExtensionsIfInstalledLocally?: string[];
@@ -340,6 +353,8 @@ export interface IDefaultChatAgent {
 	readonly manageOverageUrl: string;
 	readonly upgradePlanUrl: string;
 	readonly signUpUrl: string;
+	readonly termsStatementUrl: string;
+	readonly privacyStatementUrl: string;
 
 	readonly provider: {
 		default: { id: string; name: string };

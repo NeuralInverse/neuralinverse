@@ -4,14 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize } from '../../../../nls.js';
-import { fromNow } from '../../../../base/common/date.js';
-import { isLinuxSnap } from '../../../../base/common/platform.js';
 import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
 import { AbstractDialogHandler, IConfirmation, IConfirmationResult, IPrompt, IAsyncPromptResult } from '../../../../platform/dialogs/common/dialogs.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { INativeHostService } from '../../../../platform/native/common/native.js';
-import { IProductService } from '../../../../platform/product/common/productService.js';
-import { process } from '../../../../base/parts/sandbox/electron-browser/globals.js';
 import { getActiveWindow } from '../../../../base/browser/dom.js';
 
 export class NativeDialogHandler extends AbstractDialogHandler {
@@ -19,7 +15,6 @@ export class NativeDialogHandler extends AbstractDialogHandler {
 	constructor(
 		@ILogService private readonly logService: ILogService,
 		@INativeHostService private readonly nativeHostService: INativeHostService,
-		@IProductService private readonly productService: IProductService,
 		@IClipboardService private readonly clipboardService: IClipboardService
 	) {
 		super();
@@ -69,6 +64,7 @@ export class NativeDialogHandler extends AbstractDialogHandler {
 		throw new Error('Unsupported'); // we have no native API for password dialogs in Electron
 	}
 
+<<<<<<< HEAD
 	async about(): Promise<void> {
 		let version = this.productService.version;
 		if (this.productService.target) {
@@ -98,10 +94,13 @@ export class NativeDialogHandler extends AbstractDialogHandler {
 		const detail = detailString(true);
 		const detailToCopy = detailString(false);
 
+=======
+	async about(title: string, details: string, detailsToCopy: string): Promise<void> {
+>>>>>>> 1.104.0
 		const { response } = await this.nativeHostService.showMessageBox({
 			type: 'info',
-			message: this.productService.nameLong,
-			detail: `\n${detail}`,
+			message: title,
+			detail: `\n${details}`,
 			buttons: [
 				localize({ key: 'copy', comment: ['&& denotes a mnemonic'] }, "&&Copy"),
 				localize('okButton', "OK")
@@ -110,7 +109,7 @@ export class NativeDialogHandler extends AbstractDialogHandler {
 		});
 
 		if (response === 0) {
-			this.clipboardService.writeText(detailToCopy);
+			this.clipboardService.writeText(detailsToCopy);
 		}
 	}
 }

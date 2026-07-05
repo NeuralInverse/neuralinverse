@@ -1006,7 +1006,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			this.customMenubar.value.layout(menubarDimension);
 		}
 
-		const hasCenter = this.isCommandCenterVisible || this.title.innerText !== '';
+		const hasCenter = this.isCommandCenterVisible || this.title.textContent !== '';
 		this.rootContainer.classList.toggle('has-center', hasCenter);
 	}
 
