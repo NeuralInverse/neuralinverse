@@ -11,7 +11,7 @@ import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/c
 import { NullLogService } from '../../../log/common/log.js';
 import { IProductService } from '../../../product/common/productService.js';
 import { ITerminalProcessOptions } from '../../common/terminal.js';
-import { getShellIntegrationInjection, getWindowsBuildNumber, IShellIntegrationConfigInjection } from '../../node/terminalEnvironment.js';
+import { getShellIntegrationInjection, getWindowsBuildNumber, IShellIntegrationConfigInjection, type IShellIntegrationInjectionFailure } from '../../node/terminalEnvironment.js';
 
 const enabledProcessOptions: ITerminalProcessOptions = { shellIntegration: { enabled: true, suggestEnabled: false, nonce: '' }, windowsEnableConpty: true, windowsUseConptyDll: false, environmentVariableCollections: undefined, workspaceFolder: undefined };
 const disabledProcessOptions: ITerminalProcessOptions = { shellIntegration: { enabled: false, suggestEnabled: false, nonce: '' }, windowsEnableConpty: true, windowsUseConptyDll: false, environmentVariableCollections: undefined, workspaceFolder: undefined };
@@ -22,8 +22,8 @@ const logService = new NullLogService();
 const productService = { applicationName: 'vscode' } as IProductService;
 const defaultEnvironment = {};
 
-function deepStrictEqualIgnoreStableVar(actual: IShellIntegrationConfigInjection | undefined, expected: IShellIntegrationConfigInjection) {
-	if (actual?.envMixin) {
+function deepStrictEqualIgnoreStableVar(actual: IShellIntegrationConfigInjection | IShellIntegrationInjectionFailure | undefined, expected: IShellIntegrationConfigInjection) {
+	if (actual && 'envMixin' in actual && actual.envMixin) {
 		delete actual.envMixin['VSCODE_STABLE'];
 	}
 	deepStrictEqual(actual, expected);
@@ -31,27 +31,28 @@ function deepStrictEqualIgnoreStableVar(actual: IShellIntegrationConfigInjection
 
 suite('platform - terminalEnvironment', async () => {
 	ensureNoDisposablesAreLeakedInTestSuite();
-	suite('getShellIntegrationInjection', () => {
-		suite('should not enable', () => {
+	suite('getShellIntegrationInjection', async () => {
+		suite('should not enable', async () => {
 			// This test is only expected to work on Windows 10 build 18309 and above
 			(getWindowsBuildNumber() < 18309 ? test.skip : test)('when isFeatureTerminal or when no executable is provided', async () => {
-				ok(!(await getShellIntegrationInjection({ executable: pwshExe, args: ['-l', '-NoLogo'], isFeatureTerminal: true }, enabledProcessOptions, defaultEnvironment, logService, productService, true)));
-				ok(await getShellIntegrationInjection({ executable: pwshExe, args: ['-l', '-NoLogo'], isFeatureTerminal: false }, enabledProcessOptions, defaultEnvironment, logService, productService, true));
+				strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: ['-l', '-NoLogo'], isFeatureTerminal: true }, enabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
+				strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: ['-l', '-NoLogo'], isFeatureTerminal: false }, enabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'injection');
 			});
 			if (isWindows) {
 				test('when on windows with conpty false', async () => {
-					ok(!(await getShellIntegrationInjection({ executable: pwshExe, args: ['-l'], isFeatureTerminal: false }, winptyProcessOptions, defaultEnvironment, logService, productService, true)));
+					strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: ['-l'], isFeatureTerminal: false }, winptyProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 				});
 			}
 		});
 
 		// These tests are only expected to work on Windows 10 build 18309 and above
-		(getWindowsBuildNumber() < 18309 ? suite.skip : suite)('pwsh', () => {
+		(getWindowsBuildNumber() < 18309 ? suite.skip : suite)('pwsh', async () => {
 			const expectedPs1 = process.platform === 'win32'
 				? `try { . "${repoRoot}\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1" } catch {}`
 				: `. "${repoRoot}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1"`;
-			suite('should override args', () => {
+			suite('should override args', async () => {
 				const enabledExpectedResult = Object.freeze<IShellIntegrationConfigInjection>({
+					type: 'injection',
 					newArgs: [
 						'-noexit',
 						'-command',
@@ -65,7 +66,7 @@ suite('platform - terminalEnvironment', async () => {
 					deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: pwshExe, args: [] }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 					deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: pwshExe, args: undefined }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 				});
-				suite('when no logo', () => {
+				suite('when no logo', async () => {
 					test('array - case insensitive', async () => {
 						deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: pwshExe, args: ['-NoLogo'] }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 						deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: pwshExe, args: ['-NOLOGO'] }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
@@ -80,8 +81,9 @@ suite('platform - terminalEnvironment', async () => {
 					});
 				});
 			});
-			suite('should incorporate login arg', () => {
+			suite('should incorporate login arg', async () => {
 				const enabledExpectedResult = Object.freeze<IShellIntegrationConfigInjection>({
+					type: 'injection',
 					newArgs: [
 						'-l',
 						'-noexit',
@@ -99,24 +101,24 @@ suite('platform - terminalEnvironment', async () => {
 					deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: pwshExe, args: '-l' }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 				});
 			});
-			suite('should not modify args', () => {
+			suite('should not modify args', async () => {
 				test('when shell integration is disabled', async () => {
-					strictEqual(await getShellIntegrationInjection({ executable: pwshExe, args: ['-l'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
-					strictEqual(await getShellIntegrationInjection({ executable: pwshExe, args: '-l' }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
-					strictEqual(await getShellIntegrationInjection({ executable: pwshExe, args: undefined }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+					strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: ['-l'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
+					strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: '-l' }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
+					strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: undefined }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 				});
 				test('when using unrecognized arg', async () => {
-					strictEqual(await getShellIntegrationInjection({ executable: pwshExe, args: ['-l', '-NoLogo', '-i'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+					strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: ['-l', '-NoLogo', '-i'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 				});
 				test('when using unrecognized arg (string)', async () => {
-					strictEqual(await getShellIntegrationInjection({ executable: pwshExe, args: '-i' }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+					strictEqual((await getShellIntegrationInjection({ executable: pwshExe, args: '-i' }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 				});
 			});
 		});
 
 		if (process.platform !== 'win32') {
-			suite('zsh', () => {
-				suite('should override args', () => {
+			suite('zsh', async () => {
+				suite('should override args', async () => {
 					const username = userInfo().username;
 					const expectedDir = new RegExp(`.+\/${username}-vscode-zsh`);
 					const customZdotdir = '/custom/zsh/dotdir';
@@ -148,47 +150,48 @@ suite('platform - terminalEnvironment', async () => {
 						ok(result.filesToCopy[3].source.match(expectedSources[3]));
 					}
 					test('when undefined, []', async () => {
-						const result1 = await getShellIntegrationInjection({ executable: 'zsh', args: [] }, enabledProcessOptions, defaultEnvironment, logService, productService, true);
+						const result1 = await getShellIntegrationInjection({ executable: 'zsh', args: [] }, enabledProcessOptions, defaultEnvironment, logService, productService, true) as IShellIntegrationConfigInjection;
 						deepStrictEqual(result1?.newArgs, ['-i']);
 						assertIsEnabled(result1);
-						const result2 = await getShellIntegrationInjection({ executable: 'zsh', args: undefined }, enabledProcessOptions, defaultEnvironment, logService, productService, true);
+						const result2 = await getShellIntegrationInjection({ executable: 'zsh', args: undefined }, enabledProcessOptions, defaultEnvironment, logService, productService, true) as IShellIntegrationConfigInjection;
 						deepStrictEqual(result2?.newArgs, ['-i']);
 						assertIsEnabled(result2);
 					});
-					suite('should incorporate login arg', () => {
+					suite('should incorporate login arg', async () => {
 						test('when array', async () => {
-							const result = await getShellIntegrationInjection({ executable: 'zsh', args: ['-l'] }, enabledProcessOptions, defaultEnvironment, logService, productService, true);
+							const result = await getShellIntegrationInjection({ executable: 'zsh', args: ['-l'] }, enabledProcessOptions, defaultEnvironment, logService, productService, true) as IShellIntegrationConfigInjection;
 							deepStrictEqual(result?.newArgs, ['-il']);
 							assertIsEnabled(result);
 						});
 					});
-					suite('should not modify args', () => {
+					suite('should not modify args', async () => {
 						test('when shell integration is disabled', async () => {
-							strictEqual(await getShellIntegrationInjection({ executable: 'zsh', args: ['-l'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
-							strictEqual(await getShellIntegrationInjection({ executable: 'zsh', args: undefined }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+							strictEqual((await getShellIntegrationInjection({ executable: 'zsh', args: ['-l'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
+							strictEqual((await getShellIntegrationInjection({ executable: 'zsh', args: undefined }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 						});
 						test('when using unrecognized arg', async () => {
-							strictEqual(await getShellIntegrationInjection({ executable: 'zsh', args: ['-l', '-fake'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+							strictEqual((await getShellIntegrationInjection({ executable: 'zsh', args: ['-l', '-fake'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 						});
 					});
-					suite('should incorporate global ZDOTDIR env variable', () => {
+					suite('should incorporate global ZDOTDIR env variable', async () => {
 						test('when custom ZDOTDIR', async () => {
-							const result1 = await getShellIntegrationInjection({ executable: 'zsh', args: [] }, enabledProcessOptions, { ...defaultEnvironment, ZDOTDIR: customZdotdir }, logService, productService, true);
+							const result1 = await getShellIntegrationInjection({ executable: 'zsh', args: [] }, enabledProcessOptions, { ...defaultEnvironment, ZDOTDIR: customZdotdir }, logService, productService, true) as IShellIntegrationConfigInjection;
 							deepStrictEqual(result1?.newArgs, ['-i']);
 							assertIsEnabled(result1, customZdotdir);
 						});
 						test('when undefined', async () => {
-							const result1 = await getShellIntegrationInjection({ executable: 'zsh', args: [] }, enabledProcessOptions, undefined, logService, productService, true);
+							const result1 = await getShellIntegrationInjection({ executable: 'zsh', args: [] }, enabledProcessOptions, undefined, logService, productService, true) as IShellIntegrationConfigInjection;
 							deepStrictEqual(result1?.newArgs, ['-i']);
 							assertIsEnabled(result1);
 						});
 					});
 				});
 			});
-			suite('bash', () => {
-				suite('should override args', () => {
+			suite('bash', async () => {
+				suite('should override args', async () => {
 					test('when undefined, [], empty string', async () => {
 						const enabledExpectedResult = Object.freeze<IShellIntegrationConfigInjection>({
+							type: 'injection',
 							newArgs: [
 								'--init-file',
 								`${repoRoot}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh`
@@ -201,8 +204,9 @@ suite('platform - terminalEnvironment', async () => {
 						deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: 'bash', args: '' }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 						deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: 'bash', args: undefined }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 					});
-					suite('should set login env variable and not modify args', () => {
+					suite('should set login env variable and not modify args', async () => {
 						const enabledExpectedResult = Object.freeze<IShellIntegrationConfigInjection>({
+							type: 'injection',
 							newArgs: [
 								'--init-file',
 								`${repoRoot}/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh`
@@ -216,13 +220,13 @@ suite('platform - terminalEnvironment', async () => {
 							deepStrictEqualIgnoreStableVar(await getShellIntegrationInjection({ executable: 'bash', args: ['-l'] }, enabledProcessOptions, defaultEnvironment, logService, productService, true), enabledExpectedResult);
 						});
 					});
-					suite('should not modify args', () => {
+					suite('should not modify args', async () => {
 						test('when shell integration is disabled', async () => {
-							strictEqual(await getShellIntegrationInjection({ executable: 'bash', args: ['-l'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
-							strictEqual(await getShellIntegrationInjection({ executable: 'bash', args: undefined }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+							strictEqual((await getShellIntegrationInjection({ executable: 'bash', args: ['-l'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
+							strictEqual((await getShellIntegrationInjection({ executable: 'bash', args: undefined }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 						});
 						test('when custom array entry', async () => {
-							strictEqual(await getShellIntegrationInjection({ executable: 'bash', args: ['-l', '-i'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true), undefined);
+							strictEqual((await getShellIntegrationInjection({ executable: 'bash', args: ['-l', '-i'] }, disabledProcessOptions, defaultEnvironment, logService, productService, true)).type, 'failure');
 						});
 					});
 				});

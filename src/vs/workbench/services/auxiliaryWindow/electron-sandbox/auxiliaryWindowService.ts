@@ -35,6 +35,7 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 	private skipUnloadConfirmation = false;
 
 	private maximized = false;
+	private alwaysOnTop = false;
 
 	constructor(
 		window: CodeWindow,
@@ -57,6 +58,7 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 		}
 
 		this.handleFullScreenState();
+		this.handleAlwaysOnTopState();
 	}
 
 	private handleMaximizedState(): void {
@@ -73,6 +75,18 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 		this._register(this.nativeHostService.onDidUnmaximizeWindow(windowId => {
 			if (windowId === this.window.vscodeWindowId) {
 				this.maximized = false;
+			}
+		}));
+	}
+
+	private handleAlwaysOnTopState(): void {
+		(async () => {
+			this.alwaysOnTop = await this.nativeHostService.isWindowAlwaysOnTop({ targetWindowId: this.window.vscodeWindowId });
+		})();
+
+		this._register(this.nativeHostService.onDidChangeWindowAlwaysOnTop(({ windowId, alwaysOnTop }) => {
+			if (windowId === this.window.vscodeWindowId) {
+				this.alwaysOnTop = alwaysOnTop;
 			}
 		}));
 	}
@@ -115,7 +129,8 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 		return {
 			...state,
 			bounds: state.bounds,
-			mode: this.maximized ? AuxiliaryWindowMode.Maximized : fullscreen ? AuxiliaryWindowMode.Fullscreen : AuxiliaryWindowMode.Normal
+			mode: this.maximized ? AuxiliaryWindowMode.Maximized : fullscreen ? AuxiliaryWindowMode.Fullscreen : AuxiliaryWindowMode.Normal,
+			alwaysOnTop: this.alwaysOnTop
 		};
 	}
 }
