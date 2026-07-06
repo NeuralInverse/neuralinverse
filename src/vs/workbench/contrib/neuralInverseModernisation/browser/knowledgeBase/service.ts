@@ -67,19 +67,19 @@ import {
 	IKBHealthReport,
 } from '../../common/knowledgeBaseTypes.js';
 
-export {
+export type {
 	IUnitLock, ISourceFileVersion, ISourceDriftAlert, IDecisionConflict,
 	IUnitAnnotation, IUnitTag, IComplianceGateResult, IKnowledgeBaseCheckpoint,
 	IVelocityMetrics, IKBHealthReport,
 };
 
-export {
+export type {
 	IResolvedUnitContext, IKnowledgeBaseStats, IDependencyNode,
 	IKnowledgeBaseSessionIndex, IUnitFilterCriteria,
 	IDecisionImpactResult, IBudgetedUnitContext, IWorkPackage, IStaleUnitReport,
 };
 
-export { IPhaseProgress };
+export type { IPhaseProgress };
 
 // --- Service decorator --------------------------------------------------------
 

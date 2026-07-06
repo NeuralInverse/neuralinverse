@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 export { TokenEstimator } from './tokenEstimator.js';
-export { CompactionStrategy, IStepGroup } from './compactionStrategy.js';
-export { ConversationSummarizer, ISummarizationLLM, ISummarizeOptions } from './conversationSummarizer.js';
-export { CompactionService, ICompactionService } from './compactionService.js';
+export { CompactionStrategy } from './compactionStrategy.js';
+export type { IStepGroup } from './compactionStrategy.js';
+export { ConversationSummarizer } from './conversationSummarizer.js';
+export type { ISummarizationLLM, ISummarizeOptions } from './conversationSummarizer.js';
+export { CompactionService } from './compactionService.js';
+export type { ICompactionService } from './compactionService.js';

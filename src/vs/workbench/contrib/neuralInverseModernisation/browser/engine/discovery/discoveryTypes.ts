@@ -43,7 +43,7 @@ export interface ICheckResult {
 	blockingBehavior?: { blocksCommit: boolean };
 }
 
-export { IProjectTarget };
+export type { IProjectTarget };
 
 
 // --- Progress -----------------------------------------------------------------
@@ -526,4 +526,4 @@ export interface IFileProcessResult {
 
 // --- Re-exports ---------------------------------------------------------------
 
-export { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange };
+export type { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange };

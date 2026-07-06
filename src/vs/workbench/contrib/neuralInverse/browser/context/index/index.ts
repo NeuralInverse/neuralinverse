@@ -5,4 +5,5 @@
 
 import './workspaceSymbolIndex.js';
 
-export { IWorkspaceSymbolIndexService, IIndexedSymbol, IFileIndex } from './workspaceSymbolIndex.js';
+export { IWorkspaceSymbolIndexService } from './workspaceSymbolIndex.js';
+export type { IIndexedSymbol, IFileIndex } from './workspaceSymbolIndex.js';

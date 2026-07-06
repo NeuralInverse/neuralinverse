@@ -29,7 +29,7 @@ import {
 } from '../../common/knowledgeBaseTypes.js';
 
 // Re-export so callers don't need to change their import paths
-export { IWorkPackage, IStaleUnitReport };
+export type { IWorkPackage, IStaleUnitReport };
 
 
 // --- Context assembly ---------------------------------------------------------

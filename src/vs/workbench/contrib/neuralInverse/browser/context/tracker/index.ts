@@ -5,4 +5,5 @@
 
 import './changeTracker.js';
 
-export { IChangeTrackerService, IEditEvent, IFileEditProfile } from './changeTracker.js';
+export { IChangeTrackerService } from './changeTracker.js';
+export type { IEditEvent, IFileEditProfile } from './changeTracker.js';

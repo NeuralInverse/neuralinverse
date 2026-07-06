@@ -22,14 +22,20 @@
  */
 
 // Types
-export { IContextToolDeps, CONTEXT_TOOL_NAMES, ContextToolName } from './contextToolTypes.js';
+export type { IContextToolDeps, ContextToolName } from './contextToolTypes.js';
+export { CONTEXT_TOOL_NAMES } from './contextToolTypes.js';
 
 // Core logic (surface-agnostic)
-export { executeSearchSymbols, ISearchSymbolsArgs, ISearchSymbolsResult } from './searchSymbolsTool.js';
-export { executeGetRelatedFiles, IGetRelatedFilesArgs, IRelatedFileResult } from './getRelatedFilesTool.js';
-export { executeGetFileContext, IGetFileContextArgs } from './getFileContextTool.js';
-export { executeGetImportGraph, IGetImportGraphArgs, IImportGraphResult } from './getImportGraphTool.js';
-export { executeGetRecentEdits, IGetRecentEditsArgs, IRecentEditResult } from './getRecentEditsTool.js';
+export { executeSearchSymbols } from './searchSymbolsTool.js';
+export type { ISearchSymbolsArgs, ISearchSymbolsResult } from './searchSymbolsTool.js';
+export { executeGetRelatedFiles } from './getRelatedFilesTool.js';
+export type { IGetRelatedFilesArgs, IRelatedFileResult } from './getRelatedFilesTool.js';
+export { executeGetFileContext } from './getFileContextTool.js';
+export type { IGetFileContextArgs } from './getFileContextTool.js';
+export { executeGetImportGraph } from './getImportGraphTool.js';
+export type { IGetImportGraphArgs, IImportGraphResult } from './getImportGraphTool.js';
+export { executeGetRecentEdits } from './getRecentEditsTool.js';
+export type { IGetRecentEditsArgs, IRecentEditResult } from './getRecentEditsTool.js';
 
 // Adapters
 export { createWorkflowContextTools } from './adapters/workflowAgentAdapter.js';

@@ -5,4 +5,5 @@
 
 import './relevanceScorer.js';
 
-export { IRelevanceScorerService, IRelevanceQuery, IScoredItem, RelevanceReason } from './relevanceScorer.js';
+export { IRelevanceScorerService } from './relevanceScorer.js';
+export type { IRelevanceQuery, IScoredItem, RelevanceReason } from './relevanceScorer.js';
