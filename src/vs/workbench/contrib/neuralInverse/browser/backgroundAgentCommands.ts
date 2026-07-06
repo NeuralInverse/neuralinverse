@@ -29,16 +29,16 @@ class SpawnBackgroundAgentAction extends Action2 {
 		const title = await quickInput.input({
 			prompt: 'Background agent task title',
 			placeHolder: 'e.g. Add unit tests for auth module',
+			ignoreFocusLost: true,
 		});
 		if (!title) return;
 
 		const description = await quickInput.input({
 			prompt: 'Describe what the agent should do',
 			placeHolder: 'Write comprehensive unit tests for src/auth/ covering edge cases',
+			ignoreFocusLost: true,
 		});
-		if (!description) return;
-
-		const task = bgService.spawn({ title, description });
+		const task = bgService.spawn({ title, description: description || title });
 		notificationService.info(`Background agent spawned: ${task.branchName}`);
 	}
 }
