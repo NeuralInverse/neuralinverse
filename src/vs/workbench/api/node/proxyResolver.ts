@@ -52,10 +52,8 @@ export function connectProxyResolver(
 		getProxySupport: () => getExtHostConfigValue<ProxySupportSetting>(configProvider, isRemote, 'http.proxySupport') || 'off',
 		getNoProxyConfig: () => getExtHostConfigValue<string[]>(configProvider, isRemote, 'http.noProxy') || [],
 		isAdditionalFetchSupportEnabled: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.fetchAdditionalSupport', true),
-		isWebSocketPatchEnabled: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.webSocketAdditionalSupport', true),
 		addCertificatesV1: () => certSettingV1(configProvider, isRemote),
 		addCertificatesV2: () => certSettingV2(configProvider, isRemote),
-		loadSystemCertificatesFromNode: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.systemCertificatesNode', systemCertificatesNodeDefault),
 		log: extHostLogService,
 		getLogLevel: () => {
 			const level = extHostLogService.getLevel();
@@ -75,23 +73,17 @@ export function connectProxyResolver(
 		},
 		proxyResolveTelemetry: () => { },
 		isUseHostProxyEnabled,
-		getNetworkInterfaceCheckInterval: () => {
-			const intervalSeconds = getExtHostConfigValue<number>(configProvider, isRemote, 'http.experimental.networkInterfaceCheckInterval', 300);
-			return intervalSeconds * 1000;
-		},
 		loadAdditionalCertificates: async () => {
 			const useNodeSystemCerts = getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.systemCertificatesNode', systemCertificatesNodeDefault);
 			const promises: Promise<string[]>[] = [];
 			if (isRemote) {
 				promises.push(loadSystemCertificates({
-					loadSystemCertificatesFromNode: () => useNodeSystemCerts,
 					log: extHostLogService,
 				}));
 			}
 			if (loadLocalCertificates) {
 				if (!isRemote && useNodeSystemCerts) {
 					promises.push(loadSystemCertificates({
-						loadSystemCertificatesFromNode: () => useNodeSystemCerts,
 						log: extHostLogService,
 					}));
 				} else {
@@ -142,7 +134,7 @@ function patchGlobalFetch(params: ProxyAgentParams, configProvider: ExtHostConfi
 		const originalFetch = globalThis.fetch;
 		// eslint-disable-next-line local/code-no-any-casts
 		(globalThis as any).__vscodeOriginalFetch = originalFetch;
-		const createPatchedFetch = (options?: proxyAgent.CreateFetchPatchOptions) => proxyAgent.createFetchPatch(params, originalFetch, resolveProxyURL, options);
+		const createPatchedFetch = () => proxyAgent.createFetchPatch(params, originalFetch, resolveProxyURL);
 		const patchedFetch = createPatchedFetch();
 		// eslint-disable-next-line local/code-no-any-casts
 		(globalThis as any).__vscodePatchedFetch = patchedFetch;
@@ -210,7 +202,7 @@ function patchGlobalWebSocket(params: ProxyAgentParams, resolveProxyURL: (url: s
 		const originalWebSocket = globalThis.WebSocket;
 		// eslint-disable-next-line local/code-no-any-casts
 		(globalThis as any).__vscodeOriginalWebSocket = originalWebSocket;
-		globalThis.WebSocket = proxyAgent.createWebSocketPatch(params, originalWebSocket, resolveProxyURL);
+		// createWebSocketPatch not available in this version of proxy-agent
 	}
 }
 
