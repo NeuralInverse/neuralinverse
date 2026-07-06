@@ -50,7 +50,7 @@ const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifSe
 				tooltip: '',
 				class: undefined,
 				run: () => {
-					updateService.downloadUpdate()
+					updateService.downloadUpdate(true)
 				}
 			})
 		}

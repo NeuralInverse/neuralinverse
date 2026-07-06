@@ -50,7 +50,7 @@ export class DependencyGraphService extends Disposable implements IDependencyGra
 		const content = model.getValue();
 
 		// Try TreeSitter first
-		const lang = this._treeSitter.getLanguage(languageId, undefined);
+		const lang = this._treeSitter.getLanguage(languageId, false, undefined);
 		let tree: any;
 		if (lang) {
 			const ParserClass = await this._treeSitter.getParserClass();
@@ -70,7 +70,7 @@ export class DependencyGraphService extends Disposable implements IDependencyGra
 		const languageId = model.getLanguageId();
 		const content = model.getValue();
 
-		const lang = this._treeSitter.getLanguage(languageId, undefined);
+		const lang = this._treeSitter.getLanguage(languageId, false, undefined);
 		let tree: any;
 		if (lang) {
 			const ParserClass = await this._treeSitter.getParserClass();

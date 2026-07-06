@@ -439,7 +439,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	): Promise<IIndexedSymbol[] | undefined> {
 		try {
 			const languageId = model.getLanguageId();
-			const lang = this._treeSitterService.getLanguage(languageId, undefined);
+			const lang = this._treeSitterService.getLanguage(languageId, false, undefined);
 			if (!lang) return undefined;
 
 			const ParserClass = await this._treeSitterService.getParserClass();

@@ -28,7 +28,7 @@ import { IEditorService } from '../../../services/editor/common/editorService.js
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 import { CodeWindow, mainWindow } from '../../../../base/browser/window.js';
 import { IsWindowAlwaysOnTopContext } from '../../../common/contextkeys.js';
-import { IUpdateService } from '../../../../platform/update/common/update.js';
+import { IActionViewItemService } from '../../../../platform/actions/browser/actionViewItemService.js';
 
 export class NativeTitlebarPart extends BrowserTitlebarPart {
 
@@ -78,9 +78,9 @@ export class NativeTitlebarPart extends BrowserTitlebarPart {
 		@IEditorService editorService: IEditorService,
 		@IMenuService menuService: IMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@IUpdateService updateService: IUpdateService
+		@IActionViewItemService actionViewItemService: IActionViewItemService
 	) {
-		super(id, targetWindow, editorGroupsContainer, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService, updateService);
+		super(id, targetWindow, editorGroupsContainer, contextMenuService, configurationService, environmentService, instantiationService, themeService, storageService, layoutService, contextKeyService, hostService, editorService, menuService, keybindingService, actionViewItemService);
 
 		this.tahoeOrNewer = isTahoeOrNewer(environmentService.os.release);
 

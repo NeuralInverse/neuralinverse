@@ -86,7 +86,7 @@ export class ASTContextService extends Disposable implements IASTContextService 
         const language = model.getLanguageId();
         const fileName = model.uri.path.split('/').pop() ?? model.uri.path;
 
-        const lang = this.treeSitterService.getLanguage(language, undefined);
+        const lang = this.treeSitterService.getLanguage(language, false, undefined);
         if (!lang) {
             console.warn('[ASTContextService] TreeSitter language not available for:', language);
             return undefined;

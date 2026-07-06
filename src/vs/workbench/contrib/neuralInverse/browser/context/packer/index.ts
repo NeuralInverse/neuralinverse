@@ -5,4 +5,5 @@
 
 import './contextPacker.js';
 
-export { IContextPackerService, IPackRequest, IPackedContext, IContextSection, ContextMode } from './contextPacker.js';
+export { IContextPackerService } from './contextPacker.js';
+export type { IPackRequest, IPackedContext, IContextSection, ContextMode } from './contextPacker.js';
