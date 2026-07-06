@@ -38,6 +38,11 @@
 		"vs/platform/agentHost",
 		"vs/platform/browserView/node",
 		"vs/platform/browserView/electron-main",
-		"vs/workbench/contrib/browserView"
+		"vs/workbench/contrib/browserView",
+		"vs/platform/agentHost/node/sshRemoteAgentHostService.ts",
+		"vs/platform/agentHost/node/tunnelAgentHostService.ts",
+		"vs/platform/agentHost/node/tunnelHostMainService.ts",
+		"vs/workbench/test/browser/componentFixtures",
+		"vs/workbench/test/electron-browser/workbenchTestServices.ts"
 	]
 }
