@@ -6,6 +6,7 @@
 	"agentSocketUrl": "http://localhost:3002",
 	"applicationName": "neuralinverse",
 	"dataFolderName": ".neural-inverse",
+	"sharedDataFolderName": ".neural-inverse-shared",
 	"win32MutexName": "neuralinverse",
 	"licenseName": "MIT",
 	"licenseUrl": "https://github.com/neuralinverse/neuralinverse/blob/main/LICENSE.txt",
