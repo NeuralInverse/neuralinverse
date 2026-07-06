@@ -34,6 +34,10 @@
 		"./vscode-dts/vscode.d.ts"
 	],
 	"exclude": [
-		"vs/workbench/contrib/webview/browser/pre/service-worker.js"
+		"vs/workbench/contrib/webview/browser/pre/service-worker.js",
+		"vs/platform/agentHost",
+		"vs/platform/browserView/node",
+		"vs/platform/browserView/electron-main",
+		"vs/workbench/contrib/browserView"
 	]
 }
