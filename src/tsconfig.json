@@ -43,6 +43,8 @@
 		"vs/platform/agentHost/node/tunnelAgentHostService.ts",
 		"vs/platform/agentHost/node/tunnelHostMainService.ts",
 		"vs/workbench/test/browser/componentFixtures",
-		"vs/workbench/test/electron-browser/workbenchTestServices.ts"
+		"vs/workbench/test/electron-browser/workbenchTestServices.ts",
+		"vs/platform/browserView",
+		"vs/platform/sandbox/node/sandboxHelper.ts"
 	]
 }

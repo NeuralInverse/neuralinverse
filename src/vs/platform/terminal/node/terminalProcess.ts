@@ -558,7 +558,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 				const pixelSize = pixelWidth !== undefined && pixelHeight !== undefined
 					? { width: pixelWidth, height: pixelHeight }
 					: undefined;
-				this._ptyProcess.resize(cols, rows);
+				this._ptyProcess.resize(cols, rows, pixelSize);
 			} catch (e) {
 				// Swallow error if the pty has already exited
 				this._logService.trace('node-pty.IPty#resize exception ' + e.message);
