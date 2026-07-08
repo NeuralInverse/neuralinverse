@@ -112,10 +112,10 @@ function isGitHubInfoEqual(a: IGitHubInfo | undefined, b: IGitHubInfo | undefine
 // AgentHostSessionAdapter — shared adapter for local and remote sessions
 // ============================================================================
 
-/** Copilot CLI session type */
+/** Neural Inverse session type */
 export const CopilotCLISessionType: ISessionType = {
 	id: 'copilotcli',
-	label: localize('copilotCLI', "Copilot"),
+	label: localize('copilotCLI', "Neural Inverse"),
 	icon: Codicon.copilot,
 };
 
@@ -2338,10 +2338,11 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 	getModels(sessionId: string): readonly ILanguageModelChatMetadataAndIdentifier[] {
 		// Agent-host models are registered against the session's resource
 		// scheme (the per-host/per-agent `targetChatSessionType`). Resolve the
-		// scheme from the session and return the matching language models.
-		const resourceScheme = this._resolveSessionResourceScheme(sessionId);
+		// scheme from the session, or fall back to the default copilotcli scheme
+		// for pre-creation new-session state (before the session exists in _newSessions).
+		let resourceScheme = this._resolveSessionResourceScheme(sessionId);
 		if (!resourceScheme) {
-			return [];
+			resourceScheme = this.resourceSchemeForProvider(CopilotCLISessionType.id);
 		}
 		return this._languageModelsService.getLanguageModelIds()
 			.map((id): ILanguageModelChatMetadataAndIdentifier | undefined => {

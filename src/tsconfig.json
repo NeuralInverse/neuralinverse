@@ -35,11 +35,6 @@
 	],
 	"exclude": [
 		"vs/workbench/contrib/webview/browser/pre/service-worker.js",
-		"vs/platform/agentHost",
-		"vs/platform/browserView/node",
-		"vs/platform/browserView/electron-main",
-		"vs/workbench/contrib/browserView/electron-browser/tools",
-		"vs/platform/sandbox/node/sandboxHelper.ts",
 		"vs/workbench/test/browser/componentFixtures"
 	]
 }

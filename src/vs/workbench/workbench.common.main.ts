@@ -11,6 +11,11 @@ import './api/browser/extensionHost.contribution.js';
 import './browser/workbench.contribution.js';
 import './browser/workbench.zenMode.contribution.js';
 
+// Neural Inverse — void services (BYOLLM config, LLM messaging, tools) required by firmware & modernisation
+import './contrib/void/browser/void.contribution.js';
+import './contrib/neuralInverseModernisation/browser/neuralInverseModernisation.contribution.js';
+import './contrib/neuralInverseFirmware/browser/neuralInverseFirmware.contribution.js';
+
 // Agent-sessions color tokens — side-effect import so they register in the
 // global color registry and appear in the color-theme JSON schema.
 import '../sessions/common/theme.js';

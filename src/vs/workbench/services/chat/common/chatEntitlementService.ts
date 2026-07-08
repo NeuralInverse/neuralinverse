@@ -183,18 +183,9 @@ export interface IChatSetupRequirement {
  * state instead of a misleading lone "Auto"). BYOK models and anonymous access
  * intentionally satisfy the entitlement-based checks so those flows keep working.
  */
-export function chatRequiresSetup(context: IChatSetupRequirement): boolean {
-	return (
-		(!context.completed && !context.hasByokModels) ||			// Setup not completed (unless BYOK models are available)
-		context.disabled ||											// Extension disabled: run setup to enable
-		context.untrusted ||										// Workspace untrusted: run setup to ask for trust
-		context.entitlement === ChatEntitlement.Available ||		// Entitlement available: run setup to sign up
-		(
-			context.entitlement === ChatEntitlement.Unknown &&		// Entitlement unknown: run setup to sign in / sign up
-			!context.anonymous &&									// unless anonymous access is enabled
-			!context.hasByokModels									// unless BYOK models are available
-		)
-	);
+export function chatRequiresSetup(_context: IChatSetupRequirement): boolean {
+	// Neural Inverse: setup is never required — BYOLLM providers are always available
+	return false;
 }
 
 export interface IChatEntitlementService {
@@ -1482,7 +1473,10 @@ export class ChatEntitlementContext extends Disposable {
 		this.isInternalContextKey.set(Boolean(state.organisations?.some(org => org === 'github' || org === 'microsoft' || org === 'ms-copilot' || org === 'MicrosoftCopilot')));
 		this.skuContextKey.set(state.sku);
 
-		this.completedContext.set(!!state.completed);
+		// Neural Inverse: mark setup as completed and user as signed-in so no Copilot auth UI shows.
+		// Do NOT force hidden=true — that hides title-bar actions like "Open in Agents Window".
+		this.completedContext.set(true);
+		this.signedOutContextKey.set(false);
 		this.hiddenContext.set(!!state.hidden);
 		this.disabledInWorkspaceContext.set(!!state.disabledInWorkspace);
 		this.laterContext.set(!!state.later);

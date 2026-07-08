@@ -362,7 +362,7 @@ export class ChatAgentService extends Disposable implements IChatAgentService {
 				if (!agent.isCore) {
 					extensionAgentRegistered = true;
 				}
-				if (agent.id === 'chat.setup' || agent.id === 'github.copilot.editsAgent') {
+				if (agent.id === 'chat.setup' || agent.id === 'github.copilot.editsAgent' || agent.id === 'neuralInverse.default') {
 					// TODO@roblourens firing the event below probably isn't necessary but leave it alone for now
 					toolsAgentRegistered = true;
 				} else {

@@ -19,6 +19,7 @@
  */
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { InternalToolInfo } from '../common/prompt/prompts.js';
@@ -46,6 +47,8 @@ export const IVoidInternalToolService = createDecorator<IVoidInternalToolService
 export interface IVoidInternalToolService {
 	readonly _serviceBrand: undefined;
 
+	readonly onDidChangeTools: Event<void>;
+
 	/** Register a tool. Safe to call multiple times with the same name (last wins). */
 	register(tool: IVoidInternalTool): void;
 
@@ -61,6 +64,9 @@ export interface IVoidInternalToolService {
 	/** Returns InternalToolInfo[] for all registered tools, for LLM advertising. */
 	getToolInfos(): InternalToolInfo[];
 
+	/** Returns a tool by name, or undefined if not found. */
+	getTool(name: string): IVoidInternalTool | undefined;
+
 	/** Returns true if a tool with this name is registered. */
 	has(name: string): boolean;
 
@@ -75,27 +81,41 @@ class VoidInternalToolService extends Disposable implements IVoidInternalToolSer
 	declare readonly _serviceBrand: undefined;
 
 	private readonly _tools = new Map<string, IVoidInternalTool>();
+	private readonly _onDidChangeTools = this._register(new Emitter<void>());
+	readonly onDidChangeTools: Event<void> = this._onDidChangeTools.event;
 
 	register(tool: IVoidInternalTool): void {
 		this._tools.set(tool.name, tool);
+		this._onDidChangeTools.fire();
 	}
 
 	registerMany(tools: IVoidInternalTool[]): void {
-		for (const t of tools) { this.register(t); }
+		for (const t of tools) { this._tools.set(t.name, t); }
+		this._onDidChangeTools.fire();
 	}
 
 	unregister(name: string): void {
-		this._tools.delete(name);
+		if (this._tools.delete(name)) {
+			this._onDidChangeTools.fire();
+		}
 	}
 
 	unregisterMany(names: string[]): void {
-		for (const n of names) { this._tools.delete(n); }
+		let changed = false;
+		for (const n of names) {
+			if (this._tools.delete(n)) { changed = true; }
+		}
+		if (changed) { this._onDidChangeTools.fire(); }
 	}
 
 	getToolInfos(): InternalToolInfo[] {
 		const result: InternalToolInfo[] = [];
 		this._tools.forEach(t => result.push({ name: t.name, description: t.description, params: t.params }));
 		return result;
+	}
+
+	getTool(name: string): IVoidInternalTool | undefined {
+		return this._tools.get(name);
 	}
 
 	has(name: string): boolean {

@@ -52,6 +52,8 @@ export function connectProxyResolver(
 		getProxySupport: () => getExtHostConfigValue<ProxySupportSetting>(configProvider, isRemote, 'http.proxySupport') || 'off',
 		getNoProxyConfig: () => getExtHostConfigValue<string[]>(configProvider, isRemote, 'http.noProxy') || [],
 		isAdditionalFetchSupportEnabled: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.fetchAdditionalSupport', true),
+		isWebSocketPatchEnabled: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.webSocketPatch', true),
+		loadSystemCertificatesFromNode: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.systemCertificatesNode', systemCertificatesNodeDefault),
 		addCertificatesV1: () => certSettingV1(configProvider, isRemote),
 		addCertificatesV2: () => certSettingV2(configProvider, isRemote),
 		log: extHostLogService,
@@ -78,12 +80,14 @@ export function connectProxyResolver(
 			const promises: Promise<string[]>[] = [];
 			if (isRemote) {
 				promises.push(loadSystemCertificates({
+					loadSystemCertificatesFromNode: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.systemCertificatesNode', systemCertificatesNodeDefault),
 					log: extHostLogService,
 				}));
 			}
 			if (loadLocalCertificates) {
 				if (!isRemote && useNodeSystemCerts) {
 					promises.push(loadSystemCertificates({
+						loadSystemCertificatesFromNode: () => getExtHostConfigValue<boolean>(configProvider, isRemote, 'http.systemCertificatesNode', systemCertificatesNodeDefault),
 						log: extHostLogService,
 					}));
 				} else {

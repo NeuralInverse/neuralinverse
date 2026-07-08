@@ -100,5 +100,31 @@
 		"https://auth.neuralinverse.com",
 		"https://neuralinverse.io",
 		"https://ollama.com"
-	]
+	],
+	"defaultChatAgent": {
+		"extensionId": "GitHub.copilot-chat",
+		"chatExtensionId": "GitHub.copilot-chat",
+		"chatExtensionOutputId": "GitHub.copilot-chat",
+		"agentExtensionId": "GitHub.copilot-chat",
+		"agentExtensionOutputId": "GitHub.copilot-chat",
+		"voiceId": "",
+		"provider": {
+			"default": {
+				"id": "github",
+				"name": "GitHub"
+			},
+			"enterprise": {
+				"id": "github-enterprise",
+				"name": "GitHub Enterprise"
+			}
+		},
+		"completionsAdvancedSetting": "neuralInverse.advanced",
+		"providerUriSetting": "neuralInverse.advanced.authProvider",
+		"providerScopes": [["read:user"]],
+		"entitlementUrl": "",
+		"tokenEntitlementUrl": "",
+		"mcpRegistryDataUrl": "",
+		"managedSettingsUrl": ""
+	},
+	"sessionsWindowAllowedExtensions": []
 }

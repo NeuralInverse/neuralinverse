@@ -64,7 +64,7 @@ export class FirmwareStatusContribution extends Disposable implements IWorkbench
 			parts.push(`${session.registerMaps.length} peripherals`);
 		}
 
-		const text = `$(zap) ${parts.join(' · ')}`;
+		const text = `$(circuit-board) ${parts.join(' · ')}`;
 		const tooltip = [
 			'NeuralInverse Firmware Environment',
 			`MCU: ${cfg.manufacturer} ${cfg.family} ${cfg.variant}`,

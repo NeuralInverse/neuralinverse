@@ -1136,6 +1136,31 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		return this.requestService.lookupKerberosAuthorization(url);
 	}
 
+	async request(_windowId: number | undefined, url: string, options: any): Promise<{ statusCode: number; headers: any; body: string }> {
+		const http = await import('http');
+		const https = await import('https');
+		const parsedUrl = new URL(url);
+		const mod = parsedUrl.protocol === 'https:' ? https : http;
+		return new Promise((resolve, reject) => {
+			const req = mod.request(url, options, (res) => {
+				const chunks: Buffer[] = [];
+				res.on('data', (chunk: Buffer) => chunks.push(chunk));
+				res.on('end', () => {
+					resolve({
+						statusCode: res.statusCode ?? 0,
+						headers: res.headers,
+						body: Buffer.concat(chunks).toString(),
+					});
+				});
+			});
+			req.on('error', reject);
+			if (options?.body) {
+				req.write(options.body);
+			}
+			req.end();
+		});
+	}
+
 	async loadCertificates(_windowId: number | undefined): Promise<string[]> {
 		return this.requestService.loadCertificates();
 	}

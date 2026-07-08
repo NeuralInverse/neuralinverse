@@ -502,33 +502,8 @@ export function buildModelPickerItems(
 		});
 		return items;
 	}
-	if (setupRequired) {
-		// Trusted, but Chat still needs sign-in / setup before any model is
-		// usable. Surface a Sign In action (mirroring the send-message setup
-		// prompt) instead of a misleading lone "Auto". Like restricted mode this
-		// is checked before the empty-list branch since stale machine-cached
-		// entries can make `models` non-empty.
-		items.push({
-			kind: ActionListItemKind.Header,
-			label: localize('chat.modelPicker.setupRequired', "Sign in to use Copilot"),
-		});
-		items.push({
-			item: {
-				id: SETUP_REQUIRED_SIGN_IN_ACTION_ID,
-				enabled: !!onRequestSetup,
-				checked: false,
-				class: undefined,
-				tooltip: localize('chat.modelPicker.setupRequired.signInTooltip', "Sign in to GitHub Copilot to choose a model."),
-				label: localize('chat.modelPicker.setupRequired.signIn', "Sign in to use Copilot..."),
-				run: () => onRequestSetup?.()
-			},
-			kind: ActionListItemKind.Action,
-			label: localize('chat.modelPicker.setupRequired.signIn', "Sign in to use Copilot..."),
-			group: { title: '', icon: ThemeIcon.fromId(Codicon.signIn.id) },
-			disabled: !onRequestSetup,
-			hideIcon: false,
-		});
-		return items;
+	if (false) {
+		// Neural Inverse: sign-in gate removed — BYOLLM is always available
 	}
 	if (models.length === 0) {
 		if (!showAutoModel) {

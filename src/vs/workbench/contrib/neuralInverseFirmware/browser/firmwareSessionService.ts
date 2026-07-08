@@ -160,6 +160,9 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 	}
 
 	startSession(mcuConfig: IMCUConfig, boardName?: string, projectUri?: string): void {
+		if (this._workspace.getWorkspace().folders.length === 0) {
+			return;
+		}
 		this._mutate({
 			...DEFAULT_FIRMWARE_SESSION,
 			isActive: true,

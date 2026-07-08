@@ -37,7 +37,7 @@ import { IVoidSettingsService } from '../../../void/common/voidSettingsService.j
 import { IFileService } from '../../../../../platform/files/common/files.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { ISvdFetchService } from '../engine/datasheet/svdFetchService.js';
-import { IPeripheralRegisterMap, COMMON_BAUD_RATES, FirmwareComplianceFramework, IFirmwareSessionData, IBuildResult } from '../../common/firmwareTypes.js';
+import { IPeripheralRegisterMap, COMMON_BAUD_RATES, FirmwareComplianceFramework, IFirmwareSessionData, IBuildResult, IMCUConfig } from '../../common/firmwareTypes.js';
 import { IPinMuxService } from '../engine/pinMux/service.js';
 import { IClockTreeService } from '../engine/clockTree/service.js';
 import { IMemoryLayoutService } from '../engine/memory/service.js';
@@ -62,6 +62,9 @@ import { IClosedLoopService } from '../engine/closedLoop/closedLoopService.js';
 import { IClosedLoopIteration, ClosedLoopPhase } from '../engine/closedLoop/closedLoopTypes.js';
 import { ICoordinatedCaptureService } from '../engine/instruments/coordinatedCaptureService.js';
 import { IErrataService } from '../engine/errata/errataService.js';
+import { IProjectDetectorService } from '../projectDetectorService.js';
+import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
+import { IDialogService } from '../../../../../platform/dialogs/common/dialogs.js';
 
 
 // ─── DOM helpers (no innerHTML — Trusted Types compliant) ─────────────────────
@@ -164,6 +167,9 @@ export class FirmwarePart extends Part {
 		@ICoordinatedCaptureService private readonly _coordCaptureSvc: ICoordinatedCaptureService,
 		@IErrataService private readonly _errataSvc: IErrataService,
 		@IBuildSystemService private readonly _buildSvc: IBuildSystemService,
+		@IProjectDetectorService private readonly _projectDetector: IProjectDetectorService,
+		@IWorkspaceContextService private readonly _workspaceCtx: IWorkspaceContextService,
+		@IDialogService private readonly _dialogSvc: IDialogService,
 	) {
 		super(FIRMWARE_PART_ID, { hasTitle: false }, themeService, storageService, layoutService);
 		void this._schematicSvc;
@@ -272,10 +278,16 @@ export class FirmwarePart extends Part {
 		].join(';'));
 
 		// Brand
-		bar.appendChild($t('span', '\u2297 Neural Inverse  \u00b7  Firmware Console', [
+		const brand = $e('span', [
 			'color:var(--vscode-titleBar-activeForeground,var(--vscode-foreground))',
 			'font-weight:700', 'font-size:12px', 'letter-spacing:0.04em', 'flex:1',
-		].join(';')));
+			'display:inline-flex', 'align-items:center', 'gap:6px',
+		].join(';'));
+		const brandIcon = $e('span', 'font-size:14px;');
+		brandIcon.classList.add('codicon', 'codicon-circuit-board');
+		brand.appendChild(brandIcon);
+		brand.appendChild(document.createTextNode('Neural Inverse  \u00b7  Firmware Console'));
+		bar.appendChild(brand);
 
 		if (isActive) {
 			const s = this._session.session;
@@ -308,7 +320,15 @@ export class FirmwarePart extends Part {
 				].join(';')));
 			}
 
-			bar.appendChild(this._btn('End Session', false, () => this._session.endSession(), 'font-size:11px;padding:3px 10px;'));
+			bar.appendChild(this._btn('End Session', false, () => {
+				this._dialogSvc.confirm({
+					message: 'End firmware session?',
+					detail: 'The session state will be cleared. Your Firmware.inverse project file (if present) will be preserved on disk.',
+					primaryButton: 'End Session',
+				}).then(r => {
+					if (r.confirmed) { this._session.endSession(); }
+				});
+			}, 'font-size:11px;padding:3px 10px;'));
 		}
 
 		bar.appendChild($t('span', 'Cmd+Alt+F', 'color:var(--vscode-descriptionForeground);font-size:10px;opacity:0.5;'));
@@ -364,148 +384,267 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── IDLE Screen (Hardware Target Selector) ──────────────────────────────
+	// ─── IDLE Screen ─────────────────────────────────────────────────────────
+
+	private _idleScanning = false;
+	private _idleScanDone = false;
+	private _idleInverse: { mcu: string; board?: string; rtos?: string; buildSystem?: string; compliance?: string[] } | null = null;
+	private _idleSearchQuery = '';
+	private _idleSelectedMcu: string | null = null;
+	private _idleToolchain = 'Auto-detect';
+	private _idleRtos = 'Bare Metal';
+	private _idleCompliance: string[] = [];
+
+	private _hasWorkspace(): boolean {
+		return this._workspaceCtx.getWorkspace().folders.length > 0;
+	}
 
 	private _renderIdle(root: HTMLElement): void {
-		const wrap = $e('div', 'flex:1;display:flex;flex-direction:column;background:var(--vscode-editor-background);overflow:hidden;');
+		// ── Kick off background scan (once) ───────────────────────────────
+		if (!this._idleScanning && !this._idleInverse && !this._idleScanDone) {
+			this._idleScanDone = true;
+			this._loadInverseFile();
+		}
 
-		// Header Bar (IDE Native)
-		const header = $e('div', 'height:40px;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid var(--vscode-panel-border,var(--vscode-widget-border));background:var(--vscode-sideBarSectionHeader-background,var(--vscode-editor-background));flex-shrink:0;');
-		
-		const title = $e('div', 'display:flex;align-items:center;margin-right:32px;');
-		title.appendChild($t('span', '\u2297', 'color:var(--vscode-focusBorder);font-size:16px;margin-right:8px;'));
-		title.appendChild($t('span', 'NEURAL INVERSE FIRMWARE', 'font-size:11px;font-weight:700;letter-spacing:1px;color:var(--vscode-foreground);'));
-		header.appendChild(title);
+		// ── Auto-start if .inverse detected ───────────────────────────────
+		if (this._idleInverse && this._hasWorkspace()) {
+			const inv = this._idleInverse;
+			const entry = this._mcuDb.lookupVariant(inv.mcu) ?? this._mcuDb.search(inv.mcu, 1)[0];
+			if (entry) {
+				const cfg = this._mcuDb.toMCUConfig(entry);
+				this._session.startSession(cfg, inv.board);
+				if (inv.buildSystem) { this._session.setBuildSystem(inv.buildSystem); }
+				if (inv.rtos) { this._session.setRTOS(inv.rtos); }
+				if (inv.compliance && inv.compliance.length) { this._session.setComplianceFrameworks(inv.compliance as FirmwareComplianceFramework[]); }
+				return;
+			}
+		}
 
-		const searchBox = $e('div', 'flex:1;max-width:500px;position:relative;display:flex;align-items:center;');
-		const searchInput = $e('input', [
-			'width:100%', 'height:26px', 'padding:0 12px',
+		// ── MCU selector (only shows when no auto-detect) ─────────────────
+		const wrap = $e('div', 'flex:1;display:flex;flex-direction:column;overflow:hidden;');
+		let activeFilter = '';
+
+		// Search + filter bar
+		const searchBar = $e('div', 'padding:10px 16px 0 16px;');
+		const searchRow = $e('div', 'display:flex;align-items:center;gap:8px;');
+		const searchIcon = $e('span', 'font-size:14px;color:var(--vscode-descriptionForeground);');
+		searchIcon.classList.add('codicon', 'codicon-search');
+		searchRow.appendChild(searchIcon);
+		const mcuInput = $e('input', [
+			'flex:1', 'height:28px', 'padding:0 8px',
 			'border:1px solid var(--vscode-input-border,var(--vscode-widget-border))',
+			'border-radius:4px',
 			'background:var(--vscode-input-background)',
 			'color:var(--vscode-input-foreground)',
-			'font-size:12px', 'font-family:inherit', 'outline:none', 'border-radius:2px'
+			'font-size:12px', 'font-family:inherit', 'outline:none', 'box-sizing:border-box',
 		].join(';')) as HTMLInputElement;
-		searchInput.placeholder = 'Filter part numbers (e.g. STM32F407, NRF52840, RP2040)...';
-		searchInput.addEventListener('focus', () => searchInput.style.borderColor = 'var(--vscode-focusBorder)');
-		searchInput.addEventListener('blur', () => searchInput.style.borderColor = 'var(--vscode-input-border,var(--vscode-widget-border))');
-		searchBox.appendChild(searchInput);
-		header.appendChild(searchBox);
-
-		header.appendChild($t('div', `${this._mcuDb.count} Devices Loaded \u00b7 CMSIS-SVD Registry`, 'font-size:11px;color:var(--vscode-descriptionForeground);margin-left:auto;letter-spacing:0.5px;'));
-		wrap.appendChild(header);
-
-		// Body Area
-		const body = $e('div', 'flex:1;display:flex;flex-direction:row;overflow:hidden;');
-		
-		// Left Sidebar: Filters & Scan
-		const sidebar = $e('div', 'width:260px;background:var(--vscode-sideBar-background);border-right:1px solid var(--vscode-widget-border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;');
-		
-		const sectionHeader = (txt: string) => {
-			const hdr = $e('div', 'padding:12px 16px 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--vscode-sideBarTitle-foreground,var(--vscode-foreground));');
-			hdr.innerText = txt;
-			return hdr;
-		};
-
-		sidebar.appendChild(sectionHeader('Workspace Intelligence'));
-		const scanWrap = $e('div', 'padding:0 16px 16px;border-bottom:1px solid var(--vscode-widget-border);');
-		scanWrap.appendChild($t('p', 'Auto-detect toolchains & targets from CMakeLists.txt and platformio.ini.', 'font-size:11px;color:var(--vscode-descriptionForeground);margin:0 0 10px;line-height:1.4;'));
-		scanWrap.appendChild(this._btn('Auto-Scan Project', true, () => {}, 'width:100%;padding:4px 0;font-size:11px;'));
-		sidebar.appendChild(scanWrap);
-
-		sidebar.appendChild(sectionHeader('Filter by Manufacturer'));
-		const mfgList = $e('div', 'padding:0 16px 16px;display:flex;flex-direction:column;gap:6px;');
-		const sortedMfgs = this._mcuDb.manufacturers.slice(0, 15);
-		for (const mfg of sortedMfgs) {
-			const lbl = $e('label', 'font-size:11px;color:var(--vscode-foreground);display:flex;align-items:center;gap:8px;cursor:pointer;');
-			const cb = $e('input', 'margin:0;') as HTMLInputElement; cb.type = 'checkbox'; cb.checked = false;
-			lbl.appendChild(cb);
-			lbl.appendChild(document.createTextNode(mfg));
-			mfgList.appendChild(lbl);
-		}
-		sidebar.appendChild(mfgList);
-		body.appendChild(sidebar);
-
-		// Main Table Area
-		const tableArea = $e('div', 'flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--vscode-editor-background);');
-		
-		const colTemplate = '240px 100px 80px 80px 80px 1fr';
-		const tableHeader = $e('div', [
-			`display:grid`, `grid-template-columns:${colTemplate}`, `gap:16px`,
-			`padding:8px 32px`, `border-bottom:1px solid var(--vscode-widget-border)`,
-			`font-size:11px`, `font-weight:600`, `color:var(--vscode-descriptionForeground)`,
-			`text-transform:uppercase`, `flex-shrink:0`
-		].join(';'));
-		
-		['Part Number', 'Core', 'Clock', 'Flash', 'RAM', 'Manufacturer'].forEach(t => tableHeader.appendChild($t('div', t, 'padding:4px 0;')));
-		tableArea.appendChild(tableHeader);
-
-		const tableList = $e('div', 'flex:1;overflow-y:auto;padding:0;margin:0;');
-		tableArea.appendChild(tableList);
-		body.appendChild(tableArea);
-
-		wrap.appendChild(body);
-		root.appendChild(wrap);
-
-		// Render logic
-		this._renderMCUDataGrid(tableList, '');
-		searchInput.addEventListener('input', () => {
-			this._renderMCUDataGrid(tableList, searchInput.value);
+		mcuInput.placeholder = 'Filter MCU...';
+		mcuInput.value = this._idleSearchQuery;
+		mcuInput.addEventListener('focus', () => { mcuInput.style.borderColor = 'var(--vscode-focusBorder)'; });
+		mcuInput.addEventListener('blur', () => { mcuInput.style.borderColor = 'var(--vscode-input-border,var(--vscode-widget-border))'; });
+		mcuInput.addEventListener('input', () => {
+			this._idleSearchQuery = mcuInput.value;
+			this._idleSelectedMcu = null;
+			renderList(mcuInput.value, activeFilter);
 		});
+		searchRow.appendChild(mcuInput);
+		searchBar.appendChild(searchRow);
 
-		setTimeout(() => searchInput.focus(), 50);
-	}
-
-	private _renderMCUDataGrid(container: HTMLElement, query: string): void {
-		while (container.firstChild) { container.removeChild(container.firstChild); }
-		
-		const hits = this._mcuDb.search(query, 120); // Massive list natively handles 120 rows seamlessly
-
-		const colTemplate = '240px 100px 80px 80px 80px 1fr';
-
-		for (const entry of hits) {
-			const row = $e('div', [
-				`display:grid`, `grid-template-columns:${colTemplate}`, `gap:16px`,
-				`padding:6px 32px`, `align-items:center`,
-				`border-bottom:1px solid var(--vscode-widget-border)`,
-				`font-size:12px`, `cursor:pointer`,
-				`color:var(--vscode-foreground)`,
-				`transition:background-color 0.1s`
-			].join(';'));
-			// Ensure very faint borders
-			row.style.borderBottomColor = 'rgba(128, 128, 128, 0.15)';
-
-			row.addEventListener('mouseenter', () => row.style.background = 'var(--vscode-list-hoverBackground)');
-			row.addEventListener('mouseleave', () => row.style.background = 'transparent');
-			row.addEventListener('click', () => {
-				const cfg = this._mcuDb.toMCUConfig(entry);
-				this._session.startSession(cfg, entry.commonBoards[0]);
+		// Manufacturer filter tabs
+		const filters = ['All', 'ST', 'Nordic', 'Espressif', 'Raspberry Pi', 'NXP', 'Microchip', 'TI', 'Renesas'];
+		const filterRow = $e('div', 'display:flex;gap:2px;padding:8px 0 10px 0;overflow-x:auto;');
+		const filterBtns: HTMLButtonElement[] = [];
+		for (const f of filters) {
+			const fb = $e('button', [
+				'border:none', 'padding:3px 10px', 'border-radius:3px',
+				'font-size:10px', 'font-family:inherit', 'cursor:pointer', 'white-space:nowrap',
+				'transition:background 0.1s,color 0.1s',
+				f === 'All'
+					? 'background:var(--vscode-button-background);color:var(--vscode-button-foreground);'
+					: 'background:transparent;color:var(--vscode-descriptionForeground);',
+			].join(';')) as HTMLButtonElement;
+			fb.textContent = f;
+			fb.addEventListener('click', () => {
+				activeFilter = f === 'All' ? '' : f;
+				for (const b of filterBtns) {
+					b.style.background = 'transparent';
+					b.style.color = 'var(--vscode-descriptionForeground)';
+				}
+				fb.style.background = 'var(--vscode-button-background)';
+				fb.style.color = 'var(--vscode-button-foreground)';
+				renderList(this._idleSearchQuery, activeFilter);
 			});
-
-			// Part Number
-			row.appendChild($t('div', entry.variant, 'font-weight:600;color:var(--vscode-editor-foreground);letter-spacing:0.5px;'));
-			
-			// Core
-			row.appendChild($t('div', entry.core.toUpperCase(), 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;color:var(--vscode-symbolIcon-classForeground,var(--vscode-foreground));'));
-			
-			// Clock
-			row.appendChild($t('div', `${entry.clockMHz} MHz`, 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;'));
-			
-			// Flash
-			row.appendChild($t('div', _fmt(entry.flashSize), 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;'));
-			
-			// RAM
-			row.appendChild($t('div', _fmt(entry.ramSize), 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;'));
-			
-			// Vendor
-			row.appendChild($t('div', entry.manufacturer, 'font-size:11px;color:var(--vscode-descriptionForeground);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;'));
-
-			container.appendChild(row);
+			fb.addEventListener('mouseenter', () => { if (fb.style.background === 'transparent') { fb.style.background = 'var(--vscode-toolbar-hoverBackground)'; } });
+			fb.addEventListener('mouseleave', () => { if (fb.style.color !== 'var(--vscode-button-foreground)') { fb.style.background = 'transparent'; } });
+			filterBtns.push(fb);
+			filterRow.appendChild(fb);
 		}
+		searchBar.appendChild(filterRow);
+		wrap.appendChild(searchBar);
 
-		if (hits.length === 0) {
-			container.appendChild($t('div', 'No matching parts found in the registry.', 'padding:32px;color:var(--vscode-descriptionForeground);font-size:12px;font-style:italic;text-align:center;'));
+		// Separator
+		wrap.appendChild($e('div', 'height:1px;background:var(--vscode-widget-border);'));
+
+		// Results list
+		const list = $e('div', 'flex:1;overflow-y:auto;padding:4px 0;');
+		const renderList = (q: string, mfgFilter: string) => {
+			while (list.firstChild) { list.removeChild(list.firstChild); }
+			const searchTerm = mfgFilter ? (q ? `${mfgFilter} ${q}` : mfgFilter) : (q || 'STM32');
+			const hits = this._mcuDb.search(searchTerm, 40);
+			if (hits.length === 0) {
+				list.appendChild($t('div', 'No results', 'padding:20px;text-align:center;font-size:12px;color:var(--vscode-descriptionForeground);'));
+				return;
+			}
+			for (const h of hits) {
+				const row = $e('div', 'display:flex;align-items:center;gap:8px;padding:6px 16px;cursor:pointer;font-size:12px;transition:background 0.06s;');
+				// Chip icon
+				const chipIcon = $e('span', 'font-size:13px;color:var(--vscode-descriptionForeground);width:16px;text-align:center;');
+				chipIcon.classList.add('codicon', 'codicon-circuit-board');
+				row.appendChild(chipIcon);
+				// Variant name
+				row.appendChild($t('span', h.variant, 'font-weight:600;min-width:140px;'));
+				// Core badge
+				row.appendChild($t('span', h.core.toUpperCase(), 'font-size:9px;padding:1px 5px;border-radius:3px;background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);'));
+				// Specs
+				row.appendChild($t('span', `${h.clockMHz} MHz`, 'color:var(--vscode-descriptionForeground);font-size:11px;'));
+				row.appendChild($t('span', _fmt(h.flashSize) + ' flash', 'color:var(--vscode-descriptionForeground);font-size:11px;'));
+				row.appendChild($t('span', _fmt(h.ramSize) + ' RAM', 'color:var(--vscode-descriptionForeground);font-size:11px;'));
+				row.appendChild($e('div', 'flex:1;'));
+				// Manufacturer
+				row.appendChild($t('span', h.manufacturer, 'color:var(--vscode-descriptionForeground);font-size:10px;text-transform:uppercase;letter-spacing:0.03em;'));
+				row.addEventListener('mouseenter', () => { row.style.background = 'var(--vscode-list-hoverBackground)'; });
+				row.addEventListener('mouseleave', () => { row.style.background = ''; });
+				row.addEventListener('click', () => {
+					this._idleSelectedMcu = h.variant;
+					this._idleSearchQuery = h.variant;
+					const cfg = this._mcuDb.toMCUConfig(h);
+					this._session.startSession(cfg);
+					if (this._idleToolchain !== 'Auto-detect') { this._session.setBuildSystem(this._idleToolchain); }
+					if (this._idleRtos !== 'Bare Metal') { this._session.setRTOS(this._idleRtos); }
+					if (this._idleCompliance.length > 0) { this._session.setComplianceFrameworks(this._idleCompliance as FirmwareComplianceFramework[]); }
+				});
+				list.appendChild(row);
+			}
+		};
+		renderList(this._idleSearchQuery, activeFilter);
+		wrap.appendChild(list);
+
+		// Config bar
+		const configBar = $e('div', 'padding:8px 16px;border-top:1px solid var(--vscode-widget-border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;');
+
+		// Build system
+		const buildSel = this._select(['Auto-detect', 'CMake', 'Make', 'PlatformIO', 'ESP-IDF', 'Zephyr', 'Cargo', 'Arduino', 'STM32CubeIDE', 'Mbed']);
+		buildSel.style.cssText = 'height:24px;font-size:11px;padding:0 6px;';
+		buildSel.value = this._idleToolchain;
+		buildSel.addEventListener('change', () => { this._idleToolchain = buildSel.value; });
+		configBar.appendChild(buildSel);
+
+		// RTOS
+		const rtosSel = this._select(['Bare Metal', 'FreeRTOS', 'Zephyr', 'ThreadX', 'RIOT', 'ChibiOS', 'NuttX', 'Embassy']);
+		rtosSel.style.cssText = 'height:24px;font-size:11px;padding:0 6px;';
+		rtosSel.value = this._idleRtos;
+		rtosSel.addEventListener('change', () => { this._idleRtos = rtosSel.value; });
+		configBar.appendChild(rtosSel);
+
+		// Compliance (multi-select as chips)
+		const compBtn = $e('button', [
+			'border:1px solid var(--vscode-widget-border)', 'background:transparent',
+			'color:var(--vscode-foreground)', 'padding:2px 8px', 'border-radius:3px',
+			'font-size:11px', 'font-family:inherit', 'cursor:pointer', 'height:24px',
+		].join(';')) as HTMLButtonElement;
+		compBtn.textContent = this._idleCompliance.length > 0
+			? this._idleCompliance.length + ' standard' + (this._idleCompliance.length > 1 ? 's' : '')
+			: 'Compliance';
+		const compMenu = $e('div', [
+			'position:absolute', 'bottom:100%', 'left:0', 'margin-bottom:4px',
+			'background:var(--vscode-editorWidget-background,var(--vscode-editor-background))',
+			'border:1px solid var(--vscode-widget-border)', 'border-radius:4px',
+			'padding:4px 0', 'display:none', 'min-width:140px', 'z-index:100',
+			'box-shadow:0 2px 6px rgba(0,0,0,0.25)',
+		].join(';'));
+		const compIds = ['misra-c-2012', 'misra-c-2023', 'cert-c', 'iec-62304', 'iso-26262', 'do-178c', 'iec-61508', 'autosar'];
+		const compLabels = ['MISRA C:2012', 'MISRA C:2023', 'CERT C', 'IEC 62304', 'ISO 26262', 'DO-178C', 'IEC 61508', 'AUTOSAR'];
+		for (let i = 0; i < compIds.length; i++) {
+			const cid = compIds[i];
+			const item = $e('div', 'padding:4px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;');
+			const chk = $e('span', 'width:12px;font-size:11px;');
+			chk.textContent = this._idleCompliance.includes(cid) ? '✓' : ' ';
+			item.appendChild(chk);
+			item.appendChild($t('span', compLabels[i], ''));
+			item.addEventListener('mousedown', (e) => { e.preventDefault(); });
+			item.addEventListener('mouseenter', () => { item.style.background = 'var(--vscode-list-hoverBackground)'; });
+			item.addEventListener('mouseleave', () => { item.style.background = ''; });
+			item.addEventListener('click', () => {
+				if (this._idleCompliance.includes(cid)) {
+					this._idleCompliance = this._idleCompliance.filter(c => c !== cid);
+				} else {
+					this._idleCompliance = [...this._idleCompliance, cid];
+				}
+				chk.textContent = this._idleCompliance.includes(cid) ? '✓' : ' ';
+				compBtn.textContent = this._idleCompliance.length > 0
+					? this._idleCompliance.length + ' standard' + (this._idleCompliance.length > 1 ? 's' : '')
+					: 'Compliance';
+			});
+			compMenu.appendChild(item);
 		}
+		const compWrap = $e('div', 'position:relative;');
+		compWrap.appendChild(compMenu);
+		compBtn.addEventListener('click', () => { compMenu.style.display = compMenu.style.display === 'none' ? 'block' : 'none'; });
+		compBtn.addEventListener('blur', () => { setTimeout(() => { compMenu.style.display = 'none'; }, 120); });
+		compWrap.appendChild(compBtn);
+		configBar.appendChild(compWrap);
+
+		// Spacer + info
+		configBar.appendChild($e('div', 'flex:1;'));
+		const info = $e('span', 'font-size:10px;color:var(--vscode-descriptionForeground);');
+		const infoParts: string[] = [`${this._mcuDb.count} targets`];
+		if (this._idleScanning) { infoParts.push('scanning...'); }
+		if (!this._hasWorkspace()) { infoParts.push('no folder open'); }
+		info.textContent = infoParts.join(' \xb7 ');
+		configBar.appendChild(info);
+
+		wrap.appendChild(configBar);
+
+		root.appendChild(wrap);
+		setTimeout(() => mcuInput.focus(), 50);
 	}
+
+	private async _loadInverseFile(): Promise<void> {
+		try {
+			const det = this._projectDetector.lastResult;
+			if (det && det.projectType === 'firmware-inverse' && det.mcuVariant) {
+				this._idleInverse = {
+					mcu: det.mcuVariant,
+					board: det.boardName,
+					rtos: det.rtos,
+					buildSystem: det.buildSystem,
+					compliance: det.complianceFrameworks,
+				};
+				this._render();
+				return;
+			}
+			this._runIdleScan();
+		} catch { /* best-effort */ }
+	}
+
+	private async _runIdleScan(): Promise<void> {
+		this._idleScanning = true;
+		try {
+			const result = await this._projectDetector.scan();
+			if (result && result.confidence >= 0.5 && result.mcuVariant) {
+				this._idleInverse = {
+					mcu: result.mcuVariant,
+					board: result.boardName,
+					rtos: result.rtos,
+					buildSystem: result.buildSystem,
+					compliance: result.complianceFrameworks,
+				};
+			}
+		} catch { /* best-effort */ }
+		this._idleScanning = false;
+		this._render();
+	}
+
 
 
 	// ─── Active Tab Dispatch ──────────────────────────────────────────────────
@@ -5143,7 +5282,11 @@ export class FirmwarePart extends Part {
 
 	private _emptyState(title: string, desc: string, note?: string): HTMLElement {
 		const wrap = $e('div', 'text-align:center;padding:48px 24px;');
-		wrap.appendChild($t('div', '\u2297', 'font-size:44px;color:var(--vscode-descriptionForeground);opacity:0.2;margin-bottom:16px;'));
+		const emptyIcon = $e('div', 'font-size:44px;color:var(--vscode-descriptionForeground);opacity:0.2;margin-bottom:16px;');
+		const emptyIconSpan = $e('span');
+		emptyIconSpan.classList.add('codicon', 'codicon-circuit-board');
+		emptyIcon.appendChild(emptyIconSpan);
+		wrap.appendChild(emptyIcon);
 		wrap.appendChild($t('div', title, 'font-size:14px;font-weight:700;color:var(--vscode-editor-foreground);margin-bottom:8px;'));
 		wrap.appendChild($t('div', desc, 'font-size:12px;color:var(--vscode-descriptionForeground);max-width:380px;margin:0 auto;line-height:1.6;'));
 		if (note) {

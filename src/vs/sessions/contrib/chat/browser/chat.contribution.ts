@@ -16,6 +16,7 @@ import { RunScriptContribution } from './runScriptAction.js';
 import './nullInlineChatSessionService.js';
 import './nullChatTipService.js';
 import './modelPicker.js';
+import './niSessionsModelProvider.js';
 import './agentHostDelegation.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { KeybindingWeight } from '../../../../platform/keybinding/common/keybindingsRegistry.js';

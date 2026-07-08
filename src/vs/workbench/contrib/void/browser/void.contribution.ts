@@ -51,6 +51,12 @@ import '../common/mcpService.js'
 // internal tool registry (must load before chatThreadService and contributions that register tools)
 import './voidInternalToolService.js'
 
+// bridge void tools into VS Code's ILanguageModelToolsService (Copilot agent mode)
+import './voidToolsBridge.js'
+
+// bridge void models into ILanguageModelsService (Copilot model picker)
+import './voidModelProvider.js'
+
 // tools
 import './externalCommandExecutor.js'
 import './userInputRequestService.js'
