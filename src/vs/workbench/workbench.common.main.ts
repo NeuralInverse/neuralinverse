@@ -15,6 +15,8 @@ import './browser/workbench.zenMode.contribution.js';
 import './contrib/void/browser/void.contribution.js';
 import './contrib/neuralInverseModernisation/browser/neuralInverseModernisation.contribution.js';
 import './contrib/neuralInverseFirmware/browser/neuralInverseFirmware.contribution.js';
+import './contrib/neuralInverseChecks/browser/neuralInverseChecks.contribution.js';
+import './contrib/neuralInverseEnclave/browser/neuralInverseEnclave.contribution.js';
 
 // Agent-sessions color tokens — side-effect import so they register in the
 // global color registry and appear in the color-theme JSON schema.
