@@ -60,7 +60,7 @@ export class WorkflowVersioning {
 			if (!await this.fileService.exists(historyDir)) {
 				await this.fileService.createFolder(historyDir);
 			}
-			const archiveUri = this._versionUri(current.id, nextVersion - 1 === 0 ? 1 : nextVersion - 1);
+			const archiveUri = this._versionUri(current.id, current.version ?? 0);
 			// Archive the OLD version (before the new one overwrites it)
 			const content = JSON.stringify({ ...current, _archivedAt: Date.now() }, null, 2);
 			await this.fileService.writeFile(archiveUri, VSBuffer.fromString(content));
