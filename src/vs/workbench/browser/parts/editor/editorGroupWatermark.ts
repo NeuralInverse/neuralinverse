@@ -5,106 +5,56 @@
 
 import { $, append, clearNode, h } from '../../../../base/browser/dom.js';
 import { KeybindingLabel } from '../../../../base/browser/ui/keybindingLabel/keybindingLabel.js';
-import { coalesce, shuffle } from '../../../../base/common/arrays.js';
-import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
-import { isMacintosh, isWeb, OS } from '../../../../base/common/platform.js';
+import { Disposable, DisposableStore, IDisposable } from '../../../../base/common/lifecycle.js';
+import { OS } from '../../../../base/common/platform.js';
 import { localize } from '../../../../nls.js';
 import { MenuId } from '../../../../platform/actions/common/actions.js';
 import { HiddenItemStrategy, MenuWorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
-import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
-import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
-import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from '../../../../platform/storage/common/storage.js';
+import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { defaultKeybindingLabelStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { editorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+import { ColorScheme } from '../../../../platform/theme/common/theme.js';
+import { IThemeService } from '../../../../platform/theme/common/themeService.js';
 import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
+import { FileAccess } from '../../../../base/common/network.js';
 
-interface WatermarkEntry {
-	readonly id: string;
-	readonly text: string;
-	readonly when?: {
-		native?: ContextKeyExpression;
-		web?: ContextKeyExpression;
-	};
-}
-
-const showChatContextKey = ContextKeyExpr.and(ContextKeyExpr.equals('chatSetupHidden', false), ContextKeyExpr.equals('chatSetupDisabledInWorkspace', false));
-
-const openChat: WatermarkEntry = { text: localize('watermark.openChat', "Open Chat"), id: 'workbench.action.chat.open', when: { native: showChatContextKey, web: showChatContextKey } };
-const showCommands: WatermarkEntry = { text: localize('watermark.showCommands', "Show All Commands"), id: 'workbench.action.showCommands' };
-const gotoFile: WatermarkEntry = { text: localize('watermark.quickAccess', "Go to File"), id: 'workbench.action.quickOpen' };
-const openFile: WatermarkEntry = { text: localize('watermark.openFile', "Open File"), id: 'workbench.action.files.openFile' };
-const openFolder: WatermarkEntry = { text: localize('watermark.openFolder', "Open Folder"), id: 'workbench.action.files.openFolder' };
-const openFileOrFolder: WatermarkEntry = { text: localize('watermark.openFileFolder', "Open File or Folder"), id: 'workbench.action.files.openFileFolder' };
-const openRecent: WatermarkEntry = { text: localize('watermark.openRecent', "Open Recent"), id: 'workbench.action.openRecent' };
-const newUntitledFile: WatermarkEntry = { text: localize('watermark.newUntitledFile', "New Untitled Text File"), id: 'workbench.action.files.newUntitledFile' };
-const findInFiles: WatermarkEntry = { text: localize('watermark.findInFiles', "Find in Files"), id: 'workbench.action.findInFiles' };
-const toggleTerminal: WatermarkEntry = { text: localize({ key: 'watermark.toggleTerminal', comment: ['toggle is a verb here'] }, "Toggle Terminal"), id: 'workbench.action.terminal.toggleTerminal', when: { web: ContextKeyExpr.equals('terminalProcessSupported', true) } };
-const startDebugging: WatermarkEntry = { text: localize('watermark.startDebugging', "Start Debugging"), id: 'workbench.action.debug.start', when: { web: ContextKeyExpr.equals('terminalProcessSupported', true) } };
-const openSettings: WatermarkEntry = { text: localize('watermark.openSettings', "Open Settings"), id: 'workbench.action.openSettings' };
-
-const baseEntries: WatermarkEntry[] = [
-	openChat,
-	showCommands,
-];
-
-const emptyWindowEntries: WatermarkEntry[] = coalesce([
-	...baseEntries,
-	openRecent,
-	...(isMacintosh && !isWeb ? [openFileOrFolder] : [openFile, openFolder]),
-	isMacintosh && !isWeb ? newUntitledFile : undefined, // fill in one more on macOS to get to 5 entries
-]);
-
-const workspaceEntries: WatermarkEntry[] = [
-	...baseEntries,
-];
-
-const otherEntries: WatermarkEntry[] = [
-	gotoFile,
-	findInFiles,
-	startDebugging,
-	toggleTerminal,
-	openSettings,
+const NI_WORKSPACE_SHORTCUTS: { label: string; commandId: string }[] = [
+	{ label: 'Agents', commandId: 'neuralInverse.openAgentManager' },
+	{ label: 'Firmware', commandId: 'neuralInverse.openFirmware' },
+	{ label: 'Legacy', commandId: 'neuralInverse.openModernisation' },
 ];
 
 export class EditorGroupWatermark extends Disposable {
 
-	private static readonly CACHED_WHEN = 'editorGroupWatermark.whenConditions';
 	private static readonly SETTINGS_KEY = 'workbench.tips.enabled';
-	private static readonly MINIMUM_ENTRIES = 3;
-
-	private readonly cachedWhen: { [when: string]: boolean };
 
 	private readonly shortcuts: HTMLElement;
 	private readonly toolbarContainer: HTMLElement;
 	private readonly transientDisposables = this._register(new DisposableStore());
-	private readonly keybindingLabels = this._register(new DisposableStore());
+	private currentDisposables = new Set<IDisposable>();
 
-	private enabled = false;
 	private workbenchState: WorkbenchState;
 
 	constructor(
 		container: HTMLElement,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
-		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@IStorageService private readonly storageService: IStorageService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService
+		@IStorageService _storageService: IStorageService,
+		@IThemeService private readonly themeService: IThemeService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
 		super();
 
-		this.cachedWhen = this.storageService.getObject(EditorGroupWatermark.CACHED_WHEN, StorageScope.PROFILE, Object.create(null));
 		this.workbenchState = this.contextService.getWorkbenchState();
 
 		const elements = h('.editor-group-watermark-wrapper', [
 			h('.editor-group-watermark-toolbar-container@toolbarContainer'),
 			h('.editor-group-watermark', [
-				h('.watermark-container', [
-					h('.letterpress'),
-					h('.shortcuts@shortcuts'),
-				])
+				h('.shortcuts@shortcuts'),
 			])
 		]);
 
@@ -119,16 +69,12 @@ export class EditorGroupWatermark extends Disposable {
 		}));
 
 		this.registerListeners();
-
 		this.render();
 	}
 
 	private registerListeners(): void {
 		this._register(this.configurationService.onDidChangeConfiguration(e => {
-			if (
-				e.affectsConfiguration(EditorGroupWatermark.SETTINGS_KEY) &&
-				this.enabled !== this.configurationService.getValue<boolean>(EditorGroupWatermark.SETTINGS_KEY)
-			) {
+			if (e.affectsConfiguration(EditorGroupWatermark.SETTINGS_KEY)) {
 				this.render();
 			}
 		}));
@@ -140,78 +86,102 @@ export class EditorGroupWatermark extends Disposable {
 			}
 		}));
 
-		this._register(this.storageService.onWillSaveState(e => {
-			if (e.reason === WillSaveStateReason.SHUTDOWN) {
-				const entries = [...emptyWindowEntries, ...workspaceEntries, ...otherEntries];
-				for (const entry of entries) {
-					const when = isWeb ? entry.when?.web : entry.when?.native;
-					if (when) {
-						this.cachedWhen[entry.id] = this.contextKeyService.contextMatchesRules(when);
-					}
-				}
-
-				this.storageService.store(EditorGroupWatermark.CACHED_WHEN, JSON.stringify(this.cachedWhen), StorageScope.PROFILE, StorageTarget.MACHINE);
-			}
+		this._register(this.themeService.onDidColorThemeChange(() => {
+			this.render();
 		}));
 	}
 
 	private render(): void {
-		this.enabled = this.configurationService.getValue<boolean>(EditorGroupWatermark.SETTINGS_KEY);
-
 		clearNode(this.shortcuts);
 		this.transientDisposables.clear();
+		this.currentDisposables.forEach(d => d.dispose());
+		this.currentDisposables.clear();
 
-		if (!this.enabled) {
-			return;
-		}
+		const enabled = this.configurationService.getValue<boolean>(EditorGroupWatermark.SETTINGS_KEY);
+		if (!enabled) { return; }
 
-		const entries = this.filterEntries(this.workbenchState !== WorkbenchState.EMPTY ? workspaceEntries : emptyWindowEntries);
-		if (entries.length < EditorGroupWatermark.MINIMUM_ENTRIES) {
-			const additionalEntries = this.filterEntries(otherEntries);
-			shuffle(additionalEntries);
-			entries.push(...additionalEntries.slice(0, EditorGroupWatermark.MINIMUM_ENTRIES - entries.length));
-		}
+		const isEmpty = this.workbenchState === WorkbenchState.EMPTY;
+		const isDark = (() => {
+			const type = this.themeService.getColorTheme().type;
+			return type === ColorScheme.DARK || type === ColorScheme.HIGH_CONTRAST_DARK;
+		})();
 
-		const box = append(this.shortcuts, $('.watermark-box'));
+		const logoUri = FileAccess.asBrowserUri('vs/workbench/browser/parts/editor/media/neuralinverse_logo.png').toString(true);
 
-		const update = () => {
-			clearNode(box);
-			this.keybindingLabels.clear();
+		if (isEmpty) {
+			// Empty window: right-aligned Neural Inverse branding (matches OG)
+			this.shortcuts.style.cssText = 'display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;width:100%!important;height:100%!important;max-width:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important;';
 
-			for (const entry of entries) {
-				const keys = this.keybindingService.lookupKeybinding(entry.id);
-				if (!keys) {
-					continue;
+			const panel = append(this.shortcuts, $('div'));
+			panel.style.cssText = 'display:flex!important;flex-direction:column!important;align-items:flex-start!important;margin-right:8%!important;user-select:none!important;flex-shrink:0!important;width:auto!important;height:auto!important;';
+
+			// Brand row: logo + title inline
+			const brandRow = append(panel, $('div'));
+			brandRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:0;';
+
+			const logoImg = append(brandRow, $('img')) as HTMLImageElement;
+			logoImg.src = logoUri;
+			logoImg.style.cssText = `width:80px;height:80px;object-fit:contain;flex-shrink:0;mix-blend-mode:screen;margin-top:6px;${isDark ? '' : 'filter:invert(1);'}`;
+
+			const nameDiv = append(brandRow, $('div'));
+			nameDiv.style.cssText = 'font-size:52px;font-weight:700;color:var(--vscode-foreground);opacity:.82;letter-spacing:-1.5px;line-height:1;white-space:nowrap;';
+			nameDiv.textContent = 'Neural Inverse';
+
+			// Tagline indented to align under title (past the logo)
+			const tagline = append(panel, $('div'));
+			tagline.style.cssText = 'font-size:14px;color:var(--vscode-foreground);opacity:.38;text-align:left;line-height:1.75;margin-left:88px;';
+			tagline.textContent = 'AI-native IDE for regulated software.';
+
+		} else {
+			// Workspace open: logo + name footer + NI shortcut row
+			this.shortcuts.style.cssText = '';
+
+			const box = append(this.shortcuts, $('.watermark-box'));
+
+			// Footer: logo + "Neural Inverse"
+			const footer = append(box, $('div'));
+			footer.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:20px;opacity:0.55;user-select:none;cursor:default;';
+
+			const footerImg = append(footer, $('img')) as HTMLImageElement;
+			footerImg.src = logoUri;
+			footerImg.style.cssText = `height:32px;width:auto;object-fit:contain;${isDark ? 'filter:invert(1);' : ''}`;
+
+			const footerName = append(footer, $('div'));
+			footerName.style.cssText = 'font-size:22px;font-weight:500;color:var(--vscode-foreground);letter-spacing:-.5px;';
+			footerName.textContent = 'Neural Inverse';
+
+			// Shortcut row
+			const keysRow = append(box, $('div'));
+			keysRow.style.cssText = 'display:flex;flex-direction:row;justify-content:center;align-items:center;gap:48px;';
+
+			const updateShortcuts = () => {
+				clearNode(keysRow);
+				this.currentDisposables.forEach(d => d.dispose());
+				this.currentDisposables.clear();
+
+				for (const shortcut of NI_WORKSPACE_SHORTCUTS) {
+					const kb = this.keybindingService.lookupKeybinding(shortcut.commandId);
+					const dl = append(keysRow, $('dl'));
+					dl.style.cssText = 'display:flex;align-items:center;gap:5px;margin:0;';
+					const dt = append(dl, $('dt'));
+					dt.textContent = shortcut.label;
+					const dd = append(dl, $('dd'));
+					const kbLabel = new KeybindingLabel(dd, OS, { renderUnboundKeybindings: true, ...defaultKeybindingLabelStyles });
+					if (kb) { kbLabel.set(kb); }
+					this.currentDisposables.add(kbLabel);
 				}
+			};
 
-				const dl = append(box, $('dl'));
-				const dt = append(dl, $('dt'));
-				dt.textContent = entry.text;
-
-				const dd = append(dl, $('dd'));
-
-				const label = this.keybindingLabels.add(new KeybindingLabel(dd, OS, { renderUnboundKeybindings: true, ...defaultKeybindingLabelStyles }));
-				label.set(keys);
-			}
-		};
-
-		update();
-		this.transientDisposables.add(this.keybindingService.onDidUpdateKeybindings(update));
+			updateShortcuts();
+			this.transientDisposables.add(this.keybindingService.onDidUpdateKeybindings(updateShortcuts));
+		}
 	}
 
-	private filterEntries(entries: WatermarkEntry[]): WatermarkEntry[] {
-		const filteredEntries = entries
-			.filter(entry => {
-				if (this.cachedWhen[entry.id]) {
-					return true; // cached from previous session
-				}
-
-				const contextKey = isWeb ? entry.when?.web : entry.when?.native;
-				return !contextKey /* works without context */ || this.contextKeyService.contextMatchesRules(contextKey);
-			})
-			.filter(entry => !!CommandsRegistry.getCommand(entry.id))
-			.filter(entry => !!this.keybindingService.lookupKeybinding(entry.id));
-
-		return filteredEntries;
+	override dispose(): void {
+		this.currentDisposables.forEach(d => d.dispose());
+		this.currentDisposables.clear();
+		super.dispose();
 	}
 }
+
+registerColor('editorWatermark.foreground', { dark: transparent(editorForeground, 0.6), light: transparent(editorForeground, 0.68), hcDark: editorForeground, hcLight: editorForeground }, localize('editorLineHighlight', 'Foreground color for the labels in the editor watermark.'));

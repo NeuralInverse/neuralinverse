@@ -3,11 +3,5 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// VS Code logo silhouette path, extracted from sessions/contrib/chat/browser/media/vscode-icon.svg.
-// The aquarium cannot use that SVG file directly because each fish renders the
-// logo as live, same-document SVG geometry: fish.ts stores this path in a
-// shared <symbol>, then renders clipped <use> slices with staggered CSS
-// animations. That keeps the swimming-strip effect, currentColor species
-// tinting, and auxiliary-window support while avoiding duplicate path parsing
-// per fish.
-export const VSCODE_LOGO_PATH = 'M65.566 89.4264C66.889 89.9418 68.3976 89.9087 69.7329 89.2662L87.0271 80.9446C88.8444 80.0701 90 78.231 90 76.2132V19.7872C90 17.7695 88.8444 15.9303 87.0271 15.0559L69.7329 6.73395C67.9804 5.89069 65.9295 6.09724 64.3914 7.21543C64.1716 7.37517 63.9624 7.55352 63.7659 7.75007L30.6583 37.9548L16.2372 27.0081C14.8948 25.9891 13.0171 26.0726 11.7702 27.2067L7.14495 31.4141C5.61986 32.8014 5.61811 35.2007 7.14117 36.5902L19.6476 48.0001L7.14117 59.4099C5.61811 60.7995 5.61986 63.1988 7.14495 64.5861L11.7702 68.7934C13.0171 69.9276 14.8948 70.0111 16.2372 68.9921L30.6583 58.0453L63.7659 88.2501C64.2897 88.7741 64.9046 89.1688 65.566 89.4264ZM69.0128 28.9311L43.8917 48.0001L69.0128 67.069V28.9311Z';
+// Neural Inverse logo silhouette path, traced from neuralinverse_logo.png and scaled to 96x96 viewBox.
+export const VSCODE_LOGO_PATH = 'M51.675 39.075 L51.562 54.188 L50.438 56.438 C48.225 60.788 40.837 67.125 33.675 70.725 C32.288 71.438 31.05 72.0 30.938 72.0 C30.825 72.0 30.75 65.287 30.825 57.075 L30.938 42.188 L32.175 39.675 C33.712 36.525 37.65 32.513 42.3 29.325 C45.525 27.112 50.887 24.0 51.487 24.0 C51.637 24.0 51.712 30.788 51.675 39.075 M57.038 36.75 C60.337 38.7 63.525 41.625 64.462 43.613 C65.175 45.113 65.25 45.9 65.25 52.988 C65.25 57.263 65.138 60.75 64.987 60.75 C64.312 60.75 59.438 57.525 57.637 55.875 C54.188 52.725 54.0 52.087 54.0 43.013 C54.0 38.738 54.112 35.25 54.262 35.25 C54.413 35.25 55.65 35.925 57.038 36.75';

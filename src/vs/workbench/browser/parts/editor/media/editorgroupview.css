@@ -107,6 +107,11 @@
 	justify-content: center;
 }
 
+.monaco-workbench .part.editor > .content.empty .editor-group-container > .editor-group-watermark-wrapper > .editor-group-watermark {
+	max-width: none;
+	width: 100%;
+}
+
 .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper > .editor-group-watermark > .watermark-container {
 	display: flex;
 	width: 100%;
@@ -127,29 +132,37 @@
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper .editor-group-watermark .letterpress {
-	width: 100%;
-	max-height: 100%;
-	aspect-ratio: 1/1;
-	background-image: url('./letterpress-light.svg');
+	width: 120px;
+	height: 120px;
+	background-image: url('./neuralinverse_logo.png');
 	background-size: contain;
-	background-position-x: center;
+	background-position: center;
 	background-repeat: no-repeat;
-	max-width: 256px;
+	opacity: 0.08;
 }
 
 .monaco-workbench.vs-dark .part.editor > .content .editor-group-container .editor-group-watermark .letterpress {
-	background-image: url('./letterpress-dark.svg');
+	background-image: url('./neuralinverse_logo.png');
+	filter: invert(1);
+	opacity: 0.1;
 }
 
 .monaco-workbench.hc-light .part.editor > .content .editor-group-container .editor-group-watermark .letterpress {
-	background-image: url('./letterpress-hcLight.svg');
+	background-image: url('./neuralinverse_logo.png');
+	opacity: 0.08;
 }
 
 .monaco-workbench.hc-black .part.editor > .content .editor-group-container .editor-group-watermark .letterpress {
-	background-image: url('./letterpress-hcDark.svg');
+	background-image: url('./neuralinverse_logo.png');
+	filter: invert(1);
+	opacity: 0.1;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper .editor-group-watermark .shortcuts {
+	width: 100%;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper .editor-group-watermark .ni-shortcuts {
 	width: 100%;
 }
 
