@@ -26,6 +26,7 @@ import { Disposable } from '../../../../base/common/lifecycle.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
+import { URI } from '../../../../base/common/uri.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
@@ -90,6 +91,16 @@ export interface IWorkflowAgentService {
 	runAgent(agentId: string, input: string): Promise<IAgentRun>;
 	/** Cancel an active run */
 	cancelRun(runId: string): void;
+	/**
+	 * Run a single-step ad-hoc agent scoped to a specific working directory.
+	 * Streams progress lines via onProgress. Resolves on success, rejects on failure or cancellation.
+	 */
+	runQuickAgent(
+		goal: string,
+		workingDirectory: string,
+		onProgress: (line: string) => void,
+		cancellation: { cancelled: boolean },
+	): Promise<void>;
 
 	// ─── State ──────────────────────────────────────────────────────────────
 	getActiveRuns(): IAgentRun[];
@@ -405,6 +416,104 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 
 	getRun(runId: string): IAgentRun | undefined {
 		return this._activeRuns.get(runId) ?? this._history.find(r => r.id === runId);
+	}
+
+	async runQuickAgent(
+		goal: string,
+		workingDirectory: string,
+		onProgress: (line: string) => void,
+		cancellation: { cancelled: boolean },
+	): Promise<void> {
+		const chatModel = this.settingsService.state.modelSelectionOfFeature['Chat'];
+		if (!chatModel) {
+			throw new Error('No model selected. Configure a model in Neural Inverse LLM Settings.');
+		}
+
+		const agents = this.agentStore.getAgents();
+		const baseAgent = agents[0] ?? {
+			id: 'background-executor',
+			name: 'Background Executor',
+			description: 'Ad-hoc executor for background agent tasks',
+			systemInstructions: 'You are a background coding agent. Complete the requested task by reading and modifying files in the working directory.',
+			allowedTools: [...ALL_FS_TOOLS, ...ALL_TERMINAL_TOOLS, ...ALL_GIT_TOOLS].map(t => t.name),
+			maxIterations: 30,
+		};
+		// Always use the user's configured Chat model — builtin agents hardcode a
+		// providerName that may differ from the user's actual provider, causing auth failures.
+		const agentDef = { ...baseAgent, model: chatModel };
+
+		const syntheticWorkflow: IWorkflowDefinition = {
+			id: `bg-quick-${agentDef.id}`,
+			name: `Background: ${agentDef.name}`,
+			description: goal,
+			trigger: 'manual',
+			enabled: true,
+			steps: [{
+				id: 'main',
+				agentId: agentDef.id,
+				role: 'executor',
+				allowedTools: agentDef.allowedTools,
+				maxIterations: agentDef.maxIterations ?? 30,
+			}],
+		};
+
+		const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
+		// Only the overridden agentDef (with chatModel) goes in the map.
+		// Do NOT populate from the store — store agents carry hardcoded providerNames
+		// (e.g. 'anthropic') that would overwrite chatModel at the same key.
+		const agentMap = new Map([[agentDef.id, agentDef]]);
+
+		const internalToken: ICancellationToken = { cancelled: false };
+		this._activeRuns.set(run.id, run);
+		this._activeCancellations.set(run.id, internalToken);
+		this._onDidChangeRun.fire(run);
+
+		// Stream new outputLog lines to the caller as they appear
+		const stepCursors = new Map<string, number>();
+		const progressSub = this._onDidChangeRun.event(updatedRun => {
+			if (updatedRun.id !== run.id) { return; }
+			for (const step of updatedRun.steps) {
+				const cursor = stepCursors.get(step.stepId) ?? 0;
+				for (let i = cursor; i < step.outputLog.length; i++) {
+					onProgress(step.outputLog[i]);
+				}
+				stepCursors.set(step.stepId, step.outputLog.length);
+			}
+		});
+
+		// Mirror external cancellation into the internal token
+		const cancelInterval = setInterval(() => {
+			if (cancellation.cancelled && !internalToken.cancelled) {
+				internalToken.cancelled = true;
+			}
+		}, 200);
+
+		const modelSel = this.settingsService.state.modelSelectionOfFeature['Chat'];
+		const baseCtx = {
+			workspaceUri: URI.file(workingDirectory),
+			fileService: this.fileService,
+			modelInfo: modelSel ? { provider: modelSel.providerName, model: modelSel.modelName } : undefined,
+		};
+
+		try {
+			await this._orchestrator.run(
+				syntheticWorkflow, run, agentMap, baseCtx, goal, internalToken,
+				updatedRun => this._onDidChangeRun.fire(updatedRun),
+			);
+		} finally {
+			clearInterval(cancelInterval);
+			progressSub.dispose();
+			this._finalizeRun(run);
+		}
+
+		if (run.status === 'cancelled' || internalToken.cancelled) {
+			const err = new Error('cancelled');
+			(err as any).cancelled = true;
+			throw err;
+		}
+		if (run.status === 'failed') {
+			throw new Error(run.error ?? 'Background agent run failed');
+		}
 	}
 
 	// ─── Internal ─────────────────────────────────────────────────────────────
