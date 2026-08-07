@@ -78,7 +78,7 @@ jobs:
         run: npm run buildreact
 
       - name: Upload React build output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: react-out
           path: src/vs/workbench/contrib/void/browser/react/out/
@@ -262,7 +262,7 @@ jobs:
         run: Get-ChildItem .build\release\ | Format-Table Name, Length
 
       - name: Upload x64 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-x64
           path: .build/release/
@@ -445,7 +445,7 @@ jobs:
         run: Get-ChildItem .build\release\ | Format-Table Name, Length
 
       - name: Upload arm64 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-arm64
           path: .build/release/
