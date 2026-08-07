@@ -39,7 +39,7 @@ export function parseToolCalls(text: string): IParsedToolCall[] {
 	const calls: IParsedToolCall[] = [];
 
 	// Match every ```json ... ``` block in the response
-	const blockRegex = /```(?:json)?\s*\n([\s\S]*?)\n\s*```/g;
+	const blockRegex = /```(?:json)?\s*\n([\s\S]*?)\n?\s*```/g;
 	let match: RegExpExecArray | null;
 
 	while ((match = blockRegex.exec(text)) !== null) {
@@ -79,7 +79,7 @@ export function hasToolCalls(text: string): boolean {
  * Strip all JSON tool-call blocks from a response to get the prose around them.
  */
 export function stripToolCallBlocks(text: string): string {
-	return text.replace(/```(?:json)?\s*\n[\s\S]*?\n\s*```/g, '').trim();
+	return text.replace(/```(?:json)?\s*\n[\s\S]*?\n?\s*```/g, '').trim();
 }
 
 function _extractCall(obj: unknown): IParsedToolCall | null {

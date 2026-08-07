@@ -74,10 +74,14 @@ export class ApprovalGateManager {
 		// Auto-approve timeout
 		if (request.autoApproveAt) {
 			const delayMs = Math.max(0, request.autoApproveAt - Date.now());
+			let handle: ReturnType<typeof setTimeout>;
 			const timeoutPromise = new Promise<IApprovalResponse>(resolve => {
-				setTimeout(() => resolve({ decision: 'approve' }), delayMs);
+				handle = setTimeout(() => resolve({ decision: 'approve' }), delayMs);
 			});
-			return Promise.race([userResponsePromise, timeoutPromise]).finally(cleanup);
+			return Promise.race([userResponsePromise, timeoutPromise]).finally(() => {
+				clearTimeout(handle);
+				cleanup();
+			});
 		}
 
 		return userResponsePromise.finally(cleanup);
