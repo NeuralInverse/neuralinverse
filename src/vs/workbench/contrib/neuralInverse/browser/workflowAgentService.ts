@@ -275,13 +275,11 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		if (!workflow.enabled) throw new Error(`Workflow "${workflowId}" is disabled`);
 
 		// Build agent map from AgentRegistryService
-		const agentMap = new Map(this.agentStore.getAgents().map(a => [
-			// AgentRegistryService uses name as key; we also try the file basename
-			a.name.toLowerCase().replace(/\s+/g, '-'),
-			a,
-		]));
-		// Also index by raw name
+		// Workflow steps reference agents by `id`; keep name aliases for
+		// definitions written before ids were stable.
+		const agentMap = new Map(this.agentStore.getAgents().map(a => [a.id, a]));
 		for (const a of this.agentStore.getAgents()) {
+			agentMap.set(a.name.toLowerCase().replace(/\s+/g, '-'), a);
 			agentMap.set(a.name, a);
 		}
 
@@ -347,7 +345,11 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			// Workflow not in registry — use the synthetic one directly
 			const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
 			const cancellation: ICancellationToken = { cancelled: false };
-			const agentMap = new Map(this.agentStore.getAgents().map(a => [a.name, a]));
+			const agentMap = new Map(this.agentStore.getAgents().map(a => [a.id, a]));
+			for (const a of this.agentStore.getAgents()) {
+				agentMap.set(a.name.toLowerCase().replace(/\s+/g, '-'), a);
+				agentMap.set(a.name, a);
+			}
 			const folder = this.workspaceContextService.getWorkspace().folders[0];
 
 			this._activeRuns.set(run.id, run);
