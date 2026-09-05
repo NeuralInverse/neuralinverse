@@ -29,6 +29,14 @@ import { ILLMMessageService } from '../../../void/common/sendLLMMessageService.j
 import { IVoidSettingsService } from '../../../void/common/voidSettingsService.js';
 import { ModelSelection } from '../../../void/common/voidSettingsTypes.js';
 import { LLMChatMessage } from '../../../void/common/sendLLMMessageTypes.js';
+import { getModelCapabilities } from '../../../void/common/modelCapabilities.js';
+import { CompactableMessage, ConversationCompactor, capToolResultForHistory, createInactivityWatchdog, renderConversationSummaryMessage } from '../../../void/browser/conversationCompactor.js';
+import { IContextLedgerService } from '../../../void/browser/contextLedgerService.js';
+import { EpisodeSummarizer } from '../../../void/browser/episodeSummarizer.js';
+import { ILedgerAppendInput, ILedgerEntry } from '../../../void/common/ledgerTypes.js';
+import { DEFAULT_LEDGER_POLICY } from '../../../void/common/ledgerPolicy.js';
+import { buildWorkingBrief } from '../../../void/common/workingBriefBuilder.js';
+import { resolveCloseBoundary, noteBoundaryMissed, resetBoundaryMissTelemetry } from '../../../void/common/ledgerBoundary.js';
 import { IAgentDefinition, IWorkflowStep, IStepRun, IToolCallRecord, IToolExecutionContext, IStepToolCacheConfig } from '../../common/workflowTypes.js';
 import { ScopedToolRegistry } from '../tools/toolRegistry.js';
 import { parseToolCalls, stripToolCallBlocks } from './toolCallParser.js';
@@ -37,6 +45,18 @@ import { ToolResultCache } from './toolCache.js';
 import { BudgetTracker } from './budgetTracker.js';
 
 const DEFAULT_MAX_ITERATIONS = 20;
+
+/** Retries (on top of the first attempt) when the LLM returns an empty response */
+const MAX_EMPTY_RESPONSE_RETRIES = 2;
+
+/** A provider stream that emits no chunks for this long is treated as dead and aborted. */
+const LLM_STALL_MS = 180_000; // 3 minutes
+
+/**
+ * Appended to the working-brief message when the ledger path rebuilds the
+ * history, so the model knows older turns were archived, not deleted.
+ */
+const LEDGER_BRIEF_TRAILER = '\n\n(Working memory above summarizes the earlier archived conversation — nothing was lost. The most recent messages follow.)';
 
 export interface IPriorStepOutput {
 	stepId: string;
@@ -56,6 +76,20 @@ export class AgentExecutor {
 	/** Set at the start of each execute() call from the agent definition */
 	private _modelSelection: ModelSelection | undefined;
 
+	/** Lazy — needs the constructor-injected llmService */
+	private _compactorInstance: ConversationCompactor | undefined;
+	private _compactor(): ConversationCompactor {
+		if (!this._compactorInstance) this._compactorInstance = new ConversationCompactor(this.llmService)
+		return this._compactorInstance
+	}
+
+	// ─── Context Ledger (task M5, phase 5) ───────────────────────────────
+	// Flag ON: every message pushed into `history` is also journaled
+	// append-only, and compaction folds the aged prefix into immutable
+	// episodes + a deterministic working brief — nothing is ever dropped.
+	// Flag OFF: the ConversationCompactor path stays byte-identical to today.
+	private _ledgerWarned = false;
+
 	constructor(
 		private readonly llmService: ILLMMessageService,
 		private readonly settingsService: IVoidSettingsService,
@@ -64,7 +98,31 @@ export class AgentExecutor {
 		private readonly toolCache?: ToolResultCache,
 		private readonly cacheConfig?: IStepToolCacheConfig,
 		private readonly budgetTracker?: BudgetTracker,
+		// Optional + decorated on purpose: the executor is `new`ed positionally
+		// by WorkflowOrchestrator (and tests), so a required param would break
+		// those call sites; created through the instantiation service the
+		// decorator injects it. Without a ledger service the ledger path stays
+		// off and the legacy compactor keeps running, exactly as before.
+		@IContextLedgerService private readonly contextLedgerService?: IContextLedgerService,
 	) {}
+
+	/** Flag ON and a ledger service is wired in; otherwise the legacy compactor owns the path. */
+	private _ledgerEnabled(): boolean {
+		return !!this.contextLedgerService && this.settingsService.state.globalSettings.contextLedgerEnabled;
+	}
+
+	private _warnLedgerOnce(): void {
+		if (this._ledgerWarned) return;
+		this._ledgerWarned = true;
+		console.warn('[AgentExecutor] context ledger degraded — using legacy compaction; the step continues unaffected');
+	}
+
+	/** Fire-and-forget journal append; a ledger failure warns once and never blocks the loop. */
+	private _journal(threadId: string, input: ILedgerAppendInput): void {
+		const ledger = this.contextLedgerService;
+		if (!ledger) return;
+		ledger.append(threadId, input).catch(() => this._warnLedgerOnce());
+	}
 
 	/**
 	 * Run the agent loop for one step.
@@ -78,6 +136,7 @@ export class AgentExecutor {
 		ctx: IToolExecutionContext,
 		input: string,
 		cancellation: ICancellationToken,
+		priorConversation: LLMChatMessage[] = [],
 	): Promise<void> {
 		// Resolve model selection: prefer agent's own model, fall back to global Chat model.
 		// agent.model stores providerName as plain string (JSON), so cast to ModelSelection.
@@ -91,6 +150,15 @@ export class AgentExecutor {
 
 		const maxIterations = step.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 		const history: LLMChatMessage[] = [];
+
+		// Context Ledger conversation key (task M5 phase 5): the executor runs
+		// exactly one agent and is re-created per step attempt, so the durable
+		// conversation is keyed by the agent, not by run/step — journal,
+		// episodes and brief persist across every run of this agent. Concurrent
+		// runs of the same agent therefore share one archive; the Agents-tab
+		// conversation memory is keyed per conversationId in
+		// WorkflowAgentService instead.
+		const ledgerThreadId = 'exec:' + agent.id;
 
 		// ── System prompt (with optional context pre-injection) ─────────────
 		const toolSchemas = this.scopedTools.getSchema();
@@ -115,9 +183,31 @@ export class AgentExecutor {
 
 		const systemPrompt = this._buildSystemPrompt(agent, toolSchemas, priorOutputs, workspaceContext);
 		history.push({ role: 'system', content: systemPrompt });
+		// Journal the system prompt once per run (role 'system').
+		if (this._ledgerEnabled()) {
+			this._journal(ledgerThreadId, { role: 'system', content: systemPrompt });
+		}
+
+		// ── Prior conversation (multi-turn agent chat) ────────────────────────
+		// Ad-hoc agent runs from the Agents tab pass the ongoing conversation so
+		// follow-up messages keep their context. Workflow runs pass [] (steps get
+		// context via priorOutputs instead).
+		history.push(...priorConversation);
+		if (this._ledgerEnabled()) {
+			for (const m of priorConversation) {
+				const role = (m as { role: string }).role;
+				this._journal(ledgerThreadId, {
+					role: role === 'assistant' ? 'assistant' : role === 'system' ? 'system' : 'user',
+					content: _extractMessageText(m),
+				});
+			}
+		}
 
 		// ── Initial user message ───────────────────────────────────────────────
 		history.push({ role: 'user', content: input });
+		if (this._ledgerEnabled()) {
+			this._journal(ledgerThreadId, { role: 'user', content: input });
+		}
 
 		// ── Budget tracker: begin step ────────────────────────────────────────
 		if (this.budgetTracker) {
@@ -139,12 +229,30 @@ export class AgentExecutor {
 			// LLMChatMessage is a union (Anthropic/OpenAI/Gemini); extract text safely.
 			const inputText = history.map(m => _extractMessageText(m)).join('');
 
-			let responseText: string;
+			// Pre-send context management: fold the aged part of the running
+			// conversation into a summarized message when it approaches the
+			// model's context window (tool outputs grow the history fast).
+			await this._compactHistoryIfNeeded(history, ctx, step, agent);
+
+			let responseText: string | null = null;
 			try {
-				responseText = await this._callLLM(history);
+				// An empty response is usually transient (proxy hiccup, dropped
+				// stream) — retry instead of finishing the step with no output,
+				// which the UI renders as a bare "(done)".
+				for (let attempt = 0; attempt <= MAX_EMPTY_RESPONSE_RETRIES; attempt++) {
+					const t = await this._callLLM(history);
+					if (t && t.trim()) { responseText = t; break; }
+					ctx.log(`[${step.id}] empty LLM response (attempt ${attempt + 1}/${MAX_EMPTY_RESPONSE_RETRIES + 1})`);
+				}
 			} catch (e: any) {
 				stepRun.status = 'failed';
 				stepRun.error = `LLM error: ${e.message}`;
+				stepRun.endedAt = Date.now();
+				return;
+			}
+			if (responseText === null) {
+				stepRun.status = 'failed';
+				stepRun.error = `LLM returned an empty response after ${MAX_EMPTY_RESPONSE_RETRIES + 1} attempts`;
 				stepRun.endedAt = Date.now();
 				return;
 			}
@@ -168,6 +276,9 @@ export class AgentExecutor {
 			}
 
 			history.push({ role: 'assistant', content: responseText });
+			if (this._ledgerEnabled()) {
+				this._journal(ledgerThreadId, { role: 'assistant', content: responseText });
+			}
 			stepRun.outputLog.push(responseText);
 
 			// ── Parse tool calls ─────────────────────────────────────────────
@@ -197,8 +308,31 @@ export class AgentExecutor {
 				}
 			}
 
-			// Feed results back as user message for next iteration
-			history.push({ role: 'user', content: toolResultParts.join('\n\n') });
+			// Feed results back as user message for next iteration.
+			// Each result is capped so one huge tool output (file dump, build log)
+			// can't crowd out everything else in later iterations.
+			history.push({ role: 'user', content: toolResultParts.map(p => capToolResultForHistory(p)).join('\n\n') });
+			if (this._ledgerEnabled()) {
+				// Journal each tool result as its own 'tool' entry. The ledger
+				// stores the full uncapped output — capToolResultForHistory bounds
+				// only the send path; archiving must never lose bytes. exitCode is
+				// best-effort from the run records just written (success → 0,
+				// failure → 1; skipped when the record is missing or cancelled).
+				const records = stepRun.toolCalls.slice(-toolCalls.length);
+				for (let i = 0; i < toolCalls.length; i++) {
+					const part = toolResultParts[i];
+					if (!part) continue; // cancelled before this call ran
+					const record = records[i];
+					this._journal(ledgerThreadId, {
+						role: 'tool',
+						name: toolCalls[i].tool,
+						content: part,
+						meta: record && record.toolName === toolCalls[i].tool
+							? { exitCode: record.result.success ? 0 : 1 }
+							: undefined,
+					});
+				}
+			}
 		}
 
 		// Max iterations hit
@@ -325,22 +459,215 @@ export class AgentExecutor {
 				return;
 			}
 
-			this.llmService.sendLLMMessage({
+			// Providers disagree on where the system prompt may live. The executor
+			// keeps it as messages[0]; move it where the provider expects it:
+			// - anthropic/bedrock/gemini: separate `system`/`systemInstruction` param
+			//   (a system role inside `messages` is rejected by the API)
+			// - gemini: messages must use `parts` instead of `content`
+			// - openai-compatible: native system role inside `messages` works
+			const providerName = modelSelection.providerName;
+			let requestMessages = messages;
+			let separateSystemMessage: string | undefined;
+			const first = messages[0] as { role?: string; content?: unknown } | undefined;
+			if (first && first.role === 'system' && typeof first.content === 'string') {
+				if (providerName === 'anthropic' || providerName === 'awsBedrock' || providerName === 'gemini') {
+					separateSystemMessage = first.content;
+					requestMessages = messages.slice(1);
+				}
+			}
+			if (providerName === 'gemini') {
+				requestMessages = requestMessages.map((m): LLMChatMessage => {
+					const role = (m as { role: string }).role;
+					return { role: role === 'assistant' ? 'model' as const : 'user' as const, parts: [{ text: _extractMessageText(m) }] } as LLMChatMessage;
+				});
+			}
+
+			let stalled = false;
+			let cancelToken: string | null = null;
+			// Abort streams that stop emitting chunks entirely, so a dead
+			// connection can't hang the step forever.
+			const watchdog = createInactivityWatchdog(LLM_STALL_MS, () => {
+				stalled = true;
+				if (cancelToken) this.llmService.abort(cancelToken);
+			});
+
+			cancelToken = this.llmService.sendLLMMessage({
 				messagesType: 'chatMessages',
-				messages,
+				messages: requestMessages,
 				modelSelection,
 				modelSelectionOptions: undefined,
 				overridesOfModel: undefined,
-				separateSystemMessage: undefined,
-				chatMode: 'agent',
-				onText: () => {},
-				onFinalMessage: (p) => resolve(p.fullText),
-				onError: (p) => reject(new Error(p.message || p.fullError?.message || 'LLM error')),
-				onAbort: () => reject(new Error('LLM call aborted')),
+				separateSystemMessage,
+				// The executor manages its own tool protocol (JSON blocks +
+				// ScopedToolRegistry) and advertises it in the system prompt.
+				// chatMode 'agent' made the Void layer inject a second,
+				// unrelated tool catalog (filtered builtins + all MCP tools),
+				// so models saw contradictory tool lists and called tools that
+				// exist in neither world coherently. null = no layer tools.
+				chatMode: null,
+				onText: () => { watchdog.reset(); },
+				onFinalMessage: (p) => { watchdog.dispose(); resolve(p.fullText); },
+				onError: (p) => { watchdog.dispose(); reject(new Error(p.message || p.fullError?.message || 'LLM error')); },
+				onAbort: () => {
+					watchdog.dispose();
+					reject(new Error(stalled
+						? `LLM stream stalled — no data received for over ${Math.round(LLM_STALL_MS / 60_000)} minutes`
+						: 'LLM call aborted'));
+				},
 				logging: { loggingName: 'WorkflowAgent' },
 				allowedToolNames: [],
 			});
+
+			// sendLLMMessage already invoked onError synchronously when returning null
+			if (!cancelToken) watchdog.dispose();
 		});
+	}
+
+	// ─── History Compaction ───────────────────────────────────────────────────
+
+	/**
+	 * Fold the aged part of the running history (everything after the system
+	 * message) into one summarized user message when it approaches the model's
+	 * context window. Mutates `history` in place. Best-effort: on any failure
+	 * the history is left untouched.
+	 */
+	private async _compactHistoryIfNeeded(history: LLMChatMessage[], ctx: IToolExecutionContext, step: IWorkflowStep, agent: IAgentDefinition): Promise<void> {
+		// Flag ON: the ledger flow below owns compaction (including the
+		// decided-nothing case) and the legacy compactor is never reached.
+		// Only a ledger PROBLEM falls back to it — a ledger failure must
+		// never fail a step.
+		if (this._ledgerEnabled()) {
+			try {
+				await this._compactHistoryViaLedger(history, ctx, step, agent);
+				return;
+			} catch {
+				this._warnLedgerOnce();
+				// fall through to the legacy compactor
+			}
+		}
+
+		const modelSelection = this._modelSelection;
+		if (!modelSelection || history.length < 8) return;
+
+		let contextWindow: number | undefined;
+		try {
+			const { overridesOfModel } = this.settingsService.state;
+			contextWindow = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel).contextWindow;
+		} catch {
+			return;
+		}
+		if (!contextWindow) return;
+
+		// history[0] is the system prompt — never compact it.
+		const systemMessage = history[0];
+		const compactables: CompactableMessage[] = [];
+		for (let i = 1; i < history.length; i++) {
+			const m = history[i];
+			const role = (m as { role: string }).role;
+			compactables.push({ role: role === 'assistant' ? 'assistant' : 'user', content: _extractMessageText(m) });
+		}
+
+		let result;
+		try {
+			result = await this._compactor().compactIfNeeded({
+				messages: compactables,
+				contextWindow,
+				modelSelection,
+			});
+		} catch {
+			return;
+		}
+		if (!result.summary || result.keepFromIdx <= 0) return;
+
+		ctx.log(`[${step.id}] compacting conversation: ~${result.tokensBefore} → ~${result.tokensAfter} est. tokens (llm summary: ${result.usedLLM})`);
+		const kept = history.slice(1 + result.keepFromIdx);
+		history.length = 0;
+		// NOT journaled: this is the legacy (flag-off) or fallback rebuild —
+		// every kept message was already journaled at its original push site,
+		// and re-journaling the summary would duplicate journal content.
+		history.push(systemMessage, { role: 'user', content: renderConversationSummaryMessage(result.summary) }, ...kept);
+	}
+
+	/**
+	 * Context Ledger compaction (task M5 phase 5). Closes an episode once the
+	 * unsummarized journal crosses the policy target, freezes it, rebuilds the
+	 * deterministic working brief, then rebuilds the LOCAL `history` for
+	 * sending as [system, brief, verbatim tail]. The ledger keeps every entry,
+	 * so nothing is lost. Best-effort inside: callers wrap it so any failure
+	 * falls back to the legacy compactor. The boundary search is shared with
+	 * the chat path (M6 item 1): common/ledgerBoundary.resolveCloseBoundary.
+	 */
+	private async _compactHistoryViaLedger(history: LLMChatMessage[], ctx: IToolExecutionContext, step: IWorkflowStep, agent: IAgentDefinition): Promise<void> {
+		const ledger = this.contextLedgerService;
+		const modelSelection = this._modelSelection;
+		if (!ledger || !modelSelection) return;
+		const threadId = 'exec:' + agent.id;
+
+		// 1. journal stats drive the boundary decision, not the local array —
+		//    the journal accumulates across every run of this agent.
+		const stats = await ledger.stats(threadId);
+		if (!stats || stats.entryCount === 0) return;
+		const episodes = await ledger.listEpisodes(threadId);
+		// the smallest tail window answers decideBoundary's tail-size check;
+		// resolveCloseBoundary grows the window itself when a boundary is due
+		const tailProbe = await ledger.readTail(threadId, DEFAULT_LEDGER_POLICY.tailMinMessages + 4);
+		if (tailProbe.length === 0) return;
+		// 2. no idle signal in the executor (it compacts mid-run, never idle);
+		// there is no force/overflow signal to honor today either — a future
+		// context-overflow recovery would pass { force: true } here.
+		const decision = EpisodeSummarizer.decideBoundary(stats, tailProbe.length, 0, DEFAULT_LEDGER_POLICY);
+		if (!decision || !decision.close) return;
+
+		const fromSeq = episodes.reduce((m, ep) => Math.max(m, ep.range.toSeq), 0) + 1;
+		// shared growing-window boundary search — a tool-heavy turn no longer
+		// silently skips the close (M6 item 1)
+		const boundary = await resolveCloseBoundary(fromSeq, DEFAULT_LEDGER_POLICY, n => ledger.readTail(threadId, n));
+		if (boundary.kind !== 'close' || !boundary.window) {
+			const reason = boundary.kind === 'deferred' ? boundary.reason : 'no boundary window';
+			noteBoundaryMissed(threadId, reason ?? 'no safe episode boundary');
+			ctx.log(`[${step.id}] ledger boundary missed: ${reason ?? 'no safe episode boundary'}`);
+			return;
+		}
+		const toSeq = boundary.toSeq!;
+		// 3. freeze the episode and rebuild the brief from all episodes
+		const entries = await ledger.readRange(threadId, fromSeq, toSeq);
+		if (entries.length === 0) {
+			noteBoundaryMissed(threadId, `boundary seq ${boundary.boundarySeq} selected an empty episode range ${fromSeq}-${toSeq}`);
+			return;
+		}
+		const episode = await new EpisodeSummarizer(this.llmService).summarizeEpisode({
+			threadId,
+			ordinal: episodes.length + 1,
+			entries,
+			range: { fromSeq, toSeq },
+			modelSelection,
+		});
+		await ledger.saveEpisode(episode);
+		const brief = buildWorkingBrief({
+			threadId,
+			previousBrief: await ledger.getBrief(threadId),
+			episodes: await ledger.listEpisodes(threadId),
+			lastSeq: stats.lastSeq,
+			policy: DEFAULT_LEDGER_POLICY,
+		});
+		await ledger.saveBrief(brief);
+		resetBoundaryMissTelemetry(threadId);
+
+		ctx.log(`[${step.id}] ledger episode ${episode.ordinal} frozen (${decision.reason}): seq ${fromSeq}-${toSeq}, brief revision ${brief.revision} (~${brief.tokens} tokens)`);
+
+		// 4. rebuild the LOCAL history for sending. The ledger keeps
+		// everything — these pushes are NOT journaled: the brief summarizes
+		// frozen episodes and the tail is read straight from the journal, so
+		// every entry already lives there.
+		const systemMessage = history[0];
+		history.length = 0;
+		history.push(
+			systemMessage,
+			{ role: 'user', content: brief.text + LEDGER_BRIEF_TRAILER },
+			...boundary.window.slice(boundary.boundaryIdx!)
+				.map(_ledgerEntryToChatMessage)
+				.filter((m): m is LLMChatMessage => m !== undefined),
+		);
 	}
 
 	// ─── System Prompt ────────────────────────────────────────────────────────
@@ -405,4 +732,19 @@ function _extractMessageText(msg: import('../../../void/common/sendLLMMessageTyp
 		}
 	}
 	return '';
+}
+
+/**
+ * Map one ledger tail entry back to an LLMChatMessage for sending. Tool
+ * entries become user-formatted text (the executor protocol feeds tool
+ * results back as user messages); their content already carries the
+ * `Tool "…" result:` header from the push site and is re-capped here like
+ * any other tool output on the send path. system/note entries map to
+ * undefined — the system prompt is always history[0], never mid-array.
+ */
+function _ledgerEntryToChatMessage(entry: ILedgerEntry): LLMChatMessage | undefined {
+	if (entry.role === 'assistant') return { role: 'assistant', content: entry.content };
+	if (entry.role === 'user') return { role: 'user', content: entry.content };
+	if (entry.role === 'tool') return { role: 'user', content: capToolResultForHistory(entry.content) };
+	return undefined;
 }

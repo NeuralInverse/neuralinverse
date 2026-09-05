@@ -26,7 +26,7 @@ const ConverseStreamCommand = class {};
 const awsDefaultProvider = () => { throw new Error('AWS credentials not supported in web mode'); };
 /* eslint-enable */
 
-import { AnthropicLLMChatMessage, GeminiLLMChatMessage, LLMChatMessage, LLMFIMMessage, ModelListParams, OllamaModelResponse, OnError, OnFinalMessage, OnText, RawToolCallObj, RawToolParamsObj } from '../sendLLMMessageTypes.js';
+import { AnthropicLLMChatMessage, GeminiLLMChatMessage, LLMChatMessage, LLMFIMMessage, LLMUsage, ModelListParams, OllamaModelResponse, OnError, OnFinalMessage, OnText, RawToolCallObj, RawToolParamsObj } from '../sendLLMMessageTypes.js';
 import { ChatMode, displayInfoOfProviderName, ModelSelectionOptions, OverridesOfModel, ProviderName, SettingsOfProvider } from '../voidSettingsTypes.js';
 import { getSendableReasoningInfo, getModelCapabilities, getProviderCapabilities, defaultProviderSettings, getReservedOutputTokenSpace } from '../modelCapabilities.js';
 import { extractReasoningWrapper, extractXMLToolsWrapper } from './extractGrammar.js';
@@ -351,6 +351,11 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 		model: modelName,
 		messages: messages as any,
 		stream: true,
+		// the final chunk then carries `usage` — real token counts for the
+		// journal/cost layer (task M6 item 4). Some older local servers reject
+		// unknown fields; they answer 4xx, which lands in onError as before —
+		// no behavior change for streams that never send usage.
+		stream_options: { include_usage: true },
 		...nativeToolsObj,
 		...additionalOpenAIPayload
 		// max_completion_tokens: maxTokens,
@@ -381,16 +386,30 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 		let fullReasoningSoFar = ''
 		let fullTextSoFar = ''
 		let toolCallsBuffer: { name: string, id: string, args: string }[] = []
+		// A stream that ends without any finish_reason chunk was cut off mid-response
+		// (connection reset / node-fetch premature close). Without this check the
+		// partial text was treated as a successful final message.
+		let gotFinishReason = false
+		// real usage rides on the final chunk when stream_options.include_usage
+		// was honored (task M6 item 4)
+		let usage: LLMUsage | undefined = undefined
 
 		openai.chat.completions
 			.create(options)
-			.then(async response => {
-				_setAborter(() => response.controller.abort())
-				// when receive text
-				for await (const chunk of response) {
-					// message
-					const newText = chunk.choices[0]?.delta?.content ?? ''
-					fullTextSoFar += newText
+				.then(async response => {
+					_setAborter(() => response.controller.abort())
+					// when receive text
+					for await (const chunk of response) {
+						// message
+						const newText = chunk.choices[0]?.delta?.content ?? ''
+						fullTextSoFar += newText
+
+						if (chunk.choices[0]?.finish_reason != null) gotFinishReason = true
+
+						// usage arrives on its own final chunk (choices is empty)
+						if (chunk.usage && typeof chunk.usage.prompt_tokens === 'number') {
+							usage = { input: chunk.usage.prompt_tokens, output: chunk.usage.completion_tokens ?? 0 }
+						}
 
 					// tool call
 					for (const tool of chunk.choices[0]?.delta?.tool_calls ?? []) {
@@ -433,9 +452,19 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 						onError({ message: 'Neural Inverse: Response from model was empty.\n\nHelp: https://neuralinverse.com/docs/troubleshooting/empty-response', fullError: null })
 					}
 				}
+				else if (!gotFinishReason) {
+					// Stream ended without a finish marker — the connection was cut
+					// mid-response. Retry; the partial text must not be treated as a
+					// complete answer.
+					if (attemptNum < MAX_EMPTY_RETRIES) {
+						setTimeout(() => attemptStream(attemptNum + 1), 800 * (attemptNum + 1))
+					} else {
+						onError({ message: 'Model stream ended prematurely (network error: connection closed before the response finished). Try sending again.', fullError: null })
+					}
+				}
 				else {
 					const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]
-					onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, toolCalls: toolCalls.length > 0 ? toolCalls : undefined });
+					onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, toolCalls: toolCalls.length > 0 ? toolCalls : undefined, usage });
 				}
 			})
 			// when error/fail - this catches errors of both .create() and .then(for await)
@@ -633,8 +662,12 @@ const sendAnthropicChat = async ({ messages, providerName, onText, onFinalMessag
 		// console.log('TOOLS!!!!!!', JSON.stringify(tools, null, 2))
 		// console.log('TOOLS!!!!!!', JSON.stringify(response, null, 2))
 		const toolCalls = tools.map(t => rawToolCallObjOfAnthropicParams(t)).filter(Boolean) as RawToolCallObj[]
+		// Anthropic always reports usage on the final message (task M6 item 4)
+		const usage: LLMUsage | undefined = response.usage && typeof response.usage.input_tokens === 'number'
+			? { input: response.usage.input_tokens, output: response.usage.output_tokens ?? 0 }
+			: undefined
 
-		onFinalMessage({ fullText, fullReasoning, anthropicReasoning, toolCalls: toolCalls.length > 0 ? toolCalls : undefined })
+		onFinalMessage({ fullText, fullReasoning, anthropicReasoning, toolCalls: toolCalls.length > 0 ? toolCalls : undefined, usage })
 	})
 	// on error
 	stream.on('error', (error) => {

@@ -774,16 +774,26 @@ export class AgentManagerPart extends Part {
         }));
     }
 
-    private handleAgentMessage(data: { agentId: string; input: string }): void {
+    private handleAgentMessage(data: { agentId: string; input: string; intakeAnswers?: { [id: string]: string } }): void {
         const agent = this.agentStore.getAgent(data.agentId);
         if (!agent) {
             this.webviewElement?.postMessage({ command: 'agentResponseError', data: `Agent "${data.agentId}" not found in .inverse/agents/` });
             return;
         }
 
+        // Locally-collected intake answers ride along with the first message so
+        // the model never spends a turn asking opening questions itself.
+        let prompt = data.input;
+        if (data.intakeAnswers && Object.keys(data.intakeAnswers).length > 0) {
+            const qa = (agent.intakeQuestions ?? [])
+                .map(q => `- ${q.question}\n  Answer: ${data.intakeAnswers![q.id] ?? '(not answered)'}`)
+                .join('\n');
+            prompt = `${data.input}\n\n<IntakeAnswers>\n${qa}\n</IntakeAnswers>\n(The user already answered the intake questions above in the UI. Use these answers and do NOT ask them again — start working immediately.)`;
+        }
+
         this.webviewElement?.postMessage({ command: 'agentRunStarted' });
 
-        this.workflowAgentService.runAgent(agent.id, data.input)
+        this.workflowAgentService.runAgent(agent.id, prompt)
             .then(run => {
                 this.webviewElement?.postMessage({ command: 'agentRunFinished', data: { runId: run.id, status: run.status, output: run.finalOutput, error: run.error } });
             })
@@ -1266,6 +1276,10 @@ export class AgentManagerPart extends Part {
                         <textarea id="edit-agent-instructions" rows="6" placeholder="System prompt for this agent..."></textarea>
                     </div>
                     <div class="field-group">
+                        <label>Intake Questions (asked locally in chat — no model call)</label>
+                        <textarea id="edit-agent-intake" rows="3" placeholder="One per line. Options in [brackets], * prefix = required.&#10;e.g.  What should I focus on? [bugs|security|all]&#10;* Which branch/release?"></textarea>
+                    </div>
+                    <div class="field-group">
                         <label>Allowed Tools</label>
                         <div id="edit-tool-grid"></div>
                     </div>
@@ -1474,6 +1488,9 @@ export class AgentManagerPart extends Part {
             document.getElementById('edit-agent-name').value = agent.name || '';
             document.getElementById('edit-agent-description').value = agent.description || '';
             document.getElementById('edit-agent-instructions').value = agent.systemInstructions || '';
+            document.getElementById('edit-agent-intake').value = (agent.intakeQuestions || []).map(function(q) {
+                return (q.required ? '* ' : '') + q.question + (q.options && q.options.length ? ' [' + q.options.join('|') + ']' : '');
+            }).join('\\n');
             var editModelSel = document.getElementById('edit-agent-model');
             var agentModelVal = agent.model ? (agent.model.providerName + '::' + agent.model.modelName) : '';
             // Always sync — the initial placeholder has 1 option but no real values
@@ -1484,6 +1501,7 @@ export class AgentManagerPart extends Part {
             hideSettingsMsg();
             chatMsgsEl.innerHTML = '';
             showView('chat');
+            renderIntakeCard(agent);
             renderAgentList();
         }
         function syncEditModelDropdown() {
@@ -1540,12 +1558,76 @@ export class AgentManagerPart extends Part {
             inp.disabled = busy;
             if (btn) { btn.disabled = busy; btn.textContent = busy ? '...' : 'Send'; }
         }
+        // ── Local intake form (no LLM round-trip) ─────────────────────────
+        // Rendered when the selected agent defines intakeQuestions. The answers
+        // are collected locally and attached to the FIRST message only, so the
+        // model starts working instead of spending a turn asking them.
+        function renderIntakeCard(agent) {
+            if (!agent || !agent.intakeQuestions || !agent.intakeQuestions.length) return;
+            var card = document.createElement('div');
+            card.className = 'msg agent';
+            card.id = 'intake-card';
+            var b = document.createElement('div');
+            b.className = 'bubble';
+            b.style.background = 'rgba(59,130,246,0.07)';
+            b.style.borderColor = 'rgba(59,130,246,0.25)';
+            var title = document.createElement('div');
+            title.textContent = 'Quick setup — answered locally, sent with your first message (no model call needed):';
+            title.style.cssText = 'font-size:11px;font-weight:600;margin-bottom:6px;opacity:.85';
+            b.appendChild(title);
+            agent.intakeQuestions.forEach(function(q) {
+                var lbl = document.createElement('label');
+                lbl.textContent = q.question + (q.required ? ' *' : '');
+                lbl.style.cssText = 'display:block;font-size:11px;margin:8px 0 3px';
+                b.appendChild(lbl);
+                if (q.options && q.options.length) {
+                    var wrap = document.createElement('div');
+                    wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px';
+                    q.options.forEach(function(opt, i) {
+                        var chip = document.createElement('button');
+                        chip.type = 'button';
+                        chip.textContent = opt;
+                        chip.dataset.qid = q.id;
+                        chip.dataset.val = opt;
+                        chip.style.cssText = 'padding:3px 10px;font-size:11px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg-2);color:inherit';
+                        chip.onclick = function() {
+                            wrap.querySelectorAll('button').forEach(function(c) { c.style.background = 'var(--bg-2)'; c.style.fontWeight = 'normal'; });
+                            chip.style.background = 'rgba(59,130,246,0.25)';
+                            chip.style.fontWeight = '600';
+                        };
+                        if (q.required && i === 0) { /* highlight nothing by default */ }
+                        wrap.appendChild(chip);
+                    });
+                    b.appendChild(wrap);
+                } else {
+                    var inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.placeholder = q.placeholder || '';
+                    inp.dataset.intakeId = q.id;
+                    inp.style.cssText = 'width:100%;box-sizing:border-box;padding:5px 8px;font-size:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:4px;color:inherit';
+                    b.appendChild(inp);
+                }
+            });
+            card.appendChild(b);
+            chatMsgsEl.appendChild(card);
+        }
+        function collectIntake() {
+            var card = document.getElementById('intake-card');
+            if (!card) return undefined;
+            var answers = {};
+            card.querySelectorAll('input[data-intake-id]').forEach(function(i) { answers[i.dataset.intakeId] = i.value.trim(); });
+            card.querySelectorAll('button[data-qid]').forEach(function(c) {
+                if (c.style.background && c.style.background !== 'var(--bg-2)') answers[c.dataset.qid] = c.dataset.val;
+            });
+            card.remove(); // intake applies to the first message only
+            return Object.keys(answers).length ? answers : undefined;
+        }
         function sendMessage() {
             var inp = document.getElementById('user-input');
             var text = inp.value.trim();
             if (!activeAgentId || !text) return;
             addMsg(text, 'user');
-            vscode.postMessage({ command: 'sendMessage', data: { agentId: activeAgentId, input: text } });
+            vscode.postMessage({ command: 'sendMessage', data: { agentId: activeAgentId, input: text, intakeAnswers: collectIntake() } });
             inp.value = '';
         }
 
@@ -1607,12 +1689,22 @@ export class AgentManagerPart extends Part {
                 var parts = modelVal.split('::');
                 modelObj = { providerName: parts[0], modelName: parts[1] };
             }
+            // Intake questions: one per line, "[a|b|c]" = chip options, "* " prefix = required
+            var intakeRaw = document.getElementById('edit-agent-intake').value;
+            var intakeQuestions = intakeRaw.split('\\n').map(function(l) { return l.trim(); }).filter(Boolean).map(function(l, i) {
+                var required = l.charAt(0) === '*';
+                if (required) l = l.replace(/^\\*\\s*/, '');
+                var m = l.match(/\\s*\\[([^\\]]+)\\]\\s*$/);
+                var options = m ? m[1].split('|').map(function(o) { return o.trim(); }).filter(Boolean) : undefined;
+                var question = (m ? l.slice(0, m.index) : l).trim();
+                return { id: 'q' + (i + 1), question: question, options: options, required: required };
+            }).filter(function(q) { return q.question; });
             hideSettingsMsg();
             var btn = document.getElementById('save-agent-btn');
             btn.disabled = true; btn.textContent = 'Saving...';
             vscode.postMessage({ command: 'updateAgent', data: {
                 id: activeAgentId,
-                updates: { name: name, description: desc, systemInstructions: instr, model: modelObj, allowedTools: tools }
+                updates: { name: name, description: desc, systemInstructions: instr, model: modelObj, allowedTools: tools, intakeQuestions: intakeQuestions.length ? intakeQuestions : [] }
             }});
         }
 
@@ -1875,6 +1967,7 @@ export class AgentManagerPart extends Part {
                         var d = msg.data;
                         if (d.status === 'done' && d.output) { activeMessageBubble.textContent = d.output; }
                         else if (d.error) { activeMessageBubble.textContent = 'Error: ' + d.error; activeMessageBubble.style.color = '#f87171'; }
+                        else if (d.status === 'done') { activeMessageBubble.textContent = '(done with no output — the model returned an empty response)'; activeMessageBubble.style.color = '#f87171'; }
                         else { activeMessageBubble.textContent = '(' + d.status + ')'; }
                         chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
                         activeMessageBubble = null;

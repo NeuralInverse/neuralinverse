@@ -22,6 +22,7 @@ export interface IEmbeddingService {
 	readonly isAvailable: boolean;
 
 	embed(id: string, filePath: string, content: string, contentHash: string): Promise<void>;
+	embedToVector(text: string): Promise<Float32Array | null>;
 	search(query: string, maxResults?: number): Promise<IEmbeddingResult[]>;
 	batchEmbed(items: { id: string; filePath: string; content: string; contentHash: string }[]): Promise<void>;
 }
@@ -114,6 +115,21 @@ class EmbeddingService extends Disposable implements IEmbeddingService {
 			vector,
 			updatedAt: Date.now(),
 		}]);
+	}
+
+	/**
+	 * Embed arbitrary text and return the raw vector (task M2): lets callers
+	 * outside the code index — e.g. the agent memory hybrid retrieval — use the
+	 * same provider without storing into this service's vector cache.
+	 * Returns null whenever no embedding provider is configured (graceful).
+	 */
+	async embedToVector(text: string): Promise<Float32Array | null> {
+		if (!this._available) { return null; }
+		try {
+			return await this._getEmbeddingVector(text);
+		} catch {
+			return null;
+		}
 	}
 
 	async search(query: string, maxResults: number = 10): Promise<IEmbeddingResult[]> {

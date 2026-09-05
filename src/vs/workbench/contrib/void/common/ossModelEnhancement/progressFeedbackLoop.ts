@@ -20,19 +20,29 @@
 
 /**
  * Wraps a tool result string with feedback that encourages continued execution.
+ *
+ * `maxPreviewChars`: results longer than this are previewed. The old hard cap
+ * of 3000 chars silently destroyed file reads — read_file serves whole pages
+ * (up to MAX_FILE_CHARS_PAGE) and reports hasNextPage itself, so the wrapper
+ * cut mid-file with no way for the model to fetch the rest (paging past a
+ * single-page file returns empty). The default now matches capToolResult
+ * (24k), and the marker tells the model exactly how much was held back and
+ * how to get it.
  */
 export function wrapToolResultForOSS(
 	toolName: string,
 	success: boolean,
 	rawResult: string,
 	_remainingTools: number,
+	maxPreviewChars: number = 24_000,
 ): string {
 	const statusLine = success
 		? `[Tool "${toolName}" completed successfully]`
 		: `[Tool "${toolName}" FAILED - see error below]`;
 
-	const resultPreview = rawResult.length > 3000
-		? rawResult.substring(0, 3000) + '\n[... output truncated ...]'
+	const resultPreview = rawResult.length > maxPreviewChars
+		? rawResult.substring(0, maxPreviewChars)
+			+ `\n[... output truncated: showing first ${maxPreviewChars.toLocaleString()} of ${rawResult.length.toLocaleString()} chars — use grep/search_in_file for the rest]`
 		: rawResult;
 
 	let continuationPrompt: string;
@@ -46,7 +56,7 @@ export function wrapToolResultForOSS(
 		} else if (toolName === 'edit') {
 			continuationPrompt = 'Edit applied. Continue with next changes or verify by running the code. Use tool calls only.';
 		} else {
-			continuationPrompt = 'Tool succeeded. Continue with the next step using XML tool calls. Do NOT output markdown or explanations.';
+			continuationPrompt = 'Tool succeeded. Continue with the next step using XML tool calls. Do NOT output markdown or explanations. (If the user\'s latest message is a question, answer it in text instead — resume this task only when asked.)';
 		}
 	} else {
 		if (toolName === 'bash') {

@@ -1190,21 +1190,39 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 			// ---
 			read_file: async ({ uri, startLine, endLine, pageNumber }) => {
-				await voidModelService.initializeModel(uri)
-				const { model } = await voidModelService.getModelSafe(uri)
-				if (model === null) { throw new Error(`No contents; File does not exist.`) }
-
 				let contents: string
-				if (startLine === null && endLine === null) {
+				let totalNumLines: number
+				// The text-model service only tracks files inside the opened
+				// workspace. Absolute paths OUTSIDE it (git worktrees are the
+				// common case — task protocols run agents in worktrees) used to
+				// fail with "No contents; File does not exist." even though the
+				// file was on disk. Fall back to a raw read for those.
+				try { await voidModelService.initializeModel(uri) } catch { /* out-of-workspace — raw fallback below */ }
+				const { model } = await voidModelService.getModelSafe(uri)
+				if (model === null) {
+					if (uri.scheme !== 'file') { throw new Error(`No contents; File does not exist.`) }
+					let raw: string
+					try {
+						raw = (await fileService.readFile(uri)).value.toString()
+					} catch (e: any) {
+						throw new Error(`No contents; File does not exist. (${e?.message ?? e})`)
+					}
+					const lines = raw.split('\n')
+					const startLineNumber = startLine === null ? 1 : startLine
+					const endLineNumber = endLine === null ? lines.length : endLine
+					contents = lines.slice(startLineNumber - 1, endLineNumber).join('\n')
+					totalNumLines = lines.length
+				}
+				else if (startLine === null && endLine === null) {
 					contents = model.getValue(EndOfLinePreference.LF)
+					totalNumLines = model.getLineCount()
 				}
 				else {
 					const startLineNumber = startLine === null ? 1 : startLine
 					const endLineNumber = endLine === null ? model.getLineCount() : endLine
 					contents = model.getValueInRange({ startLineNumber, startColumn: 1, endLineNumber, endColumn: Number.MAX_SAFE_INTEGER }, EndOfLinePreference.LF)
+					totalNumLines = model.getLineCount()
 				}
-
-				const totalNumLines = model.getLineCount()
 
 				const fromIdx = MAX_FILE_CHARS_PAGE * (pageNumber - 1)
 				const toIdx = MAX_FILE_CHARS_PAGE * pageNumber - 1
@@ -1605,6 +1623,13 @@ export class ToolsService extends Disposable implements IToolsService {
 			context_semantic_search: (_params, result) => result.result,
 			// ---
 			read_file: (params, result) => {
+				// An empty page means the model paged past the end of the file
+				// (read_file serves whole pages; the OSS wrapper used to cut
+				// them mid-file, which made models page forward into nothing).
+				// Say it explicitly instead of an empty code fence.
+				if (result.fileContents === '' && (params.pageNumber ?? 1) > 1) {
+					return `${params.uri.fsPath}\n(no more content — page ${params.pageNumber} is beyond the end of this ${result.totalNumLines}-line file)`
+				}
 				return `${params.uri.fsPath}\n\`\`\`\n${result.fileContents}\n\`\`\`${nextPageStr(result.hasNextPage)}${result.hasNextPage ? `\nMore info because truncated: this file has ${result.totalNumLines} lines, or ${result.totalFileLen} characters.` : ''}`
 			},
 			ls_dir: (params, result) => {

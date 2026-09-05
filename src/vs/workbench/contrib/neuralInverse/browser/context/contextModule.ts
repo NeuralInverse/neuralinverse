@@ -12,6 +12,7 @@ import './search/bm25Index.js';
 import './search/trigramIndex.js';
 import './search/embeddingService.js';
 import './search/hybridSearchService.js';
+import './search/ledgerRecallService.js';
 
 export { IWorkspaceSymbolIndexService } from './index/workspaceSymbolIndex.js';
 export type { IIndexedSymbol, IFileIndex } from './index/workspaceSymbolIndex.js';
@@ -28,4 +29,5 @@ export { ITrigramIndexService } from './search/trigramIndex.js';
 export type { ITrigramMatch } from './search/trigramIndex.js';
 export { IEmbeddingService } from './search/embeddingService.js';
 export { IHybridSearchService } from './search/hybridSearchService.js';
+export { ILedgerRecallService } from './search/ledgerRecallService.js';
 export type { IHybridSearchResult } from './search/hybridSearchService.js';
