@@ -30,7 +30,7 @@ import { IVoidSettingsService } from '../../../void/common/voidSettingsService.j
 import { ModelSelection } from '../../../void/common/voidSettingsTypes.js';
 import { LLMChatMessage } from '../../../void/common/sendLLMMessageTypes.js';
 import { getModelCapabilities } from '../../../void/common/modelCapabilities.js';
-import { CompactableMessage, ConversationCompactor, capToolResultForHistory, createInactivityWatchdog, renderConversationSummaryMessage } from '../../../void/browser/conversationCompactor.js';
+import { CompactableMessage, ConversationCompactor, capToolResultForHistory, createInactivityWatchdog, isRetryableLlmError, renderConversationSummaryMessage } from '../../../void/browser/conversationCompactor.js';
 import { IContextLedgerService } from '../../../void/browser/contextLedgerService.js';
 import { EpisodeSummarizer } from '../../../void/browser/episodeSummarizer.js';
 import { ILedgerAppendInput, ILedgerEntry } from '../../../void/common/ledgerTypes.js';
@@ -48,6 +48,9 @@ const DEFAULT_MAX_ITERATIONS = 20;
 
 /** Retries (on top of the first attempt) when the LLM returns an empty response */
 const MAX_EMPTY_RESPONSE_RETRIES = 2;
+
+/** Delay between transient-error retries — matches the chat loop's RETRY_DELAY. */
+const LLM_RETRY_DELAY_MS = 2500;
 
 /** A provider stream that emits no chunks for this long is treated as dead and aborted. */
 const LLM_STALL_MS = 180_000; // 3 minutes
@@ -238,11 +241,23 @@ export class AgentExecutor {
 			try {
 				// An empty response is usually transient (proxy hiccup, dropped
 				// stream) — retry instead of finishing the step with no output,
-				// which the UI renders as a bare "(done)".
+				// which the UI renders as a bare "(done)". Transient connection
+				// errors (local endpoints dropping streams under heavy load) get
+				// the same treatment: one blip must not kill a long agent run.
 				for (let attempt = 0; attempt <= MAX_EMPTY_RESPONSE_RETRIES; attempt++) {
-					const t = await this._callLLM(history);
-					if (t && t.trim()) { responseText = t; break; }
-					ctx.log(`[${step.id}] empty LLM response (attempt ${attempt + 1}/${MAX_EMPTY_RESPONSE_RETRIES + 1})`);
+					try {
+						const t = await this._callLLM(history);
+						if (t && t.trim()) { responseText = t; break; }
+						ctx.log(`[${step.id}] empty LLM response (attempt ${attempt + 1}/${MAX_EMPTY_RESPONSE_RETRIES + 1})`);
+					} catch (e: any) {
+						const msg: string = e?.message ?? '';
+						if (attempt < MAX_EMPTY_RESPONSE_RETRIES && isRetryableLlmError(msg)) {
+							ctx.log(`[${step.id}] transient LLM error, retrying (attempt ${attempt + 1}/${MAX_EMPTY_RESPONSE_RETRIES + 1}): ${msg}`);
+							await new Promise(r => setTimeout(r, LLM_RETRY_DELAY_MS));
+							continue;
+						}
+						throw e;
+					}
 				}
 			} catch (e: any) {
 				stepRun.status = 'failed';

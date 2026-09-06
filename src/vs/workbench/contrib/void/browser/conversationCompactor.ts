@@ -79,18 +79,10 @@ const SUMMARIZE_TIMEOUT_MS = 90_000;
 const SUMMARIZE_STALL_MS = 45_000;
 
 // ─── Error classification ──────────────────────────────────────────────────────
+// Single definition lives in common/streamIntegrity.ts (shared with the
+// electron-main provider impls and unit-tested standalone).
 
-/** Provider errors that mean "the request does not fit the context window". */
-export function isContextOverflowError(message: string | undefined): boolean {
-	if (!message) return false;
-	return /context length|context window|context_length|exceeds?\s+(the\s+)?(maximum\s+)?(context|tokens|input)|maximum.*tokens?|too many tokens|prompt is too long|input.*too long|reduce the length|input_length|MAX_TOKENS/i.test(message)
-}
-
-/** Provider errors worth retrying (transient). Anything else should fail fast. */
-export function isRetryableLlmError(message: string | undefined): boolean {
-	if (!message) return false;
-	return /\b429\b|rate.?limit|overloaded|quota|timeout|timed out|fetch failed|network|econnreset|econnrefused|enotfound|socket hang up|\b50[0-4]\b|service unavailable|internal server|temporarily/i.test(message)
-}
+export { isContextOverflowError, isRetryableLlmError } from '../common/streamIntegrity.js';
 
 // ─── Watchdog ──────────────────────────────────────────────────────────────────
 

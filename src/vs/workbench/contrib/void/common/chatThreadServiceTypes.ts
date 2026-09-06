@@ -73,6 +73,10 @@ export type ChatMessage =
 		reasoning: string; // reasoning from the LLM, used for step-by-step thinking
 
 		anthropicReasoning: AnthropicReasoning[] | null; // anthropic reasoning
+
+		// wall-clock duration of the agent run that produced this message (set on
+		// committed messages; optional so stored threads stay compatible)
+		durationMs?: number;
 	}
 	| ToolMessage<ToolName>
 	| DecorativeCanceledTool

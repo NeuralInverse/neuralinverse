@@ -62,6 +62,10 @@ const INDEX_CONCURRENCY = 4;
 const DEBOUNCE_FILE_CHANGE_MS = 300;
 const MAX_TRANSITIVE_DEPTH = 6;
 const MAX_TRANSITIVE_RESULTS = 200;
+// Full-index cap: huge workspaces (200k+ source files) would otherwise read+parse for
+// HOURS, saturating IO and making the whole editor feel frozen (session 20260906T164055:
+// the walk alone found 235,985 files). The first 25k files cover normal projects entirely.
+const MAX_INDEX_FILES = 25_000;
 
 const SOURCE_EXTENSIONS = new Set([
 	'.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs',
@@ -97,6 +101,8 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	private _ready = false;
 	private _indexingInProgress = false;
 	private _fullIndexCts: CancellationTokenSource | undefined;
+	private _initialIndexTimeout: ReturnType<typeof setTimeout> | undefined;
+	private _indexCapped = false;
 	private readonly _limiter = new Limiter<void>(INDEX_CONCURRENCY);
 
 	private readonly _pendingFileChanges = new Set<string>();
@@ -146,7 +152,10 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			}
 		}));
 
-		this._startFullIndex();
+		// Defer the initial index until the workbench settles: indexing 10k+ files
+		// right at startup makes the first minute of every session feel frozen
+		// (exthost unresponsive cycles + heavy IO churn alongside session restore).
+		this._initialIndexTimeout = setTimeout(() => this._startFullIndex(), 20_000);
 	}
 
 	isReady(): boolean { return this._ready; }
@@ -243,6 +252,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		}
 
 		this._indexingInProgress = true;
+		this._indexCapped = false;
 		this._fullIndexCts = new CancellationTokenSource();
 		const token = this._fullIndexCts.token;
 
@@ -297,6 +307,13 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 				} else {
 					const ext = this._extname(child.name);
 					if (SOURCE_EXTENSIONS.has(ext)) {
+						if (results.length >= MAX_INDEX_FILES) {
+							if (!this._indexCapped) {
+								this._indexCapped = true;
+								this._logService.warn(`[SymbolIndex] Capping full index at ${MAX_INDEX_FILES} files — the workspace has more; only the first ${MAX_INDEX_FILES} source files are indexed.`);
+							}
+							return;
+						}
 						results.push(child.resource.toString());
 					}
 				}
@@ -1257,6 +1274,10 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	}
 
 	override dispose(): void {
+		if (this._initialIndexTimeout) {
+			clearTimeout(this._initialIndexTimeout);
+			this._initialIndexTimeout = undefined;
+		}
 		this._cancelFullIndex();
 		super.dispose();
 	}

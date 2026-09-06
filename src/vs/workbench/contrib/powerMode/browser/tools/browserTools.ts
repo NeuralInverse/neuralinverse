@@ -44,12 +44,12 @@ Rules:
 		[
 			{ name: 'command', type: 'string', description: 'The bash command to execute', required: true },
 			{ name: 'description', type: 'string', description: 'Brief description of what this command does', required: true },
-			{ name: 'timeout', type: 'number', description: 'Optional timeout in milliseconds (default: 120000)', required: false },
+			{ name: 'timeout', type: 'number', description: 'Optional timeout in milliseconds (default: 3600000). Commands are only killed after 1800s of NO output — total runtime is unlimited while output flows; for multi-hour silent tasks use bg_after or a persistent terminal.', required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			let command = args.command as string;
 			const description = args.description as string;
-			const timeout = (args.timeout as number) ?? 120000;
+			const timeout = (args.timeout as number) ?? 3600000;
 
 			// Security validation: check for dangerous patterns
 			const securityResult = checkBashSecurity(command, workingDirectory);
@@ -510,6 +510,12 @@ Rules:
 			const folderUri = URI.file(searchPath);
 
 			try {
+				// Per-file cap: without it, a handful of files with dozens of matches
+				// each ate the whole result budget and the model saw "a few files"
+				// instead of the full picture across the repo.
+				const MAX_GREP_RESULTS = 1000;
+				const MAX_MATCHES_PER_FILE = 15;
+				const matchesPerFile = new Map<string, number>();
 				const query: ITextQuery = {
 					type: QueryType.Text,
 					contentPattern: {
@@ -520,7 +526,7 @@ Rules:
 					folderQueries: [{ folder: folderUri }],
 					includePattern: include ? { [include]: true } : undefined,
 					excludePattern: { '**/node_modules': true, '**/.git': true },
-					maxResults: 200,
+					maxResults: MAX_GREP_RESULTS,
 				};
 
 				const matches: string[] = [];
@@ -531,6 +537,9 @@ Rules:
 						if (fileMatch.results) {
 							for (const result of fileMatch.results) {
 								if (result.rangeLocations && result.rangeLocations.length > 0) {
+									const soFar = matchesPerFile.get(file) ?? 0;
+									if (soFar >= MAX_MATCHES_PER_FILE) { continue; }
+									matchesPerFile.set(file, soFar + 1);
 									const line = result.rangeLocations[0].source.startLineNumber;
 									const preview = result.previewText ?? '';
 									matches.push(`${file}:${line}: ${preview.trim()}`);

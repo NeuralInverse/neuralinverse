@@ -8,6 +8,7 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
 
 import { URI } from '../../../../base/common/uri.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
@@ -196,6 +197,10 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	readonly streamState: ThreadStreamState = {}
 	state: ThreadsState // allThreads is the workspace-filtered view; _allThreads is the full store
 	private _allThreads: ChatThreads = {} // unfiltered store across all workspaces
+
+	// start of the currently-running agent loop (null when idle); read by
+	// abortRunning, which runs outside the loop's scope
+	private _activeLoopStartMs: number | null = null
 
 	// used in checkpointing
 	// private readonly _userModifiedFilesToCheckInCheckpoints = new LRUCache<string, null>(50)
@@ -466,6 +471,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 	constructor(
 		@IStorageService private readonly _storageService: IStorageService,
+		@ILogService private readonly _logService: ILogService,
 		@IVoidModelService private readonly _voidModelService: IVoidModelService,
 		@ILLMMessageService private readonly _llmMessageService: ILLMMessageService,
 		@IToolsService private readonly _toolsService: IToolsService,
@@ -920,7 +926,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		// add assistant message
 		if (this.streamState[threadId]?.isRunning === 'LLM') {
 			const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = this.streamState[threadId].llmInfo
-			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null })
+			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null, durationMs: Date.now() - (this._activeLoopStartMs ?? Date.now()) })
 			if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 		}
 		// add tool that's running
@@ -1036,6 +1042,9 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		let interrupted = false
 		let resolveInterruptor: (r: () => void) => void = () => { }
 		const interruptorPromise = new Promise<() => void>(res => { resolveInterruptor = res })
+		// Tool calls used to be invisible in session logs — every "why did the
+		// agent hang" investigation started with zero evidence. One line per call.
+		const toolStartedAt = Date.now()
 		try {
 
 			// set stream state
@@ -1077,6 +1086,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			if (interrupted) { return { interrupted: true } } // the tool result is added where we interrupt, not here
 
 			const errorMessage = getErrorMessage(error)
+			this._logService.warn(`[AgentTool] ${toolName} FAILED after ${Date.now() - toolStartedAt}ms: ${errorMessage.slice(0, 300)}`)
 			this._updateLatestTool(threadId, { role: 'tool', type: 'tool_error', params: toolParams, result: errorMessage, name: toolName, content: errorMessage, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 			return {}
 		}
@@ -1096,6 +1106,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			}
 		} catch (error) {
 			const errorMessage = this.toolErrMsgs.errWhenStringifying(error)
+			this._logService.warn(`[AgentTool] ${toolName} stringification FAILED after ${Date.now() - toolStartedAt}ms: ${errorMessage.slice(0, 300)}`)
 			this._updateLatestTool(threadId, { role: 'tool', type: 'tool_error', params: toolParams, result: errorMessage, name: toolName, content: errorMessage, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 			return {}
 		}
@@ -1112,6 +1123,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			finalToolResultStr = wrapToolResultForOSS(toolName, true, finalToolResultStr, 0);
 		}
 
+		this._logService.info(`[AgentTool] ${toolName} ok: ${Date.now() - toolStartedAt}ms, ${finalToolResultStr.length} chars`)
 		this._updateLatestTool(threadId, { role: 'tool', type: 'success', params: toolParams, result: toolResult, name: toolName, content: finalToolResultStr, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 		return {}
 	};
@@ -1145,6 +1157,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		let shouldSendAnotherMessage = true
 		let isRunningWhenEnd: IsRunningType = undefined
 		const _loopStartMs = Date.now()
+		this._activeLoopStartMs = _loopStartMs
 		const MAX_MESSAGES_SENT = 50 // hard cap to prevent infinite loops
 		let _lastToolSig = '' // for consecutive duplicate tool detection
 		let _consecutiveDuplicateTools = 0
@@ -1288,6 +1301,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						// stop the loop to free up promise, but don't modify state (already handled by whatever stopped it)
 						resMessageIsDonePromise({ type: 'llmAborted' })
 						this._metricsService.capture('Agent Loop Done (Aborted)', { nMessagesSent, chatMode, duration_ms: Date.now() - _loopStartMs })
+						this._activeLoopStartMs = null
 					},
 				})
 
@@ -1365,7 +1379,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						const { error } = llmRes
 						const llmInfo = this.streamState[threadId]?.llmInfo ?? { displayContentSoFar: '', reasoningSoFar: '', toolCallSoFar: null }
 						const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = llmInfo
-						this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null })
+						this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null, durationMs: Date.now() - _loopStartMs })
 						if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 
 						this._setStreamState(threadId, { isRunning: undefined, error })
@@ -1377,7 +1391,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				// llm res success
 				const { toolCalls, info } = llmRes
 
-				this._addMessageToThread(threadId, { role: 'assistant', displayContent: info.fullText, reasoning: info.fullReasoning, anthropicReasoning: info.anthropicReasoning })
+				this._addMessageToThread(threadId, { role: 'assistant', displayContent: info.fullText, reasoning: info.fullReasoning, anthropicReasoning: info.anthropicReasoning, durationMs: Date.now() - _loopStartMs })
 
 				// Context Ledger (task M5): after each completed reply, check in
 				// the background whether an episode should close (token target /
@@ -1535,6 +1549,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 		// capture number of messages sent
 		this._metricsService.capture('Agent Loop Done', { nMessagesSent, chatMode, duration_ms: Date.now() - _loopStartMs })
+		this._activeLoopStartMs = null
 	}
 
 

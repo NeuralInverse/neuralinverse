@@ -443,6 +443,15 @@ const prepareOpenAIOrAnthropicMessages = ({
 	//                     contextWindow - maxOut|putTokens
 	//                                          totalLen
 	let remainingCharsToTrim = charsNeedToTrim
+	// Cut at a line boundary whenever possible — a raw char slice lands mid-token and mangles file
+	// paths (e.g. `functions.p...`), which forces the model to re-search everything it was shown.
+	const cutToLen = (content: string, cutLen: number): string => {
+		if (cutLen <= 0) return '...'
+		let cut = content.slice(0, cutLen)
+		const nl = cut.lastIndexOf('\n')
+		if (nl > 0) cut = cut.slice(0, nl)
+		return cut.replace(/\s+$/, '') + '...'
+	}
 	let i = 0
 
 	while (remainingCharsToTrim > 0) {
@@ -460,12 +469,12 @@ const prepareOpenAIOrAnthropicMessages = ({
 		const numCharsWillTrim = m.content.length - trimToLen
 		if (numCharsWillTrim > remainingCharsToTrim) {
 			// trim remainingCharsToTrim + '...'.length chars
-			m.content = m.content.slice(0, m.content.length - remainingCharsToTrim - '...'.length).trim() + '...'
+			m.content = cutToLen(m.content, m.content.length - remainingCharsToTrim - '...'.length)
 			break
 		}
 
 		remainingCharsToTrim -= numCharsWillTrim
-		m.content = m.content.substring(0, trimToLen - '...'.length) + '...'
+		m.content = cutToLen(m.content, trimToLen - '...'.length)
 		alreadyTrimmedIdxes.add(trimIdx)
 	}
 

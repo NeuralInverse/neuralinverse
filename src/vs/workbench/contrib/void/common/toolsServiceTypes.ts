@@ -26,6 +26,7 @@ export const approvalTypeOfBuiltinToolName: Partial<{ [T in BuiltinToolName]?: '
 	'multi_replace_file_content': 'edits',
 	'run_command': 'terminal',
 	'run_persistent_command': 'terminal',
+	'run_background_command': 'terminal',
 	'open_persistent_terminal': 'terminal',
 	'read_terminal': 'terminal',
 	'send_command_input': 'terminal',
@@ -99,6 +100,7 @@ export type BuiltinToolCallParams = {
 	// ---
 	'run_command': { command: string; cwd: string | null, terminalId: string, timeout: number | null, bgAfter: number | null },
 	'run_persistent_command': { command: string; persistentTerminalId: string },
+	'run_background_command': { command: string; cwd: string | null },
 	'open_persistent_terminal': { cwd: string | null },
 	'read_terminal': { persistentTerminalId: string },
 	'send_command_input': { persistentTerminalId: string, input: string },
@@ -161,6 +163,7 @@ export type BuiltinToolResultType = {
 	// ---
 	'run_command': { result: string; resolveReason: TerminalResolveReason; },
 	'run_persistent_command': { result: string; resolveReason: TerminalResolveReason; },
+	'run_background_command': { result: string; resolveReason: TerminalResolveReason; },
 	'open_persistent_terminal': { persistentTerminalId: string },
 	'read_terminal': { result: string },
 	'send_command_input': { result: string },

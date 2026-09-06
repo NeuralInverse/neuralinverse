@@ -221,21 +221,26 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 				if (res.error) {
 					scanErrors.push(res.error);
 				} else {
-					allUnits.push(...res.units);
-					allGRCViolations.push(...res.grcViolations);
-					allAPIEndpoints.push(...res.apiEndpoints);
-					allDataSchemas.push(...res.dataSchemas);
-					allTechDebtItems.push(...res.techDebtItems);
-					allRegulatedHits.push(...res.regulatedDataHits);
-					allEffortEstimates.push(...res.effortEstimates);
+					// Spread-push (`push(...arr)`) passes every element as a function
+					// argument — on files with tens of thousands of extracted units
+					// (vendored/minified JS inside a PHP project) that blew the stack
+					// with "Maximum call stack size exceeded". Loop-push is O(n) with
+					// no argument-count limit.
+					for (const u of res.units) { allUnits.push(u); }
+					for (const g of res.grcViolations) { allGRCViolations.push(g); }
+					for (const a of res.apiEndpoints) { allAPIEndpoints.push(a); }
+					for (const d of res.dataSchemas) { allDataSchemas.push(d); }
+					for (const t of res.techDebtItems) { allTechDebtItems.push(t); }
+					for (const r of res.regulatedDataHits) { allRegulatedHits.push(r); }
+					for (const e of res.effortEstimates) { allEffortEstimates.push(e); }
 					langCounts[res.lang] = (langCounts[res.lang] ?? 0) + 1;
 					totalLines += res.lineCount;
 					if (res.lineCount > largestLines) {
 						largestLines   = res.lineCount;
 						largestFileUri = res.units[0]?.legacyFilePath ?? '';
 					}
-					rawDepEdges.push(...res.dependencyEdges);
-					rawCallEntries.push(...res.callEdges.map(e => ({ ...e, lang: res.lang })));
+					for (const e of res.dependencyEdges) { rawDepEdges.push(e); }
+					for (const e of res.callEdges) { rawCallEntries.push({ ...e, lang: res.lang }); }
 				}
 
 				this._progress('fingerprinting', filesProcessed, fileUris.length, allUnits.length,
@@ -246,10 +251,13 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		// -- Phase 4: dependency graph --------------------------------------
 		this._progress('graph', filesProcessed, fileUris.length, allUnits.length, 'Resolving dependency graph...', project.label);
 		const dependencyEdges = buildDependencyGraph(allUnits, rawDepEdges);
+		// Map lookup instead of find-per-edge: with ~10k units × ~10k edges the
+		// old nested find made this phase run for minutes ("scan never finishes").
+		const unitById = new Map(allUnits.map(u => [u.id, u]));
 		for (const edge of dependencyEdges) {
 			if (!edge.resolved) { continue; }
-			const from = allUnits.find(u => u.id === edge.fromId);
-			const to   = allUnits.find(u => u.id === edge.toId);
+			const from = unitById.get(edge.fromId);
+			const to   = unitById.get(edge.toId);
 			if (from && !from.dependencies.includes(edge.toId)) { from.dependencies.push(edge.toId); }
 			if (to   && !to.dependents.includes(edge.fromId))   { to.dependents.push(edge.fromId);   }
 		}
@@ -273,7 +281,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		const cloneDebt = dominantLang === 'cobol'
 			? detectCopyPasteCobol(allUnits.map(u => ({ unitId: u.id, content: '' })))
 			: [];
-		allTechDebtItems.push(...cloneDebt);
+		for (const c of cloneDebt) { allTechDebtItems.push(c); }
 
 		// -- Aggregate ------------------------------------------------------
 		const grcSnapshot  = buildGRCSnapshot(allGRCViolations);

@@ -1437,6 +1437,26 @@ const AssistantMessageComponent = React.memo(({ chatMessage, isCheckpointGhost, 
 				</ProseWrapper>
 			</div>
 		}
+
+		{/* run footer: duration + copy-this-message (committed messages only) */}
+		{isCommitted && (chatMessage.durationMs ?? 0) > 0 &&
+			<div className="flex items-center gap-1 pt-0.5 mt-1">
+				<span
+					className="text-[10px] font-mono uppercase tracking-wider text-[var(--vscode-descriptionForeground)] opacity-60 select-none"
+					title="Wall-clock duration of the agent run that produced this message"
+				>
+					{chatMessage.durationMs! >= 3600000
+						? `${Math.floor(chatMessage.durationMs! / 3600000)}h ${Math.floor((chatMessage.durationMs! % 3600000) / 60000)}m`
+						: chatMessage.durationMs! >= 60000
+							? `${Math.floor(chatMessage.durationMs! / 60000)}m ${Math.floor((chatMessage.durationMs! % 60000) / 1000)}s`
+							: `${(chatMessage.durationMs! / 1000).toFixed(1)}s`}
+				</span>
+				<CopyButton
+					codeStr={(chatMessage.displayContent || '').replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim()}
+					toolTipName="Copy message"
+				/>
+			</div>
+		}
 	</>
 
 })

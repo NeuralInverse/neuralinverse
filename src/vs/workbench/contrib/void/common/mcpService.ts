@@ -56,6 +56,44 @@ const MCP_CONFIG_SAMPLE_STRING = JSON.stringify(MCP_CONFIG_SAMPLE, null, 2);
 // }
 
 
+/**
+ * Coerce string-typed tool params to the types declared in the MCP tool's JSON
+ * schema. The LLM tool-call parser produces a map of strings; servers that
+ * validate their inputSchema reject those with -32602 "Invalid Parameters".
+ * Values are only converted when the conversion is unambiguous — anything the
+ * schema doesn't describe, or that doesn't parse, is left untouched.
+ */
+export function coerceMCPParamsToSchema(params: unknown, inputSchema?: Record<string, any>): unknown {
+	if (!params || typeof params !== 'object' || Array.isArray(params)) return params
+	const properties = inputSchema?.properties
+	if (!properties || typeof properties !== 'object') return params
+	const out: Record<string, unknown> = { ...(params as Record<string, unknown>) }
+	for (const [name, prop] of Object.entries(properties)) {
+		const value = out[name]
+		if (typeof value !== 'string') continue
+		const type = Array.isArray(prop?.type) ? prop.type[0] : prop?.type
+		const trimmed = value.trim()
+		try {
+			if (type === 'number') {
+				if (trimmed !== '' && !Number.isNaN(Number(trimmed))) out[name] = Number(trimmed)
+			}
+			else if (type === 'integer') {
+				const n = Number.parseInt(trimmed, 10)
+				if (!Number.isNaN(n)) out[name] = n
+			}
+			else if (type === 'boolean') {
+				if (trimmed === 'true') out[name] = true
+				else if (trimmed === 'false') out[name] = false
+			}
+			else if ((type === 'object' || type === 'array') && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
+				const parsed = JSON.parse(trimmed)
+				if (type === 'array' ? Array.isArray(parsed) : (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))) out[name] = parsed
+			}
+		} catch { /* not valid JSON — leave the string as-is */ }
+	}
+	return out
+}
+
 class MCPService extends Disposable implements IMCPService {
 	_serviceBrand: undefined;
 
@@ -327,7 +365,14 @@ class MCPService extends Disposable implements IMCPService {
 
 
 	public async callMCPTool(toolData: MCPToolCallParams): Promise<{ result: RawMCPToolCall }> {
-		const result = await this.channel.call<RawMCPToolCall>('callTool', toolData);
+		// LLM tool params arrive as a map of STRINGS (that's what the tool-call parser
+		// produces), but MCP servers validate against their JSON schema and reject
+		// mistyped values with -32602 "Invalid Parameters" (e.g. clude-memory's
+		// importance: number). Coerce to the declared types before sending.
+		const server = this.state.mcpServerOfName[toolData.serverName]
+		const tool = server?.tools?.find(t => t.name === toolData.toolName)
+		const params = coerceMCPParamsToSchema(toolData.params, (tool as { inputSchema?: Record<string, any> } | undefined)?.inputSchema)
+		const result = await this.channel.call<RawMCPToolCall>('callTool', { ...toolData, params });
 		if (result.event === 'error') {
 			throw new Error(`Error: ${result.text}`)
 		}
