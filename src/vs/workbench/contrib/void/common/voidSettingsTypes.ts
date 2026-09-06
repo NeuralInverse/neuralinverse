@@ -526,6 +526,8 @@ export type GlobalSettings = {
 	disableSystemMessage: boolean;
 	autoAcceptLLMChanges: boolean;
 	useCase: UseCase;
+	/** Context Ledger (task M5): immutable-episode context management. Off = legacy conversationCompactor path. */
+	contextLedgerEnabled: boolean;
 }
 
 export const defaultGlobalSettings: GlobalSettings = {
@@ -543,6 +545,7 @@ export const defaultGlobalSettings: GlobalSettings = {
 	disableSystemMessage: false,
 	autoAcceptLLMChanges: false,
 	useCase: null,
+	contextLedgerEnabled: true,
 }
 
 export type GlobalSettingName = keyof GlobalSettings

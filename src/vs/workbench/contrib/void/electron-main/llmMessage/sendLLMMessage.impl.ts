@@ -23,6 +23,7 @@ import { extractReasoningWrapper, extractXMLToolsWrapper } from './extractGramma
 import { availableTools, InternalToolInfo } from '../../common/prompt/prompts.js';
 import { generateUuid } from '../../../../../base/common/uuid.js';
 import { ToolName } from '../../common/toolsServiceTypes.js';
+import { streamEndedPrematurely, truncatedStreamMessage } from '../../common/streamIntegrity.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
@@ -393,6 +394,7 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 	const attemptStream = (attemptNum: number) => {
 		let fullReasoningSoFar = ''
 		let fullTextSoFar = ''
+		let sawFinishMarker = false
 		let toolCallsBuffer: { name: string, id: string, args: string }[] = []
 
 		openai.chat.completions
@@ -401,12 +403,14 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 				_setAborter(() => response.controller.abort())
 				// when receive text
 				for await (const chunk of response) {
+					const choice = chunk.choices[0]
+					if (choice?.finish_reason) sawFinishMarker = true
 					// message
-					const newText = chunk.choices[0]?.delta?.content ?? ''
+					const newText = choice?.delta?.content ?? ''
 					fullTextSoFar += newText
 
 					// tool call
-					for (const tool of chunk.choices[0]?.delta?.tool_calls ?? []) {
+					for (const tool of choice?.delta?.tool_calls ?? []) {
 						const index = tool.index ?? 0
 						if (typeof index !== 'number' || index < 0) continue; // skip malformed entries
 						while (toolCallsBuffer.length <= index) {
@@ -436,17 +440,30 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 						toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 					})
 
-				}
-				// on final
-				if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
-					// Bedrock/proxy can return an empty stream under throttling — retry with backoff
-					if (attemptNum < MAX_EMPTY_RETRIES) {
-						setTimeout(() => attemptStream(attemptNum + 1), 800 * (attemptNum + 1))
-					} else {
-						onError({ message: 'Neural Inverse: Response from model was empty.\n\nHelp: https://neuralinverse.com/docs/troubleshooting/empty-response', fullError: null })
 					}
-				}
-				else {
+					// on final
+					if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
+						// Bedrock/proxy can return an empty stream under throttling — retry with backoff
+						if (attemptNum < MAX_EMPTY_RETRIES) {
+							setTimeout(() => attemptStream(attemptNum + 1), 800 * (attemptNum + 1))
+						} else {
+							onError({ message: 'Neural Inverse: Response from model was empty.\n\nHelp: https://neuralinverse.com/docs/troubleshooting/empty-response', fullError: null })
+						}
+					}
+					else if (streamEndedPrematurely({ sawFinishMarker, hasContent: true })) {
+						// Stream delivered content but ended without the terminal
+						// finish_reason chunk — the connection was cut mid-response
+						// (same guard the web impl already has). The partial text
+						// must never be accepted as a complete answer: truncated
+						// tool-call JSON gets silently dropped and the agent stops
+						// mid-task. Retry, then surface a transient (retryable) error.
+						if (attemptNum < MAX_EMPTY_RETRIES) {
+							setTimeout(() => attemptStream(attemptNum + 1), 800 * (attemptNum + 1))
+						} else {
+							onError({ message: truncatedStreamMessage(fullTextSoFar.length + fullReasoningSoFar.length), fullError: null })
+						}
+					}
+					else {
 					const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]
 					onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, toolCalls: toolCalls.length > 0 ? toolCalls : undefined });
 				}
@@ -871,8 +888,12 @@ const sendGeminiChat = async ({
 		.then(async (stream) => {
 			_setAborter(() => { stream.return(fullTextSoFar); });
 
+			let sawFinishMarker = false
 			// Process the stream
 			for await (const chunk of stream) {
+				// Gemini sends finishReason on the terminal chunk — its absence
+				// after content means the connection was closed mid-response.
+				if (chunk.candidates?.[0]?.finishReason) sawFinishMarker = true
 				// message
 				const newText = chunk.text ?? ''
 				fullTextSoFar += newText
@@ -900,6 +921,13 @@ const sendGeminiChat = async ({
 					fullReasoning: fullReasoningSoFar,
 					toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 				})
+			}
+
+			// Stream closed without the terminal finishReason chunk — the reply
+			// is truncated (see the OpenAI-compatible impl for the rationale).
+			if (streamEndedPrematurely({ sawFinishMarker, hasContent: fullTextSoFar !== '' || fullReasoningSoFar !== '' || toolCallsBuffer.length > 0 })) {
+				onError({ message: truncatedStreamMessage(fullTextSoFar.length + fullReasoningSoFar.length), fullError: null })
+				return
 			}
 
 			// on final

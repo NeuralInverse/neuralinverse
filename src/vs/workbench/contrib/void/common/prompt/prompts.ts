@@ -29,7 +29,7 @@ export const MAX_CHILDREN_URIs_PAGE = 500
 
 // terminal tool info
 export const MAX_TERMINAL_CHARS = 100_000
-export const MAX_TERMINAL_INACTIVE_TIME = 120 // seconds
+export const MAX_TERMINAL_INACTIVE_TIME = 1800 // seconds — inactivity-based. A command is NEVER killed while it keeps producing output (total runtime unlimited); only 30 min of complete silence interrupts it.
 export const MAX_TERMINAL_BG_COMMAND_TIME = 300
 
 
@@ -396,18 +396,18 @@ export const builtinTools: {
 	},
 	run_command: {
 		name: 'run_command',
-		description: `Runs a terminal command and waits for the result (times out after ${MAX_TERMINAL_INACTIVE_TIME}s of inactivity). Use bg_after to watch output for N seconds then automatically promote to a background terminal if still running — ideal for downloads, builds, or installs that may take a long time. ${terminalDescHelper}`,
+		description: `Runs a terminal command and waits for the result. A command is NEVER killed while it keeps producing output — total runtime is unlimited; it is only interrupted after ${MAX_TERMINAL_INACTIVE_TIME}s of COMPLETE silence. For multi-hour or mostly-silent tasks, ALWAYS pass bg_after=N (returns immediately, the result is reported back automatically on completion) or use open_persistent_terminal + run_persistent_command + read_terminal to poll progress. ${terminalDescHelper}`,
 		params: {
 			command: { description: 'The terminal command to run.' },
 			cwd: { description: cwdHelper },
-			timeout: { description: `Optional: override the inactivity timeout in seconds. Use this when you know a command needs more time (e.g. timeout=600 for large builds).` },
+			timeout: { description: `Optional: override the inactivity timeout in SECONDS for a mostly-silent command you know needs longer quiet phases (e.g. timeout=1800). Not needed for commands that print output regularly — those never time out.` },
 			bg_after: { description: `Optional: if the command is still running after this many seconds, automatically promote it to a background terminal and return immediately with the terminal ID. Use this for long-running commands like downloads, npm install, cargo build, etc. Example: bg_after=30 watches for 30s then moves to background if not done.` },
 		},
 	},
 
 	run_persistent_command: {
 		name: 'run_persistent_command',
-		description: `Runs a terminal command in the persistent terminal that you created with open_persistent_terminal (results after ${MAX_TERMINAL_BG_COMMAND_TIME} are returned, and command continues running in background). ${terminalDescHelper}`,
+		description: `Runs a terminal command in the persistent terminal that you created with open_persistent_terminal. NEVER blocks and NEVER kills the command — total runtime is unlimited (hours are fine). When the command finishes, its output is automatically reported back to you; use read_terminal to check progress in the meantime. ${terminalDescHelper}`,
 		params: {
 			command: { description: 'The terminal command to run.' },
 			persistent_terminal_id: { description: 'The ID of the terminal created using open_persistent_terminal.' },
@@ -415,6 +415,15 @@ export const builtinTools: {
 	},
 
 
+
+	run_background_command: {
+		name: 'run_background_command',
+		description: `Starts a command in a NEW background terminal and returns IMMEDIATELY — it never blocks the conversation and can NEVER time out or be killed (multi-hour runtime is fine). When the command finishes, its output is automatically delivered to you as a [SYSTEM: Background terminal finished] message — do NOT re-run it. Meanwhile, check progress with read_terminal (pass the returned terminal_id) or answer prompts with send_command_input. This is the right tool for builds, installs, workspace-wide scans, test suites, dev servers, and any task expected to take more than a few minutes.`,
+		params: {
+			command: { description: 'The terminal command to run.' },
+			cwd: { description: cwdHelper },
+		},
+	},
 
 	open_persistent_terminal: {
 		name: 'open_persistent_terminal',

@@ -219,7 +219,12 @@ export class Win32UpdateService extends AbstractUpdateService implements IRelaun
 			.then(update => {
 				const updateType = getUpdateType();
 
-				if (!update || !update.url || !update.version || !update.productVersion) {
+				if (!update || !update.url || !update.version || !update.productVersion
+					// Update feeds that ignore the commit hash (release-server
+					// returning the latest build unconditionally) would offer the
+					// already-installed version forever; compare versions client-side.
+					|| update.version === this.productService.version
+				) {
 					// If we were checking for an overwrite update and found nothing newer,
 					// restore the Ready state with the pending update
 					if (this.state.type === StateType.Overwriting) {

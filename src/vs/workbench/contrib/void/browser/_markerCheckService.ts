@@ -134,4 +134,9 @@ class MarkerCheckService extends Disposable implements IMarkerCheckService {
 
 }
 
-registerSingleton(IMarkerCheckService, MarkerCheckService, InstantiationType.Eager);
+// Lazy on purpose: nothing injects IMarkerCheckService, and the constructor's
+// 5-second interval iterates EVERY error marker in the workspace (creating text
+// models + querying code actions for each). Registered Eager, that ran in every
+// session as pure debug leftover — hundreds of working copies of churn once the
+// language servers are active.
+registerSingleton(IMarkerCheckService, MarkerCheckService, InstantiationType.Delayed);

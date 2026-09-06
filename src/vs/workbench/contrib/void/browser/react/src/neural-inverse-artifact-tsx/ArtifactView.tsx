@@ -65,7 +65,12 @@ export const ArtifactView = ({ uri }: { uri: URI | undefined }) => {
 
 	const handleCopy = async () => {
 		try {
-			await navigator.clipboard.writeText(content)
+			// navigator.clipboard is DENIED for the main window by Electron
+			// (no clipboard-sanitized-write in allowedPermissionsInCore), so this
+			// silently failed forever. IClipboardService routes through the native
+			// host instead — same pattern as the working chat CopyButton.
+			const clipboardService = accessor.get('IClipboardService') as { writeText(text: string): Promise<void> }
+			await clipboardService.writeText(content)
 			setCopied(true)
 			setTimeout(() => setCopied(false), 2000)
 		} catch (err) {

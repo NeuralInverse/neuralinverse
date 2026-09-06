@@ -372,6 +372,13 @@ export class MCPChannel implements IServerChannel {
 				errorMessage = `${codeDescription}. Full response:\n${JSON.stringify(err, null, 2)}`
 			}
 			// Check if it's an MCP error with a code
+			else if (err instanceof Error) {
+				// Error's message/stack are NON-enumerable, so JSON.stringify(err)
+				// is always "{}" — this branch previously swallowed every real
+				// downstream tool error (e.g. "Cortex API error 404: …") behind
+				// an empty object, making server-side failures undebuggable.
+				errorMessage = err.message || String(err);
+			}
 			else if (typeof err === 'string') {
 				// String error
 				errorMessage = err;

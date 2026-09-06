@@ -81,6 +81,7 @@ class TerminalProcessManager extends Disposable implements ITerminalProcessManag
 		if (proc) {
 			proc.isAlive = false;
 			this._onDidProcessEnd.fire({ id: processId, exitCode });
+			this._processes.delete(processId);
 		}
 	}
 
@@ -89,6 +90,7 @@ class TerminalProcessManager extends Disposable implements ITerminalProcessManag
 		if (proc && proc.isAlive) {
 			proc.isAlive = false;
 			this._onDidProcessEnd.fire({ id: processId, exitCode: null });
+			this._processes.delete(processId);
 		}
 	}
 

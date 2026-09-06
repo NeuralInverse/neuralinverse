@@ -29,7 +29,11 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
+import { LLMChatMessage } from '../../void/common/sendLLMMessageTypes.js';
 import { IVoidSettingsService } from '../../void/common/voidSettingsService.js';
+import { ConversationCompactor } from '../../void/browser/conversationCompactor.js';
+import { IContextLedgerService } from '../../void/browser/contextLedgerService.js';
+import { ILedgerEntry } from '../../void/common/ledgerTypes.js';
 import { IAgentStoreService } from './agentStoreService.js';
 import { IAgentRun, IWorkflowDefinition, WorkflowTrigger } from '../common/workflowTypes.js';
 import { IApprovalRequest, IApprovalResponse } from './orchestrator/approvalGate.js';
@@ -129,10 +133,25 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 
 	/** runId → cancellation token for active runs */
 	private readonly _activeCancellations = new Map<string, ICancellationToken>();
+
+	/**
+	 * agentId → active conversationId for ad-hoc (Agents tab) chat runs
+	 * (task M5 phase 5). The pointer survives until clearAgentConversation()
+	 * drops it, so memory is keyed per conversation instead of per
+	 * agent-lifetime — the documented concurrent-runs context-mixing fix.
+	 */
+	private readonly _conversationByAgent = new Map<string, string>();
+	/**
+	 * Flag-OFF conversation store, keyed by conversationId. Flag-ON
+	 * conversations live in the Context Ledger journal instead and never
+	 * pass through this map.
+	 */
+	private readonly _agentConversations = new Map<string, LLMChatMessage[]>();
 	/** runId → IAgentRun for active runs */
 	private readonly _activeRuns = new Map<string, IAgentRun>();
 	/** Completed runs in reverse-chronological order */
 	private readonly _history: IAgentRun[] = [];
+	private _ledgerWarned = false;
 
 	constructor(
 		@IFileService private readonly fileService: IFileService,
@@ -154,6 +173,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		@IWorkspaceSymbolIndexService private readonly symbolIndexService: IWorkspaceSymbolIndexService,
 		@IRelevanceScorerService private readonly relevanceScorerService: IRelevanceScorerService,
 		@IChangeTrackerService private readonly changeTrackerService: IChangeTrackerService,
+		@IContextLedgerService private readonly contextLedgerService: IContextLedgerService,
 	) {
 		super();
 
@@ -203,6 +223,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			this.settingsService,
 			this._toolRegistry,
 			this.contextPackerService,
+			this.contextLedgerService,
 		);
 
 		// ── Trigger Manager ───────────────────────────────────────────────────
@@ -275,13 +296,11 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		if (!workflow.enabled) throw new Error(`Workflow "${workflowId}" is disabled`);
 
 		// Build agent map from AgentRegistryService
-		const agentMap = new Map(this.agentStore.getAgents().map(a => [
-			// AgentRegistryService uses name as key; we also try the file basename
-			a.name.toLowerCase().replace(/\s+/g, '-'),
-			a,
-		]));
-		// Also index by raw name
+		// Workflow steps reference agents by `id`; keep name aliases for
+		// definitions written before ids were stable.
+		const agentMap = new Map(this.agentStore.getAgents().map(a => [a.id, a]));
 		for (const a of this.agentStore.getAgents()) {
+			agentMap.set(a.name.toLowerCase().replace(/\s+/g, '-'), a);
 			agentMap.set(a.name, a);
 		}
 
@@ -329,7 +348,9 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 	}
 
 	async runAgent(agentId: string, input: string): Promise<IAgentRun> {
-		// Synthesize a single-step workflow for ad-hoc agent execution
+		// Synthesize a single-step workflow for ad-hoc agent execution.
+		// The synthetic id is never in the config registry, so run directly —
+		// the old code first tried runWorkflow() which always rejected.
 		const syntheticWorkflow: IWorkflowDefinition = {
 			id: `adhoc-${agentId}`,
 			name: `Ad-hoc: ${agentId}`,
@@ -343,42 +364,89 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 				allowedTools: [...ALL_FS_TOOLS, ...ALL_TERMINAL_TOOLS, ...ALL_GIT_TOOLS, ...ALL_HTTP_TOOLS].map(t => t.name),
 			}],
 		};
-		return this.runWorkflow(syntheticWorkflow.id, input, 'manual').catch(async () => {
-			// Workflow not in registry — use the synthetic one directly
-			const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
-			const cancellation: ICancellationToken = { cancelled: false };
-			const agentMap = new Map(this.agentStore.getAgents().map(a => [a.name, a]));
-			const folder = this.workspaceContextService.getWorkspace().folders[0];
+		const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
+		const cancellation: ICancellationToken = { cancelled: false };
+		const agentMap = new Map(this.agentStore.getAgents().map(a => [a.id, a]));
+		for (const a of this.agentStore.getAgents()) {
+			agentMap.set(a.name.toLowerCase().replace(/\s+/g, '-'), a);
+			agentMap.set(a.name, a);
+		}
+		const folder = this.workspaceContextService.getWorkspace().folders[0];
 
-			this._activeRuns.set(run.id, run);
-			this._activeCancellations.set(run.id, cancellation);
-			this._onDidChangeRun.fire(run);
+		this._activeRuns.set(run.id, run);
+		this._activeCancellations.set(run.id, cancellation);
+		this._onDidChangeRun.fire(run);
 
-			if (!folder) {
-				run.status = 'failed';
-				run.error = 'No workspace folder open';
-				run.endedAt = Date.now();
-				this._finalizeRun(run);
-				return run;
-			}
-
-			const agentModelSel = this.settingsService.state.modelSelectionOfFeature['Chat'];
-			const baseCtx = { workspaceUri: folder.uri, fileService: this.fileService, modelInfo: agentModelSel ? { provider: agentModelSel.providerName, model: agentModelSel.modelName } : undefined };
-
-			try {
-				await this._orchestrator.run(
-					syntheticWorkflow, run, agentMap, baseCtx, input, cancellation,
-					(r) => this._onDidChangeRun.fire(r),
-				);
-			} catch (e: any) {
-				run.status = 'failed';
-				run.error = e.message;
-				run.endedAt = Date.now();
-			}
-
+		if (!folder) {
+			run.status = 'failed';
+			run.error = 'No workspace folder open';
+			run.endedAt = Date.now();
 			this._finalizeRun(run);
 			return run;
-		});
+		}
+
+		const agentModelSel = this.settingsService.state.modelSelectionOfFeature['Chat'];
+		const baseCtx = { workspaceUri: folder.uri, fileService: this.fileService, modelInfo: agentModelSel ? { provider: agentModelSel.providerName, model: agentModelSel.modelName } : undefined };
+
+		// Context Ledger flag (task M5 phase 5): ON → prior conversation comes
+		// from the ledger journal keyed by conversationId; OFF → the in-RAM
+		// store, exactly as before.
+		const ledgerOn = this.settingsService.state.globalSettings.contextLedgerEnabled;
+		const conversationId = this._getOrCreateConversationId(agentId);
+		const priorConversation = ledgerOn
+			? await this._loadConversationFromLedger(conversationId)
+			: this._getAgentConversation(conversationId);
+
+		try {
+			await this._orchestrator.run(
+				syntheticWorkflow, run, agentMap, baseCtx, input, cancellation,
+				(r) => this._onDidChangeRun.fire(r),
+				priorConversation,
+			);
+		} catch (e: any) {
+			run.status = 'failed';
+			run.error = e.message;
+			run.endedAt = Date.now();
+		}
+
+		// Append this turn to the agent's conversation so follow-up messages
+		// from the Agents tab keep their context. Only successful turns are
+		// recorded — a failed run produced no assistant reply worth keeping.
+		if (run.status === 'done' && run.finalOutput) {
+			if (ledgerOn) {
+				// Flag ON: journal the turn to the ledger, fire-and-forget with a
+				// single warn on failure. The ledger path never truncates —
+				// long conversations compress via episodes/brief, not the
+				// splice/shift caps of the legacy branch below.
+				this.contextLedgerService.append(conversationId, { role: 'user', content: input })
+					.catch(() => this._warnLedgerOnce());
+				this.contextLedgerService.append(conversationId, { role: 'assistant', content: run.finalOutput })
+					.catch(() => this._warnLedgerOnce());
+			} else {
+				this._appendAgentConversation(conversationId, input, run.finalOutput);
+			}
+		}
+
+		this._finalizeRun(run);
+		return run;
+	}
+
+	/**
+	 * Reset the conversation memory of an agent (ad-hoc chat runs only).
+	 * The Agents tab can call this when the user starts a fresh chat.
+	 */
+	clearAgentConversation(agentId: string): void {
+		// Delete the RAM conversation AND the agent→conversation pointer so the
+		// next run starts a fresh conversationId. Ledger archives are never
+		// deleted — memory is keyed per conversation instead of per
+		// agent-lifetime, which closes the documented concurrent-runs
+		// context-mixing bug (parallel chats of one agent no longer share a
+		// single rolling history).
+		const conversationId = this._conversationByAgent.get(agentId);
+		if (conversationId !== undefined) {
+			this._agentConversations.delete(conversationId);
+		}
+		this._conversationByAgent.delete(agentId);
 	}
 
 	cancelRun(runId: string): void {
@@ -408,6 +476,91 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 	}
 
 	// ─── Internal ─────────────────────────────────────────────────────────────
+
+	/** Max user/assistant turns kept per agent conversation — bounds token growth in the legacy store and caps the ledger readTail (task M5 phase 5) */
+	private static readonly MAX_CONVERSATION_MESSAGES = 24;
+	/** Max estimated tokens kept per agent conversation — the real bound (legacy store) */
+	private static readonly MAX_CONVERSATION_TOKENS = 32_000;
+	/** A single stored turn is capped so one giant output can't dominate memory (legacy store) */
+	private static readonly MAX_STORED_TURN_CHARS = 16_000;
+
+	/** Get (or create on first run) the active conversationId of an agent. */
+	private _getOrCreateConversationId(agentId: string): string {
+		let conversationId = this._conversationByAgent.get(agentId);
+		if (conversationId === undefined) {
+			conversationId = `wf-${agentId}-${Date.now().toString(36)}`;
+			this._conversationByAgent.set(agentId, conversationId);
+		}
+		return conversationId;
+	}
+
+	/**
+	 * Flag-ON prior conversation for runAgent (task M5 phase 5): the ledger
+	 * tail capped at MAX_CONVERSATION_MESSAGES entries, with the working brief
+	 * prepended as one user message when one exists — long conversations keep
+	 * continuing compressed within MAX_CONVERSATION_TOKENS instead of being
+	 * truncated. Never throws: a ledger problem degrades to an empty prior
+	 * (the run starts fresh).
+	 */
+	private async _loadConversationFromLedger(conversationId: string): Promise<LLMChatMessage[]> {
+		try {
+			const entries = await this.contextLedgerService.readTail(conversationId, WorkflowAgentService.MAX_CONVERSATION_MESSAGES);
+			const messages: LLMChatMessage[] = [];
+			const brief = await this.contextLedgerService.getBrief(conversationId);
+			if (brief !== null) {
+				messages.push({ role: 'user', content: brief.text });
+			}
+			for (const entry of entries) {
+				const mapped = this._ledgerEntryToChatMessage(entry);
+				if (mapped) messages.push(mapped);
+			}
+			return messages;
+		} catch {
+			this._warnLedgerOnce();
+			return [];
+		}
+	}
+
+	/** user/assistant pass through; tool results become user-formatted text; system/note are internal bookkeeping. */
+	private _ledgerEntryToChatMessage(entry: ILedgerEntry): LLMChatMessage | null {
+		if (entry.role === 'user') return { role: 'user', content: entry.content };
+		if (entry.role === 'assistant') return { role: 'assistant', content: entry.content };
+		if (entry.role === 'tool') return { role: 'user', content: `Tool "${entry.name ?? 'unknown'}" result:\n${entry.content}` };
+		return null;
+	}
+
+	private _warnLedgerOnce(): void {
+		if (this._ledgerWarned) return;
+		this._ledgerWarned = true;
+		console.warn('[WorkflowAgentService] context ledger degraded — agent conversation memory may reset; runs continue unaffected');
+	}
+
+	private _getAgentConversation(conversationId: string): LLMChatMessage[] {
+		return [...(this._agentConversations.get(conversationId) ?? [])];
+	}
+
+	private _appendAgentConversation(conversationId: string, userText: string, assistantText: string): void {
+		// Legacy (flag-OFF) branch only — the ledger path above never truncates.
+		const cap = (t: string) => t.length > WorkflowAgentService.MAX_STORED_TURN_CHARS
+			? t.slice(0, WorkflowAgentService.MAX_STORED_TURN_CHARS) + '\n…[truncated]'
+			: t;
+		const conv = this._agentConversations.get(conversationId) ?? [];
+		conv.push({ role: 'user', content: cap(userText) });
+		conv.push({ role: 'assistant', content: cap(assistantText) });
+		// Keep the most recent turns; old context ages out
+		if (conv.length > WorkflowAgentService.MAX_CONVERSATION_MESSAGES) {
+			conv.splice(0, conv.length - WorkflowAgentService.MAX_CONVERSATION_MESSAGES);
+		}
+		// Token cap — a few huge turns can exceed the message cap's intent
+		const tokensOf = (m: LLMChatMessage) => ConversationCompactor.estimateTextTokens(
+			(() => { const c = (m as { content?: unknown }).content; return typeof c === 'string' ? c : JSON.stringify(c ?? ''); })()
+		);
+		let totalTokens = conv.reduce((s, m) => s + tokensOf(m), 0);
+		while (conv.length > 2 && totalTokens > WorkflowAgentService.MAX_CONVERSATION_TOKENS) {
+			totalTokens -= tokensOf(conv.shift()!);
+		}
+		this._agentConversations.set(conversationId, conv);
+	}
 
 	private _finalizeRun(run: IAgentRun): void {
 		this._activeRuns.delete(run.id);

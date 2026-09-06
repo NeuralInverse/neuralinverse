@@ -1,4 +1,4 @@
-// ../../../../../../../node_modules/diff/lib/index.mjs
+// ../../../../../../../tools/.verify/node_modules/diff/lib/index.mjs
 function Diff() {
 }
 Diff.prototype = {

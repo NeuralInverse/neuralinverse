@@ -8,6 +8,7 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
 
 import { URI } from '../../../../base/common/uri.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
@@ -47,6 +48,16 @@ import { needsOSSEnhancement } from '../common/ossModelEnhancement/ossDetection.
 import { shouldAutoRetry, getCorrectionMessage } from '../common/ossModelEnhancement/autoRetryCorrection.js';
 import { wrapToolResultForOSS } from '../common/ossModelEnhancement/progressFeedbackLoop.js';
 import { workspaceFilteredThreads } from '../common/chatThreadUtils.js';
+import { getModelCapabilities } from '../common/modelCapabilities.js';
+import { CompactableMessage, ConversationCompactor, createInactivityWatchdog, isContextOverflowError, isRetryableLlmError, renderConversationSummaryMessage } from './conversationCompactor.js';
+import { IContextLedgerService } from './contextLedgerService.js';
+import { ILedgerRecallService } from '../../neuralInverse/browser/context/search/ledgerRecallService.js';
+import { ILedgerAppendInput, IContextUsageReport } from '../common/ledgerTypes.js';
+import { EpisodeSummarizer } from './episodeSummarizer.js';
+import { buildWorkingBrief } from '../common/workingBriefBuilder.js';
+import { assemble } from '../common/contextAssembler.js';
+import { DEFAULT_LEDGER_POLICY } from '../common/ledgerPolicy.js';
+import { resolveCloseBoundary, noteBoundaryMissed, resetBoundaryMissTelemetry } from '../common/ledgerBoundary.js';
 
 
 // Tool name aliases: OSS models use alternative names for built-in tools
@@ -83,6 +94,18 @@ function resolveToolAlias(name: string): string {
 // related to retrying when LLM message has error
 const CHAT_RETRIES = 3
 const RETRY_DELAY = 2500
+
+// A provider stream that emits no chunks for this long is treated as dead and
+// aborted — without this a stalled connection leaves the thread spinning forever.
+const LLM_STREAM_STALL_MS = 180_000 // 3 minutes
+
+/** Compact token count for the ledger assembled log line: 0 / 41 / 38.2k / 1.84M. */
+function fmtTokens(n: number): string {
+	if (n === 0) return '0'
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
+	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+	return String(n)
+}
 
 
 const findStagingSelectionIndex = (currentSelections: StagingSelectionItem[] | undefined, newSelection: StagingSelectionItem): number | null => {
@@ -175,6 +198,11 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	state: ThreadsState // allThreads is the workspace-filtered view; _allThreads is the full store
 	private _allThreads: ChatThreads = {} // unfiltered store across all workspaces
 
+	// agent-loop start per thread (absent when idle); read by abortRunning,
+	// which runs outside the loop's scope. Keyed by threadId — two threads
+	// can run loops concurrently and must not overwrite each other's start.
+	private readonly _activeLoopStartMsByThread = new Map<string, number>()
+
 	// used in checkpointing
 	// private readonly _userModifiedFilesToCheckInCheckpoints = new LRUCache<string, null>(50)
 
@@ -188,11 +216,263 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				this._agentService = null
 			}
 		}
-		return this._agentService
+		return this._agentService ?? null
+	}
+
+	// Pre-send context compaction (opencode-style). Lazy because it needs the
+	// constructor-injected _llmMessageService.
+	private _compactor: ConversationCompactor | undefined
+	private _getCompactor(): ConversationCompactor {
+		if (!this._compactor) this._compactor = new ConversationCompactor(this._llmMessageService)
+		return this._compactor
+	}
+
+	// ── Context Ledger (task M5) ─────────────────────────────────────────────
+	// The ledger path (flag contextLedgerEnabled) journals every message
+	// append-only, closes immutable episodes, and sends a deterministic
+	// working brief instead of a rewritten rolling summary. The compactor
+	// above stays as the exact legacy path for flag=off.
+	// lazy like _compactor: needs the constructor-injected _llmMessageService
+	private _ledgerSummarizer: EpisodeSummarizer | undefined
+	private _getLedgerSummarizer(): EpisodeSummarizer {
+		if (!this._ledgerSummarizer) this._ledgerSummarizer = new EpisodeSummarizer(this._llmMessageService)
+		return this._ledgerSummarizer
+	}
+	/** last sent prefix per thread — feeds the D5 cache-stability check */
+	private readonly _ledgerPrevPrefix = new Map<string, { revision: number; prefix: string }>()
+	/** last assembler report per thread — consumed by the context gauge (C2) */
+	private readonly _ledgerUsageReports = new Map<string, IContextUsageReport>()
+	/** message objects already journaled this session (migration dedupe) */
+	private readonly _journaledThisSession = new Map<string, Set<ChatMessage>>()
+	/** real provider usage of the last final message per thread — feeds the journal + calibration (task M6 item 4) */
+	private readonly _ledgerLastUsage = new Map<string, { input: number; output: number }>()
+	/** accumulated REAL usage per thread; getSessionCost prefers it over estimates */
+	private readonly _ledgerSessionUsage = new Map<string, { input: number; output: number }>()
+	/** per-model calibration ratio estimated/actual input tokens (task M6 item 4) */
+	private readonly _ledgerCalibration = new Map<string, { ratio: number; n: number }>()
+	private _ledgerWarned = false
+
+	private _ledgerEnabled(): boolean {
+		return this._settingsService.state.globalSettings.contextLedgerEnabled
+	}
+
+	private _warnLedgerOnce(): void {
+		if (this._ledgerWarned) return
+		this._ledgerWarned = true
+		console.warn('[ChatThread] context ledger degraded — falling back where needed; conversation continues unaffected')
+	}
+
+	/** Map a stored ChatMessage to a journal append; null for non-conversational roles. */
+	private _toLedgerInput(m: ChatMessage): ILedgerAppendInput | null {
+		if (m.role === 'checkpoint') return null
+		if (m.role === 'interrupted_streaming_tool') return null
+		if (m.role === 'assistant') {
+			const content = (m.displayContent || '').replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim()
+			if (!content) return null
+			return { role: 'assistant', content }
+		}
+		if (m.role === 'tool') return { role: 'tool', content: m.content ?? '', name: m.name }
+		if (m.role === 'user') return { role: 'user', content: m.content ?? '' }
+		return null
+	}
+
+	private _journalMessage(threadId: string, m: ChatMessage): void {
+		const input = this._toLedgerInput(m)
+		if (!input) return
+		// Migration dedupe only (M6 item 5): the set exists solely while a
+		// legacy thread's migration is still pending and is deleted once it
+		// settles — it is never re-created, so it cannot pin every message
+		// of the session in memory anymore.
+		this._journaledThisSession.get(threadId)?.add(m)
+		// Real provider usage of the reply this assistant message came from
+		// (M6 item 4); consumed exactly once, right here.
+		if (m.role === 'assistant') {
+			const usage = this._ledgerLastUsage.get(threadId)
+			if (usage) {
+				this._ledgerLastUsage.delete(threadId)
+				input.meta = { ...input.meta, usage: { ...usage } }
+			}
+		}
+		this._contextLedgerService.append(threadId, input)
+			.then(entry => {
+				// feed the recall index (task M5 phase 3) — best-effort, idle-safe
+				if (entry) void this._recallIndexService?.indexEntry(threadId, entry).catch(() => undefined)
+			})
+			.catch(() => this._warnLedgerOnce())
+	}
+
+	/** Record real provider usage: last-usage side channel + session totals + per-model calibration (M6 item 4). */
+	private _recordLedgerUsage(threadId: string, modelSelection: ModelSelection | null, usage: { input: number; output: number }): void {
+		this._ledgerLastUsage.set(threadId, usage)
+		const acc = this._ledgerSessionUsage.get(threadId) ?? { input: 0, output: 0 }
+		acc.input += usage.input
+		acc.output += usage.output
+		this._ledgerSessionUsage.set(threadId, acc)
+		const report = this._ledgerUsageReports.get(threadId)
+		if (modelSelection && report && report.totalTokens > 0 && usage.input > 0) {
+			const key = `${modelSelection.providerName}/${modelSelection.modelName}`
+			const sample = report.totalTokens / usage.input // estimate / actual
+			const prev = this._ledgerCalibration.get(key)
+			this._ledgerCalibration.set(key, { ratio: (prev ? (prev.ratio * prev.n + sample) / (prev.n + 1) : sample), n: prev ? prev.n + 1 : 1 })
+		}
+	}
+
+	/**
+	 * Context Ledger send path (task M5 phase 2/4). Copy-only migration of
+	 * legacy threads on first send, then budget-aware assembly
+	 * (brief → tail). Never throws — falls back to the raw messages.
+	 */
+	private async _assembleLedgerThread(threadId: string, rawMessages: ChatMessage[], modelSelection: ModelSelection | null, force: boolean): Promise<ChatMessage[]> {
+		if (!modelSelection || rawMessages.length === 0) return rawMessages
+		try {
+			// copy-only migration: a legacy thread with stored history but an
+			// empty journal gets its messages appended once. THREAD_STORAGE_KEY
+			// is never touched — flag-off must reproduce today's exact behavior.
+			const stats = await this._contextLedgerService.stats(threadId)
+			if (!stats || stats.entryCount === 0) {
+				const journaled = this._journaledThisSession.get(threadId)
+				try {
+					for (const m of rawMessages) {
+						if (journaled?.has(m)) continue
+						const input = this._toLedgerInput(m)
+						if (input) await this._contextLedgerService.append(threadId, input)
+					}
+				} finally {
+					// M6 item 5: migration settled — the dedupe set has no further
+					// job (the journal is non-empty now, or there was nothing to
+					// journal) and must not hold message references for the rest
+					// of the session.
+					this._journaledThisSession.delete(threadId)
+				}
+			}
+
+			// overflow recovery / manual compact: close an episode right now
+			// (awaited — the retry depends on the folded prefix)
+			if (force) await this._closeEpisodeIfNeeded(threadId, modelSelection, true)
+
+			const brief = await this._contextLedgerService.getBrief(threadId)
+			const { compactables, raws } = this._toCompactables(rawMessages)
+			const { overridesOfModel } = this._settingsService.state
+			const { contextWindow, reservedOutputTokenSpace } = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel)
+			const assembled = assemble<ChatMessage>({
+				raws,
+				compactables,
+				brief,
+				contextWindow,
+				reservedOutputTokenSpace,
+				policy: DEFAULT_LEDGER_POLICY,
+				prevPrefix: this._ledgerPrevPrefix.get(threadId) ?? null,
+			})
+			if (!assembled.report.cacheStable) {
+				// D5 violation: same brief revision but a different prefix — the
+				// provider prompt cache would be burned on every request
+				console.warn('[ChatThread] ledger cache break: prefix changed without a brief revision bump')
+			}
+			if (brief !== null) this._ledgerPrevPrefix.set(threadId, { revision: brief.revision, prefix: brief.text })
+			this._ledgerUsageReports.set(threadId, assembled.report)
+
+			// One honest line per send (M6 item 3): exact section sizes, the
+			// revision, and total journal tokens so "payload is constant" is
+			// measurable, not asserted. The printed sections always sum to
+			// totalTokens (reserved-output is informational and excluded).
+			const parts = assembled.report.sections
+				.filter(s => s.name !== 'reserved-output')
+				.map(s => `${s.name} ${fmtTokens(s.tokens)}`)
+				.join(' + ')
+			console.log(`[ChatThread] ledger assembled: ${parts} = ${fmtTokens(assembled.report.totalTokens)} / ${fmtTokens(assembled.report.availableInputTokens)} (rev ${brief?.revision ?? 0}, journal ${fmtTokens(stats?.totalTokens ?? 0)})`)
+
+			// the assembled head (brief/pinned/recalled synthetics) maps to plain
+			// user ChatMessages; the verbatim tail passes through untouched
+			const tailLen = raws.length - assembled.keepFromIdx
+			const headMsgs = assembled.messages.slice(0, assembled.messages.length - tailLen)
+			const head: ChatMessage[] = headMsgs.map(m => ({
+				role: 'user' as const,
+				content: (m as { content: string }).content,
+				displayContent: '',
+				selections: null,
+				state: defaultMessageState,
+			}))
+			if (assembled.report.totalTokens > assembled.report.availableInputTokens) {
+				console.warn(`[ChatThread] ledger request over budget: ~${assembled.report.totalTokens} > ${assembled.report.availableInputTokens} tokens`)
+			}
+			return [...head, ...raws.slice(assembled.keepFromIdx)]
+		} catch {
+			this._warnLedgerOnce()
+			return rawMessages
+		}
+	}
+
+	/**
+	 * Close an episode when the boundary policy says so (tokens / idle /
+	 * force) and rebuild the working brief from all frozen episodes.
+	 * Background-safe: callers may fire-and-forget; failures warn once.
+	 * The boundary search itself is shared with the executor (M6 item 1):
+	 * common/ledgerBoundary.resolveCloseBoundary.
+	 */
+	private async _closeEpisodeIfNeeded(threadId: string, modelSelection: ModelSelection | null, force: boolean): Promise<void> {
+		if (!modelSelection) return
+		try {
+			const stats = await this._contextLedgerService.stats(threadId)
+			if (!stats || stats.entryCount === 0) return
+			const episodes = await this._contextLedgerService.listEpisodes(threadId)
+			const idleMs = stats.lastEntryTs ? Date.now() - stats.lastEntryTs : 0
+			// the smallest tail window answers decideBoundary's tail-size check;
+			// resolveCloseBoundary grows the window itself when a boundary is due
+			const tailProbe = await this._contextLedgerService.readTail(threadId, DEFAULT_LEDGER_POLICY.tailMinMessages + 4)
+			if (tailProbe.length === 0) return
+			const decision = EpisodeSummarizer.decideBoundary(stats, tailProbe.length, idleMs, DEFAULT_LEDGER_POLICY, { force })
+			if (!decision || !decision.close) return
+			const fromSeq = episodes.reduce((m, ep) => Math.max(m, ep.range.toSeq), 0) + 1
+			// shared growing-window boundary search — a tool-heavy turn no longer
+			// silently skips the close (M6 item 1)
+			const boundary = await resolveCloseBoundary(fromSeq, DEFAULT_LEDGER_POLICY, n => this._contextLedgerService.readTail(threadId, n))
+			if (boundary.kind !== 'close') {
+				noteBoundaryMissed(threadId, boundary.reason ?? 'no safe episode boundary')
+				return
+			}
+			const toSeq = boundary.toSeq!
+			const entries = await this._contextLedgerService.readRange(threadId, fromSeq, toSeq)
+			if (entries.length === 0) {
+				noteBoundaryMissed(threadId, `boundary seq ${boundary.boundarySeq} selected an empty episode range ${fromSeq}-${toSeq}`)
+				return
+			}
+			const episode = await this._getLedgerSummarizer().summarizeEpisode({
+				threadId,
+				ordinal: episodes.length + 1,
+				entries,
+				range: { fromSeq, toSeq },
+				modelSelection,
+			})
+			await this._contextLedgerService.saveEpisode(episode)
+			// the frozen episode enters the recall index too (its goal/
+			// invariants/rejected terms are the richest search surface)
+			void this._recallIndexService?.indexEpisode(threadId, episode).catch(() => undefined)
+			const brief = buildWorkingBrief({
+				threadId,
+				previousBrief: await this._contextLedgerService.getBrief(threadId),
+				episodes: [...episodes, episode],
+				lastSeq: stats.lastSeq,
+				policy: DEFAULT_LEDGER_POLICY,
+			})
+			await this._contextLedgerService.saveBrief(brief)
+			// adopt the new revision cleanly on the next send; a successful
+			// close also re-arms the boundary-miss warning (M6 item 1)
+			this._ledgerPrevPrefix.delete(threadId)
+			resetBoundaryMissTelemetry(threadId)
+			console.log(`[ChatThread] ledger episode ${episode.ordinal} frozen (${decision.reason}): seq ${fromSeq}-${toSeq}, brief revision ${brief.revision} (~${brief.tokens} tokens)`)
+		} catch {
+			this._warnLedgerOnce()
+		}
+	}
+
+	/** Last assembler usage report for the context gauge (task C2). */
+	getLedgerUsageReport(threadId: string): IContextUsageReport | undefined {
+		return this._ledgerUsageReports.get(threadId)
 	}
 
 	constructor(
 		@IStorageService private readonly _storageService: IStorageService,
+		@ILogService private readonly _logService: ILogService,
 		@IVoidModelService private readonly _voidModelService: IVoidModelService,
 		@ILLMMessageService private readonly _llmMessageService: ILLMMessageService,
 		@IToolsService private readonly _toolsService: IToolsService,
@@ -209,6 +489,8 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		@IVoidInternalToolService private readonly _internalToolService: IVoidInternalToolService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IUserInputRequestService private readonly _userInputRequestService: IUserInputRequestService,
+		@IContextLedgerService private readonly _contextLedgerService: IContextLedgerService,
+		@ILedgerRecallService private readonly _recallIndexService: ILedgerRecallService,
 	) {
 		super()
 		this.state = { allThreads: {}, currentThreadId: null as unknown as string } // default state
@@ -289,16 +571,166 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		}
 	}
 
-	getSessionCost(_threadId: string): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string } {
-		return { totalCost: 0, inputTokens: 0, outputTokens: 0, formattedCost: '$0.0000' };
+	/**
+	 * Session cost: REAL provider usage when the ledger recorded it (M6 item
+	 * 4), otherwise the chars/4 estimate — calibrated by the per-model
+	 * estimated/actual ratio once one real sample exists. Priced by the
+	 * model's published rates.
+	 */
+	getSessionCost(threadId: string): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string } {
+		const { modelSelection } = this._currentModelSelectionProps()
+		if (!modelSelection) return { totalCost: 0, inputTokens: 0, outputTokens: 0, formattedCost: '$0.0000' }
+		let cost = { input: 0, output: 0 }
+		try {
+			const { overridesOfModel } = this._settingsService.state
+			cost = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel).cost
+		} catch { /* unknown model — zero rates */ }
+		const thread = this._allThreads[threadId]
+		const real = this._ledgerSessionUsage.get(threadId)
+		const calibration = this._ledgerCalibration.get(`${modelSelection.providerName}/${modelSelection.modelName}`)
+		const report = this._ledgerUsageReports.get(threadId)
+		// chat messages are a role union; only conversational roles have text
+		const estimateOf = (m: ChatMessage): number => this.estimateTokens(m.role === 'assistant' ? (m.displayContent ?? '') : ('content' in m ? (m.content ?? '') : ''))
+		const estimateSum = (thread?.messages ?? []).reduce((s, m) => s + estimateOf(m), 0)
+		const inputTokens = real
+			? real.input
+			: calibration && calibration.n > 0 && calibration.ratio > 0
+				? Math.round((report?.totalTokens ?? estimateSum) / calibration.ratio)
+				: report
+					? report.totalTokens
+					: estimateSum
+		const outputTokens = real
+			? real.output
+			: (thread?.messages ?? []).reduce((s, m) => s + (m.role === 'assistant' ? this.estimateTokens(m.displayContent ?? '') : 0), 0)
+		const totalCost = (inputTokens / 1e6) * cost.input + (outputTokens / 1e6) * cost.output
+		return { totalCost, inputTokens, outputTokens, formattedCost: `$${totalCost.toFixed(4)}` }
 	}
 
 	estimateTokens(text: string): number {
 		return Math.ceil(text.length / 4);
 	}
 
-	async compactThread(_threadId: string): Promise<{ summary: string; messageCountBefore: number; messageCountAfter: number } | null> {
-		return null;
+	/**
+	 * Manual compaction (opencode-style): summarize the aged prefix of a thread
+	 * and REWRITE the stored thread, replacing the old messages with a single
+	 * summary message. The UI history shrinks accordingly.
+	 */
+	async compactThread(threadId: string): Promise<{ summary: string; messageCountBefore: number; messageCountAfter: number } | null> {
+		const thread = this.state.allThreads[threadId]
+		if (!thread) return null
+
+		const { modelSelection } = this._currentModelSelectionProps()
+		const rawMessages = thread.messages
+		const messageCountBefore = rawMessages.length
+
+		const { compactables, raws } = this._toCompactables(rawMessages)
+		if (compactables.length === 0 || !modelSelection) return null
+
+		const { overridesOfModel } = this._settingsService.state
+		const { contextWindow } = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel)
+
+		let result
+		try {
+			result = await this._getCompactor().compactIfNeeded({
+				messages: compactables,
+				contextWindow,
+				modelSelection,
+				cacheKey: threadId,
+				force: true,
+			})
+		} catch {
+			return null
+		}
+		if (!result.summary || result.keepFromIdx <= 0) return null
+
+		const summaryMessage: ChatMessage = {
+			role: 'user',
+			content: renderConversationSummaryMessage(result.summary),
+			displayContent: '📦 Conversation compacted — earlier messages were summarized to free up context.',
+			selections: null,
+			state: defaultMessageState,
+		}
+		this._replaceThreadMessages(threadId, [summaryMessage, ...raws.slice(result.keepFromIdx)])
+		return { summary: result.summary, messageCountBefore, messageCountAfter: 1 + (raws.length - result.keepFromIdx) }
+	}
+
+	/**
+	 * Pre-send context management: when the thread's estimated tokens approach
+	 * the model's context window, fold its aged prefix into one LLM-summarized
+	 * user message. The stored thread (and the UI) are untouched — only the
+	 * outgoing request is compacted.
+	 */
+	private async _maybeCompactThreadForSend(threadId: string, rawMessages: ChatMessage[], modelSelection: ModelSelection | null, force: boolean): Promise<ChatMessage[]> {
+		if (!modelSelection || rawMessages.length === 0) return rawMessages
+
+		const { compactables, raws } = this._toCompactables(rawMessages)
+		if (compactables.length === 0) return rawMessages
+
+		const { overridesOfModel } = this._settingsService.state
+		const { contextWindow } = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel)
+
+		let result
+		try {
+			result = await this._getCompactor().compactIfNeeded({
+				messages: compactables,
+				contextWindow,
+				modelSelection,
+				cacheKey: threadId,
+				force,
+			})
+		} catch {
+			return rawMessages // compaction is best-effort; never block the send
+		}
+
+		if (!result.summary || result.keepFromIdx <= 0) return rawMessages
+		console.log(`[ChatThread] Compacted context for send: ~${result.tokensBefore} → ~${result.tokensAfter} est. tokens (llm summary: ${result.usedLLM})`)
+
+		const summaryMessage: ChatMessage = {
+			role: 'user',
+			content: renderConversationSummaryMessage(result.summary),
+			displayContent: '',
+			selections: null,
+			state: defaultMessageState,
+		}
+		return [summaryMessage, ...raws.slice(result.keepFromIdx)]
+	}
+
+	/** Convert stored ChatMessages to the compactor's minimal shape, keeping a parallel array of the originals. */
+	private _toCompactables(rawMessages: ChatMessage[]): { compactables: CompactableMessage[], raws: ChatMessage[] } {
+		const compactables: CompactableMessage[] = []
+		const raws: ChatMessage[] = []
+		for (const m of rawMessages) {
+			if (m.role === 'checkpoint') continue
+			if (m.role === 'interrupted_streaming_tool') continue
+			if (m.role === 'assistant') {
+				compactables.push({ role: 'assistant', content: (m.displayContent || '').replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim() })
+				raws.push(m)
+			}
+			else if (m.role === 'tool') {
+				compactables.push({ role: 'tool', content: m.content ?? '', name: m.name })
+				raws.push(m)
+			}
+			else if (m.role === 'user') {
+				compactables.push({ role: 'user', content: m.content ?? '' })
+				raws.push(m)
+			}
+		}
+		return { compactables, raws }
+	}
+
+	private _replaceThreadMessages(threadId: string, messages: ChatMessage[]) {
+		const oldThread = this._allThreads[threadId]
+		if (!oldThread) return // should never happen
+		const newThreads = {
+			...this._allThreads,
+			[oldThread.id]: {
+				...oldThread,
+				lastModified: new Date().toISOString(),
+				messages,
+			},
+		}
+		this._storeAllThreads(newThreads)
+		this._setState({ allThreads: newThreads })
 	}
 
 
@@ -495,7 +927,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		// add assistant message
 		if (this.streamState[threadId]?.isRunning === 'LLM') {
 			const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = this.streamState[threadId].llmInfo
-			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null })
+			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null, durationMs: Date.now() - (this._activeLoopStartMsByThread.get(threadId) ?? Date.now()) })
 			if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 		}
 		// add tool that's running
@@ -611,6 +1043,9 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		let interrupted = false
 		let resolveInterruptor: (r: () => void) => void = () => { }
 		const interruptorPromise = new Promise<() => void>(res => { resolveInterruptor = res })
+		// Tool calls used to be invisible in session logs — every "why did the
+		// agent hang" investigation started with zero evidence. One line per call.
+		const toolStartedAt = Date.now()
 		try {
 
 			// set stream state
@@ -652,6 +1087,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			if (interrupted) { return { interrupted: true } } // the tool result is added where we interrupt, not here
 
 			const errorMessage = getErrorMessage(error)
+			this._logService.warn(`[AgentTool] ${toolName} FAILED after ${Date.now() - toolStartedAt}ms: ${errorMessage.slice(0, 300)}`)
 			this._updateLatestTool(threadId, { role: 'tool', type: 'tool_error', params: toolParams, result: errorMessage, name: toolName, content: errorMessage, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 			return {}
 		}
@@ -671,6 +1107,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			}
 		} catch (error) {
 			const errorMessage = this.toolErrMsgs.errWhenStringifying(error)
+			this._logService.warn(`[AgentTool] ${toolName} stringification FAILED after ${Date.now() - toolStartedAt}ms: ${errorMessage.slice(0, 300)}`)
 			this._updateLatestTool(threadId, { role: 'tool', type: 'tool_error', params: toolParams, result: errorMessage, name: toolName, content: errorMessage, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 			return {}
 		}
@@ -687,6 +1124,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			finalToolResultStr = wrapToolResultForOSS(toolName, true, finalToolResultStr, 0);
 		}
 
+		this._logService.info(`[AgentTool] ${toolName} ok: ${Date.now() - toolStartedAt}ms, ${finalToolResultStr.length} chars`)
 		this._updateLatestTool(threadId, { role: 'tool', type: 'success', params: toolParams, result: toolResult, name: toolName, content: finalToolResultStr, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 		return {}
 	};
@@ -720,12 +1158,19 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		let shouldSendAnotherMessage = true
 		let isRunningWhenEnd: IsRunningType = undefined
 		const _loopStartMs = Date.now()
+		this._activeLoopStartMsByThread.set(threadId, _loopStartMs)
 		const MAX_MESSAGES_SENT = 50 // hard cap to prevent infinite loops
 		let _lastToolSig = '' // for consecutive duplicate tool detection
 		let _consecutiveDuplicateTools = 0
 		let _failedBashCommands: string[] = [] // track failed bash commands to detect retry loops
 		let _consecutiveNoProgressRounds = 0 // track rounds where all tool calls fail (no forward progress)
 		let _sameToolNameAttempts: Record<string, number> = {} // track repeated calls to same tool name
+		let _didOverflowRecovery = false // one context-overflow compaction per agent run
+		// the user message that started this run — the OSS auto-retry layer must
+		// not "correct" a text answer when the user asked a QUESTION (it used to
+		// resume the finished task right after answering)
+		const _runUserMessage = findLast(this._allThreads[threadId]?.messages ?? [], m => m.role === 'user')?.content ?? null
+		let _toolsExecutedThisRun = false
 
 		// before enter loop, call tool
 		if (callThisToolFirst) {
@@ -754,12 +1199,22 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 			this._setStreamState(threadId, { isRunning: 'idle', interrupt: idleInterruptor })
 
-			const chatMessages = this.state.allThreads[threadId]?.messages ?? []
-			const { messages, separateSystemMessage } = await this._convertToLLMMessagesService.prepareLLMChatMessages({
-				chatMessages,
-				modelSelection,
-				chatMode
-			})
+			// Builds the outgoing request. Pre-send context management: the
+			// Context Ledger path (task M5) assembles brief + verbatim tail when
+			// the flag is on; otherwise the legacy opencode-style compactor
+			// folds the aged prefix into one summarized user message.
+			const buildMessages = async (forceCompaction: boolean) => {
+				const chatMessagesRaw = this.state.allThreads[threadId]?.messages ?? []
+				const chatMessages = this._ledgerEnabled()
+					? await this._assembleLedgerThread(threadId, chatMessagesRaw, modelSelection, forceCompaction)
+					: await this._maybeCompactThreadForSend(threadId, chatMessagesRaw, modelSelection, forceCompaction)
+				return await this._convertToLLMMessagesService.prepareLLMChatMessages({
+					chatMessages,
+					modelSelection,
+					chatMode
+				})
+			}
+			let { messages, separateSystemMessage } = await buildMessages(false)
 
 			if (interruptedWhenIdle) {
 				this._setStreamState(threadId, undefined)
@@ -813,7 +1268,15 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 					return merged.slice(0, 128); // API hard limit
 				})();
 
-				const llmCancelToken = this._llmMessageService.sendLLMMessage({
+				let llmCancelToken: string | null = null
+				let llmStalled = false
+				// Abort a stream that stops emitting chunks entirely (dead connection),
+				// so the thread can never hang in the 'LLM' state forever.
+				const stallWatchdog = createInactivityWatchdog(LLM_STREAM_STALL_MS, () => {
+					llmStalled = true
+					if (llmCancelToken) this._llmMessageService.abort(llmCancelToken)
+				})
+				llmCancelToken = this._llmMessageService.sendLLMMessage({
 					messagesType: 'chatMessages',
 					chatMode,
 					messages: messages,
@@ -824,29 +1287,43 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 					logging: { loggingName: `Chat - ${chatMode}`, loggingExtras: { threadId, nMessagesSent, chatMode } },
 					separateSystemMessage: separateSystemMessage,
 					onText: ({ fullText, fullReasoning, toolCalls }) => {
+						stallWatchdog.reset()
 						this._setStreamState(threadId, { isRunning: 'LLM', llmInfo: { displayContentSoFar: fullText, reasoningSoFar: fullReasoning, toolCallSoFar: toolCalls?.[toolCalls.length - 1] ?? null }, interrupt: Promise.resolve(() => { if (llmCancelToken) this._llmMessageService.abort(llmCancelToken) }) })
 					},
-					onFinalMessage: async ({ fullText, fullReasoning, toolCalls, anthropicReasoning, }) => {
+					onFinalMessage: async ({ fullText, fullReasoning, toolCalls, anthropicReasoning, usage }) => {
+						// real provider usage (M6 item 4) — journaled with the reply
+						if (usage) this._recordLedgerUsage(threadId, modelSelection, usage)
 						resMessageIsDonePromise({ type: 'llmDone', toolCalls, info: { fullText, fullReasoning, anthropicReasoning } }) // resolve with tool calls
 					},
 					onError: async (error) => {
 						resMessageIsDonePromise({ type: 'llmError', error: error })
 					},
 					onAbort: () => {
-						// stop the loop to free up the promise, but don't modify state (already handled by whatever stopped it)
+						// stop the loop to free up promise, but don't modify state (already handled by whatever stopped it)
 						resMessageIsDonePromise({ type: 'llmAborted' })
 						this._metricsService.capture('Agent Loop Done (Aborted)', { nMessagesSent, chatMode, duration_ms: Date.now() - _loopStartMs })
+						this._activeLoopStartMsByThread.delete(threadId)
 					},
 				})
 
 				// mark as streaming
 				if (!llmCancelToken) {
+					stallWatchdog.dispose()
+					// Returning (not `break`) is important: the fall-through
+					// `_setStreamState({ isRunning: isRunningWhenEnd })` at the end of the
+					// loop would otherwise overwrite this error and hide it from the user.
 					this._setStreamState(threadId, { isRunning: undefined, error: { message: 'There was an unexpected error when sending your chat message.', fullError: null } })
-					break
+					this._addUserCheckpoint({ threadId })
+					return
 				}
 
 				this._setStreamState(threadId, { isRunning: 'LLM', llmInfo: { displayContentSoFar: '', reasoningSoFar: '', toolCallSoFar: null }, interrupt: Promise.resolve(() => this._llmMessageService.abort(llmCancelToken)) })
-				const llmRes = await messageIsDonePromise // wait for message to complete
+				let llmRes: ResTypes
+				try {
+					llmRes = await messageIsDonePromise // wait for message to complete
+				} finally {
+					stallWatchdog.dispose()
+				}
 
 				// if something else started running in the meantime
 				if (this.streamState[threadId]?.isRunning !== 'LLM') {
@@ -857,12 +1334,37 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				// llm res aborted
 				if (llmRes.type === 'llmAborted') {
 					this._setStreamState(threadId, undefined)
+					if (llmStalled) {
+						this._setStreamState(threadId, { isRunning: undefined, error: { message: `The model stopped sending data for over ${Math.round(LLM_STREAM_STALL_MS / 60_000)} minutes — the stream was closed. Try sending again, or switch models/endpoints.`, fullError: null } })
+						this._addUserCheckpoint({ threadId })
+					}
 					return
 				}
 				// llm res error
 				else if (llmRes.type === 'llmError') {
-					// error, should retry
-					if (nAttempts < CHAT_RETRIES) {
+					const errorMessage = llmRes.error?.message ?? ''
+
+					// Context-window overflow: instead of blindly resending the same
+					// oversized payload, compact the thread once and retry immediately.
+					if (isContextOverflowError(errorMessage) && !_didOverflowRecovery) {
+						_didOverflowRecovery = true
+						this._setStreamState(threadId, { isRunning: 'idle', interrupt: idleInterruptor })
+						try {
+							;({ messages, separateSystemMessage } = await buildMessages(true))
+						} catch {
+							// fall through to the normal error paths below
+						}
+						if (interruptedWhenIdle) {
+							this._setStreamState(threadId, undefined)
+							return
+						}
+						shouldRetryLLM = true
+						continue
+					}
+
+					// error, should retry — only transient errors are worth retrying;
+					// auth/validation failures fail fast instead of burning 3 × 2.5s
+					if (nAttempts < CHAT_RETRIES && isRetryableLlmError(errorMessage)) {
 						shouldRetryLLM = true
 						this._setStreamState(threadId, { isRunning: 'idle', interrupt: idleInterruptor })
 						await timeout(RETRY_DELAY)
@@ -873,11 +1375,12 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						else
 							continue // retry
 					}
-					// error, but too many attempts
+					// error, non-retryable or too many attempts
 					else {
 						const { error } = llmRes
-						const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = this.streamState[threadId].llmInfo
-						this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null })
+						const llmInfo = this.streamState[threadId]?.llmInfo ?? { displayContentSoFar: '', reasoningSoFar: '', toolCallSoFar: null }
+						const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = llmInfo
+						this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null, durationMs: Date.now() - _loopStartMs })
 						if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 
 						this._setStreamState(threadId, { isRunning: undefined, error })
@@ -889,7 +1392,13 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				// llm res success
 				const { toolCalls, info } = llmRes
 
-				this._addMessageToThread(threadId, { role: 'assistant', displayContent: info.fullText, reasoning: info.fullReasoning, anthropicReasoning: info.anthropicReasoning })
+				this._addMessageToThread(threadId, { role: 'assistant', displayContent: info.fullText, reasoning: info.fullReasoning, anthropicReasoning: info.anthropicReasoning, durationMs: Date.now() - _loopStartMs })
+
+				// Context Ledger (task M5): after each completed reply, check in
+				// the background whether an episode should close (token target /
+				// idle). Non-blocking — the current request already went out and
+				// a closed episode only affects the NEXT send.
+				if (this._ledgerEnabled()) void this._closeEpisodeIfNeeded(threadId, modelSelection, false)
 
 				this._setStreamState(threadId, { isRunning: 'idle', interrupt: 'not_needed' }) // just decorative for clarity
 
@@ -897,6 +1406,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				// call tools if there are any
 				if (toolCalls && toolCalls.length > 0) {
 					const mcpTools = this._mcpService.getMCPTools()
+					_toolsExecutedThisRun = true
 
 					let anyInterrupted = false;
 					let anyAwaitingUserApproval = false;
@@ -1019,7 +1529,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				else if (info.fullText && modelSelection && needsOSSEnhancement(modelSelection.providerName, modelSelection.modelName)) {
 					const _ossRetryKey = `_ossRetry_${threadId}`;
 					const retryCount = ((this as any)[_ossRetryKey] || 0) as number;
-					if (shouldAutoRetry(info.fullText, 0, chatMode, retryCount)) {
+					if (shouldAutoRetry(info.fullText, 0, chatMode, retryCount, { userMessage: _runUserMessage, toolsExecutedThisRun: _toolsExecutedThisRun })) {
 						(this as any)[_ossRetryKey] = retryCount + 1;
 						const correction = getCorrectionMessage(retryCount, info.fullText);
 						this._addMessageToThread(threadId, { role: 'user', content: correction, displayContent: '', selections: null, state: defaultMessageState });
@@ -1040,6 +1550,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 		// capture number of messages sent
 		this._metricsService.capture('Agent Loop Done', { nMessagesSent, chatMode, duration_ms: Date.now() - _loopStartMs })
+		this._activeLoopStartMsByThread.delete(threadId)
 	}
 
 
@@ -1854,6 +2365,11 @@ We only need to do it for files that were edited since `from`, ie files between 
 		}
 		this._storeAllThreads(newThreads)
 		this._setState({ allThreads: newThreads }) // the current thread just changed (it had a message added to it)
+
+		// Context Ledger (task M5): mirror the message into the append-only
+		// journal. Fire-and-forget — the ledger degrades gracefully and must
+		// never block the UI write path.
+		if (this._ledgerEnabled()) this._journalMessage(threadId, message)
 	}
 
 	// sets the currently selected message (must be undefined if no message is selected)

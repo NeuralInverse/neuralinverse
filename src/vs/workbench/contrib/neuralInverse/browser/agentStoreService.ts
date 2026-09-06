@@ -60,7 +60,7 @@ export interface IAgentStoreService {
 
 	updateAgent(
 		id: string,
-		updates: Partial<Pick<IAgentDefinition, 'name' | 'description' | 'model' | 'systemInstructions' | 'allowedTools' | 'maxIterations' | 'tags'>>
+		updates: Partial<Pick<IAgentDefinition, 'name' | 'description' | 'model' | 'systemInstructions' | 'intakeQuestions' | 'allowedTools' | 'maxIterations' | 'tags'>>
 	): Promise<void>;
 
 	deleteAgent(id: string): Promise<void>;
@@ -281,7 +281,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 
 	async updateAgent(
 		id: string,
-		updates: Partial<Pick<IAgentDefinition, 'name' | 'description' | 'model' | 'systemInstructions' | 'allowedTools' | 'maxIterations' | 'tags'>>
+		updates: Partial<Pick<IAgentDefinition, 'name' | 'description' | 'model' | 'systemInstructions' | 'intakeQuestions' | 'allowedTools' | 'maxIterations' | 'tags'>>
 	): Promise<void> {
 		const existing = this._agents.get(id);
 		if (!existing) throw new Error(`Agent "${id}" not found`);

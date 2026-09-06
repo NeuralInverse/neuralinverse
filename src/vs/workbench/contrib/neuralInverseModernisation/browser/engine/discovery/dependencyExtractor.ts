@@ -482,6 +482,9 @@ export function buildDependencyGraph(
 		if (base) { byBase.set(base, unit.id); }
 	}
 
+	// Set-based dedup: the old `edges.some(...)` scan per edge was O(n^2) — with
+	// thousands of import edges this phase alone ran for minutes.
+	const seenEdgeKeys = new Set<string>();
 	for (const { fromUnitId, rawImport } of rawEdges) {
 		const imported = parseImportLeaf(rawImport);
 		if (!imported) { continue; }
@@ -495,14 +498,16 @@ export function buildDependencyGraph(
 			byName.get(norm.split('/').pop() ?? norm) ??
 			byBase.get(norm.split('/').pop() ?? norm);
 
-		if (!edges.some(e => e.fromId === fromUnitId && e.toId === (resolvedId ?? imported))) {
-			edges.push({
-				fromId:          fromUnitId,
-				toId:            resolvedId ?? imported,
-				importStatement: rawImport,
-				resolved:        !!resolvedId,
-			});
-		}
+		const toId = resolvedId ?? imported;
+		const edgeKey = fromUnitId + '\u0000' + toId;
+		if (seenEdgeKeys.has(edgeKey)) { continue; }
+		seenEdgeKeys.add(edgeKey);
+		edges.push({
+			fromId:          fromUnitId,
+			toId,
+			importStatement: rawImport,
+			resolved:        !!resolvedId,
+		});
 	}
 
 	return edges;

@@ -1714,8 +1714,15 @@ class EditCodeService extends Disposable implements IEditCodeService {
 		const modelStrLines = modelStr.split('\n')
 
 		const replacements: { origStart: number; origEnd: number; block: any }[] = []
+		if (chunks.length === 0) throw new Error(`No replacement chunks were received!`)
 		for (const chunk of chunks) {
 			const { StartLine, EndLine, TargetContent } = chunk
+			// An empty TargetContent matches at position 0 of the search region (edits the wrong line),
+			// and a missing ReplacementContent splices the literal "undefined" into the file.
+			if (typeof TargetContent !== 'string' || TargetContent.length === 0)
+				throw new Error(`Replacement chunk failed: TargetContent must be a non-empty string. Received: ${JSON.stringify(TargetContent)}`)
+			if (typeof chunk.ReplacementContent !== 'string')
+				throw new Error(`Replacement chunk failed: ReplacementContent must be a string (use "" to delete text). Received: ${String(chunk.ReplacementContent)}`)
 
 			let regionLines = modelStrLines
 			let lineOffset = 0

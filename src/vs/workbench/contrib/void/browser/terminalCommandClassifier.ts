@@ -15,12 +15,15 @@ export interface ICommandClassification {
 }
 
 const TIMEOUT_BY_CATEGORY: Record<CommandCategory, number> = {
-	build: 300_000,
-	test: 600_000,
-	install: 120_000,
+	// Inactivity ceilings, not total-runtime limits — a command that keeps
+	// producing output runs as long as it needs. Raised from 60-600s so
+	// long-running agent tasks don't die mid-run.
+	build: 1_800_000,
+	test: 1_800_000,
+	install: 900_000,
 	server: 0,
-	lint: 60_000,
-	generic: 120_000,
+	lint: 300_000,
+	generic: 900_000,
 };
 
 const PATTERNS: { category: CommandCategory; patterns: RegExp[] }[] = [

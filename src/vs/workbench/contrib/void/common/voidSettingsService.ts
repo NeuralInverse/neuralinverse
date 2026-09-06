@@ -335,6 +335,11 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 			// add autoAcceptLLMChanges feature
 			if (readS.globalSettings.autoAcceptLLMChanges === undefined) readS.globalSettings.autoAcceptLLMChanges = false;
 
+			// add the Context Ledger flag (task M5). Persisted settings predate the
+			// key, and the state is NOT merged with defaults on read — without this
+			// migration every existing install would silently run the legacy path.
+			if (readS.globalSettings.contextLedgerEnabled === undefined) readS.globalSettings.contextLedgerEnabled = true;
+
 			// add Checks feature (dedicated model for GRC checks)
 			if (readS.modelSelectionOfFeature && !readS.modelSelectionOfFeature['Checks']) {
 				readS.modelSelectionOfFeature['Checks'] = null; // null = not configured, falls back to Chat

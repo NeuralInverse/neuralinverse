@@ -318,7 +318,12 @@ type VoidStaticProviderInfo = { // doesn't change (not stateful)
 
 
 const defaultModelOptions = {
-	contextWindow: 4_096,
+	// Unknown/OSS models almost always have >=32k context. The old 4_096 default made
+	// the context-fit trim budget fall to its 5k-char floor, so every request
+	// re-shredded tool results to ~120 chars (unusable reads, agents re-searching
+	// in loops). If a model truly has a smaller window, its provider returns a
+	// context-length error, which is a better failure mode than silent mangling.
+	contextWindow: 32_768,
 	reservedOutputTokenSpace: 4_096,
 	cost: { input: 0, output: 0 },
 	downloadable: false,

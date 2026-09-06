@@ -2,6 +2,7 @@ import { CancellationToken } from '../../../../base/common/cancellation.js'
 import { Emitter, Event } from '../../../../base/common/event.js'
 import { Disposable } from '../../../../base/common/lifecycle.js'
 import { URI } from '../../../../base/common/uri.js'
+import { isWindows } from '../../../../base/common/platform.js'
 import { IFileService } from '../../../../platform/files/common/files.js'
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js'
 import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js'
@@ -57,6 +58,21 @@ const validateStr = (argName: string, value: unknown) => {
 	return value
 }
 
+// Normalize a model-provided path to a forward-slash path, resolving relatives against the workspace root.
+// Models receive fsPath-style absolute paths (e.g. c:\repo\src\a.ts) from glob/grep/list — a `/`-prefix
+// check misclassifies those on Windows and produced joined paths like `c:\repo/c:\repo\a.ts` (ENOENT).
+const normalizeToolPath = (filePath: string, workspaceDir: string): string => {
+	const p = filePath.replace(/\\/g, '/')
+	const root = workspaceDir.replace(/\\/g, '/')
+	// Absolute: Windows drive (c:/… or /c:/…), UNC (//server/…), or a POSIX path already inside the root.
+	// A plain single-slash path like /app/functions.php is a common model habit for a workspace-relative
+	// file — joining it matches the old behavior and avoids file:///app/… ENOENTs on Windows.
+	const isAbsolute = /^\/?[a-zA-Z]:\//.test(p) || p.startsWith('//')
+		|| (p.startsWith('/') && root.startsWith('/') && p.toLowerCase().startsWith(root.toLowerCase() + '/'))
+	if (isAbsolute) return p
+	return `${root}/${p.replace(/^\//, '')}`
+}
+
 
 // We are NOT checking to make sure in workspace
 // workspaceRootUri: when set, plain paths are resolved using the workspace root's scheme
@@ -72,8 +88,9 @@ const makeValidateURI = (workspaceRootUri: URI | undefined) => (uriStr: unknown)
 
 	// Plain path — use workspace root scheme if available (handles vscode-remote://, ssh-remote://, etc.)
 	if (workspaceRootUri && workspaceRootUri.scheme !== 'file') {
-		// Reconstruct URI with the same scheme/authority but the given path
-		return workspaceRootUri.with({ path: uriStr })
+		// Reconstruct URI with the same scheme/authority but the given path.
+		// URI paths always use '/', so normalize Windows-style separators first.
+		return workspaceRootUri.with({ path: uriStr.replace(/\\/g, '/') })
 	}
 	return URI.file(uriStr)
 }
@@ -563,6 +580,12 @@ export class ToolsService extends Disposable implements IToolsService {
 				const terminalId = generateUuid()
 				return { command, cwd, terminalId, timeout, bgAfter }
 			},
+			run_background_command: (params: RawToolParamsObj) => {
+				const { command: commandUnknown, cwd: cwdUnknown } = params
+				const command = validateStr('command', commandUnknown)
+				const cwd = validateOptionalStr('cwd', cwdUnknown)
+				return { command, cwd }
+			},
 			run_persistent_command: (params: RawToolParamsObj) => {
 				const { command: commandUnknown, persistent_terminal_id: persistentTerminalIdUnknown } = params;
 				const command = validateStr('command', commandUnknown);
@@ -634,8 +657,15 @@ export class ToolsService extends Disposable implements IToolsService {
 			// --- Power Mode style tools ---
 			bash: async ({ command, description, timeout }) => {
 				const jobId = `void_bash_${Date.now()}`
-				const fullCommand = `cd ${JSON.stringify(workspaceDir)} && ${wrapNonInteractive(command)}`
-				const { resultPromise, interrupt: interruptTool } = this.commandExecutor.executeWithInterrupt(jobId, fullCommand, timeout ?? 120_000, MAX_PM_OUTPUT)
+				// On Windows the agent terminal is PowerShell, where `&&` chains and the
+				// `env VAR=…` prefix are parser errors — the whole wrapped command died
+				// before the user's command ever ran (the tool returned only the echo
+				// line). The temporary terminal is already created with the workspace
+				// cwd, so on Windows run the raw command with no wrapper at all.
+				const fullCommand = isWindows
+					? command
+					: `cd ${JSON.stringify(workspaceDir)} && ${wrapNonInteractive(command)}`
+				const { resultPromise, interrupt: interruptTool } = this.commandExecutor.executeWithInterrupt(jobId, fullCommand, timeout ?? 3_600_000, MAX_PM_OUTPUT)
 				const result = resultPromise.then(output => {
 					const truncated = output.length > MAX_PM_OUTPUT ? output.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated at 50KB]' : output
 					return { result: truncated }
@@ -645,7 +675,7 @@ export class ToolsService extends Disposable implements IToolsService {
 				return { result, interruptTool }
 			},
 			read: async ({ filePath, offset, limit: readLimit }) => {
-				const normalizedPath = (filePath.startsWith('/') && filePath.startsWith(workspaceDir)) ? filePath : `${workspaceDir}/${filePath.replace(/^\//, '')}`
+				const normalizedPath = normalizeToolPath(filePath, workspaceDir)
 				const uri = validateURIws(normalizedPath)
 				try {
 					const stat = await fileService.stat(uri)
@@ -671,7 +701,7 @@ export class ToolsService extends Disposable implements IToolsService {
 				}
 			},
 			write: async ({ filePath, content }) => {
-				const normalizedPath = (filePath.startsWith('/') && filePath.startsWith(workspaceDir)) ? filePath : `${workspaceDir}/${filePath.replace(/^\//, '')}`
+				const normalizedPath = normalizeToolPath(filePath, workspaceDir)
 				const uri = validateURIws(normalizedPath)
 				try {
 					// If path has no file extension, model is trying to create a directory
@@ -690,7 +720,7 @@ export class ToolsService extends Disposable implements IToolsService {
 				}
 			},
 			edit: async ({ filePath, oldString, newString }) => {
-				const normalizedPath = (filePath.startsWith('/') && filePath.startsWith(workspaceDir)) ? filePath : `${workspaceDir}/${filePath.replace(/^\//, '')}`
+				const normalizedPath = normalizeToolPath(filePath, workspaceDir)
 				const uri = validateURIws(normalizedPath)
 				try {
 					const content = await fileService.readFile(uri)
@@ -710,7 +740,7 @@ export class ToolsService extends Disposable implements IToolsService {
 				}
 			},
 			glob: async ({ pattern, path: searchPath }) => {
-				const folderUri = validateURIws(searchPath ?? workspaceDir)
+				const folderUri = validateURIws(normalizeToolPath(searchPath ?? workspaceDir, workspaceDir))
 				try {
 					const query: IFileQuery = {
 						type: QueryType.File,
@@ -726,15 +756,21 @@ export class ToolsService extends Disposable implements IToolsService {
 				}
 			},
 			grep: async ({ pattern, path: searchPath, include }) => {
-				const folderUri = validateURIws(searchPath ?? workspaceDir)
+				const folderUri = validateURIws(normalizeToolPath(searchPath ?? workspaceDir, workspaceDir))
 				try {
+					// Per-file cap: without it, a handful of files with dozens of
+					// matches each ate the whole result budget and the model saw
+					// "a few files" instead of the full picture across the repo.
+					const MAX_GREP_RESULTS = 1000
+					const MAX_MATCHES_PER_FILE = 15
+					const matchesPerFile = new Map<string, number>()
 					const query: ITextQuery = {
 						type: QueryType.Text,
 						contentPattern: { pattern, isRegExp: true, isCaseSensitive: false },
 						folderQueries: [{ folder: folderUri }],
 						includePattern: include ? { [include]: true } : undefined,
 						excludePattern: { '**/node_modules': true, '**/.git': true },
-						maxResults: 200,
+						maxResults: MAX_GREP_RESULTS,
 					}
 					const matches: string[] = []
 					await searchService.textSearch(query, undefined, (item) => {
@@ -742,19 +778,25 @@ export class ToolsService extends Disposable implements IToolsService {
 							const fm = item as { resource: { fsPath: string }; results?: Array<{ rangeLocations?: Array<{ source: { startLineNumber: number } }>; previewText?: string }> }
 							const file = fm.resource.fsPath
 							for (const res of fm.results ?? []) {
+								const soFar = matchesPerFile.get(file) ?? 0
+								if (soFar >= MAX_MATCHES_PER_FILE) continue
+								matchesPerFile.set(file, soFar + 1)
 								const line = res.rangeLocations?.[0]?.source.startLineNumber ?? 0
 								matches.push(`${file}:${line}: ${(res.previewText ?? '').trim()}`)
 							}
 						}
 					})
 					const output = matches.join('\n') || 'No matches found.'
+					if (matches.length >= MAX_GREP_RESULTS) {
+						return { result: { result: output + `\n[Result limit reached (${MAX_GREP_RESULTS} matches, max ${MAX_MATCHES_PER_FILE}/file). Narrow the pattern or search per subdirectory.]` } }
+					}
 					return { result: { result: output.length > MAX_PM_OUTPUT ? output.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated]' : output } }
 				} catch (err: any) {
 					return { result: { result: `Error: ${err.message}` } }
 				}
 			},
 			list: async ({ dirPath }) => {
-				const uri = validateURIws(dirPath ?? workspaceDir)
+				const uri = validateURIws(normalizeToolPath(dirPath ?? workspaceDir, workspaceDir))
 				try {
 					const resolved = await fileService.resolve(uri)
 					const entries = (resolved.children ?? []).map(c => `${c.isDirectory ? 'd' : '-'} ${c.name}`).sort().join('\n')
@@ -1190,21 +1232,39 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 			// ---
 			read_file: async ({ uri, startLine, endLine, pageNumber }) => {
-				await voidModelService.initializeModel(uri)
-				const { model } = await voidModelService.getModelSafe(uri)
-				if (model === null) { throw new Error(`No contents; File does not exist.`) }
-
 				let contents: string
-				if (startLine === null && endLine === null) {
+				let totalNumLines: number
+				// The text-model service only tracks files inside the opened
+				// workspace. Absolute paths OUTSIDE it (git worktrees are the
+				// common case — task protocols run agents in worktrees) used to
+				// fail with "No contents; File does not exist." even though the
+				// file was on disk. Fall back to a raw read for those.
+				try { await voidModelService.initializeModel(uri) } catch { /* out-of-workspace — raw fallback below */ }
+				const { model } = await voidModelService.getModelSafe(uri)
+				if (model === null) {
+					if (uri.scheme !== 'file') { throw new Error(`No contents; File does not exist.`) }
+					let raw: string
+					try {
+						raw = (await fileService.readFile(uri)).value.toString()
+					} catch (e: any) {
+						throw new Error(`No contents; File does not exist. (${e?.message ?? e})`)
+					}
+					const lines = raw.split('\n')
+					const startLineNumber = startLine === null ? 1 : startLine
+					const endLineNumber = endLine === null ? lines.length : endLine
+					contents = lines.slice(startLineNumber - 1, endLineNumber).join('\n')
+					totalNumLines = lines.length
+				}
+				else if (startLine === null && endLine === null) {
 					contents = model.getValue(EndOfLinePreference.LF)
+					totalNumLines = model.getLineCount()
 				}
 				else {
 					const startLineNumber = startLine === null ? 1 : startLine
 					const endLineNumber = endLine === null ? model.getLineCount() : endLine
 					contents = model.getValueInRange({ startLineNumber, startColumn: 1, endLineNumber, endColumn: Number.MAX_SAFE_INTEGER }, EndOfLinePreference.LF)
+					totalNumLines = model.getLineCount()
 				}
-
-				const totalNumLines = model.getLineCount()
 
 				const fromIdx = MAX_FILE_CHARS_PAGE * (pageNumber - 1)
 				const toIdx = MAX_FILE_CHARS_PAGE * pageNumber - 1
@@ -1348,6 +1408,20 @@ export class ToolsService extends Disposable implements IToolsService {
 
 				let chunks: { StartLine: number, EndLine: number, TargetContent: string, ReplacementContent: string }[] = []
 				try { chunks = JSON.parse(replacementChunks) } catch (e) { throw new Error(`Invalid JSON for replacement_chunks.`) }
+				if (!Array.isArray(chunks) || chunks.length === 0) {
+					throw new Error(`replacement_chunks must be a non-empty JSON array. Each chunk needs {StartLine, EndLine, TargetContent, ReplacementContent}. Received: ${String(replacementChunks).slice(0, 200)}`)
+				}
+				// An empty TargetContent matches at position 0 of the search region (edits the wrong line),
+				// and a missing ReplacementContent splices the literal "undefined" into the file.
+				for (let ci = 0; ci < chunks.length; ci++) {
+					const c = chunks[ci]
+					if (typeof c?.TargetContent !== 'string' || typeof c?.ReplacementContent !== 'string') {
+						throw new Error(`replacement_chunks[${ci}] must have string fields TargetContent and ReplacementContent (use "" to delete text). Received: ${JSON.stringify(chunks[ci])?.slice(0, 200)}`)
+					}
+					if (c.TargetContent === '') {
+						throw new Error(`replacement_chunks[${ci}].TargetContent is empty — an empty search string is ambiguous. Provide the exact text to replace.`)
+					}
+				}
 
 				editCodeService.instantlyApplyReplacementChunks({ uri, replacementChunks: chunks })
 
@@ -1361,16 +1435,16 @@ export class ToolsService extends Disposable implements IToolsService {
 				return { result: lintErrorsPromise }
 			},
 			// ---
-			run_command: async ({ command: rawCommand, cwd, terminalId, bgAfter }) => {
+			run_command: async ({ command: rawCommand, cwd, terminalId, timeout, bgAfter }) => {
 				const command = this._injectCoAuthorIfGitCommit(rawCommand);
 				const commitGateMsg = this._checkCommitGate(command);
 				if (commitGateMsg) {
 					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) }
 				}
-				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'temporary', cwd, terminalId })
+				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'temporary', cwd, terminalId, inactivityTimeoutSec: timeout ?? undefined })
 
 				// Build a shared result promise that can be resolved early by bg_after timer OR user "Move to BG" click
-				const result = new Promise<{ result: string, resolveReason: TerminalResolveReason }>(async (resolve) => {
+				const result = new Promise<{ result: string, resolveReason: TerminalResolveReason }>(async (resolve, reject) => {
 					// User-triggered "Move to BG" button
 					const threadIdAtPromotion = this._currentThreadId
 					const fireWhenDone = (bgTerminalId: string) => {
@@ -1410,22 +1484,36 @@ export class ToolsService extends Disposable implements IToolsService {
 					})
 
 					if (!bgAfter) {
-						const r = await resPromise
-						promoteListener.dispose()
-						resolve(r)
+						try {
+							const r = await resPromise
+							resolve(r)
+						} catch (err) {
+							// A throw inside an async Promise executor does NOT reject the
+							// outer promise — without this, a failed command left the tool
+							// call pending forever and hung the whole agent loop.
+							reject(err)
+						} finally {
+							promoteListener.dispose()
+						}
 						return
 					}
 
 					// bg_after: watch for N seconds, then promote to background if still running
 					const bgAfterMs = bgAfter * 1000
-					const winner = await Promise.race([
-						resPromise.then(r => ({ kind: 'done' as const, r })),
-						new Promise<{ kind: 'timeout' }>(res => setTimeout(() => res({ kind: 'timeout' }), bgAfterMs)),
-					])
-					promoteListener.dispose()
+					try {
+						const winner = await Promise.race([
+							resPromise.then(r => ({ kind: 'done' as const, r })),
+							new Promise<{ kind: 'timeout' }>(res => setTimeout(() => res({ kind: 'timeout' }), bgAfterMs)),
+						])
+						promoteListener.dispose()
 
-					if (winner.kind === 'done') {
-						resolve(winner.r)
+						if (winner.kind === 'done') {
+							resolve(winner.r)
+							return
+						}
+					} catch (err) {
+						promoteListener.dispose()
+						reject(err)
 						return
 					}
 
@@ -1446,6 +1534,27 @@ export class ToolsService extends Disposable implements IToolsService {
 				})
 
 				return { result, interruptTool: interrupt }
+			},
+			run_background_command: async ({ command: rawCommand, cwd }) => {
+				const command = this._injectCoAuthorIfGitCommit(rawCommand);
+				const commitGateMsg = this._checkCommitGate(command);
+				if (commitGateMsg) {
+					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) }
+				}
+				const persistentTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd })
+				const { resPromise } = await this.terminalToolService.runCommand(command, { type: 'persistent', persistentTerminalId })
+				const threadId = this._currentThreadId
+				resPromise.then(r => {
+					// Only a REAL completion is reported as finished — a quiet-timeout
+					// resolve just means the command is running silently; the agent can
+					// poll it with read_terminal.
+					if (r.resolveReason.type === 'done') {
+						this._onBackgroundTerminalComplete.fire({ threadId, command, output: r.result, exitCode: r.resolveReason.exitCode ?? 0 })
+					}
+				}).catch(() => {
+					this._onBackgroundTerminalComplete.fire({ threadId, command, output: `Terminal was closed before completing.`, exitCode: 1 })
+				})
+				return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 0 }, result: `Command started in background terminal ${persistentTerminalId}. It can never time out. When it finishes you will receive a [SYSTEM: Background terminal finished] message with its output — do NOT re-run it. Use read_terminal with terminal_id=${persistentTerminalId} to check progress in the meantime.` }) }
 			},
 			run_persistent_command: async ({ command: rawCommand, persistentTerminalId }) => {
 				const command = this._injectCoAuthorIfGitCommit(rawCommand);
@@ -1605,6 +1714,13 @@ export class ToolsService extends Disposable implements IToolsService {
 			context_semantic_search: (_params, result) => result.result,
 			// ---
 			read_file: (params, result) => {
+				// An empty page means the model paged past the end of the file
+				// (read_file serves whole pages; the OSS wrapper used to cut
+				// them mid-file, which made models page forward into nothing).
+				// Say it explicitly instead of an empty code fence.
+				if (result.fileContents === '' && (params.pageNumber ?? 1) > 1) {
+					return `${params.uri.fsPath}\n(no more content — page ${params.pageNumber} is beyond the end of this ${result.totalNumLines}-line file)`
+				}
 				return `${params.uri.fsPath}\n\`\`\`\n${result.fileContents}\n\`\`\`${nextPageStr(result.hasNextPage)}${result.hasNextPage ? `\nMore info because truncated: this file has ${result.totalNumLines} lines, or ${result.totalFileLen} characters.` : ''}`
 			},
 			ls_dir: (params, result) => {
@@ -1698,6 +1814,9 @@ export class ToolsService extends Disposable implements IToolsService {
 				throw new Error(`Unexpected internal error: Terminal command did not resolve with a valid reason.`)
 			},
 
+			run_background_command: (_params, result) => {
+				return result.result;
+			},
 			open_persistent_terminal: (_params, result) => {
 				const { persistentTerminalId } = result;
 				return `Successfully created persistent terminal. persistentTerminalId="${persistentTerminalId}"`;

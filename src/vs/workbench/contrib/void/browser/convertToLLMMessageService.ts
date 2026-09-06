@@ -48,6 +48,7 @@ type SimpleLLMMessage = {
 
 const CHARS_PER_TOKEN = 4 // assume abysmal chars per token
 const TRIM_TO_LEN = 120
+const TOOL_TRIM_TO_LEN = 4_000 // last-resort trim keeps a useful head of tool outputs
 
 
 
@@ -364,7 +365,7 @@ const prepareOpenAIOrAnthropicMessages = ({
 }): { messages: AnthropicOrOpenAILLMMessage[], separateSystemMessage: string | undefined } => {
 
 	reservedOutputTokenSpace = Math.max(
-		contextWindow * 1 / 2, // reserve at least 1/4 of the token window length
+		contextWindow * 1 / 4, // reserve a quarter of the token window for output
 		reservedOutputTokenSpace ?? 4_096 // defaults to 4096
 	)
 	let messages: (SimpleLLMMessage | { role: 'system', content: string })[] = deepClone(messages_)
@@ -442,6 +443,15 @@ const prepareOpenAIOrAnthropicMessages = ({
 	//                     contextWindow - maxOut|putTokens
 	//                                          totalLen
 	let remainingCharsToTrim = charsNeedToTrim
+	// Cut at a line boundary whenever possible — a raw char slice lands mid-token and mangles file
+	// paths (e.g. `functions.p...`), which forces the model to re-search everything it was shown.
+	const cutToLen = (content: string, cutLen: number): string => {
+		if (cutLen <= 0) return '...'
+		let cut = content.slice(0, cutLen)
+		const nl = cut.lastIndexOf('\n')
+		if (nl > 0) cut = cut.slice(0, nl)
+		return cut.replace(/\s+$/, '') + '...'
+	}
 	let i = 0
 
 	while (remainingCharsToTrim > 0) {
@@ -450,17 +460,21 @@ const prepareOpenAIOrAnthropicMessages = ({
 
 		const trimIdx = _findLargestByWeight(messages)
 		const m = messages[trimIdx]
+		// Tool outputs are dense actionable data (file contents, command results) —
+		// destroying them to 120 chars breaks the model's ability to keep working.
+		// Old tool results keep a generous head instead.
+		const trimToLen = m.role === 'tool' ? TOOL_TRIM_TO_LEN : TRIM_TO_LEN
 
 		// if can finish here, do
-		const numCharsWillTrim = m.content.length - TRIM_TO_LEN
+		const numCharsWillTrim = m.content.length - trimToLen
 		if (numCharsWillTrim > remainingCharsToTrim) {
 			// trim remainingCharsToTrim + '...'.length chars
-			m.content = m.content.slice(0, m.content.length - remainingCharsToTrim - '...'.length).trim() + '...'
+			m.content = cutToLen(m.content, m.content.length - remainingCharsToTrim - '...'.length)
 			break
 		}
 
 		remainingCharsToTrim -= numCharsWillTrim
-		m.content = m.content.substring(0, TRIM_TO_LEN - '...'.length) + '...'
+		m.content = cutToLen(m.content, trimToLen - '...'.length)
 		alreadyTrimmedIdxes.add(trimIdx)
 	}
 
