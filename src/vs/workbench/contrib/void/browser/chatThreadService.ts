@@ -198,9 +198,10 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	state: ThreadsState // allThreads is the workspace-filtered view; _allThreads is the full store
 	private _allThreads: ChatThreads = {} // unfiltered store across all workspaces
 
-	// start of the currently-running agent loop (null when idle); read by
-	// abortRunning, which runs outside the loop's scope
-	private _activeLoopStartMs: number | null = null
+	// agent-loop start per thread (absent when idle); read by abortRunning,
+	// which runs outside the loop's scope. Keyed by threadId — two threads
+	// can run loops concurrently and must not overwrite each other's start.
+	private readonly _activeLoopStartMsByThread = new Map<string, number>()
 
 	// used in checkpointing
 	// private readonly _userModifiedFilesToCheckInCheckpoints = new LRUCache<string, null>(50)
@@ -926,7 +927,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		// add assistant message
 		if (this.streamState[threadId]?.isRunning === 'LLM') {
 			const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = this.streamState[threadId].llmInfo
-			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null, durationMs: Date.now() - (this._activeLoopStartMs ?? Date.now()) })
+			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null, durationMs: Date.now() - (this._activeLoopStartMsByThread.get(threadId) ?? Date.now()) })
 			if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 		}
 		// add tool that's running
@@ -1157,7 +1158,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		let shouldSendAnotherMessage = true
 		let isRunningWhenEnd: IsRunningType = undefined
 		const _loopStartMs = Date.now()
-		this._activeLoopStartMs = _loopStartMs
+		this._activeLoopStartMsByThread.set(threadId, _loopStartMs)
 		const MAX_MESSAGES_SENT = 50 // hard cap to prevent infinite loops
 		let _lastToolSig = '' // for consecutive duplicate tool detection
 		let _consecutiveDuplicateTools = 0
@@ -1301,7 +1302,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						// stop the loop to free up promise, but don't modify state (already handled by whatever stopped it)
 						resMessageIsDonePromise({ type: 'llmAborted' })
 						this._metricsService.capture('Agent Loop Done (Aborted)', { nMessagesSent, chatMode, duration_ms: Date.now() - _loopStartMs })
-						this._activeLoopStartMs = null
+						this._activeLoopStartMsByThread.delete(threadId)
 					},
 				})
 
@@ -1549,7 +1550,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 		// capture number of messages sent
 		this._metricsService.capture('Agent Loop Done', { nMessagesSent, chatMode, duration_ms: Date.now() - _loopStartMs })
-		this._activeLoopStartMs = null
+		this._activeLoopStartMsByThread.delete(threadId)
 	}
 
 
