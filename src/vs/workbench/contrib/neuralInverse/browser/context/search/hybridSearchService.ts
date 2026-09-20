@@ -8,7 +8,7 @@ import { createDecorator } from '../../../../../../platform/instantiation/common
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { IWorkspaceBM25Service, IBM25Result } from './bm25Index.js';
 import { ITrigramIndexService, ITrigramMatch } from './trigramIndex.js';
-import { IEmbeddingService } from './embeddingService.js';
+import { IEmbeddingService, IEmbeddingResult } from './embeddingService.js';
 
 export interface IHybridSearchResult {
 	filePath: string;
@@ -34,7 +34,7 @@ const W_BM25 = 0.55;
 const W_TRIGRAM = 0.25;
 const W_EMBEDDING = 0.20;
 
-class HybridSearchService extends Disposable implements IHybridSearchService {
+export class HybridSearchService extends Disposable implements IHybridSearchService {
 	readonly _serviceBrand: undefined;
 
 	constructor(
@@ -64,6 +64,7 @@ class HybridSearchService extends Disposable implements IHybridSearchService {
 			sources: Set<'bm25' | 'trigram' | 'embedding'>;
 			bm25Result?: IBM25Result;
 			trigramResult?: ITrigramMatch;
+			embeddingResult?: IEmbeddingResult;
 		}>();
 
 		// Add BM25 results
@@ -95,9 +96,12 @@ class HybridSearchService extends Disposable implements IHybridSearchService {
 			}
 		}
 
-		// Add embedding results (boost existing or create new)
+		// Add embedding results (boost existing or create new). Vector hits
+		// keep their chunk identity (content + line range, persisted with the
+		// vector) so a file that only the vector backend found still surfaces
+		// usable content instead of being dropped by the output filter.
 		for (const result of embeddingResults) {
-			const key = `${result.filePath}:0`;
+			const key = `${result.filePath}:${result.startLine ?? 0}`;
 			const normalizedScore = embeddingNormalized.get(result.id) || 0;
 			const existing = merged.get(key);
 			if (existing) {
@@ -107,6 +111,7 @@ class HybridSearchService extends Disposable implements IHybridSearchService {
 				merged.set(key, {
 					score: normalizedScore * W_EMBEDDING,
 					sources: new Set(['embedding']),
+					embeddingResult: result,
 				});
 			}
 		}
@@ -117,10 +122,10 @@ class HybridSearchService extends Disposable implements IHybridSearchService {
 			.slice(0, maxResults);
 
 		return sorted.map(([_key, data]) => ({
-			filePath: data.bm25Result?.filePath || data.trigramResult?.filePath || '',
-			content: data.bm25Result?.content || '',
-			startLine: data.bm25Result?.startLine || 0,
-			endLine: data.bm25Result?.endLine || 0,
+			filePath: data.bm25Result?.filePath || data.trigramResult?.filePath || data.embeddingResult?.filePath || '',
+			content: data.bm25Result?.content || data.embeddingResult?.content || '',
+			startLine: data.bm25Result?.startLine || data.embeddingResult?.startLine || 0,
+			endLine: data.bm25Result?.endLine || data.embeddingResult?.endLine || 0,
 			symbolName: data.bm25Result?.symbolName || data.trigramResult?.symbolName,
 			score: data.score,
 			sources: [...data.sources],

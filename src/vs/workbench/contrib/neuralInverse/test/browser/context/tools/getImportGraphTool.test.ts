@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------*/
 
 import assert from 'assert';
+import { Event } from '../../../../../../../base/common/event.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
 import { executeGetImportGraph } from '../../../../browser/context/tools/getImportGraphTool.js';
 import { IWorkspaceSymbolIndexService } from '../../../../browser/context/index/workspaceSymbolIndex.js';
@@ -33,8 +34,10 @@ function makeIndex(stubs: IImportStubs = {}): IWorkspaceSymbolIndexService {
 
 	return {
 		_serviceBrand: undefined as any,
-		onDidReindex: { event: () => {} } as any,
-		onDidFinishFullIndex: { event: () => {} } as any,
+		onDidReindex: { event: () => { } } as any,
+		onDidFinishFullIndex: { event: () => { } } as any,
+		onDidStartFullIndex: Event.None,
+		onDidRemoveFiles: Event.None,
 		isReady: () => ready,
 		getSymbolsByName: () => [],
 		getSymbolsInFile: () => [],
@@ -44,7 +47,7 @@ function makeIndex(stubs: IImportStubs = {}): IWorkspaceSymbolIndexService {
 		getTransitiveDependents: () => { if (throwImporters) { throw new Error('transitive deps error'); } return transitiveDependents; },
 		getFileIndex: () => undefined,
 		getStats: () => ({ totalFiles: 0, totalSymbols: 0, indexingInProgress: false }),
-		forceReindex: async () => {},
+		forceReindex: async () => { },
 	};
 }
 

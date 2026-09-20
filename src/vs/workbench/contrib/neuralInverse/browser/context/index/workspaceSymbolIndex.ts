@@ -7,16 +7,18 @@ import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { Emitter, Event } from '../../../../../../base/common/event.js';
 import { URI } from '../../../../../../base/common/uri.js';
 import { CancellationTokenSource, CancellationToken } from '../../../../../../base/common/cancellation.js';
-import { Limiter } from '../../../../../../base/common/async.js';
-import { RunOnceScheduler } from '../../../../../../base/common/async.js';
+import { Limiter, RunOnceScheduler } from '../../../../../../base/common/async.js';
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
-import { IFileService } from '../../../../../../platform/files/common/files.js';
+import { IFileService, FileOperationError, FileOperationResult } from '../../../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { IModelService } from '../../../../../../editor/common/services/model.js';
 import { ITreeSitterLibraryService } from '../../../../../../editor/common/services/treeSitter/treeSitterLibraryService.js';
 import { SymbolKind } from '../../../../../../editor/common/languages.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
+import { IWorkspaceBM25Service } from '../search/bm25Index.js';
+import { ITrigramIndexService } from '../search/trigramIndex.js';
+import { IPersistentContextStore, IStoredFileIndex } from '../search/persistentStore.js';
 
 export const IWorkspaceSymbolIndexService = createDecorator<IWorkspaceSymbolIndexService>('neuralInverseWorkspaceSymbolIndex');
 
@@ -31,6 +33,33 @@ export interface IIndexedSymbol {
 	references: string[];
 }
 
+export type IndexRejectionReason = 'tooLarge' | 'generated' | 'unreadable' | 'gitignored' | 'capped';
+
+/** Counters for the most recent full-index run. `rejected` explains every
+ *  discovered file that did not reach the lexical feed, so a silent gap in
+ *  search coverage can be told apart from an actually complete index.
+ *
+ *  Reconciliation invariant (asserted by tests):
+ *    discovered == indexed + unchanged + rejected.tooLarge + rejected.generated + rejected.unreadable
+ *  (`gitignored`/`capped` are pre-admission: those files were seen by the walk
+ *  but never entered `discovered`.)
+ *
+ *  `canceled`/`unreadableDirs` separate a COMPLETE walk from a partial one:
+ *  only a completed, uncanceled walk with no unreadable directories proves a
+ *  missing file was really deleted, which is what the stale cleanup relies on. */
+export interface IIndexRunStats {
+	discovered: number;
+	indexed: number;
+	unchanged: number;
+	rejected: Partial<Record<IndexRejectionReason, number>>;
+	/** true when the run ended by cancellation — the walk is partial; its file set proves nothing about deletions. */
+	canceled: boolean;
+	/** directories the walk could not read; files under them are exempt from stale cleanup. */
+	unreadableDirs: number;
+	failed: boolean;
+	error: string | undefined;
+}
+
 export interface IFileIndex {
 	uri: string;
 	symbols: IIndexedSymbol[];
@@ -42,6 +71,8 @@ export interface IFileIndex {
 export interface IWorkspaceSymbolIndexService {
 	readonly _serviceBrand: undefined;
 	readonly onDidReindex: Event<string[]>;
+	readonly onDidRemoveFiles: Event<string[]>;
+	readonly onDidStartFullIndex: Event<void>;
 	readonly onDidFinishFullIndex: Event<void>;
 	getSymbolsByName(name: string): IIndexedSymbol[];
 	getSymbolsInFile(uri: string): IIndexedSymbol[];
@@ -51,8 +82,21 @@ export interface IWorkspaceSymbolIndexService {
 	getTransitiveImports(uri: string, maxDepth?: number): string[];
 	getFileIndex(uri: string): IFileIndex | undefined;
 	isReady(): boolean;
-	getStats(): { totalFiles: number; totalSymbols: number; indexingInProgress: boolean };
+	getStats(): { totalFiles: number; totalSymbols: number; indexingInProgress: boolean; indexCapped?: boolean; lastRun?: IIndexRunStats };
 	forceReindex(uri?: string): Promise<void>;
+}
+
+/** Minimal shape of a Tree-sitter syntax node (untyped by the parser). */
+interface TreeSitterNode {
+	type: string;
+	namedChildren?: TreeSitterNode[];
+	namedChildCount?: number;
+	namedChild(index: number): TreeSitterNode | null | undefined;
+	childForFieldName?(field: string): TreeSitterNode | null | undefined;
+	startPosition?: { row: number; column: number };
+	endPosition?: { row: number; column: number };
+	text?: string;
+	parent?: TreeSitterNode | null;
 }
 
 const BATCH_SIZE = 30;
@@ -60,10 +104,17 @@ const BATCH_YIELD_MS = 16;
 const MAX_FILE_SIZE_BYTES = 1_048_576; // 1MB
 const INDEX_CONCURRENCY = 4;
 const DEBOUNCE_FILE_CHANGE_MS = 300;
+const WORKSPACE_RESCAN_DEBOUNCE_MS = 2_000;
 const MAX_TRANSITIVE_DEPTH = 6;
 const MAX_TRANSITIVE_RESULTS = 200;
+// Full-index cap: huge workspaces (200k+ source files) would otherwise read+parse for
+// HOURS, saturating IO and making the whole editor feel frozen (session 20260906T164055:
+// the walk alone found 235,985 files). The first 25k files cover normal projects entirely.
+const MAX_INDEX_FILES = 25_000;
 
 const SOURCE_EXTENSIONS = new Set([
+	// Text retrieval also covers project assets without a symbol parser.
+	'.html', '.htm', '.css', '.scss', '.less', '.json', '.jsonc', '.md', '.mdx', '.yaml', '.yml', '.toml',
 	'.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs',
 	'.py', '.pyi', '.go', '.rs', '.c', '.h', '.cpp', '.hpp', '.cc', '.hh',
 	'.cs', '.java', '.kt', '.kts', '.scala', '.vue', '.svelte',
@@ -81,11 +132,23 @@ const IGNORED_DIRS = new Set([
 
 const TREESITTER_SUPPORTED = new Set(['typescript', 'javascript', 'css', 'ini', 'regex']);
 
-class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbolIndexService {
+function emptyRunStats(): IIndexRunStats {
+	return { discovered: 0, indexed: 0, unchanged: 0, rejected: {}, canceled: false, unreadableDirs: 0, failed: false, error: undefined };
+}
+
+export class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbolIndexService {
 	declare readonly _serviceBrand: undefined;
 
 	private readonly _onDidReindex = this._register(new Emitter<string[]>());
 	readonly onDidReindex = this._onDidReindex.event;
+
+	private readonly _onDidRemoveFiles = this._register(new Emitter<string[]>());
+	/** Files dropped from the index (delete/rename/ignore) — downstream
+	 *  stores (embeddings) use it for symmetric cleanup. */
+	readonly onDidRemoveFiles = this._onDidRemoveFiles.event;
+
+	private readonly _onDidStartFullIndex = this._register(new Emitter<void>());
+	readonly onDidStartFullIndex = this._onDidStartFullIndex.event;
 
 	private readonly _onDidFinishFullIndex = this._register(new Emitter<void>());
 	readonly onDidFinishFullIndex = this._onDidFinishFullIndex.event;
@@ -97,10 +160,28 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	private _ready = false;
 	private _indexingInProgress = false;
 	private _fullIndexCts: CancellationTokenSource | undefined;
+	private _initialIndexTimeout: ReturnType<typeof setTimeout> | undefined;
+	private _indexCapped = false;
+	private _workspaceRescanScheduler: RunOnceScheduler;
+	// Counters for the in-flight (or most recently settled) full-index run.
+	private _run: IIndexRunStats = emptyRunStats();
 	private readonly _limiter = new Limiter<void>(INDEX_CONCURRENCY);
 
 	private readonly _pendingFileChanges = new Set<string>();
 	private readonly _fileChangeDebouncer: RunOnceScheduler;
+
+	// ─── Persistence (task D3) ─────────────────────────────────────────────────
+	// Lazy store init — one attempt per workspace, fault-tolerant (same pattern
+	// as bm25Index.ts).  If the store is unavailable we degrade to in-memory only.
+	private _storeInit: Promise<boolean> | undefined;
+	private _hydrated = false;
+
+	// .gitignore patterns read at the start of a full index walk.  Simple
+	// glob matching (no full gitignore spec) — covers the vast majority of
+	// real-world .gitignore entries (path globs, * wildcards, directory
+	// suffix).  Patterns are relative to the workspace root.
+	private _gitignorePatterns: string[] = [];
+	private _gitignoreLoaded = false;
 
 	constructor(
 		@IFileService private readonly _fileService: IFileService,
@@ -108,6 +189,9 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		@IModelService private readonly _modelService: IModelService,
 		@ITreeSitterLibraryService private readonly _treeSitterService: ITreeSitterLibraryService,
 		@ILogService private readonly _logService: ILogService,
+		@IWorkspaceBM25Service private readonly _bm25Index: IWorkspaceBM25Service,
+		@ITrigramIndexService private readonly _trigramIndex: ITrigramIndexService,
+		@IPersistentContextStore private readonly _contextStore: IPersistentContextStore,
 	) {
 		super();
 
@@ -116,6 +200,19 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		));
 
 		this._register(this._fileService.onDidFilesChange(e => {
+			// .gitignore changes (F07): re-read the patterns and purge files
+			// that just became ignored, so ignore edits apply without waiting
+			// for the next full reindex. Containment check: the changed file
+			// must be a root's `.gitignore` — the old `roots.includes(...)`
+			// compared the .gitignore URI against the ROOT URIs and could
+			// never fire, so ignore edits silently never applied.
+			const roots = this._workspaceService.getWorkspace().folders.map(f => f.uri.toString());
+			const gitignoreChanged = [...e.rawAdded, ...e.rawUpdated, ...e.rawDeleted]
+				.some(r => r.path.endsWith('/.gitignore') && roots.some(root => r.toString().startsWith(root + '/')));
+			if (gitignoreChanged) {
+				this._gitignoreLoaded = false;
+				void this._applyGitignoreChanges();
+			}
 			for (const resource of e.rawDeleted) {
 				const ext = this._extname(resource.path);
 				if (SOURCE_EXTENSIONS.has(ext)) {
@@ -146,17 +243,31 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			}
 		}));
 
-		this._startFullIndex();
+		// Defer the initial index until the workbench settles: indexing 10k+ files
+		// right at startup makes the first minute of every session feel frozen
+		// (exthost unresponsive cycles + heavy IO churn alongside session restore).
+		this._initialIndexTimeout = setTimeout(() => this._startFullIndex(), 20_000);
+
+		// Workspace roots changed (root added/removed): a removed root's files
+		// must be pruned and a new root must be walked. Debounced — folder
+		// changes arrive in bursts; the persisted-hash fast path keeps the
+		// re-walk cheap for unchanged files.
+		this._workspaceRescanScheduler = this._register(new RunOnceScheduler(
+			() => { this._gitignoreLoaded = false; void this._startFullIndex(); }, WORKSPACE_RESCAN_DEBOUNCE_MS
+		));
+		this._register(this._workspaceService.onDidChangeWorkspaceFolders(() => {
+			if (!this._workspaceRescanScheduler.isScheduled()) { this._workspaceRescanScheduler.schedule(); }
+		}));
 	}
 
 	isReady(): boolean { return this._ready; }
 
-	getStats(): { totalFiles: number; totalSymbols: number; indexingInProgress: boolean } {
+	getStats(): { totalFiles: number; totalSymbols: number; indexingInProgress: boolean; indexCapped: boolean; lastRun: IIndexRunStats } {
 		let totalSymbols = 0;
 		for (const fi of this._fileIndices.values()) {
 			totalSymbols += fi.symbols.length;
 		}
-		return { totalFiles: this._fileIndices.size, totalSymbols, indexingInProgress: this._indexingInProgress };
+		return { totalFiles: this._fileIndices.size, totalSymbols, indexingInProgress: this._indexingInProgress, indexCapped: this._indexCapped, lastRun: this._run };
 	}
 
 	getSymbolsByName(name: string): IIndexedSymbol[] {
@@ -195,6 +306,10 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			await this._indexFile(uri, CancellationToken.None);
 			this._onDidReindex.fire([uri]);
 		} else {
+			if (this._initialIndexTimeout !== undefined) {
+				clearTimeout(this._initialIndexTimeout);
+				this._initialIndexTimeout = undefined;
+			}
 			this._cancelFullIndex();
 			await this._startFullIndex();
 		}
@@ -207,11 +322,11 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 		while (queue.length > 0 && results.length < MAX_TRANSITIVE_RESULTS) {
 			const { uri, depth } = queue.shift()!;
-			if (visited.has(uri)) continue;
+			if (visited.has(uri)) { continue; }
 			visited.add(uri);
 
-			if (uri !== startUri) results.push(uri);
-			if (depth >= maxDepth) continue;
+			if (uri !== startUri) { results.push(uri); }
+			if (depth >= maxDepth) { continue; }
 
 			const neighbors = direction === 'reverse'
 				? this._reverseImportEdges.get(uri)
@@ -243,74 +358,437 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		}
 
 		this._indexingInProgress = true;
-		this._fullIndexCts = new CancellationTokenSource();
-		const token = this._fullIndexCts.token;
+		this._indexCapped = false;
+		// Per-run stats object: a superseded (canceled) run keeps mutating ITS
+		// OWN object and can never skew the replacement run's counters.
+		const runStats = emptyRunStats();
+		this._run = runStats;
+		const run = new CancellationTokenSource();
+		this._fullIndexCts = run;
+		const token = run.token;
+		const unreadableDirs: URI[] = [];
+		this._onDidStartFullIndex.fire();
 
 		try {
+			// Load .gitignore BEFORE hydration: persisted entries that became
+			// ignored since the last session must not be resurrected (F09/WI-1).
+			await this._loadGitignore();
+
+			// Hydrate from persistence before walking — if the store has data
+			// from a previous session, in-memory maps are populated now so the
+			// walk only re-indexes files whose content hash changed.
+			await this._ensureStore();
+			if (!this._hydrated) {
+				await this._hydrate().catch(() => { /* best-effort — degrade to in-memory */ });
+			}
+			const persistedHashes = await this._getPersistedHashes();
+
 			const folders = this._workspaceService.getWorkspace().folders;
 			const allFiles: string[] = [];
 
 			for (const folder of folders) {
-				if (token.isCancellationRequested) return;
-				await this._walkDirectory(folder.uri, allFiles, token);
+				if (token.isCancellationRequested) { return; }
+				await this._walkDirectory(folder.uri, allFiles, token, unreadableDirs, runStats);
+			}
+			runStats.discovered = allFiles.length;
+			runStats.unreadableDirs = unreadableDirs.length;
+
+			// Remove entries for files the completed walk did NOT see — deleted,
+			// renamed, moved out, newly gitignored, or under a removed root.
+			// The old `!_isUriGitignored(uri)` guard kept now-ignored entries
+			// alive forever (WI-1: ~1.2k node_modules ghosts next to 92 real
+			// files). Pruning is allowed ONLY when this walk is proof: not
+			// canceled, not failed, and the file is not under a directory the
+			// walk could not read (a missing file under an unreadable dir is
+			// not evidence of deletion).
+			const walkSettled = !token.isCancellationRequested && !runStats.failed;
+			if (walkSettled) {
+				const allFileSet = new Set(allFiles);
+				const unreadablePrefixes = unreadableDirs.map(d => d.toString());
+				let pruned = 0;
+				for (const [uri] of this._fileIndices) {
+					if (allFileSet.has(uri)) { continue; }
+					if (unreadablePrefixes.some(p => uri.startsWith(p + '/') || uri === p)) { continue; }
+					this._removeFile(uri);
+					pruned++;
+				}
+				if (pruned > 0) {
+					this._logService.info(`[SymbolIndex] Stale cleanup pruned ${pruned} entries absent from the completed walk`);
+				}
 			}
 
 			this._logService.info(`[SymbolIndex] Indexing ${allFiles.length} files across ${folders.length} folders`);
 
 			for (let i = 0; i < allFiles.length; i += BATCH_SIZE) {
-				if (token.isCancellationRequested) return;
+				if (token.isCancellationRequested) { return; }
 
 				const batch = allFiles.slice(i, i + BATCH_SIZE);
-				const promises = batch.map(f => this._limiter.queue(() => this._indexFile(f, token)));
+				const promises = batch.map(f => this._limiter.queue(() => this._indexFile(f, token, persistedHashes, runStats)));
 				await Promise.all(promises);
 
 				// Yield to event loop between batches
 				await new Promise<void>(r => setTimeout(r, BATCH_YIELD_MS));
 			}
 
+			if (token.isCancellationRequested) { return; }
 			this._ready = true;
 			this._logService.info(`[SymbolIndex] Done. ${this._fileIndices.size} files, ${this.getStats().totalSymbols} symbols`);
-			this._onDidFinishFullIndex.fire();
 		} catch (e) {
 			if (!token.isCancellationRequested) {
+				runStats.failed = true;
+				runStats.error = e instanceof Error ? e.message : String(e);
 				this._logService.error(`[SymbolIndex] Indexing failed:`, e);
 			}
 		} finally {
-			this._indexingInProgress = false;
+			runStats.canceled = token.isCancellationRequested;
+			// Observers synchronously read getStats(). Publish the settled state
+			// first; a superseded run must not clear a newer run's busy flag.
+			if (this._fullIndexCts === run) {
+				this._fullIndexCts = undefined;
+				this._indexingInProgress = false;
+				this._onDidFinishFullIndex.fire();
+			}
+			run.dispose();
 		}
 	}
 
-	private async _walkDirectory(dirUri: URI, results: string[], token: CancellationToken): Promise<void> {
-		if (token.isCancellationRequested) return;
+	// ─── Persistence (task D3) ─────────────────────────────────────────────────
+
+	private _ensureStore(): Promise<boolean> {
+		if (!this._storeInit) {
+			this._storeInit = (async () => {
+				const ws = this._workspaceService.getWorkspace().folders[0]?.uri;
+				if (!ws) { return false; }
+				const id = ws.toString().replace(/[^a-zA-Z0-9]/g, '_').slice(-120) || 'default';
+				await this._contextStore.initialize(id);
+				if (!this._hydrated) {
+					this._hydrated = true;
+					await this._hydrate().catch(() => { /* best-effort — degrade to in-memory */ });
+				}
+				return true;
+			})().catch(() => false);
+		}
+		return this._storeInit;
+	}
+
+	/** Rebuild in-memory maps from the persistent store. Called once after
+	 *  _ensureStore() succeeds — mirrors the rebuild() pattern in bm25Index.ts. */
+	/** Feed the (non-persistent) trigram index for a file whose symbols we
+	 *  already know — used on hydration and unchanged fast paths so a warm
+	 *  restart keeps fuzzy-name search working without re-parsing every file. */
+	private _feedTrigram(uri: string, symbols: IIndexedSymbol[]): void {
+		const resource = URI.parse(uri);
+		const filePath = resource.fsPath;
+		try { this._trigramIndex.addEntry(uri, filePath, resource.path); } catch { /* best-effort */ }
+		for (const sym of symbols) {
+			try { this._trigramIndex.addEntry(`${uri}:${sym.name}`, filePath, sym.name, sym.name); } catch { /* best-effort */ }
+		}
+	}
+
+	private async _hydrate(): Promise<void> {
+		const stored = await this._contextStore.getAllFileIndices();
+		if (stored.length === 0) { return; }
+
+		this._fileIndices.clear();
+		this._symbolsByName.clear();
+		this._reverseImportEdges.clear();
+
+		let droppedIgnored = 0;
+		for (const fi of stored) {
+			// A persisted entry that is gitignored NOW must not be resurrected
+			// (F09/WI-1): skip the in-memory feed, drop it from the store so it
+			// cannot come back on the next restart either, and clean the
+			// downstream search feeds (bm25 hydrates from its own store and
+			// would otherwise keep serving the ghost text).
+			if (this._isUriGitignored(fi.uri)) {
+				droppedIgnored++;
+				const resource = URI.parse(fi.uri);
+				try { this._trigramIndex.removeEntriesForFile(resource.fsPath); } catch { /* best-effort */ }
+				try { this._bm25Index.removeFile(resource.fsPath).catch(() => { }); } catch { /* best-effort */ }
+				try { await this._contextStore.deleteFileIndexByUri(fi.uri).catch(() => { }); } catch { /* best-effort */ }
+				continue;
+			}
+
+			// Deserialize: imports string[] → Set<string>, symbols stored as-is
+			const symbols = fi.symbols;
+			const imports = new Set(fi.imports);
+
+			const fileIndex: IFileIndex = {
+				uri: fi.uri,
+				symbols,
+				imports,
+				lastIndexedAt: fi.lastIndexedAt,
+				contentHash: fi.contentHash,
+			};
+			this._fileIndices.set(fi.uri, fileIndex);
+
+			for (const sym of symbols) {
+				let set = this._symbolsByName.get(sym.name);
+				if (!set) {
+					set = new Set();
+					this._symbolsByName.set(sym.name, set);
+				}
+				set.add(sym);
+			}
+
+			for (const target of imports) {
+				let rev = this._reverseImportEdges.get(target);
+				if (!rev) {
+					rev = new Set();
+					this._reverseImportEdges.set(target, rev);
+				}
+				rev.add(fi.uri);
+			}
+
+			// Warm start (F07): trigram has no persistence of its own — feed
+			// hydrated entries here, or fuzzy search is empty after restart
+			// until every file happens to change.
+			this._feedTrigram(fi.uri, symbols);
+		}
+
+		this._logService.info(`[SymbolIndex] Hydrated ${this._fileIndices.size} files from persistent store${droppedIgnored > 0 ? ` (dropped ${droppedIgnored} now-gitignored stale entries)` : ''}`);
+	}
+
+	/** Returns a map of uri → contentHash from the persistent store, so the
+	 *  walk can skip files that haven't changed without reading their content. */
+	private async _getPersistedHashes(): Promise<Map<string, number>> {
+		try {
+			return await this._contextStore.getSymbolFileHashes();
+		} catch {
+			return new Map();
+		}
+	}
+
+	/** Serialize an in-memory IFileIndex to the IndexedDB-friendly IStoredFileIndex. */
+	private _serializeFileIndex(fi: IFileIndex): IStoredFileIndex {
+		return {
+			uri: fi.uri,
+			symbols: fi.symbols,
+			imports: Array.from(fi.imports),
+			lastIndexedAt: fi.lastIndexedAt,
+			contentHash: fi.contentHash,
+		};
+	}
+
+	// ─── .gitignore reading (task D3) ──────────────────────────────────────────
+
+	/** Read .gitignore from each workspace root and collect glob patterns.
+	 *  Simple matching: supports exact paths, * wildcards, and directory
+	 *  suffix patterns (trailing /).  Negation (!) and nested .gitignore
+	 *  files are not supported — covers the majority of real-world usage. */
+	private async _loadGitignore(): Promise<void> {
+		if (this._gitignoreLoaded) { return; }
+		this._gitignoreLoaded = true;
+		this._gitignorePatterns = [];
+
+		const folders = this._workspaceService.getWorkspace().folders;
+		for (const folder of folders) {
+			const gitignoreUri = URI.joinPath(folder.uri, '.gitignore');
+			try {
+				const stat = await this._fileService.readFile(gitignoreUri);
+				const text = stat.value.toString();
+				for (const line of text.split(/\r?\n/)) {
+					const trimmed = line.trim();
+					if (!trimmed || trimmed.startsWith('#')) { continue; }
+					this._gitignorePatterns.push(trimmed);
+				}
+			} catch {
+				// no .gitignore in this folder — fine
+			}
+		}
+
+		if (this._gitignorePatterns.length > 0) {
+			this._logService.info(`[SymbolIndex] Loaded ${this._gitignorePatterns.length} .gitignore patterns`);
+		}
+	}
+
+	/** Check if a file path matches any .gitignore pattern. */
+	private _isGitignored(filePath: string): boolean {
+		for (const pattern of this._gitignorePatterns) {
+			if (this._matchGitignorePattern(filePath, pattern)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Check if a URI is gitignored (converts URI to path first). */
+	private _isUriGitignored(uri: string): boolean {
+		try {
+			const resource = URI.parse(uri);
+			return this._isGitignored(resource.fsPath);
+		} catch {
+			return false;
+		}
+	}
+
+	/** Simple gitignore pattern matcher. Supports:
+	 *  - exact path match (e.g. "secrets.txt")
+	 *  - * wildcard (e.g. "*.log")
+	 *  - directory suffix (e.g. "dist/")
+	 *  - path globs (e.g. "src/generated/*") */
+	private _matchGitignorePattern(filePath: string, pattern: string): boolean {
+		// Normalize: use forward slashes consistently
+		const normalizedPath = filePath.replace(/\\/g, '/');
+
+		// Directory suffix pattern (e.g. "dist/")
+		if (pattern.endsWith('/')) {
+			const dir = pattern.slice(0, -1);
+			// Match if any path segment equals the directory name
+			const segments = normalizedPath.split('/');
+			if (segments.some(s => s === dir)) { return true; }
+			// Or if the path contains the directory as a path component
+			if (normalizedPath.includes('/' + dir + '/')) { return true; }
+			return false;
+		}
+
+		// Negation patterns (!) — not supported, treat as no-match
+		if (pattern.startsWith('!')) { return false; }
+
+		// Convert glob to regex
+		// Escape regex special chars except * and /
+		let regexStr = pattern
+			.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+			.replace(/\*/g, '.*');
+
+		// If pattern contains no /, match against any path segment (basename match)
+		if (!pattern.includes('/')) {
+			regexStr = '(^|/)' + regexStr + '(/|$)';
+		}
+
+		const regex = new RegExp(regexStr);
+		return regex.test(normalizedPath);
+	}
+
+	private async _walkDirectory(dirUri: URI, results: string[], token: CancellationToken, unreadableDirs: URI[] = [], runStats: IIndexRunStats = this._run): Promise<void> {
+		if (token.isCancellationRequested) { return; }
 
 		try {
 			const stat = await this._fileService.resolve(dirUri);
-			if (!stat.children) return;
+			if (!stat.children) { return; }
 
 			for (const child of stat.children) {
-				if (token.isCancellationRequested) return;
+				if (token.isCancellationRequested) { return; }
 
 				if (child.isDirectory) {
 					if (!IGNORED_DIRS.has(child.name) && !child.name.startsWith('.')) {
-						await this._walkDirectory(child.resource, results, token);
+						await this._walkDirectory(child.resource, results, token, unreadableDirs, runStats);
 					}
 				} else {
 					const ext = this._extname(child.name);
 					if (SOURCE_EXTENSIONS.has(ext)) {
+						// Skip files that match .gitignore patterns (task D3)
+						if (this._isGitignored(child.resource.fsPath)) {
+							this._countRejected(runStats, 'gitignored');
+							continue;
+						}
+						if (results.length >= MAX_INDEX_FILES) {
+							if (!this._indexCapped) {
+								this._indexCapped = true;
+								this._logService.warn(`[SymbolIndex] Capping full index at ${MAX_INDEX_FILES} files — the workspace has more; only the first ${MAX_INDEX_FILES} source files are indexed.`);
+							}
+							this._countRejected(runStats, 'capped');
+							return;
+						}
 						results.push(child.resource.toString());
 					}
 				}
 			}
 		} catch {
-			// directory unreadable — skip silently
+			// Directory unreadable — its subtree is missing from this walk, so
+			// stale cleanup must spare files under it (a missing file here is
+			// not evidence of deletion).
+			unreadableDirs.push(dirUri);
 		}
 	}
 
-	private async _indexFile(uri: string, token: CancellationToken): Promise<void> {
-		if (token.isCancellationRequested) return;
+	/** Reload .gitignore patterns and apply them both ways:
+	 *  - newly ignored files are dropped from every in-memory index + search
+	 *    feed, and
+	 *  - newly UNignored paths (a removed pattern) are re-discovered by a
+	 *    debounced full re-walk — the persisted-hash fast path keeps it cheap.
+	 *  Failures leave the previous patterns in place. */
+	private async _applyGitignoreChanges(): Promise<void> {
+		try {
+			const previous = new Set(this._gitignorePatterns);
+			await this._loadGitignore();
+			const removed: string[] = [];
+			for (const [uri] of this._fileIndices) {
+				if (this._isUriGitignored(uri)) {
+					this._removeFile(uri);
+					removed.push(uri);
+				}
+			}
+			if (removed.length > 0) {
+				this._logService.info(`[SymbolIndex] .gitignore change removed ${removed.length} indexed files`);
+			}
+			const unignored = [...previous].some(p => !this._gitignorePatterns.includes(p));
+			if (unignored && !this._workspaceRescanScheduler.isScheduled()) {
+				this._workspaceRescanScheduler.schedule();
+			}
+		} catch (e) {
+			this._logService.warn(`[SymbolIndex] failed to apply .gitignore change:`, e);
+		}
+	}
+
+	private _countRejected(runStats: IIndexRunStats, reason: IndexRejectionReason): void {
+		runStats.rejected[reason] = (runStats.rejected[reason] ?? 0) + 1;
+	}
+
+	private async _indexFile(uri: string, token: CancellationToken, persistedHashes?: Map<string, number>, runStats?: IIndexRunStats): Promise<void> {
+		if (token.isCancellationRequested) { return; }
+		const countsTowardRun = runStats !== undefined;
 
 		try {
 			const resource = URI.parse(uri);
+
+			// Unified eligibility (F09): the watcher/incremental path applies the
+			// SAME rules as the full walk — a gitignored file must not slip into
+			// the index just because a file event mentioned it.
+			if (this._isUriGitignored(uri)) {
+				if (countsTowardRun) { this._countRejected(runStats, 'gitignored'); }
+				return;
+			}
+
+			// Fast-path skip: if the persisted store already has this file
+			// and we hydrated from it, the in-memory hash matches the stored
+			// one.  We still need to verify the on-disk content hasn't changed
+			// since the last session, but we can defer the file read until
+			// after the cheap hash comparison.  If the persisted hash exists
+			// and the in-memory index already has it, the file was hydrated
+			// and we only need to re-read if the content changed.
+			//
+			// The existing hash-check at line 583 below already handles the
+			// in-memory skip.  The persistedHashes map lets us skip even
+			// reading the file: if the persisted hash matches the in-memory
+			// one (from hydrate), and no model is open for this file, we
+			// can trust the hydrated data without touching disk.
+			const inMemory = this._fileIndices.get(uri);
+			const persistedHash = persistedHashes?.get(uri);
+			if (inMemory && persistedHash !== undefined && inMemory.contentHash === persistedHash) {
+				// The file was hydrated from the store and hasn't been touched
+				// in this session.  We still need to verify the on-disk content
+				// hasn't changed since last session — but only if no editor
+				// model is open (if one is open, its content is authoritative).
+				const model = this._modelService.getModel(resource);
+				if (!model) {
+					// No editor model — read the file to check the hash.
+					// This is still cheaper than full symbol extraction.
+					const stat = await this._fileService.readFile(resource, { limits: { size: MAX_FILE_SIZE_BYTES } });
+					const content = stat.value.toString();
+					const hash = this._hashContent(content);
+					if (hash === inMemory.contentHash) {
+						// File unchanged — skip symbol extraction entirely, but
+						// keep the trigram feed alive across warm restarts.
+						if (countsTowardRun) { runStats.unchanged++; }
+						this._feedTrigram(uri, inMemory.symbols);
+						return;
+					}
+					// File changed on disk — fall through to full re-index.
+					// (The code below will read content again, but the file
+					// system cache makes this nearly free.)
+				}
+			}
 
 			// Try in-memory model first (already open in editor)
 			const model = this._modelService.getModel(resource);
@@ -323,12 +801,27 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 				content = stat.value.toString();
 			}
 
-			if (token.isCancellationRequested) return;
+			if (token.isCancellationRequested) { return; }
+
+			// Skip minified/generated files — a 100KB+ file with under 10
+			// newlines is almost certainly bundled/minified output, not
+			// source. Indexing it wastes memory and pollutes search results.
+			if (content.length > 50_000) {
+				const newlineCount = (content.match(/\n/g) ?? []).length;
+				if (newlineCount < 10) {
+					if (countsTowardRun) { this._countRejected(runStats, 'generated'); }
+					return;
+				}
+			}
 
 			// Content hash for skip-if-unchanged
 			const hash = this._hashContent(content);
 			const existing = this._fileIndices.get(uri);
-			if (existing && existing.contentHash === hash) return;
+			if (existing && existing.contentHash === hash) {
+				if (countsTowardRun) { runStats.unchanged++; }
+				this._feedTrigram(uri, existing.symbols);
+				return;
+			}
 
 			// Remove old data
 			this._removeFile(uri);
@@ -366,21 +859,52 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 				}
 				rev.add(uri);
 			}
-		} catch {
-			// unreadable or too large — skip
+
+			// Persist to IndexedDB (task D3) — fire-and-forget; a store
+			// failure must never block the symbol index.
+			try { await this._contextStore.putFileIndex(this._serializeFileIndex(fileIndex)); } catch { /* best-effort */ }
+
+			// Feed search indexes (C8 bnd 1) — the file content is already
+			// in memory; zero extra I/O.  bm25 indexes the full text for
+			// keyword retrieval; trigram indexes file + symbol names for
+			// fuzzy matching.  Both are fire-and-forget — a failure in the
+			// search layer must never block the symbol index.
+			const filePath = resource.fsPath;
+			try { this._trigramIndex.addEntry(uri, filePath, resource.path); } catch { /* best-effort */ }
+			for (const sym of symbols) {
+				try { this._trigramIndex.addEntry(`${uri}:${sym.name}`, filePath, sym.name, sym.name); } catch { /* best-effort */ }
+			}
+			try { await this._bm25Index.indexFile(filePath, content, String(hash)); } catch { /* best-effort */ }
+			if (countsTowardRun) { runStats.indexed++; }
+		} catch (e) {
+			// unreadable or too large — skip, but say why in the run stats so
+			// the gap in search coverage stays visible instead of silent.
+			if (countsTowardRun) {
+				if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE) {
+					this._countRejected(runStats, 'tooLarge');
+				} else {
+					this._countRejected(runStats, 'unreadable');
+				}
+			}
 		}
 	}
 
 	private _removeFile(uri: string): void {
 		const existing = this._fileIndices.get(uri);
-		if (!existing) return;
+		if (!existing) { return; }
+
+		// Feed search indexes — symmetric removal (C8 bnd 1)
+		const resource = URI.parse(uri);
+		const filePath = resource.fsPath;
+		try { this._trigramIndex.removeEntriesForFile(filePath); } catch { /* best-effort */ }
+		try { this._bm25Index.removeFile(filePath).catch(() => { }); } catch { /* best-effort */ }
 
 		// Remove from name index
 		for (const sym of existing.symbols) {
 			const set = this._symbolsByName.get(sym.name);
 			if (set) {
 				set.delete(sym);
-				if (set.size === 0) this._symbolsByName.delete(sym.name);
+				if (set.size === 0) { this._symbolsByName.delete(sym.name); }
 			}
 		}
 
@@ -389,18 +913,23 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			const rev = this._reverseImportEdges.get(target);
 			if (rev) {
 				rev.delete(uri);
-				if (rev.size === 0) this._reverseImportEdges.delete(target);
+				if (rev.size === 0) { this._reverseImportEdges.delete(target); }
 			}
 		}
 
 		this._fileIndices.delete(uri);
+
+		// Remove from persistent store (task D3) — fire-and-forget
+		try { this._contextStore.deleteFileIndexByUri(uri).catch(() => { }); } catch { /* best-effort */ }
+
+		try { this._onDidRemoveFiles.fire([uri]); } catch { /* listener failures must not break removal */ }
 	}
 
 	private async _processFileChanges(): Promise<void> {
 		const files = Array.from(this._pendingFileChanges);
 		this._pendingFileChanges.clear();
 
-		if (files.length === 0) return;
+		if (files.length === 0) { return; }
 
 		const reindexed: string[] = [];
 		for (const uri of files) {
@@ -425,7 +954,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			const langId = model.getLanguageId();
 			if (TREESITTER_SUPPORTED.has(langId)) {
 				const tsSymbols = await this._extractViaTreeSitter(uri, model);
-				if (tsSymbols && tsSymbols.length > 0) return tsSymbols;
+				if (tsSymbols && tsSymbols.length > 0) { return tsSymbols; }
 			}
 		}
 
@@ -440,17 +969,17 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		try {
 			const languageId = model.getLanguageId();
 			const lang = this._treeSitterService.getLanguage(languageId, false, undefined);
-			if (!lang) return undefined;
+			if (!lang) { return undefined; }
 
 			const ParserClass = await this._treeSitterService.getParserClass();
 			const parser = new ParserClass();
 			parser.setLanguage(lang);
 			const tree = parser.parse(model.getValue());
-			if (!tree) return undefined;
+			if (!tree) { return undefined; }
 			const root = tree.rootNode;
 			const symbols: IIndexedSymbol[] = [];
 
-			this._walkTreeSitterNode(root, uri, symbols, undefined);
+			this._walkTreeSitterNode(root as unknown as TreeSitterNode, uri, symbols, undefined);
 			return symbols;
 		} catch {
 			return undefined;
@@ -458,7 +987,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	}
 
 	private _walkTreeSitterNode(
-		node: any,
+		node: TreeSitterNode,
 		uri: string,
 		symbols: IIndexedSymbol[],
 		containerName: string | undefined,
@@ -467,14 +996,14 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 		// Exported declarations
 		if (type === 'export_statement') {
-			const declaration = node.namedChildren?.find((c: any) =>
+			const declaration = node.namedChildren?.find((c: TreeSitterNode) =>
 				c.type.includes('declaration') || c.type === 'class_declaration' ||
 				c.type === 'function_declaration' || c.type === 'lexical_declaration' ||
 				c.type === 'type_alias_declaration' || c.type === 'enum_declaration' ||
 				c.type === 'interface_declaration'
 			);
 			if (declaration) {
-				this._extractDeclarationSymbol(declaration, uri, symbols, containerName, true, node.text?.startsWith('export default'));
+				this._extractDeclarationSymbol(declaration, uri, symbols, containerName, true, node.text?.startsWith('export default') ?? false);
 			}
 			return;
 		}
@@ -487,7 +1016,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		// Recurse into classes/namespaces for nested symbols
 		if (type === 'class_declaration' || type === 'class' || type === 'abstract_class_declaration') {
 			const name = this._getNodeName(node);
-			const body = node.namedChildren?.find((c: any) => c.type === 'class_body');
+			const body = node.namedChildren?.find((c: TreeSitterNode) => c.type === 'class_body');
 			if (body && name) {
 				for (let i = 0; i < (body.namedChildCount ?? 0); i++) {
 					const child = body.namedChild(i);
@@ -502,7 +1031,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		// Walk children
 		for (let i = 0; i < (node.namedChildCount ?? 0); i++) {
 			const child = node.namedChild(i);
-			if (child) this._walkTreeSitterNode(child, uri, symbols, containerName);
+			if (child) { this._walkTreeSitterNode(child, uri, symbols, containerName); }
 		}
 	}
 
@@ -514,7 +1043,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	}
 
 	private _extractDeclarationSymbol(
-		node: any,
+		node: TreeSitterNode,
 		uri: string,
 		symbols: IIndexedSymbol[],
 		containerName: string | undefined,
@@ -522,7 +1051,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		isDefault: boolean,
 	): void {
 		const name = this._getNodeName(node);
-		if (!name) return;
+		if (!name) { return; }
 
 		const kind = this._nodeTypeToSymbolKind(node.type);
 		const startPos = node.startPosition;
@@ -545,20 +1074,20 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		});
 	}
 
-	private _getNodeName(node: any): string | undefined {
+	private _getNodeName(node: TreeSitterNode): string | undefined {
 		// Try named children for identifier
 		for (let i = 0; i < (node.namedChildCount ?? 0); i++) {
 			const child = node.namedChild(i);
-			if (!child) continue;
+			if (!child) { continue; }
 			if (child.type === 'identifier' || child.type === 'type_identifier' || child.type === 'property_identifier') {
 				return child.text;
 			}
 		}
 		// Variable declarators
 		if (node.type === 'lexical_declaration' || node.type === 'variable_declaration') {
-			const declarator = node.namedChildren?.find((c: any) => c.type === 'variable_declarator');
+			const declarator = node.namedChildren?.find((c: TreeSitterNode) => c.type === 'variable_declarator');
 			if (declarator) {
-				const id = declarator.namedChildren?.find((c: any) => c.type === 'identifier');
+				const id = declarator.namedChildren?.find((c: TreeSitterNode) => c.type === 'identifier');
 				return id?.text;
 			}
 		}
@@ -634,7 +1163,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 			// Track brace depth for class scope detection
 			for (const ch of line) {
-				if (ch === '{') braceDepth++;
+				if (ch === '{') { braceDepth++; }
 				if (ch === '}') {
 					braceDepth--;
 					if (braceDepth <= classStartDepth) {
@@ -644,7 +1173,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 				}
 			}
 
-			if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue;
+			if (trimmed.startsWith('//') || trimmed.startsWith('*')) { continue; }
 
 			const isExport = /^export\s/.test(trimmed);
 			const isDefault = /^export\s+default\s/.test(trimmed);
@@ -711,7 +1240,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			const trimmed = line.trim();
-			if (trimmed.startsWith('#') || trimmed.length === 0) continue;
+			if (trimmed.startsWith('#') || trimmed.length === 0) { continue; }
 
 			const indent = line.length - line.trimStart().length;
 
@@ -742,7 +1271,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			const trimmed = line.trim();
-			if (trimmed.startsWith('//')) continue;
+			if (trimmed.startsWith('//')) { continue; }
 
 			let match = /^func\s+(?:\((\w+)\s+\*?(\w+)\)\s+)?(\w+)/.exec(trimmed);
 			if (match) {
@@ -776,7 +1305,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			const trimmed = line.trim();
-			if (trimmed.startsWith('//')) continue;
+			if (trimmed.startsWith('//')) { continue; }
 
 			let match = /^(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+(\w+)/.exec(trimmed);
 			if (match) {
@@ -819,7 +1348,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			const trimmed = line.trim();
-			if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('/*')) continue;
+			if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('/*')) { continue; }
 
 			// Function: return_type name(params) {
 			const match = /^(?:(?:static|inline|extern|const|unsigned|signed|volatile|struct|enum)\s+)*(?:[\w*]+\s+)+(\w+)\s*\([^;]*\)\s*\{?\s*$/.exec(trimmed);
@@ -856,7 +1385,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			const trimmed = line.trim();
-			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('@')) continue;
+			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('@')) { continue; }
 
 			let match = /^(?:(?:public|private|protected|static|final|abstract|sealed|open|data|internal)\s+)*(?:class|interface|enum|object)\s+(\w+)/.exec(trimmed);
 			if (match) {
@@ -882,7 +1411,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			const trimmed = line.trim();
-			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('[')) continue;
+			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('[')) { continue; }
 
 			let match = /^namespace\s+([\w.]+)/.exec(trimmed);
 			if (match) { namespacePrefix = match[1]; continue; }
@@ -892,7 +1421,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 				currentClass = match[1];
 				const kind = trimmed.includes('interface') ? SymbolKind.Interface :
 					trimmed.includes('enum') ? SymbolKind.Enum :
-					trimmed.includes('struct') ? SymbolKind.Struct : SymbolKind.Class;
+						trimmed.includes('struct') ? SymbolKind.Struct : SymbolKind.Class;
 				symbols.push(this._makeSymbol(match[1], kind, uri, i, line, namespacePrefix || undefined, !trimmed.includes('private'), false));
 				continue;
 			}
@@ -909,7 +1438,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 		for (let i = 0; i < lines.length; i++) {
 			const trimmed = lines[i].trim();
-			if (trimmed.startsWith('#')) continue;
+			if (trimmed.startsWith('#')) { continue; }
 
 			let match = /^(?:class|module)\s+(\w+(?:::\w+)*)/.exec(trimmed);
 			if (match) {
@@ -936,7 +1465,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 		for (let i = 0; i < lines.length; i++) {
 			const trimmed = lines[i].trim();
-			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('#')) continue;
+			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('#')) { continue; }
 
 			let match = /^(?:abstract\s+|final\s+)?class\s+(\w+)/.exec(trimmed);
 			if (match) {
@@ -963,7 +1492,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 		for (let i = 0; i < lines.length; i++) {
 			const trimmed = lines[i].trim();
-			if (trimmed.startsWith('//')) continue;
+			if (trimmed.startsWith('//')) { continue; }
 
 			let match = /^(?:(?:public|private|internal|open|fileprivate)\s+)?(?:final\s+)?(?:class|struct|enum|protocol|actor)\s+(\w+)/.exec(trimmed);
 			if (match) {
@@ -1061,21 +1590,21 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		let match;
 		while ((match = staticImport.exec(content)) !== null) {
 			const resolved = this._resolveJSPath(dirPath, match[1]);
-			if (resolved) imports.add(resolved);
+			if (resolved) { imports.add(resolved); }
 		}
 
 		// Dynamic imports
 		const dynamicImport = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 		while ((match = dynamicImport.exec(content)) !== null) {
 			const resolved = this._resolveJSPath(dirPath, match[1]);
-			if (resolved) imports.add(resolved);
+			if (resolved) { imports.add(resolved); }
 		}
 
 		// Require
 		const requireCall = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 		while ((match = requireCall.exec(content)) !== null) {
 			const resolved = this._resolveJSPath(dirPath, match[1]);
-			if (resolved) imports.add(resolved);
+			if (resolved) { imports.add(resolved); }
 		}
 	}
 
@@ -1087,7 +1616,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		while ((match = fromImport.exec(content)) !== null) {
 			if (match[1].startsWith('.')) {
 				const resolved = this._resolvePythonRelative(dirPath, match[1]);
-				if (resolved) imports.add(resolved);
+				if (resolved) { imports.add(resolved); }
 			} else {
 				imports.add(`python:${match[1]}`);
 			}
@@ -1097,7 +1626,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			const mod = match[1].split(',')[0].trim();
 			if (mod.startsWith('.')) {
 				const resolved = this._resolvePythonRelative(dirPath, mod);
-				if (resolved) imports.add(resolved);
+				if (resolved) { imports.add(resolved); }
 			} else {
 				imports.add(`python:${mod}`);
 			}
@@ -1118,7 +1647,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 			const lines = match[1].split('\n');
 			for (const line of lines) {
 				const pathMatch = /"([^"]+)"/.exec(line.trim());
-				if (pathMatch) imports.add(`go:${pathMatch[1]}`);
+				if (pathMatch) { imports.add(`go:${pathMatch[1]}`); }
 			}
 		}
 	}
@@ -1196,7 +1725,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	// ─── Path Resolution ────────────────────────────────────────────────────────
 
 	private _resolveJSPath(dirPath: string, specifier: string): string | undefined {
-		if (!specifier.startsWith('.') && !specifier.startsWith('/')) return undefined;
+		if (!specifier.startsWith('.') && !specifier.startsWith('/')) { return undefined; }
 
 		// Strip query string and hash
 		const cleanSpec = specifier.split('?')[0].split('#')[0];
@@ -1208,18 +1737,18 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 
 	private _resolvePythonRelative(dirPath: string, specifier: string): string | undefined {
 		const dotsMatch = specifier.match(/^(\.+)/);
-		if (!dotsMatch) return undefined;
+		if (!dotsMatch) { return undefined; }
 
 		const dots = dotsMatch[1].length;
 		let base = dirPath;
 		for (let i = 1; i < dots; i++) {
 			const lastSlash = base.lastIndexOf('/');
-			if (lastSlash === -1) return undefined;
+			if (lastSlash === -1) { return undefined; }
 			base = base.substring(0, lastSlash);
 		}
 
 		const rest = specifier.slice(dots).replace(/\./g, '/');
-		if (!rest) return base + '/__init__.py';
+		if (!rest) { return base + '/__init__.py'; }
 		return base + '/' + rest + '.py';
 	}
 
@@ -1228,9 +1757,9 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		const relParts = relative.split('/');
 
 		for (const part of relParts) {
-			if (part === '' || part === '.') continue;
-			else if (part === '..') { if (parts.length > 1) parts.pop(); }
-			else parts.push(part);
+			if (part === '' || part === '.') { continue; }
+			else if (part === '..') { if (parts.length > 1) { parts.pop(); } }
+			else { parts.push(part); }
 		}
 
 		return parts.join('/');
@@ -1242,7 +1771,7 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 		const lastSlash = pathOrUri.lastIndexOf('/');
 		const basename = lastSlash >= 0 ? pathOrUri.slice(lastSlash + 1) : pathOrUri;
 		const lastDot = basename.lastIndexOf('.');
-		if (lastDot <= 0) return '';
+		if (lastDot <= 0) { return ''; }
 		return basename.slice(lastDot);
 	}
 
@@ -1257,6 +1786,10 @@ class WorkspaceSymbolIndexService extends Disposable implements IWorkspaceSymbol
 	}
 
 	override dispose(): void {
+		if (this._initialIndexTimeout) {
+			clearTimeout(this._initialIndexTimeout);
+			this._initialIndexTimeout = undefined;
+		}
 		this._cancelFullIndex();
 		super.dispose();
 	}

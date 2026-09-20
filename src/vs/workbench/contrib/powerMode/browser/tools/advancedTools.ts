@@ -634,7 +634,7 @@ Automatically detects: npm/yarn test, pytest, cargo test, go test, etc.`,
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			const pattern = args.pattern as string | undefined;
-			const timeout = (args.timeout as number) ?? 120000;
+			const timeout = (args.timeout as number) ?? 3600000;
 
 			ctx.metadata({ title: 'Running tests...' });
 

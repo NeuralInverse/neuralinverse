@@ -1,13 +1,18 @@
-import { URI } from '../../../../base/common/uri.js'
+/*--------------------------------------------------------------------------------------
+ *  Copyright (c) Neural Inverse. All rights reserved.
+ *  Tools Service Types — parameter/result shapes of the builtin agent tools.
+ *--------------------------------------------------------------------------------------*/
+
+import { URI } from '../../../../base/common/uri.js';
 import { RawMCPToolCall } from './mcpServiceTypes.js';
 
 import { RawToolParamsObj } from './sendLLMMessageTypes.js';
 
 
 
-export type TerminalResolveReason = { type: 'timeout' } | { type: 'done', exitCode: number }
+export type TerminalResolveReason = { type: 'timeout' } | { type: 'done'; exitCode: number };
 
-export type LintErrorItem = { code: string, message: string, startLineNumber: number, endLineNumber: number }
+export type LintErrorItem = { code: string; message: string; startLineNumber: number; endLineNumber: number };
 
 // Partial of IFileStat
 export type ShallowDirectoryItem = {
@@ -15,7 +20,7 @@ export type ShallowDirectoryItem = {
 	name: string;
 	isDirectory: boolean;
 	isSymbolicLink: boolean;
-}
+};
 
 
 export const approvalTypeOfBuiltinToolName: Partial<{ [T in BuiltinToolName]?: 'edits' | 'terminal' | 'MCP tools' }> = {
@@ -26,6 +31,7 @@ export const approvalTypeOfBuiltinToolName: Partial<{ [T in BuiltinToolName]?: '
 	'multi_replace_file_content': 'edits',
 	'run_command': 'terminal',
 	'run_persistent_command': 'terminal',
+	'run_background_command': 'terminal',
 	'open_persistent_terminal': 'terminal',
 	'read_terminal': 'terminal',
 	'send_command_input': 'terminal',
@@ -34,7 +40,7 @@ export const approvalTypeOfBuiltinToolName: Partial<{ [T in BuiltinToolName]?: '
 	'bash': 'terminal',
 	'write': 'edits',
 	'edit': 'edits',
-}
+};
 
 
 export type ToolApprovalType = NonNullable<(typeof approvalTypeOfBuiltinToolName)[keyof typeof approvalTypeOfBuiltinToolName]>;
@@ -43,7 +49,7 @@ export type ToolApprovalType = NonNullable<(typeof approvalTypeOfBuiltinToolName
 export const toolApprovalTypes = new Set<ToolApprovalType>([
 	...Object.values(approvalTypeOfBuiltinToolName),
 	'MCP tools',
-])
+]);
 
 
 
@@ -51,132 +57,134 @@ export const toolApprovalTypes = new Set<ToolApprovalType>([
 // PARAMS OF TOOL CALL
 export type BuiltinToolCallParams = {
 	// --- Power Mode style tools ---
-	'bash': { command: string, description: string, timeout: number | null },
-	'read': { filePath: string, offset: number | null, limit: number | null },
-	'write': { filePath: string, content: string },
-	'edit': { filePath: string, oldString: string, newString: string },
-	'glob': { pattern: string, path: string | null },
-	'grep': { pattern: string, path: string | null, include: string | null },
-	'list': { dirPath: string | null },
-	'ask_powermode': { question: string },
+	'bash': { command: string; description: string; timeout: number | null };
+	'read': { filePath: string; offset: number | null; limit: number | null };
+	'write': { filePath: string; content: string };
+	'edit': { filePath: string; oldString: string; newString: string };
+	'glob': { pattern: string; path: string | null };
+	'grep': { pattern: string; path: string | null; include: string | null };
+	'list': { dirPath: string | null };
+	'ask_powermode': { question: string };
 	// --- (GRC compliance tools available in Enterprise Edition only) ---
-	'query_ni_agent': { agentId: string, input: string },
+	'query_ni_agent': { agentId: string; input: string };
 	// --- Workflow tools ---
-	'ask_user': { question: string },
-	'web_fetch': { url: string, description: string },
-	'memory_write': { key: string, content: string },
-	'memory_read': { key: string },
-	'tasks_create': { title: string, description: string | null },
-	'tasks_list': {},
-	'tasks_update': { taskId: string, status: string | null, title: string | null, description: string | null },
-	'tasks_get': { taskId: string },
+	'ask_user': { question: string };
+	'web_fetch': { url: string; description: string };
+	'memory_write': { key: string; content: string; type: string | undefined };
+	'memory_read': { key: string };
+	'tasks_create': { title: string; description: string | null };
+	'tasks_list': {};
+	'tasks_update': { taskId: string; status: string | null; title: string | null; description: string | null };
+	'tasks_get': { taskId: string };
 	// --- Sub-agent orchestration ---
-	'spawn_agent': { role: string, goal: string, scopedFiles: string | null },
-	'get_agent_status': { agentId: string },
-	'wait_for_agent': { agentId: string },
-	'list_agents': {},
+	'spawn_agent': { role: string; goal: string; scopedFiles: string | null };
+	'get_agent_status': { agentId: string };
+	'wait_for_agent': { agentId: string };
+	'list_agents': {};
 	// --- Context Engine ---
-	'context_search_symbols': { query: string, kind: string | null, filePattern: string | null },
-	'context_related_files': { file: string | null, query: string | null, maxResults: number | null },
-	'context_file_context': { file: string, budget: number | null },
-	'context_import_graph': { file: string, depth: number | null },
-	'context_recent_edits': { withinMinutes: number | null },
-	'context_semantic_search': { query: string, maxResults: number | null, filePattern: string | null },
+	'context_search_symbols': { query: string; kind: string | null; filePattern: string | null };
+	'context_related_files': { file: string | null; query: string | null; maxResults: number | null };
+	'context_file_context': { file: string; budget: number | null };
+	'context_import_graph': { file: string; depth: number | null };
+	'context_recent_edits': { withinMinutes: number | null };
+	'context_semantic_search': { query: string; maxResults: number | null; filePattern: string | null };
 	// ---
-	'read_file': { uri: URI, startLine: number | null, endLine: number | null, pageNumber: number },
-	'ls_dir': { uri: URI, pageNumber: number },
-	'get_dir_tree': { uri: URI },
-	'search_pathnames_only': { query: string, includePattern: string | null, pageNumber: number },
-	'search_for_files': { query: string, isRegex: boolean, searchInFolder: URI | null, pageNumber: number },
-	'search_in_file': { uri: URI, query: string, isRegex: boolean },
-	'read_lint_errors': { uri: URI },
+	'read_file': { uri: URI; startLine: number | null; endLine: number | null; pageNumber: number };
+	'ls_dir': { uri: URI; pageNumber: number };
+	'get_dir_tree': { uri: URI };
+	'search_pathnames_only': { query: string; includePattern: string | null; pageNumber: number };
+	'search_for_files': { query: string; isRegex: boolean; searchInFolder: URI | null; pageNumber: number };
+	'search_in_file': { uri: URI; query: string; isRegex: boolean };
+	'read_lint_errors': { uri: URI };
 	// ---
-	'rewrite_file': { uri: URI, newContent: string },
-	'edit_file': { uri: URI, searchReplaceBlocks: string },
-	'multi_replace_file_content': { uri: URI, replacementChunks: string },
-	'create_file_or_folder': { uri: URI, isFolder: boolean },
-	'delete_file_or_folder': { uri: URI, isRecursive: boolean, isFolder: boolean },
+	'rewrite_file': { uri: URI; newContent: string };
+	'edit_file': { uri: URI; searchReplaceBlocks: string };
+	'multi_replace_file_content': { uri: URI; replacementChunks: string };
+	'create_file_or_folder': { uri: URI; isFolder: boolean };
+	'delete_file_or_folder': { uri: URI; isRecursive: boolean; isFolder: boolean };
 	// ---
-	'run_command': { command: string; cwd: string | null, terminalId: string, timeout: number | null, bgAfter: number | null },
-	'run_persistent_command': { command: string; persistentTerminalId: string },
-	'open_persistent_terminal': { cwd: string | null },
-	'read_terminal': { persistentTerminalId: string },
-	'send_command_input': { persistentTerminalId: string, input: string },
-	'kill_persistent_terminal': { persistentTerminalId: string },
-	'update_agent_status': { taskName: string, taskSummary: string, taskStatus: string },
-	'generate_document': { title: string, content: string },
-	'plan_mode_enter': {},
-	'plan_mode_exit': {},
-	'todo_write': { todos: string },
-}
+	'run_command': { command: string; cwd: string | null; terminalId: string; timeout: number | null; bgAfter: number | null };
+	'run_persistent_command': { command: string; persistentTerminalId: string };
+	'run_background_command': { command: string; cwd: string | null };
+	'open_persistent_terminal': { cwd: string | null };
+	'read_terminal': { persistentTerminalId: string };
+	'send_command_input': { persistentTerminalId: string; input: string };
+	'kill_persistent_terminal': { persistentTerminalId: string };
+	'update_agent_status': { taskName: string; taskSummary: string; taskStatus: string };
+	'generate_document': { title: string; content: string };
+	'plan_mode_enter': {};
+	'plan_mode_exit': {};
+	'todo_write': { todos: string };
+};
 
 // RESULT OF TOOL CALL
 export type BuiltinToolResultType = {
 	// --- Power Mode style tools ---
-	'bash': { result: string },
-	'read': { result: string },
-	'write': { result: string },
-	'edit': { result: string },
-	'glob': { result: string },
-	'grep': { result: string },
-	'list': { result: string },
-	'ask_powermode': { result: string },
+	'bash': { result: string };
+	'read': { result: string };
+	'write': { result: string };
+	'edit': { result: string };
+	'glob': { result: string };
+	'grep': { result: string };
+	'list': { result: string };
+	'ask_powermode': { result: string };
 	// --- (GRC compliance results available in Enterprise Edition only) ---
-	'query_ni_agent': { result: string },
+	'query_ni_agent': { result: string };
 	// --- Workflow tools ---
-	'ask_user': { result: string },
-	'web_fetch': { result: string },
-	'memory_write': { result: string },
-	'memory_read': { result: string },
-	'tasks_create': { result: string },
-	'tasks_list': { result: string },
-	'tasks_update': { result: string },
-	'tasks_get': { result: string },
+	'ask_user': { result: string };
+	'web_fetch': { result: string };
+	'memory_write': { result: string };
+	'memory_read': { result: string };
+	'tasks_create': { result: string };
+	'tasks_list': { result: string };
+	'tasks_update': { result: string };
+	'tasks_get': { result: string };
 	// --- Sub-agent orchestration ---
-	'spawn_agent': { result: string },
-	'get_agent_status': { result: string },
-	'wait_for_agent': { result: string },
-	'list_agents': { result: string },
+	'spawn_agent': { result: string };
+	'get_agent_status': { result: string };
+	'wait_for_agent': { result: string };
+	'list_agents': { result: string };
 	// --- Context Engine ---
-	'context_search_symbols': { result: string },
-	'context_related_files': { result: string },
-	'context_file_context': { result: string },
-	'context_import_graph': { result: string },
-	'context_recent_edits': { result: string },
-	'context_semantic_search': { result: string },
+	'context_search_symbols': { result: string };
+	'context_related_files': { result: string };
+	'context_file_context': { result: string };
+	'context_import_graph': { result: string };
+	'context_recent_edits': { result: string };
+	'context_semantic_search': { result: string };
 	// ---
-	'read_file': { fileContents: string, totalFileLen: number, totalNumLines: number, hasNextPage: boolean },
-	'ls_dir': { children: ShallowDirectoryItem[] | null, hasNextPage: boolean, hasPrevPage: boolean, itemsRemaining: number },
-	'get_dir_tree': { str: string, },
-	'search_pathnames_only': { uris: URI[], hasNextPage: boolean },
-	'search_for_files': { uris: URI[], hasNextPage: boolean },
-	'search_in_file': { lines: number[]; },
-	'read_lint_errors': { lintErrors: LintErrorItem[] | null },
+	'read_file': { fileContents: string; totalFileLen: number; totalNumLines: number; hasNextPage: boolean };
+	'ls_dir': { children: ShallowDirectoryItem[] | null; hasNextPage: boolean; hasPrevPage: boolean; itemsRemaining: number };
+	'get_dir_tree': { str: string };
+	'search_pathnames_only': { uris: URI[]; hasNextPage: boolean };
+	'search_for_files': { uris: URI[]; hasNextPage: boolean };
+	'search_in_file': { lines: number[] };
+	'read_lint_errors': { lintErrors: LintErrorItem[] | null };
 	// ---
-	'rewrite_file': Promise<{ lintErrors: LintErrorItem[] | null }>,
-	'edit_file': Promise<{ lintErrors: LintErrorItem[] | null }>,
-	'multi_replace_file_content': Promise<{ lintErrors: LintErrorItem[] | null }>,
-	'create_file_or_folder': {},
-	'delete_file_or_folder': {},
+	'rewrite_file': Promise<{ lintErrors: LintErrorItem[] | null }>;
+	'edit_file': Promise<{ lintErrors: LintErrorItem[] | null }>;
+	'multi_replace_file_content': Promise<{ lintErrors: LintErrorItem[] | null }>;
+	'create_file_or_folder': {};
+	'delete_file_or_folder': {};
 	// ---
-	'run_command': { result: string; resolveReason: TerminalResolveReason; },
-	'run_persistent_command': { result: string; resolveReason: TerminalResolveReason; },
-	'open_persistent_terminal': { persistentTerminalId: string },
-	'read_terminal': { result: string },
-	'send_command_input': { result: string },
-	'kill_persistent_terminal': {},
-	'update_agent_status': { result: string },
-	'generate_document': { result: string, fileUri?: import('../../../../base/common/uri.js').UriComponents },
-	'plan_mode_enter': { result: string },
-	'plan_mode_exit': { result: string },
-	'todo_write': { result: string },
-}
+	'run_command': { result: string; resolveReason: TerminalResolveReason };
+	'run_persistent_command': { result: string; resolveReason: TerminalResolveReason };
+	'run_background_command': { result: string; resolveReason: TerminalResolveReason };
+	'open_persistent_terminal': { persistentTerminalId: string };
+	'read_terminal': { result: string };
+	'send_command_input': { result: string };
+	'kill_persistent_terminal': {};
+	'update_agent_status': { result: string };
+	'generate_document': { result: string; fileUri?: import('../../../../base/common/uri.js').UriComponents };
+	'plan_mode_enter': { result: string };
+	'plan_mode_exit': { result: string };
+	'todo_write': { result: string };
+};
 
 
-export type ToolCallParams<T extends BuiltinToolName | (string & {})> = T extends BuiltinToolName ? BuiltinToolCallParams[T] : RawToolParamsObj
-export type ToolResult<T extends BuiltinToolName | (string & {})> = T extends BuiltinToolName ? BuiltinToolResultType[T] : RawMCPToolCall
+export type ToolCallParams<T extends BuiltinToolName | (string & {})> = T extends BuiltinToolName ? BuiltinToolCallParams[T] : RawToolParamsObj;
+export type ToolResult<T extends BuiltinToolName | (string & {})> = T extends BuiltinToolName ? BuiltinToolResultType[T] : RawMCPToolCall;
 
-export type BuiltinToolName = keyof BuiltinToolResultType
+export type BuiltinToolName = keyof BuiltinToolResultType;
 
 
 export type SnakeCase<S extends string> =
@@ -189,14 +197,14 @@ export type SnakeCase<S extends string> =
 	? `${C extends Lowercase<C> ? C : `_${Lowercase<C>}`}${SnakeCase<Rest>}`
 	: S;
 
-export type SnakeCaseKeys<T extends Record<string, any>> = {
+export type SnakeCaseKeys<T extends Record<string, unknown>> = {
 	[K in keyof T as SnakeCase<Extract<K, string>>]: T[K]
 };
 
-type BuiltinToolParamNameOfTool<T extends BuiltinToolName> = keyof SnakeCaseKeys<BuiltinToolCallParams[T]>
-export type BuiltinToolParamName = { [T in BuiltinToolName]: BuiltinToolParamNameOfTool<T> }[BuiltinToolName]
+type BuiltinToolParamNameOfTool<T extends BuiltinToolName> = keyof SnakeCaseKeys<BuiltinToolCallParams[T]>;
+export type BuiltinToolParamName = { [T in BuiltinToolName]: BuiltinToolParamNameOfTool<T> }[BuiltinToolName];
 
 
-export type ToolName = BuiltinToolName | (string & {})
-export type ToolParamName<T extends ToolName> = T extends BuiltinToolName ? BuiltinToolParamNameOfTool<T> : string
+export type ToolName = BuiltinToolName | (string & {});
+export type ToolParamName<T extends ToolName> = T extends BuiltinToolName ? BuiltinToolParamNameOfTool<T> : string;
 

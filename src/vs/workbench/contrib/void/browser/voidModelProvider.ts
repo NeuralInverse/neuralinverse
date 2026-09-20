@@ -12,7 +12,7 @@ import { IContextKeyService } from '../../../../platform/contextkey/common/conte
 import { IWorkbenchContribution, registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 import { IVoidSettingsService } from '../common/voidSettingsService.js';
 import { ILLMMessageService } from '../common/sendLLMMessageService.js';
-import { ProviderName, providerNames, displayInfoOfProviderName } from '../common/voidSettingsTypes.js';
+import { ModelSelection, OverridesOfModel, ProviderName, providerNames, displayInfoOfProviderName } from '../common/voidSettingsTypes.js';
 import { getModelCapabilities } from '../common/modelCapabilities.js';
 import { ChatEntitlementContextKeys } from '../../../services/chat/common/chatEntitlementService.js';
 import {
@@ -35,13 +35,13 @@ import {
 	IChatAgentHistoryEntry,
 	IChatAgentRequest,
 } from '../../chat/common/participants/chatAgents.js';
-import { IChatProgress } from '../../chat/common/chatService/chatService.js';
+import { ConfirmedReason, IChatProgress, IChatToolInvocation, ToolConfirmKind } from '../../chat/common/chatService/chatService.js';
 import { ChatAgentLocation, ChatModeKind } from '../../chat/common/constants.js';
-import { LLMChatMessage, OpenAILLMChatMessage, RawToolCallObj } from '../common/sendLLMMessageTypes.js';
-import { OverridesOfModel } from '../common/voidSettingsTypes.js';
+import { LLMChatMessage, LLMUsage, OpenAILLMChatMessage, RawToolCallObj } from '../common/sendLLMMessageTypes.js';
 import { ILanguageModelToolsService, IToolData, ToolDataSource } from '../../chat/common/tools/languageModelToolsService.js';
 import { ChatToolInvocation } from '../../chat/common/model/chatProgressTypes/chatToolInvocation.js';
-import { ToolConfirmKind } from '../../chat/common/chatService/chatService.js';
+import { waitForState } from '../../../../base/common/observable.js';
+import { localize } from '../../../../nls.js';
 import { URI } from '../../../../base/common/uri.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
@@ -50,11 +50,51 @@ import { IConvertToLLMMessageService } from './convertToLLMMessageService.js';
 import { extractXMLToolsWrapper } from '../common/llmMessage/extractGrammar.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
 import { InternalToolInfo, isABuiltinToolName } from '../common/prompt/prompts.js';
-import { BuiltinToolName } from '../common/toolsServiceTypes.js';
+import { approvalTypeOfBuiltinToolName, BuiltinToolName } from '../common/toolsServiceTypes.js';
+import { IContextLedgerService } from './contextLedgerService.js';
+import { IVoidInternalToolService } from './voidInternalToolService.js';
+import { ILedgerAppendInput, ILedgerEntry } from '../common/ledgerTypes.js';
+import { chatSessionResourceToId } from '../../chat/common/model/chatUri.js';
+import { DEFAULT_LEDGER_POLICY, availableInputTokens, estimateTokens } from '../common/ledgerPolicy.js';
+import { isContextOverflowError } from './conversationCompactor.js';
+import { resolveCloseBoundary } from '../common/ledgerBoundary.js';
+import { buildWorkingBrief } from '../common/workingBriefBuilder.js';
+import { EpisodeSummarizer } from '../common/episodeSummarizer.js';
+import { applyLoopBudget } from '../common/loopBudget.js';
+import { migrateLegacyTurns } from '../common/ledgerTurns.js';
+import { assembleLedgerPayload } from '../common/ledgerPayload.js';
+import { contiguousCoverage } from '../common/ledgerJournalCore.js';
 
 const NI_EXTENSION_ID = new ExtensionIdentifier('neuralInverse.void');
 const NI_AGENT_ID = 'neuralInverse.default';
 const MAX_TOOL_ITERATIONS = 20;
+
+/** The vendor entry the model picker groups our BYOLLM models under. */
+const NI_PROVIDER_DESCRIPTOR: IUserFriendlyLanguageModel = {
+	vendor: 'neuralInverse',
+	displayName: 'Neural Inverse',
+	// Models come from the Void settings pane, not a contributed configuration,
+	// and the provider is always available — so these three carry no value.
+	configuration: undefined,
+	managementCommand: undefined,
+	when: undefined,
+};
+
+/** A streamed text chunk, typed at construction so callers need no assertion. */
+const textPart = (value: string): IChatResponsePart => ({ type: 'text', value });
+
+/**
+ * Message of a thrown value. `catch` binds `unknown`, and providers throw a mix
+ * of Error, string, and API error objects, so narrow before reading `.message`.
+ */
+function messageOfThrown(e: unknown): string {
+	if (e instanceof Error) { return e.message; }
+	if (typeof e === 'object' && e !== null) {
+		const m = (e as { message?: unknown }).message;
+		if (typeof m === 'string') { return m; }
+	}
+	return String(e);
+}
 
 /** Per-tool display metadata for the native chat pill UI. */
 interface VoidToolMeta {
@@ -449,7 +489,27 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 		private readonly _lmToolsService: ILanguageModelToolsService,
 		private readonly _toolsService: IToolsService,
 		private readonly _convertService: IConvertToLLMMessageService,
+		private readonly _contextLedgerService: IContextLedgerService,
+		private readonly _internalToolService: IVoidInternalToolService,
 	) { }
+
+	/**
+	 * Best-effort journal write for the native chat (task A7 item 3). The sidebar
+	 * journals every message through chatThreadService; requests arriving here
+	 * were invisible to the ledger, so this surface had no archive, no
+	 * compaction and nothing for `recall_history` to find. Failures are
+	 * swallowed on purpose: a ledger problem must never break a chat turn.
+	 */
+	private _journal(threadId: string, input: ILedgerAppendInput): Promise<ILedgerEntry | null> {
+		if (!this._settingsService.state.globalSettings.contextLedgerEnabled) { return Promise.resolve(null); }
+		return this._contextLedgerService.append(threadId, input).catch(() => null);
+	}
+
+	private _ledgerSummarizer: EpisodeSummarizer | undefined;
+	private _getLedgerSummarizer(): EpisodeSummarizer {
+		if (!this._ledgerSummarizer) { this._ledgerSummarizer = new EpisodeSummarizer(this._llmMessageService); }
+		return this._ledgerSummarizer;
+	}
 
 	async invoke(request: IChatAgentRequest, progress: (parts: IChatProgress[]) => void, history: IChatAgentHistoryEntry[], token: CancellationToken): Promise<IChatAgentResult> {
 		const state = this._settingsService.state;
@@ -468,6 +528,31 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 			return {};
 		}
 
+		// /compact slash command — fold the ledger's open episode into a
+		// summary, freeing context budget. The native chat panel uses the
+		// ledger directly; the sidebar has its own compactThread method.
+		if (request.command === 'compact') {
+			const ledgerThreadId = chatSessionResourceToId(request.sessionResource);
+			const stats = await this._contextLedgerService.stats(ledgerThreadId);
+			if (!stats || stats.entryCount === 0) {
+				progress([{ kind: 'markdownContent', content: new MarkdownString('Nothing to compact — the conversation is short enough.') }]);
+				return {};
+			}
+			progress([{ kind: 'markdownContent', content: new MarkdownString('Compacting conversation…') }]);
+			try {
+				const freed = await this._compactLedgerThread(ledgerThreadId, modelSelection);
+				if (freed <= 0) {
+					progress([{ kind: 'markdownContent', content: new MarkdownString('Nothing to compact — the conversation does not meet the compaction threshold yet.') }]);
+					return {};
+				}
+				const freedK = freed >= 1000 ? `${(freed / 1000).toFixed(1)}k` : `${freed}`;
+				progress([{ kind: 'markdownContent', content: new MarkdownString(`✅ Context compacted — ${freedK} tokens freed. The next request is built from the ledger brief + the uncovered tail.`) }]);
+			} catch (e) {
+				progress([{ kind: 'markdownContent', content: new MarkdownString(`Compaction failed: ${e instanceof Error ? e.message : String(e)}`) }]);
+			}
+			return {};
+		}
+
 		// Resolve context from attached files/pastes — prepend to first user message so the
 		// system message is built entirely by void's pipeline (workspace + tool schemas via chatMode).
 		const contextText = await resolveContext(request, this._toolsService);
@@ -479,24 +564,110 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 		// browser tools, testing tools, subagent, etc.) and convert to void's InternalToolInfo.
 		// These are passed as mcpTools — void's sendLLMMessage appends them to the agent tool list.
 		// ni_* tools (voidToolsBridge) are excluded: void's own builtin tool execution handles them.
+		// Honour the tool picker: when the user has narrowed the tool set for this request,
+		// offering the model everything registered is how a disabled tool still gets called
+		// (task A7 item 1). An entry missing from the map means "not chosen"; an empty/absent
+		// map means the user never narrowed anything, so everything stays available.
+		const userSelectedTools = request.userSelectedTools;
+		const isToolAllowed = (toolId: string): boolean =>
+			!userSelectedTools || Object.keys(userSelectedTools).length === 0 || userSelectedTools[toolId] === true;
 		const copilotMcpTools: InternalToolInfo[] = Array.from(this._lmToolsService.getTools(undefined))
 			.filter(t => !t.id.startsWith('ni_'))
+			.filter(t => isToolAllowed(t.id))
 			.map(copilotToolToInternalToolInfo);
+
+		// Void internal tools (ledger recall, discovery, …) are part of the
+		// sidebar's tool list for agent chatModes (chatThreadService merges
+		// internalToolService.getToolInfos() the same way). The bridge must
+		// offer AND execute them too, or the system message advertises tools
+		// the loop can never run — exactly how recall_history went missing in
+		// the owner's live test (task A8). Internal tools win name conflicts.
+		const allBridgeTools: InternalToolInfo[] = (() => {
+			const seen = new Set<string>();
+			return [...this._internalToolService.getToolInfos(), ...copilotMcpTools]
+				.filter(t => {
+					if (seen.has(t.name)) { return false; }
+					seen.add(t.name);
+					return true;
+				})
+				.slice(0, 128); // API hard limit
+		})();
 
 		// Build message history as plain OpenAI-style messages.
 		// Do NOT pass a systemMessage here — chatMode:'agent' in sendLLMMessage triggers void's
 		// pipeline to build the full system message (workspace context + all tool schemas).
 		// Passing an empty string would create an empty Anthropic system block (API error).
-		const llmMessages: OpenAILLMChatMessage[] = [];
+		// One ledger thread per chat session, so a resumed session keeps its archive.
+		const ledgerThreadId = chatSessionResourceToId(request.sessionResource);
+		// R2: turns that predate the journal (ledger enabled late, a failed
+		// append, a cleared archive) are migrated INTO the ledger before the
+		// current message is appended, so the journal stays chronological and
+		// stays a superset of the session history. T3: the return value is the
+		// contiguous coverage the journal CONFIRMED — the send path may claim
+		// exactly that (and nothing more) in the coverage note/watermark.
+		const migratedThrough = await this._migrateLegacyTurns(ledgerThreadId, history);
+		// F01 lifecycle: a DUE episode closes on the normal send path too —
+		// not only on /compact and context-overflow — so the brief this
+		// request is assembled from reflects the policy threshold (R7)
+		await this._closeLedgerEpisode(ledgerThreadId, modelSelection, {}).catch(() => 0);
+		// awaited: the assembly below reads the journal, and the current message
+		// must already be part of it (it enters the payload exactly once — from
+		// the ledger, never duplicated from the session rebuild). meta.turn is
+		// the stable turn marker the migration matcher keys on.
+		const appendedEntry = await this._journal(ledgerThreadId, {
+			role: 'user',
+			content: userMessage,
+			meta: { turn: history.length },
+		});
+		// U1/T3: the durable coverage note — it claims exactly the COMPLETED
+		// turns the migration receipt confirmed, and NOTHING more. The current
+		// turn is deliberately NOT certified here: its assistant answer does
+		// not exist yet (the LLM has not run), and certifying it would make a
+		// failed answer write permanently unrecoverable. The next send
+		// verifies this turn (user marker + assistant marker) and advances
+		// the watermark then. T4/U2: the same value is persisted as the
+		// meta.json watermark, which no bounded journal window can lose and
+		// which only becomes durable together with this note's flush.
+		if (appendedEntry !== null && migratedThrough >= 0) {
+			const noted = await this._journal(ledgerThreadId, {
+				role: 'note',
+				content: 'turn-coverage-v2',
+				meta: { coveredThrough: migratedThrough },
+			});
+			if (noted !== null) {
+				this._contextLedgerService.recordTurnCoverage(ledgerThreadId, migratedThrough).catch(() => { });
+			}
+		}
+
+		// F01 fallback: the Copilot session rebuild — markdown-only, no tool
+		// results, no compaction. Used when the ledger is off/empty or fails;
+		// the ledger path replaces it entirely otherwise.
+		const fallbackMessages: OpenAILLMChatMessage[] = [];
 		for (const turn of history) {
-			llmMessages.push({ role: 'user', content: turn.request.message });
+			fallbackMessages.push({ role: 'user', content: turn.request.message });
 			const assistantText = turn.response
 				.filter(r => r.kind === 'markdownContent')
 				.map(r => (r as { kind: string; content: { value: string } }).content.value)
 				.join('');
-			if (assistantText) { llmMessages.push({ role: 'assistant', content: assistantText }); }
+			if (assistantText) { fallbackMessages.push({ role: 'assistant', content: assistantText }); }
 		}
-		llmMessages.push({ role: 'user', content: userMessage });
+		fallbackMessages.push({ role: 'user', content: userMessage });
+
+		// F01: the ledger payload — brief + everything the frozen episodes do
+		// not cover, tool results included, budget-aware. The current request
+		// travels with its JOURNAL SEQ (the append receipt) so the payload can
+		// be PROVEN to carry it exactly once — wherever it sits — and a failed
+		// append is repaired rather than silently sent without it (S1/S3).
+		const assembled = await this._assembleNativePayload(
+			ledgerThreadId,
+			fallbackMessages,
+			modelSelection,
+			{ message: userMessage, seq: appendedEntry !== null ? (appendedEntry.seq ?? null) : null },
+		);
+		const llmMessages: OpenAILLMChatMessage[] = assembled.messages;
+		// S1: the budget's mandatory anchor is this index — never guessed from
+		// message text. Loop appends only AFTER it, so the index stays valid.
+		let currentUserIdx = assembled.currentRequestIdx;
 
 		// Build the full system message in the renderer where workspace/editor services are available.
 		// chatMode:'agent' in generateSystemMessage includes: workspace folders, open files, dir tree,
@@ -505,6 +676,18 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 		// extractXMLToolsWrapper manually so tool XML never leaks to the chat display.
 		const { providerName: pn, modelName: mn } = modelSelection;
 		let systemMessage = await this._convertService.generateSystemMessage('agent', undefined, undefined, pn, mn);
+
+		// Hybrid agent memory (tasks M2/A8): the sidebar path injects these
+		// instructions via prepareLLMChatMessages — which the bridge bypasses —
+		// so it appends the same block itself (the workspace-rules pattern from
+		// E1). Seeded with the user's message so recall works in fresh chats.
+		// F09: getAIInstructionsForChat already carries the workspace rules —
+		// the separate <workspace_rules> append used to inject every rule file
+		// TWICE into the native system message, so it is gone.
+		const aiInstructions = await this._convertService.getAIInstructionsForChat(userMessage);
+		if (aiInstructions) {
+			systemMessage = `${systemMessage}\n\n${aiInstructions}`;
+		}
 
 		// Append Copilot mode instructions (custom instructions from .github/copilot-instructions.md
 		// or a custom Chat mode) so user-configured personas carry through to the NI backend.
@@ -515,19 +698,122 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 
 		// Agentic tool loop
 		const loopMessages = [...llmMessages];
+		const { overridesOfModel } = state;
+		const { contextWindow, reservedOutputTokenSpace } = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel);
+		// F10: the tool schemas reach the provider SEPARATELY from the system
+		// message (sendLLMMessage serialises them into the prompt) — the
+		// window accounting must measure them, not assume them away (R1)
+		const toolDefTokens = estimateTokens(allBridgeTools
+			.map(t => JSON.stringify({ name: t.name, description: t.description, params: t.params }))
+			.join('\n'));
+		const loopArchiveNote = state.globalSettings.contextLedgerEnabled
+			? 'the ledger archive preserves the original, recall_history can retrieve it'
+			: 'the original content is no longer part of this request';
 		let iterations = 0;
+		let overflowRetried = false;
 		while (iterations < MAX_TOOL_ITERATIONS) {
 			if (token.isCancellationRequested) { break; }
 			iterations++;
 
-			const { text, toolCalls } = await this._callLLM(
-				loopMessages, modelSelection, state, copilotMcpTools, systemMessage, token
+			// F01/F10: the window is enforced on EVERY loop send — in-loop tool
+			// results grow the payload exactly when nobody is looking. R1/S1:
+			// the current request (by index) and the brief are mandatory,
+			// oversized tool results are shortened in place — cumulatively
+			// when the savings must be distributed (S5) — and an infeasible
+			// payload STOPS the turn instead of silently sending a request
+			// without the user's message.
+			const budgeted = applyLoopBudget(
+				loopMessages,
+				availableInputTokens(contextWindow, (reservedOutputTokenSpace ?? 4_096) + estimateTokens(systemMessage) + toolDefTokens),
+				loopArchiveNote,
+				{ currentRequestIdx: currentUserIdx },
 			);
+			if (budgeted.infeasible) {
+				console.warn(`[ChatThread] native loop infeasible: mandatory payload ${budgeted.infeasible.mandatoryTokens} tokens > ${budgeted.infeasible.availableTokens} available — refusing to send`);
+				progress([{ kind: 'markdownContent', content: new MarkdownString('This request does not fit the selected model\u2019s context window — even after trimming history and shortening tool results. Reduce the attached context or start a new conversation.') }]);
+				return {};
+			}
+			if (budgeted.foldedCount > 0 || budgeted.truncatedCount > 0) {
+				console.warn(`[ChatThread] native loop over budget: folded ${budgeted.foldedCount} messages, shortened ${budgeted.truncatedCount} tool results`);
+				loopMessages.length = 0;
+				loopMessages.push(...budgeted.messages as OpenAILLMChatMessage[]);
+				// T1: trimming replaced the array — the mandatory anchor must
+				// follow the current request into the NEW array, or the next
+				// send protects whatever message now occupies the old position
+				currentUserIdx = budgeted.currentRequestIdx;
+			}
+
+			let text: string;
+			let toolCalls: RawToolCallObj[] | undefined;
+			let usage: LLMUsage | undefined;
+			try {
+				({ text, toolCalls, usage } = await this._callLLM(
+					loopMessages, modelSelection, state, allBridgeTools, systemMessage, token
+				));
+			} catch (e) {
+				// bounded recovery: a context-length rejection folds the covered
+				// prefix into a frozen episode and the payload is rebuilt once —
+				// the provider's own refusal drives the compaction, so this can
+				// not loop forever (cancellation still honored)
+				if (overflowRetried || token.isCancellationRequested || !isContextOverflowError(e instanceof Error ? e.message : String(e))) { throw e; }
+				overflowRetried = true;
+				console.warn('[ChatThread] native request hit the context window — compacting the ledger and retrying once');
+				progress([{ kind: 'markdownContent', content: new MarkdownString('Context window exhausted — compacting the conversation and retrying…') }]);
+				await this._compactLedgerThread(ledgerThreadId, modelSelection);
+				// S3: the rebuilt payload re-anchors the current request by its
+				// journal seq — after tool activity it legitimately sits EARLIER
+				// in the window, and a last-message check would re-append it
+				const rebuilt = await this._assembleNativePayload(ledgerThreadId, fallbackMessages, modelSelection, { message: userMessage, seq: appendedEntry !== null ? (appendedEntry.seq ?? null) : null });
+				loopMessages.length = 0;
+				loopMessages.push(...rebuilt.messages);
+				// keep the loop's mandatory anchor pointing at the CURRENT
+				// request in the rebuilt array (appends still happen after it)
+				currentUserIdx = rebuilt.currentRequestIdx;
+				continue;
+			}
 
 			if (token.isCancellationRequested) { break; }
 
-			if (text.length > 0) {
-				progress([{ kind: 'markdownContent', content: new MarkdownString(text) }]);
+			// Feed the native context gauge (task A7 item 4). It reads
+			// `response.usage`, which the chat model sets from this progress part.
+			// Reported per iteration, not once at the end: `promptTokens` is how
+			// full the window is right now, and an agent turn can call the model
+			// many times, so the last one is the number the user needs to see.
+			// The core accumulates `completionTokens` across the turn itself.
+			if (usage) {
+				progress([{
+					kind: 'usage',
+					promptTokens: usage.input,
+					completionTokens: usage.output,
+					actualModelId: `ni:${modelSelection.providerName}:${modelSelection.modelName}`,
+				}]);
+			}
+
+			// R7: the assistant record carries the tool calls it ISSUED (ids as
+			// the model named them), so the payload rebuild can render the
+			// tool-call side of each interaction, not only bare results. The
+			// bridged terminal/edit tools regenerate their call ids below —
+			// those results pair by name instead of id.
+			const issuedCalls = (toolCalls ?? [])
+				.map(c => ({ id: typeof c.id === 'string' && c.id ? c.id : generateUuid(), name: String(c.name) }))
+				.filter(c => c.name);
+			if (text.length > 0 || issuedCalls.length > 0) {
+				if (text.length > 0) {
+					progress([{ kind: 'markdownContent', content: new MarkdownString(text) }]);
+				}
+				this._journal(ledgerThreadId, {
+					role: 'assistant',
+					content: text,
+					meta: {
+						model: `${modelSelection.providerName}/${modelSelection.modelName}`,
+						// U1: the turn marker makes this answer's presence
+						// marker-exact for the next migration — a missing
+						// answer is repaired instead of certified
+						turn: history.length,
+						...(usage ? { usage: { input: usage.input, output: usage.output } } : {}),
+						...(issuedCalls.length > 0 ? { toolCalls: issuedCalls } : {}),
+					},
+				});
 			}
 
 			if (!toolCalls || toolCalls.length === 0) { break; }
@@ -675,7 +961,7 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 								context: { sessionResource: request.sessionResource },
 								chatRequestId: request.requestId,
 								tokenBudget: undefined,
-								userSelectedTools: undefined,
+								userSelectedTools: request.userSelectedTools,
 							},
 							async (txt) => Math.ceil(txt.length / 4),
 							token,
@@ -685,18 +971,58 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 							.map(p => (p as { kind: 'text'; value: string }).value)
 							.join('\n');
 						await invocation.didExecuteTool({ content: [{ kind: 'text', value: toolResultText }] });
-					} catch (e: any) {
-						toolResultText = `Tool error: ${e?.message ?? String(e)}`;
+					} catch (e) {
+						toolResultText = `Tool error: ${messageOfThrown(e)}`;
 						await invocation.didExecuteTool({ content: [{ kind: 'text', value: toolResultText }], toolResultError: true });
 					}
 				} else if (isABuiltinToolName(toolName)) {
 					// --- Void harness ---
-					// Transition Streaming → Executing so the spinner shows the "running" state.
+					// Tools that mutate the workspace or run commands need the same approval
+					// here as they do in the sidebar (`chatThreadService` consults the very same
+					// map before running one). Without this the identical tool ran unattended
+					// just because the request arrived through the native chat — task A7 item 2.
+					const approvalType = approvalTypeOfBuiltinToolName[toolName];
+					const autoApprove = approvalType
+						? this._settingsService.state.globalSettings.autoApprove[approvalType] === true
+						: false;
+					// `undefined` makes transitionFromStreaming park the invocation in
+					// WaitingForConfirmation and render the native confirmation buttons.
+					const autoConfirmed: ConfirmedReason | undefined = !approvalType
+						? { type: ToolConfirmKind.ConfirmationNotNeeded }
+						: autoApprove
+							? { type: ToolConfirmKind.Setting, id: `void.autoApprove.${approvalType}` }
+							: undefined;
 					invocation.transitionFromStreaming(
-						{ invocationMessage: new MarkdownString(invocationMsg) },
+						{
+							invocationMessage: new MarkdownString(invocationMsg),
+							confirmationMessages: approvalType && !autoApprove
+								? {
+									title: localize('void.toolConfirm.title', "Allow {0}?", toolData.displayName),
+									message: localize('void.toolConfirm.message', "The agent wants to run \"{0}\". This can change files or run commands in your workspace.", toolData.displayName),
+									allowAutoConfirm: true,
+								}
+								: undefined,
+						},
 						rawParams,
-						{ type: ToolConfirmKind.ConfirmationNotNeeded },
+						autoConfirmed,
 					);
+					if (autoConfirmed === undefined) {
+						// Park until the user answers. Denied/Skipped land in Cancelled; the
+						// model is told the call was refused so it can pick another route.
+						const settled = await waitForState(
+							invocation.state,
+							s => s.type === IChatToolInvocation.StateKind.Executing
+								|| s.type === IChatToolInvocation.StateKind.Cancelled,
+							undefined,
+							token,
+						);
+						if (settled.type === IChatToolInvocation.StateKind.Cancelled) {
+							toolResultText = `The user denied permission to run "${toolName}". Do not retry it; explain what you wanted to do, or choose a read-only alternative.`;
+							await invocation.didExecuteTool({ content: [{ kind: 'text', value: toolResultText }], toolResultError: true });
+							loopMessages.push({ role: 'user', content: `<tool_result name="${toolName}" id="${toolCallId}">\n${toolResultText}\n</tool_result>` });
+							continue;
+						}
+					}
 					const pastTenseMsg = voidMeta?.pastTenseLabel(rawParams);
 					// Build an input summary for the collapsible pill header (key param, max 120 chars).
 					const inputSummary = (
@@ -711,8 +1037,8 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 						const { result } = await this._toolsService.callTool[toolName](typedParams as never);
 						const awaitedResult = await result;
 						toolResultText = (this._toolsService.stringOfResult[toolName] as (p: unknown, r: unknown) => string)(typedParams, awaitedResult);
-					} catch (e: any) {
-						toolResultText = `Tool error: ${e?.message ?? String(e)}`;
+					} catch (e) {
+						toolResultText = `Tool error: ${messageOfThrown(e)}`;
 						isError = true;
 					}
 					// Attach toolSpecificData so the chat renderer picks the right sub-part widget.
@@ -722,17 +1048,219 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 						toolResultError: isError || undefined,
 						toolResultMessage: pastTenseMsg ? new MarkdownString(pastTenseMsg) : undefined,
 					});
+				} else if (this._internalToolService.has(toolName)) {
+					// --- Void internal tools (ledger recall, KB discovery — task A8) ---
+					// Registered by contributions, read-only by design, and the sidebar
+					// runs them through this same service — the bridge must route them
+					// too, or the model is shown a tool it can never call (the exact
+					// "recall_history is not available" failure from the live test).
+					// No approval flow: they never mutate the workspace.
+					let internalError = false;
+					try {
+						// F02: the native surface owns its identity — the ledger thread
+						// id of THIS session, never the active sidebar thread singleton
+						toolResultText = await this._internalToolService.execute(
+							toolName,
+							rawParams,
+							{ conversationId: ledgerThreadId, source: 'native-chat' },
+						);
+					} catch (e) {
+						toolResultText = `Tool error: ${messageOfThrown(e)}`;
+						internalError = true;
+					}
+					await invocation.didExecuteTool({ content: [{ kind: 'text', value: toolResultText }], toolResultError: internalError || undefined });
 				} else {
 					toolResultText = `Tool "${toolName}" is not available.`;
 					await invocation.didExecuteTool({ content: [{ kind: 'text', value: toolResultText }], toolResultError: true });
 				}
 
+				this._journal(ledgerThreadId, {
+					role: 'tool',
+					content: toolResultText,
+					name: toolName,
+					meta: { toolCallId },
+				});
 				// Feed result back as a tool message
 				loopMessages.push({ role: 'user', content: `<tool_result name="${toolName}" id="${toolCallId}">\n${toolResultText}\n</tool_result>` });
 			}
 		}
 
 		return {};
+	}
+
+	/**
+	 * Fold the journal's open episode into a frozen summary and rebuild the
+	 * working brief (F01). Shared by the /compact command, the context-
+	 * overflow recovery path AND the normal send path (R7): `force` skips the
+	 * policy thresholds — the send path passes none and closes only a DUE
+	 * episode. Returns the freed token estimate (0 on refusal).
+	 */
+	private async _closeLedgerEpisode(ledgerThreadId: string, modelSelection: ModelSelection | null, opts: { force?: boolean }): Promise<number> {
+		const stats = await this._contextLedgerService.stats(ledgerThreadId);
+		if (!stats || stats.entryCount === 0) { return 0; }
+		const episodes = await this._contextLedgerService.listEpisodes(ledgerThreadId);
+		const fromSeq = episodes.reduce((m, ep) => Math.max(m, ep.range.toSeq), 0) + 1;
+		const tailProbe = await this._contextLedgerService.readTail(ledgerThreadId, DEFAULT_LEDGER_POLICY.tailMinMessages + 4);
+		if (tailProbe.length === 0) { return 0; }
+		const idleMs = stats.lastEntryTs ? Date.now() - stats.lastEntryTs : 0;
+		const decision = EpisodeSummarizer.decideBoundary(stats, tailProbe.length, idleMs, DEFAULT_LEDGER_POLICY, opts);
+		if (!decision || !decision.close) { return 0; }
+		const boundary = await resolveCloseBoundary(fromSeq, DEFAULT_LEDGER_POLICY, n => this._contextLedgerService.readTail(ledgerThreadId, n));
+		if (boundary.kind !== 'close' || !boundary.toSeq) { return 0; }
+		const entries = await this._contextLedgerService.readRange(ledgerThreadId, fromSeq, boundary.toSeq);
+		if (entries.length === 0) { return 0; }
+		const episode = await this._getLedgerSummarizer().summarizeEpisode({
+			threadId: ledgerThreadId,
+			ordinal: episodes.length + 1,
+			entries,
+			range: { fromSeq, toSeq: boundary.toSeq },
+			modelSelection,
+		});
+		await this._contextLedgerService.saveEpisode(episode);
+		const brief = buildWorkingBrief({
+			threadId: ledgerThreadId,
+			previousBrief: await this._contextLedgerService.getBrief(ledgerThreadId),
+			episodes: [...episodes, episode],
+			lastSeq: stats.lastSeq,
+			policy: DEFAULT_LEDGER_POLICY,
+		});
+		await this._contextLedgerService.saveBrief(brief);
+		const foldedTokens = entries.reduce((s, e) => s + e.tokens, 0);
+		return Math.max(0, foldedTokens - brief.tokens);
+	}
+
+	/**
+	 * Manual /compact — always closes, regardless of the policy thresholds.
+	 */
+	private _compactLedgerThread(ledgerThreadId: string, modelSelection: ModelSelection | null): Promise<number> {
+		return this._closeLedgerEpisode(ledgerThreadId, modelSelection, { force: true });
+	}
+
+	/**
+	 * F01: assemble the outgoing payload FROM THE LEDGER instead of resending
+	 * the Copilot session's raw history. The journal is a superset of what the
+	 * session remembers (it also holds the tool results the session drops),
+	 * and the working brief replaces everything the frozen episodes actually
+	 * cover — so the payload stays bounded as the conversation grows, and
+	 * /compact's summary finally enters the next request.
+	 *
+	 * Coverage boundary (owner condition): the trim starts after the
+	 * CONTIGUOUS prefix the episodes the brief was built from actually cover
+	 * (R2) — NOT brief.builtAtSeq, which is the build-time watermark
+	 * (stats.lastSeq at build moment) and runs ahead of what the episodes
+	 * really summarize, and NOT a bare max(toSeq), which would delete entries
+	 * behind a gap in episode coverage. Anything uncovered stays verbatim in
+	 * the payload.
+	 *
+	 * S1/S3: the current request is carried by its journal SEQ (the append
+	 * receipt) — verified present exactly once, wherever it sits; a failed
+	 * append is repaired by pushing it once. The returned currentRequestIdx
+	 * is the budget's mandatory anchor (never guessed from message text).
+	 *
+	 * Never throws — on any failure the caller's session-history fallback is
+	 * returned so a ledger problem can never break a chat turn.
+	 */
+	private async _assembleNativePayload(
+		ledgerThreadId: string,
+		fallback: OpenAILLMChatMessage[],
+		modelSelection: { providerName: ProviderName; modelName: string },
+		currentRequest: { message: string; seq: number | null },
+	): Promise<{ messages: OpenAILLMChatMessage[]; currentRequestIdx: number }> {
+		try {
+			if (!this._settingsService.state.globalSettings.contextLedgerEnabled) {
+				return { messages: fallback, currentRequestIdx: fallback.length - 1 };
+			}
+			const stats = await this._contextLedgerService.stats(ledgerThreadId);
+			if (!stats || stats.entryCount === 0) {
+				return { messages: fallback, currentRequestIdx: fallback.length - 1 };
+			}
+
+			const brief = await this._contextLedgerService.getBrief(ledgerThreadId);
+			const episodes = await this._contextLedgerService.listEpisodes(ledgerThreadId);
+			let coveredSeq = 0;
+			if (brief) {
+				// contiguous-prefix coverage: a gap between episodes keeps the
+				// entries behind it in the payload instead of trimming them
+				coveredSeq = contiguousCoverage(
+					episodes
+						.filter(ep => brief.builtFromEpisodes.includes(ep.ordinal))
+						.map(ep => ep.range),
+				);
+			}
+
+			// the retained window, verbatim from the journal — including the
+			// tool results the session rebuild drops
+			const entries = await this._contextLedgerService.readRange(ledgerThreadId, coveredSeq + 1, stats.lastSeq);
+			if (entries.length === 0) {
+				return { messages: fallback, currentRequestIdx: fallback.length - 1 };
+			}
+
+			const { overridesOfModel } = this._settingsService.state;
+			const { contextWindow, reservedOutputTokenSpace } = getModelCapabilities(modelSelection.providerName, modelSelection.modelName, overridesOfModel);
+			const result = assembleLedgerPayload({
+				entries,
+				brief,
+				contextWindow,
+				reservedOutputTokenSpace,
+				policy: DEFAULT_LEDGER_POLICY,
+				current: currentRequest,
+			});
+			if (!result) {
+				return { messages: fallback, currentRequestIdx: fallback.length - 1 };
+			}
+			const parts = result.sections
+				.filter(s => s.name !== 'reserved-output')
+				.map(s => `${s.name} ${s.tokens}`)
+				.join(' + ');
+			console.log(`[ChatThread] native ledger assembled: ${parts} = ${result.totalTokens} / ${result.availableInputTokens} (covered_seq ${coveredSeq}, journal ${stats.totalTokens})`);
+			return { messages: result.messages, currentRequestIdx: result.currentRequestIdx };
+		} catch {
+			// a ledger problem must never break a chat turn
+			return { messages: fallback, currentRequestIdx: fallback.length - 1 };
+		}
+	}
+
+	/**
+	 * R2: migrate session turns the journal never saw. A nonempty ledger used
+	 * to replace the session rebuild wholesale, so enabling the ledger mid-
+	 * session (or one failed append) made every prior turn vanish from the
+	 * payload. The uncovered RECORDS are journaled here — BEFORE the current
+	 * message is appended — with `meta.turn` markers, which also gives the
+	 * journal its stable turn mapping (R7). Content matching covers journals
+	 * written before the marker existed; see common/ledgerTurns.ts.
+	 *
+	 * T3/T4 + U1–U3: returns the contiguous watermark over COMPLETED turns the
+	 * journal CONFIRMED (-1 when none) — coverage discovery reads the durable
+	 * meta watermark, the tail/head windows and (when a record is still
+	 * unresolved) the WHOLE archive; a failed write stops the watermark so
+	 * the next send retries it, and the current, not-yet-answered turn is
+	 * never certified.
+	 */
+	private async _migrateLegacyTurns(threadId: string, history: IChatAgentHistoryEntry[]): Promise<number> {
+		if (history.length === 0 || !this._settingsService.state.globalSettings.contextLedgerEnabled) { return -1; }
+		try {
+			return await migrateLegacyTurns(
+				{
+					statsEntryCount: async () => (await this._contextLedgerService.stats(threadId))?.entryCount ?? null,
+					readTail: max => this._contextLedgerService.readTail(threadId, max),
+					readRange: (fromSeq, toSeq) => this._contextLedgerService.readRange(threadId, fromSeq, toSeq),
+					getCoverage: () => this._contextLedgerService.getTurnCoverage(threadId),
+					append: record => this._journal(threadId, record),
+				},
+				history.map(t => ({
+					message: t.request.message,
+					assistantText: t.response
+						.filter(r => r.kind === 'markdownContent')
+						.map(r => (r as { kind: string; content: { value: string } }).content.value)
+						.join(''),
+				})),
+			);
+		} catch {
+			// a ledger problem must never break a chat turn — report "nothing
+			// confirmed" so the coverage claim stays honest and the next send
+			// retries the missing records
+			return -1;
+		}
 	}
 
 	private _callLLM(
@@ -742,13 +1270,13 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 		mcpTools: InternalToolInfo[],
 		systemMessage: string,
 		token: CancellationToken,
-	): Promise<{ text: string; toolCalls: RawToolCallObj[] | undefined }> {
+	): Promise<{ text: string; toolCalls: RawToolCallObj[] | undefined; usage: LLMUsage | undefined }> {
 		return new Promise((resolve, reject) => {
 			const abortRef = { current: null as (() => void) | null };
 			const cancellationListener = token.onCancellationRequested(() => {
 				abortRef.current?.();
 				cancellationListener.dispose();
-				resolve({ text: '', toolCalls: undefined });
+				resolve({ text: '', toolCalls: undefined, usage: undefined });
 			});
 
 			// System message is pre-built in the renderer; chatMode:null skips redundant main-process
@@ -756,9 +1284,9 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 			// (read_file, update_agent_status, etc.) never appears raw in the chat display.
 			const { newOnText, newOnFinalMessage } = extractXMLToolsWrapper(
 				() => { },
-				({ fullText, toolCalls }) => {
+				({ fullText, toolCalls, usage }) => {
 					cancellationListener.dispose();
-					resolve({ text: fullText, toolCalls });
+					resolve({ text: fullText, toolCalls, usage });
 				},
 				'agent',
 				mcpTools.length > 0 ? mcpTools : undefined,
@@ -783,7 +1311,7 @@ class VoidChatAgentImpl implements IChatAgentImplementation {
 				},
 				onAbort: () => {
 					cancellationListener.dispose();
-					resolve({ text: '', toolCalls: undefined });
+					resolve({ text: '', toolCalls: undefined, usage: undefined });
 				},
 			});
 			if (requestId) {
@@ -813,6 +1341,8 @@ class VoidModelProvider extends Disposable implements IWorkbenchContribution, IL
 		@ILanguageModelToolsService private readonly _lmToolsService: ILanguageModelToolsService,
 		@IToolsService private readonly _toolsService: IToolsService,
 		@IConvertToLLMMessageService private readonly _convertService: IConvertToLLMMessageService,
+		@IContextLedgerService private readonly _contextLedgerService: IContextLedgerService,
+		@IVoidInternalToolService private readonly _internalToolService: IVoidInternalToolService,
 	) {
 		super();
 
@@ -836,7 +1366,7 @@ class VoidModelProvider extends Disposable implements IWorkbenchContribution, IL
 	private _registerAll(): void {
 		// Register language model vendor + provider for the model picker
 		this._languageModelsService.deltaLanguageModelChatProviderDescriptors(
-			[{ vendor: 'neuralInverse', displayName: 'Neural Inverse' } as IUserFriendlyLanguageModel],
+			[NI_PROVIDER_DESCRIPTOR],
 			[]
 		);
 		this._lmRegistration.value = this._languageModelsService.registerLanguageModelProvider('neuralInverse', this);
@@ -844,12 +1374,12 @@ class VoidModelProvider extends Disposable implements IWorkbenchContribution, IL
 		// Register default chat agent once — it stays for the session
 		if (!this._agentRegistered) {
 			this._agentRegistered = true;
-			const agentImpl = new VoidChatAgentImpl(this._settingsService, this._llmMessageService, this._lmToolsService, this._toolsService, this._convertService);
+			const agentImpl = new VoidChatAgentImpl(this._settingsService, this._llmMessageService, this._lmToolsService, this._toolsService, this._convertService, this._contextLedgerService, this._internalToolService);
 			const ds = new DisposableStore();
 
 			ds.add(this._chatAgentService.registerAgent(NI_AGENT_ID, {
 				id: NI_AGENT_ID,
-				name: 'NeuralInverse',
+				name: 'Neural Inverse',
 				fullName: 'Neural Inverse',
 				description: 'Neural Inverse AI — powered by your configured LLM providers',
 				extensionId: NI_EXTENSION_ID,
@@ -859,7 +1389,9 @@ class VoidModelProvider extends Disposable implements IWorkbenchContribution, IL
 				isDefault: true,
 				isDynamic: true,
 				metadata: {},
-				slashCommands: [],
+				slashCommands: [
+					{ name: 'compact', description: 'Summarize earlier conversation to free up context window' },
+				],
 				locations: [ChatAgentLocation.Chat, ChatAgentLocation.Terminal, ChatAgentLocation.Notebook, ChatAgentLocation.EditorInline],
 				modes: [ChatModeKind.Ask, ChatModeKind.Edit, ChatModeKind.Agent],
 				disambiguation: [],
@@ -984,12 +1516,12 @@ class VoidModelProvider extends Disposable implements IWorkbenchContribution, IL
 				while (true) {
 					// Drain all queued chunks
 					while (idx < queue.length) {
-						yield { type: 'text', value: queue[idx++] } as IChatResponsePart;
+						yield textPart(queue[idx++]);
 					}
 					if (done) {
 						// Drain any final chunks added before done flag
 						while (idx < queue.length) {
-							yield { type: 'text', value: queue[idx++] } as IChatResponsePart;
+							yield textPart(queue[idx++]);
 						}
 						if (error) {
 							throw error;

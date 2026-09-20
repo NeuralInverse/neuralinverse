@@ -37,6 +37,7 @@ export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
 	// destructive — terminal, deletion, hard to reverse
 	'delete_file_or_folder': 'destructive',
 	'run_command': 'destructive',
+	'run_background_command': 'destructive',
 	'run_persistent_command': 'destructive',
 	'open_persistent_terminal': 'destructive',
 	'send_command_input': 'destructive',
@@ -82,7 +83,7 @@ export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
 };
 
 export const getRiskLevel = (toolName: ToolName): ToolRiskLevel => {
-	if (toolName in toolRiskLevels) {
+	if (Object.prototype.hasOwnProperty.call(toolRiskLevels, toolName)) {
 		return toolRiskLevels[toolName as BuiltinToolName];
 	}
 	return 'destructive'; // MCP/unknown tools default to destructive
@@ -184,6 +185,7 @@ export const defaultApprovalTiers: Record<BuiltinToolName, ApprovalTier> = {
 	// confirm — require explicit approval
 	'delete_file_or_folder': 'confirm',
 	'run_command': 'confirm',
+	'run_background_command': 'confirm',
 	'run_persistent_command': 'confirm',
 	'open_persistent_terminal': 'confirm',
 	'send_command_input': 'confirm',

@@ -28,7 +28,7 @@ export interface ITerminalToolService {
 	listPersistentTerminalIds(): string[];
 	runCommand(command: string, opts:
 		| { type: 'persistent', persistentTerminalId: string }
-		| { type: 'temporary', cwd: string | null, terminalId: string }
+		| { type: 'temporary', cwd: string | null, terminalId: string, inactivityTimeoutSec?: number }
 		// | { type: 'apply', terminalId: string }
 	): Promise<{ interrupt: () => void; resPromise: Promise<{ result: string, resolveReason: TerminalResolveReason }> }>;
 
@@ -188,12 +188,15 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 		// Visible in terminal panel so user can watch — but never steals focus (setActiveInstance removed)
 		const terminal = await this._createTerminal({ cwd, config, hidden: false })
 		this.persistentTerminalInstanceOfId[terminalId] = terminal
-		// Clean up map entry if the user manually closes/kills the terminal panel
-		this._register(terminal.onDisposed(() => {
+		// Clean up map entry if the user manually closes/kills the terminal panel.
+		// Self-dispose (like initializeTerminal above) so the service's own store
+		// doesn't accumulate one dead registration per terminal ever created.
+		const d = terminal.onDisposed(() => {
 			if (this.persistentTerminalInstanceOfId[terminalId] === terminal) {
 				delete this.persistentTerminalInstanceOfId[terminalId]
 			}
-		}))
+			d.dispose()
+		})
 		return terminalId
 	}
 
@@ -354,7 +357,11 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 			// Prefer the structured command-detection capability when available
 
 			const waitUntilDone = new Promise<void>(resolve => {
-				if (!cmdCap) { resolve(); return }
+				// No CommandDetection capability (common on Windows when shell integration doesn't inject):
+				// never pre-resolve here — that settled Promise.any with resolveReason unset and crashed
+				// with "Promise.any should have resolved with a reason". Instead let waitUntilInterrupt's
+				// inactivity timer govern, then read the raw scrollback buffer below.
+				if (!cmdCap) return
 				const l = cmdCap.onCommandFinished(cmd => {
 					if (resolveReason) return // already resolved
 					resolveReason = { type: 'done', exitCode: cmd.exitCode ?? 0 };
@@ -369,12 +376,18 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 			// send the command now that listeners are attached
 			await terminal.sendText(command, true)
 
-			// Use command classifier for smart timeouts; fall back to constants
+			// Use command classifier for smart timeouts; fall back to constants.
+			// An explicit inactivityTimeoutSec from the model (run_command's
+			// timeout param) always wins — the model knows when a command will
+			// be legitimately silent for a long time.
+			const customInactiveSec = (params as { inactivityTimeoutSec?: number }).inactivityTimeoutSec
 			const classification = this._commandClassifier.classify(command);
 			const bgTimeoutMs = classification.timeoutMs > 0 ? classification.timeoutMs : MAX_TERMINAL_BG_COMMAND_TIME * 1000;
-			const inactiveTimeoutMs = classification.timeoutMs > 0
-				? Math.min(classification.timeoutMs, MAX_TERMINAL_INACTIVE_TIME * 1000)
-				: MAX_TERMINAL_INACTIVE_TIME * 1000;
+			const inactiveTimeoutMs = (customInactiveSec && customInactiveSec > 0)
+				? customInactiveSec * 1000
+				: classification.timeoutMs > 0
+					? Math.min(classification.timeoutMs, MAX_TERMINAL_INACTIVE_TIME * 1000)
+					: MAX_TERMINAL_INACTIVE_TIME * 1000;
 
 			// Track process for monitoring
 			const termId = isPersistent ? (params as { persistentTerminalId: string }).persistentTerminalId
@@ -385,7 +398,7 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 			const waitUntilInterrupt = isPersistent ?
 				new Promise<void>(res => {
 					const maxTimeoutMs = classification.category === 'server' ? 600_000 : bgTimeoutMs
-					const bgInactivityMs = 8_000 // Short inactivity for BG terminals — report back quickly
+					const bgInactivityMs = 120_000 // Quiet window for BG terminals before reporting the output-so-far. 8s reported "finished" long before silent commands actually finished; 120s only fires on genuinely quiet phases, and never kills anything.
 					let inactivityId: ReturnType<typeof setTimeout>
 					const resetInactivity = () => {
 						clearTimeout(inactivityId)
@@ -442,10 +455,12 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 
 
 
-			// read result if timed out, since we didn't get it (could clean this code up but it's ok)
-			if (resolveReason?.type === 'timeout') {
+			// When we timed out — or 'done' fired but the markers yielded no output (heuristic command
+			// detection on Windows leaves getOutput() undefined) — read the raw scrollback buffer.
+			// Must happen before interrupt() disposes the temporary terminal.
+			if (resolveReason?.type === 'timeout' || (resolveReason?.type === 'done' && !result.trim())) {
 				const terminalId = isPersistent ? params.persistentTerminalId : params.terminalId
-				result = await this.readTerminal(terminalId)
+				try { result = await this.readTerminal(terminalId) } catch { /* keep whatever we captured */ }
 			}
 
 			if (!isPersistent) {
@@ -467,7 +482,14 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 			return { result, resolveReason }
 
 		}
-		const resPromise = waitForResult()
+		const resPromise = waitForResult().catch(err => {
+			// An early throw (sendText rejection, readTerminal failure, ...) skips the
+			// interrupt() at the end of waitForResult and would leak the hidden
+			// TerminalInstance plus its shared-service listeners forever (the [041]
+			// listener-LEAK grew to 600 listeners this way).
+			interrupt()
+			throw err
+		})
 
 		return {
 			interrupt,

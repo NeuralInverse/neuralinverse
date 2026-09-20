@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------*/
 
 import assert from 'assert';
+import { Event } from '../../../../../../../base/common/event.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
 import { createWorkflowContextTools } from '../../../../browser/context/tools/adapters/workflowAgentAdapter.js';
 import { IContextToolDeps } from '../../../../browser/context/tools/contextToolTypes.js';
@@ -28,8 +29,10 @@ function makeDeps(overrides: Partial<IContextToolDeps> = {}): IContextToolDeps {
 	return {
 		symbolIndex: {
 			_serviceBrand: undefined as any,
-			onDidReindex: { event: () => {} } as any,
-			onDidFinishFullIndex: { event: () => {} } as any,
+			onDidReindex: { event: () => { } } as any,
+			onDidFinishFullIndex: { event: () => { } } as any,
+			onDidStartFullIndex: Event.None,
+			onDidRemoveFiles: Event.None,
 			isReady: () => true,
 			getSymbolsByName: (name: string) => [makeSymbol(name, 11, `src/${name}.ts`)],
 			getSymbolsInFile: () => [],
@@ -39,7 +42,7 @@ function makeDeps(overrides: Partial<IContextToolDeps> = {}): IContextToolDeps {
 			getTransitiveDependents: () => [],
 			getFileIndex: () => undefined,
 			getStats: () => ({ totalFiles: 0, totalSymbols: 0, indexingInProgress: false }),
-			forceReindex: async () => {},
+			forceReindex: async () => { },
 		},
 		relevanceScorer: {
 			_serviceBrand: undefined as any,
@@ -57,7 +60,7 @@ function makeDeps(overrides: Partial<IContextToolDeps> = {}): IContextToolDeps {
 		},
 		changeTracker: {
 			_serviceBrand: undefined as any,
-			onDidRecordEdit: { event: () => {} } as any,
+			onDidRecordEdit: { event: () => { } } as any,
 			getRecentlyEdited: () => [{
 				uri: 'file:///workspace/src/active.ts',
 				lastEditAt: Date.now() - 5000,
@@ -72,7 +75,7 @@ function makeDeps(overrides: Partial<IContextToolDeps> = {}): IContextToolDeps {
 			getEditVelocity: () => 1.2,
 			getHotRegions: () => [],
 			isFileActive: () => true,
-			reset: () => {},
+			reset: () => { },
 		},
 		...overrides,
 	};

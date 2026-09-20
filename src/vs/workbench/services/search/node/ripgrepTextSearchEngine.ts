@@ -16,7 +16,7 @@ import { Progress } from '../../../../platform/progress/common/progress.js';
 import { DEFAULT_MAX_SEARCH_RESULTS, IExtendedExtensionSearchOptions, ITextSearchPreviewOptions, SearchError, SearchErrorCode, serializeSearchError, TextSearchMatch } from '../common/search.js';
 import { Range, TextSearchComplete2, TextSearchContext2, TextSearchMatch2, TextSearchProviderOptions, TextSearchQuery2, TextSearchResult2 } from '../common/searchExtTypes.js';
 import { AST as ReAST, RegExpParser, RegExpVisitor } from 'vscode-regexpp';
-import { anchorGlob, IOutputChannel, Maybe, rangeToSearchRange, searchRangeToRange } from './ripgrepSearchUtils.js';
+import { anchorGlob, diagnoseRipgrepSpawnError, IOutputChannel, Maybe, rangeToSearchRange, ripgrepSpawnPreflightProblem, searchRangeToRange } from './ripgrepSearchUtils.js';
 import type { RipgrepTextSearchOptions } from '../common/searchExtTypesInternal.js';
 import { newToOldPreviewOptions } from '../common/searchExtConversionTypes.js';
 import { rgDiskPath } from '../../../../base/node/ripgrep.js';
@@ -75,11 +75,18 @@ export class RipgrepTextSearchEngine {
 				.join(' ');
 			this.outputChannel.appendLine(`${resolvedRgDiskPath} ${escapedArgs}\n - cwd: ${cwd}`);
 
+			const preflightProblem = ripgrepSpawnPreflightProblem(resolvedRgDiskPath, cwd, this.outputChannel);
+			if (preflightProblem) {
+				reject(serializeSearchError(new SearchError(preflightProblem, SearchErrorCode.rgProcessError)));
+				return;
+			}
+
 			let rgProc: Maybe<cp.ChildProcess> = cp.spawn(resolvedRgDiskPath, rgArgs, { cwd });
 			rgProc.on('error', e => {
 				console.error(e);
-				this.outputChannel.appendLine('Error: ' + (e && e.message));
-				reject(serializeSearchError(new SearchError(e && e.message, SearchErrorCode.rgProcessError)));
+				const message = e ? diagnoseRipgrepSpawnError(resolvedRgDiskPath, cwd, e) : 'ripgrep failed to start';
+				this.outputChannel.appendLine('Error: ' + message);
+				reject(serializeSearchError(new SearchError(message, SearchErrorCode.rgProcessError)));
 			});
 
 			let gotResult = false;

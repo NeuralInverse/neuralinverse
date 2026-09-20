@@ -11,7 +11,7 @@ import { Action2, registerAction2 } from '../../../../platform/actions/common/ac
 import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 
 import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
-import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions, registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 import { IAuxiliaryWindow, IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { NeuralInverseWalkthroughService } from './neuralInverseWalkthroughService.js';
@@ -28,6 +28,7 @@ import './fim/neuralInverseFIMService.js';
 import './context/input/astContextService.js';
 import './context/graph/dependencyGraph.js';
 import './context/contextModule.js';
+import './context/codebaseIndexCommands.js';
 import './composer/composerModule.js';
 import '../common/modelManagement/serviceImpl.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
@@ -46,7 +47,6 @@ import './modelManagement/deployment/index.js';
 import '../../powerMode/browser/powerMode.contribution.js';
 
 // Model Management - Auto Setup
-import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 import { LocalProvidersAutoSetupContribution } from './modelManagement/localProvidersAutoSetup.js';
 
 registerWorkbenchContribution2(
@@ -86,7 +86,7 @@ export class AgentManagerContribution extends Disposable implements IWorkbenchCo
 		}
 	}
 
-	async openAgentManagerWindow(bounds?: any): Promise<void> {
+	async openAgentManagerWindow(bounds?: { x: number; y: number; width: number; height: number }): Promise<void> {
 		if (_agentManagerWindow && !_agentManagerWindow.window.closed) {
 			_agentManagerWindow.window.focus();
 			return;

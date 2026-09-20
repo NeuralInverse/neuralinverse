@@ -16,6 +16,7 @@ export const IRelevanceScorerService = createDecorator<IRelevanceScorerService>(
 export type RelevanceReason =
 	| 'import-direct'
 	| 'import-transitive'
+	| 'import-of-match'
 	| 'co-edit-recent'
 	| 'name-match'
 	| 'semantic-match'
@@ -71,7 +72,7 @@ const IMPORT_DEPTH_3_SCORE = 0.2;
 const _tokenCache = new Map<string, string[]>();
 const MAX_TOKEN_CACHE_SIZE = 100;
 
-class RelevanceScorerService extends Disposable implements IRelevanceScorerService {
+export class RelevanceScorerService extends Disposable implements IRelevanceScorerService {
 	declare readonly _serviceBrand: undefined;
 
 	private readonly _openFileUris = new Set<string>();
@@ -97,21 +98,32 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		this._openFileUris.clear();
 		for (const editor of this._editorService.editors) {
 			const resource = editor.resource;
-			if (resource) this._openFileUris.add(resource.toString());
+			if (resource) { this._openFileUris.add(resource.toString()); }
 		}
 	}
 
-	scoreFiles(query: IRelevanceQuery, maxResults = 20): IScoredItem[] {
-		const activeUri = query.activeFileUri ?? query.uri;
-		if (!activeUri) return [];
+	/** The seed file for import/directory/co-edit signals: the explicit query
+	 *  URI wins; otherwise the active editor. Callers that pass neither (the
+	 *  workflow executor builds a text-only query) still get text/symbol/
+	 *  semantic/recent-edit candidates instead of an empty context. */
+	private _resolveActiveUri(query: IRelevanceQuery): string | undefined {
+		if (query.activeFileUri || query.uri) { return query.activeFileUri ?? query.uri; }
+		const resource = this._editorService.activeEditor?.resource;
+		return resource?.toString();
+	}
 
-		const candidates = this._gatherCandidates(activeUri, query);
+	scoreFiles(query: IRelevanceQuery, maxResults = 20): IScoredItem[] {
+		const activeUri = this._resolveActiveUri(query);
+		if (!activeUri && !query.text && !query.symbols) { return []; }
+
+		const importSeeded = new Set<string>();
+		const candidates = this._gatherCandidates(activeUri, query, importSeeded);
 		const results: IScoredItem[] = [];
 
 		for (const uri of candidates) {
-			if (uri === activeUri) continue;
+			if (uri === activeUri) { continue; }
 
-			const scored = this._scoreFileInternal(uri, activeUri, query);
+			const scored = this._scoreFileInternal(uri, activeUri, query, importSeeded.has(uri));
 			if (scored && scored.score >= MIN_SCORE_THRESHOLD) {
 				results.push(scored);
 			}
@@ -123,8 +135,8 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 	}
 
 	scoreFile(uri: string, query: IRelevanceQuery): IScoredItem | undefined {
-		const activeUri = query.activeFileUri ?? query.uri;
-		if (!activeUri || uri === activeUri) return undefined;
+		const activeUri = this._resolveActiveUri(query);
+		if (uri === activeUri) { return undefined; }
 		return this._scoreFileInternal(uri, activeUri, query);
 	}
 
@@ -135,8 +147,8 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 
 	private async _warmSemanticCache(query: IRelevanceQuery): Promise<void> {
 		const queryText = query.text || query.symbols?.join(' ') || '';
-		if (!queryText) return;
-		if (this._semanticScoreCache.has(queryText)) return;
+		if (!queryText) { return; }
+		if (this._semanticScoreCache.has(queryText)) { return; }
 
 		try {
 			const results = await this._hybridSearch.search(queryText, MAX_CANDIDATES);
@@ -146,14 +158,14 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 				for (const r of results) {
 					const normalized = maxScore > 0 ? r.score / maxScore : 0;
 					const existing = scoreMap.get(r.filePath) ?? 0;
-					if (normalized > existing) scoreMap.set(r.filePath, normalized);
+					if (normalized > existing) { scoreMap.set(r.filePath, normalized); }
 				}
 			}
 			this._semanticScoreCache.set(queryText, scoreMap);
 			// Evict old entries if cache grows too large
 			if (this._semanticScoreCache.size > 50) {
 				const firstKey = this._semanticScoreCache.keys().next().value;
-				if (firstKey) this._semanticScoreCache.delete(firstKey);
+				if (firstKey) { this._semanticScoreCache.delete(firstKey); }
 			}
 		} catch {
 			// Hybrid search unavailable — degrade gracefully
@@ -162,9 +174,9 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 
 	private _getSemanticScore(uri: string, query: IRelevanceQuery): number {
 		const queryText = query.text || query.symbols?.join(' ') || '';
-		if (!queryText) return 0;
+		if (!queryText) { return 0; }
 		const scoreMap = this._semanticScoreCache.get(queryText);
-		if (!scoreMap) return 0;
+		if (!scoreMap) { return 0; }
 		return scoreMap.get(uri) ?? 0;
 	}
 
@@ -180,7 +192,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 				let symScore = file.score;
 
 				// Boost exported symbols
-				if (sym.exportedAs) symScore += 0.05;
+				if (sym.exportedAs) { symScore += 0.05; }
 
 				// Boost name matches against query
 				if (queryTokens.length > 0) {
@@ -204,23 +216,31 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		return results.slice(0, maxSymbols);
 	}
 
-	private _gatherCandidates(activeUri: string, query: IRelevanceQuery): Set<string> {
+	private _gatherCandidates(activeUri: string | undefined, query: IRelevanceQuery, importSeeded?: Set<string>): Set<string> {
 		const candidates = new Set<string>();
 
-		// Direct imports and importers (depth 1)
-		const directImports = this._symbolIndex.getImports(activeUri);
-		for (const imp of directImports) candidates.add(imp);
+		if (activeUri) {
+			// Direct imports and importers (depth 1)
+			const directImports = this._symbolIndex.getImports(activeUri);
+			for (const imp of directImports) { candidates.add(imp); }
 
-		const directImporters = this._symbolIndex.getImporters(activeUri);
-		for (const imp of directImporters) candidates.add(imp);
+			const directImporters = this._symbolIndex.getImporters(activeUri);
+			for (const imp of directImporters) { candidates.add(imp); }
 
-		// Depth 2 imports (transitive)
-		for (const imp of directImports) {
-			if (candidates.size >= MAX_CANDIDATES) break;
-			const depth2 = this._symbolIndex.getImports(imp);
-			for (const d2 of depth2) {
-				candidates.add(d2);
-				if (candidates.size >= MAX_CANDIDATES) break;
+			// Depth 2 imports (transitive)
+			for (const imp of directImports) {
+				if (candidates.size >= MAX_CANDIDATES) { break; }
+				const depth2 = this._symbolIndex.getImports(imp);
+				for (const d2 of depth2) {
+					candidates.add(d2);
+					if (candidates.size >= MAX_CANDIDATES) { break; }
+				}
+			}
+
+			// Co-edited files
+			const coEdited = this._changeTracker.getCoEditedFiles(activeUri);
+			for (const uri of coEdited) {
+				candidates.add(uri);
 			}
 		}
 
@@ -235,21 +255,15 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 			candidates.add(profile.uri);
 		}
 
-		// Co-edited files
-		const coEdited = this._changeTracker.getCoEditedFiles(activeUri);
-		for (const uri of coEdited) {
-			candidates.add(uri);
-		}
-
 		// If query has text, also look for symbol name matches in the global index
 		if (query.text) {
 			const tokens = this._tokenize(query.text);
 			for (const token of tokens.slice(0, 5)) {
-				if (token.length < NAME_MATCH_MIN_TOKEN_LENGTH) continue;
+				if (token.length < NAME_MATCH_MIN_TOKEN_LENGTH) { continue; }
 				const matchedSymbols = this._symbolIndex.getSymbolsByName(token);
 				for (const sym of matchedSymbols) {
 					candidates.add(sym.filePath);
-					if (candidates.size >= MAX_CANDIDATES) break;
+					if (candidates.size >= MAX_CANDIDATES) { break; }
 				}
 			}
 		}
@@ -258,23 +272,61 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		if (query.symbols) {
 			for (const symName of query.symbols) {
 				const matched = this._symbolIndex.getSymbolsByName(symName);
-				for (const sym of matched) candidates.add(sym.filePath);
+				for (const sym of matched) { candidates.add(sym.filePath); }
+			}
+		}
+
+		// B4 (2026-09-15): with NO active editor the import signal used to be
+		// lost entirely — a symbol/semantic match found the target file but its
+		// dependencies never entered the pool. Seed the direct imports (depth
+		// 1) of every name/semantic-matched file so "edit X" also retrieves
+		// what X depends on. Seeded files are recorded so scoring can grant
+		// them the import-of-match signal (otherwise they enter the pool with
+		// score 0 and the threshold drops them again). Cap-aware, best-effort.
+		if (!activeUri) {
+			for (const uri of [...candidates]) {
+				if (candidates.size >= MAX_CANDIDATES) { break; }
+				for (const imp of this._symbolIndex.getImports(uri)) {
+					if (!candidates.has(imp)) { importSeeded?.add(imp); }
+					candidates.add(imp);
+					if (candidates.size >= MAX_CANDIDATES) { break; }
+				}
+			}
+		}
+
+		// Semantic candidates from the warmed hybrid-search cache: without an
+		// active editor these are the main signal, so they must be able to
+		// introduce files the name/symbol lookups missed.
+		if (query.text) {
+			const scoreMap = this._semanticScoreCache.get(query.text);
+			if (scoreMap) {
+				for (const uri of scoreMap.keys()) {
+					if (candidates.size >= MAX_CANDIDATES) { break; }
+					candidates.add(uri);
+				}
 			}
 		}
 
 		return candidates;
 	}
 
-	private _scoreFileInternal(uri: string, activeUri: string, query: IRelevanceQuery): IScoredItem | undefined {
+	private _scoreFileInternal(uri: string, activeUri: string | undefined, query: IRelevanceQuery, importOfMatch = false): IScoredItem | undefined {
 		const reasons: RelevanceReason[] = [];
 		const matchedTokens: string[] = [];
 		let totalScore = 0;
 
-		// 1. Import distance
-		const importScore = this._computeImportScore(uri, activeUri);
-		if (importScore > 0) {
-			totalScore += importScore * W_IMPORT;
-			reasons.push(importScore >= 0.9 ? 'import-direct' : 'import-transitive');
+		// 1. Import distance (needs an active file)
+		if (activeUri) {
+			const importScore = this._computeImportScore(uri, activeUri);
+			if (importScore > 0) {
+				totalScore += importScore * W_IMPORT;
+				reasons.push(importScore >= 0.9 ? 'import-direct' : 'import-transitive');
+			}
+		} else if (importOfMatch) {
+			// B4: a direct dependency of a query-matched file — depth-1
+			// equivalent for the no-active-editor path
+			totalScore += IMPORT_DEPTH_2_SCORE * W_IMPORT;
+			reasons.push('import-of-match');
 		}
 
 		// 2. Edit recency (via change tracker)
@@ -300,31 +352,33 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 			reasons.push('semantic-match');
 		}
 
-		// 5. Co-edit correlation
-		const coEditScore = this._computeCoEditScore(uri, activeUri);
-		if (coEditScore > 0) {
-			totalScore += coEditScore * W_COEDIT;
-			if (!reasons.includes('co-edit-recent')) reasons.push('co-edit-recent');
-		}
-
-		// 5. Open tab
+		// 5. Open tab (works without an active file too)
 		if (this._openFileUris.has(uri)) {
 			totalScore += W_OPEN_TAB;
 			reasons.push('open-tab');
 		}
 
-		// 6. Directory proximity
-		const dirScore = this._computeDirectoryScore(uri, activeUri);
-		if (dirScore > 0) {
-			totalScore += dirScore * W_DIRECTORY;
-			reasons.push('same-directory');
-		}
+		// 6-8. Active-file-relative signals
+		if (activeUri) {
+			const coEditScore = this._computeCoEditScore(uri, activeUri);
+			if (coEditScore > 0) {
+				totalScore += coEditScore * W_COEDIT;
+				if (!reasons.includes('co-edit-recent')) { reasons.push('co-edit-recent'); }
+			}
 
-		// 7. Type dependency
-		const typeScore = this._computeTypeDependencyScore(uri, activeUri);
-		if (typeScore > 0) {
-			totalScore += typeScore * W_TYPE_DEP;
-			reasons.push('type-dependency');
+			// Directory proximity
+			const dirScore = this._computeDirectoryScore(uri, activeUri);
+			if (dirScore > 0) {
+				totalScore += dirScore * W_DIRECTORY;
+				reasons.push('same-directory');
+			}
+
+			// Type dependency
+			const typeScore = this._computeTypeDependencyScore(uri, activeUri);
+			if (typeScore > 0) {
+				totalScore += typeScore * W_TYPE_DEP;
+				reasons.push('type-dependency');
+			}
 		}
 
 		// Bonus: high edit velocity indicates active development
@@ -334,7 +388,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 			reasons.push('high-edit-velocity');
 		}
 
-		if (totalScore < MIN_SCORE_THRESHOLD) return undefined;
+		if (totalScore < MIN_SCORE_THRESHOLD) { return undefined; }
 
 		// Collect relevant symbol names from this file
 		const fileSymbols = this._symbolIndex.getSymbolsInFile(uri);
@@ -357,16 +411,16 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 	private _computeImportScore(uri: string, activeUri: string): number {
 		// Check depth 1
 		const directImports = this._symbolIndex.getImports(activeUri);
-		if (directImports.includes(uri)) return 1.0;
+		if (directImports.includes(uri)) { return 1.0; }
 
 		// Also check reverse: if the target imports activeUri
 		const targetImports = this._symbolIndex.getImports(uri);
-		if (targetImports.includes(activeUri)) return 0.8;
+		if (targetImports.includes(activeUri)) { return 0.8; }
 
 		// Depth 2
 		for (const imp of directImports) {
 			const depth2Imports = this._symbolIndex.getImports(imp);
-			if (depth2Imports.includes(uri)) return IMPORT_DEPTH_2_SCORE;
+			if (depth2Imports.includes(uri)) { return IMPORT_DEPTH_2_SCORE; }
 		}
 
 		// Depth 3 (limited — only check a subset)
@@ -375,7 +429,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 			const d2Imports = this._symbolIndex.getImports(directImports[i]);
 			for (const d2 of d2Imports.slice(0, 10)) {
 				const d3Imports = this._symbolIndex.getImports(d2);
-				if (d3Imports.includes(uri)) return IMPORT_DEPTH_3_SCORE;
+				if (d3Imports.includes(uri)) { return IMPORT_DEPTH_3_SCORE; }
 			}
 		}
 
@@ -387,16 +441,16 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		const explicitSymbols = query.symbols ?? [];
 		const allQueryTerms = [...queryTokens, ...explicitSymbols].filter(t => t.length >= NAME_MATCH_MIN_TOKEN_LENGTH);
 
-		if (allQueryTerms.length === 0) return 0;
+		if (allQueryTerms.length === 0) { return 0; }
 
 		const symbols = this._symbolIndex.getSymbolsInFile(uri);
-		if (symbols.length === 0) return 0;
+		if (symbols.length === 0) { return 0; }
 
 		let matchCount = 0;
 		const symbolTokenSets = symbols.map(s => this._tokenize(s.name));
 		const allSymbolTokens = new Set<string>();
 		for (const tokenSet of symbolTokenSets) {
-			for (const t of tokenSet) allSymbolTokens.add(t.toLowerCase());
+			for (const t of tokenSet) { allSymbolTokens.add(t.toLowerCase()); }
 		}
 
 		for (const qt of allQueryTerms) {
@@ -422,7 +476,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		for (const qt of allQueryTerms) {
 			if (fileTokens.some(ft => ft.toLowerCase() === qt.toLowerCase())) {
 				matchCount += 0.7;
-				if (!matchedTokens.includes(qt)) matchedTokens.push(qt);
+				if (!matchedTokens.includes(qt)) { matchedTokens.push(qt); }
 			}
 		}
 
@@ -431,12 +485,12 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 
 	private _computeCoEditScore(uri: string, activeUri: string): number {
 		const coEdited = this._changeTracker.getCoEditedFiles(activeUri);
-		if (coEdited.includes(uri)) return 1.0;
+		if (coEdited.includes(uri)) { return 1.0; }
 
 		// Transitive co-edit: if a third file is co-edited with both
 		for (const middleUri of coEdited) {
 			const middleCoEdits = this._changeTracker.getCoEditedFiles(middleUri);
-			if (middleCoEdits.includes(uri)) return 0.4;
+			if (middleCoEdits.includes(uri)) { return 0.4; }
 		}
 
 		return 0;
@@ -446,25 +500,25 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		const dirA = this._dirname(activeUri);
 		const dirB = this._dirname(uri);
 
-		if (dirA === dirB) return 1.0;
+		if (dirA === dirB) { return 1.0; }
 
 		// Parent directory
 		const parentA = this._dirname(dirA);
 		const parentB = this._dirname(dirB);
 
-		if (parentA === dirB || dirB === parentA) return 0.6;
-		if (parentA === parentB) return 0.4;
+		if (parentA === dirB || dirB === parentA) { return 0.6; }
+		if (parentA === parentB) { return 0.4; }
 
 		// Grandparent
 		const gpA = this._dirname(parentA);
-		if (gpA === dirB || gpA === parentB) return 0.2;
+		if (gpA === dirB || gpA === parentB) { return 0.2; }
 
 		return 0;
 	}
 
 	private _computeTypeDependencyScore(uri: string, activeUri: string): number {
 		const imports = this._symbolIndex.getImports(activeUri);
-		if (!imports.includes(uri)) return 0;
+		if (!imports.includes(uri)) { return 0; }
 
 		const symbols = this._symbolIndex.getSymbolsInFile(uri);
 		const typeSymbols = symbols.filter(s =>
@@ -474,7 +528,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 			s.kind === 22 /* Struct */
 		);
 
-		if (typeSymbols.length === 0) return 0;
+		if (typeSymbols.length === 0) { return 0; }
 
 		// Weight by ratio of type exports
 		const typeRatio = typeSymbols.length / Math.max(symbols.length, 1);
@@ -485,7 +539,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 
 	private _tokenize(text: string): string[] {
 		const cached = _tokenCache.get(text);
-		if (cached) return cached;
+		if (cached) { return cached; }
 
 		const tokens = text
 			.replace(/([a-z0-9])([A-Z])/g, '$1 $2')  // camelCase split
@@ -499,7 +553,7 @@ class RelevanceScorerService extends Disposable implements IRelevanceScorerServi
 		// LRU eviction
 		if (_tokenCache.size >= MAX_TOKEN_CACHE_SIZE) {
 			const firstKey = _tokenCache.keys().next().value;
-			if (firstKey !== undefined) _tokenCache.delete(firstKey);
+			if (firstKey !== undefined) { _tokenCache.delete(firstKey); }
 		}
 		_tokenCache.set(text, tokens);
 

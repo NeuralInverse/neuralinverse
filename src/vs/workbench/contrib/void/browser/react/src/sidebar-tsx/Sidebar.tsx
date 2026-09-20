@@ -1,19 +1,17 @@
 /*--------------------------------------------------------------------------------------
- *  Copyright 2026 Glass Devtools, Inc. All rights reserved.
+ *  Copyright 2026 Neural Inverse Inc. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
 import { useIsDark } from '../util/services.js';
-// import { SidebarThreadSelector } from './SidebarThreadSelector.js';
-// import { SidebarChat } from './SidebarChat.js';
-
-import '../styles.css'
+import '../styles.css';
 import { SidebarChat } from './SidebarChat.js';
+import { ContextGauge } from './ContextGauge.js';
 import ErrorBoundary from './ErrorBoundary.js';
 
 export const Sidebar = ({ className }: { className: string }) => {
 
-	const isDark = useIsDark()
+	const isDark = useIsDark();
 	return <div
 		className={`@@void-scope ${isDark ? 'dark' : ''}`}
 		style={{ width: '100%', height: '100%' }}
@@ -28,6 +26,14 @@ export const Sidebar = ({ className }: { className: string }) => {
 			`}
 		>
 
+			{/* context gauge header (task C2) — hidden until the ledger
+			produces the first usage report for the current thread */}
+			<div className='w-full flex-none flex items-center justify-end px-3 pt-2'>
+				<ErrorBoundary>
+					<ContextGauge />
+				</ErrorBoundary>
+			</div>
+
 			<div className={`w-full flex-1 min-h-0`}>
 				<ErrorBoundary>
 					<SidebarChat />
@@ -36,7 +42,7 @@ export const Sidebar = ({ className }: { className: string }) => {
 
 			{/* Enterprise hint — minimal, non-intrusive */}
 			<a
-				href='https://neuralinverse.com/enterprise'
+				href='https://neuralinverse.com'
 				target='_blank'
 				rel='noreferrer'
 				className='flex items-center justify-center gap-1 py-1.5 border-t border-void-border-1 text-void-fg-3 hover:text-void-fg-2 transition-colors'
@@ -47,8 +53,7 @@ export const Sidebar = ({ className }: { className: string }) => {
 				<span style={{ fontSize: 9, opacity: 0.6 }}>→</span>
 			</a>
 		</div>
-	</div>
+	</div>;
 
 
-}
-
+};

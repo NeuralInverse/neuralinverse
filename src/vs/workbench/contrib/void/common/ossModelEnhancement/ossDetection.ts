@@ -15,7 +15,7 @@ const OSS_PROVIDERS: ReadonlySet<ProviderName> = new Set([
 	'lmStudio',
 	'openAICompatible',
 	'liteLLM',
-	'niFreeModels',
+	'omni',
 ]);
 
 /**

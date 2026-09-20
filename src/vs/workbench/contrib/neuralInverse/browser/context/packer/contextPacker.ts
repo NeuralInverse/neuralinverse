@@ -66,7 +66,7 @@ const PRIORITY_FILE_RESERVE_RATIO = 0.20;
 const MIN_REMAINING_BUDGET = 150;
 const MAX_FILE_READ_SIZE = 524_288; // 512KB
 
-class ContextPackerService extends Disposable implements IContextPackerService {
+export class ContextPackerService extends Disposable implements IContextPackerService {
 	declare readonly _serviceBrand: undefined;
 
 	constructor(
@@ -117,9 +117,9 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 			let priorityRemaining = priorityBudget;
 
 			for (const uri of request.priorityFiles) {
-				if (excludeSet.has(uri)) continue;
-				if (sections.some(s => s.uri === uri)) continue;
-				if (priorityRemaining < MIN_REMAINING_BUDGET) break;
+				if (excludeSet.has(uri)) { continue; }
+				if (sections.some(s => s.uri === uri)) { continue; }
+				if (priorityRemaining < MIN_REMAINING_BUDGET) { break; }
 
 				const section = await this._packFile(uri, request.mode, request.query, priorityRemaining, 0.95);
 				if (section) {
@@ -130,8 +130,11 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 			}
 		}
 
-		// Phase 3: Score and pack remaining context
-		const scoredFiles = this._relevanceScorer.scoreFiles(request.query, 60);
+		// Phase 3: Score and pack remaining context. scoreFilesAsync warms the
+		// semantic cache first — the sync path scored with semantic-match stuck
+		// at 0 on the very first query of a session (empty context when no
+		// editor was open).
+		const scoredFiles = await this._relevanceScorer.scoreFilesAsync(request.query, 60);
 		const alreadyIncluded = new Set(sections.map(s => s.uri));
 
 		for (const item of scoredFiles) {
@@ -140,7 +143,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 				break;
 			}
 
-			if (alreadyIncluded.has(item.uri) || excludeSet.has(item.uri)) continue;
+			if (alreadyIncluded.has(item.uri) || excludeSet.has(item.uri)) { continue; }
 
 			const section = await this._packFile(item.uri, request.mode, request.query, remaining, item.score);
 			if (section) {
@@ -176,7 +179,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 
 	async packToString(request: IPackRequest): Promise<string> {
 		const packed = await this.pack(request);
-		if (packed.sections.length === 0) return '';
+		if (packed.sections.length === 0) { return ''; }
 
 		const parts: string[] = [];
 
@@ -203,7 +206,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		relevanceScore: number,
 	): Promise<IContextSection | undefined> {
 		const content = await this._readFile(uri);
-		if (!content || content.trim().length === 0) return undefined;
+		if (!content || content.trim().length === 0) { return undefined; }
 
 		const fullTokens = this.estimateTokens(content);
 
@@ -289,7 +292,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		);
 
 		for (const sym of typeSymbols) {
-			if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.8) break;
+			if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.8) { break; }
 			const startLine = sym.range.startLine - 1;
 			const blockEnd = this._findBlockEnd(lines, startLine);
 			if (blockEnd - startLine < 30) {
@@ -307,7 +310,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 			s.kind === 11 /* Function */ || s.kind === 5 /* Method */
 		);
 		for (const sym of funcSymbols.slice(0, 15)) {
-			if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.9) break;
+			if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.9) { break; }
 			const line = sym.range.startLine - 1;
 			if (line < lines.length) {
 				parts.push(lines[line]);
@@ -338,10 +341,10 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		const exported = symbols.filter(s => s.exportedAs);
 
 		for (const sym of exported) {
-			if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.85) break;
+			if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.85) { break; }
 
 			const startLine = sym.range.startLine - 1;
-			if (startLine >= lines.length) continue;
+			if (startLine >= lines.length) { continue; }
 
 			// For classes/interfaces: include full definition up to reasonable limit
 			if (sym.kind === 4 /* Class */ || sym.kind === 10 /* Interface */ || sym.kind === 9 /* Enum */) {
@@ -351,7 +354,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 
 				if (blockTokens < maxTokens * 0.3) {
 					parts.push(...blockLines);
-					if (blockEnd > startLine + 50) parts.push('  // ... (truncated)');
+					if (blockEnd > startLine + 50) { parts.push('  // ... (truncated)'); }
 					parts.push('');
 				} else {
 					// Just members list
@@ -376,9 +379,9 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		if (currentTokens < maxTokens * 0.6) {
 			const nonExported = symbols.filter(s => !s.exportedAs && !s.containerName);
 			for (const sym of nonExported.slice(0, 10)) {
-				if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.85) break;
+				if (this.estimateTokens(parts.join('\n')) > maxTokens * 0.85) { break; }
 				const line = sym.range.startLine - 1;
-				if (line < lines.length) parts.push(lines[line]);
+				if (line < lines.length) { parts.push(lines[line]); }
 			}
 		}
 
@@ -397,7 +400,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		// Imports are important for inline edit (type context)
 		const importLines = this._extractImportBlock(lines);
 		parts.push(...importLines);
-		if (importLines.length > 0) parts.push('');
+		if (importLines.length > 0) { parts.push(''); }
 
 		// Region around cursor (or hot regions from change tracker)
 		const hotRegions = this._changeTracker.getHotRegions(uri);
@@ -468,9 +471,9 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		for (let i = startLine; i < lines.length; i++) {
 			for (const ch of lines[i]) {
 				if (ch === '{') { depth++; foundOpen = true; }
-				if (ch === '}') depth--;
+				if (ch === '}') { depth--; }
 			}
-			if (foundOpen && depth <= 0) return i + 1;
+			if (foundOpen && depth <= 0) { return i + 1; }
 		}
 
 		return Math.min(startLine + 30, lines.length);
@@ -490,7 +493,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 			for (const t of types.slice(0, 5)) {
 				const line = `${t.exportedAs}: ${t.containerName ? t.containerName + '.' : ''}${t.name} (${impUri.split('/').pop()})`;
 				const lineTokens = this.estimateTokens(line);
-				if (used + lineTokens > budgetTokens) return typeParts.length > 0 ? typeParts.join('\n') : undefined;
+				if (used + lineTokens > budgetTokens) { return typeParts.length > 0 ? typeParts.join('\n') : undefined; }
 				typeParts.push(`// ${line}`);
 				used += lineTokens;
 			}
@@ -501,7 +504,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 
 	private _hardTruncate(text: string, maxTokens: number): string {
 		const maxChars = Math.floor(maxTokens * 3.5);
-		if (text.length <= maxChars) return text;
+		if (text.length <= maxChars) { return text; }
 
 		// Try to truncate at a line boundary
 		const truncated = text.slice(0, maxChars);
@@ -517,7 +520,7 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 
 		// Prefer in-memory model (already open, no disk IO)
 		const model = this._modelService.getModel(resource);
-		if (model) return model.getValue();
+		if (model) { return model.getValue(); }
 
 		// Disk read with size limit
 		try {

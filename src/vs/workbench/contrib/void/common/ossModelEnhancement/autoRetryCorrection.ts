@@ -18,23 +18,56 @@ const AGENTIC_MODES: ReadonlySet<ChatMode> = new Set(['agent', 'copilot', 'valid
 const MAX_RETRIES = 2;
 
 /**
+ * True when the user's message reads like a QUESTION (English or Persian),
+ * i.e. a text answer is the expected outcome — not tool calls. The auto-retry
+ * layer must not "correct" a model that is simply answering a question about
+ * the task (e.g. "how long did this take?" → the model answers, then the old
+ * retry layer forcibly resumed the task — the exact bug this fixes).
+ */
+export function looksLikeQuestion(userMessage: string | undefined | null): boolean {
+	if (!userMessage) return false;
+	const msg = userMessage.trim();
+	if (msg.length === 0) return false;
+	if (/[?؟]\s*$/.test(msg)) return true;
+	// English interrogatives at the start
+	if (/^\s*(how|what|why|when|where|who|which|whose|is|are|was|were|do|does|did|can|could|would|should|has|have|had|will)\b/i.test(msg)) return true;
+	// Persian interrogatives at the start
+	if (/^\s*(چرا|چطور|چگونه|چقدر|چند|آیا|کجا|کدام|کِی|کی)\s/.test(msg)) return true;
+	return false;
+}
+
+export interface IAutoRetryContext {
+	/** the user message that started this agent run, if known */
+	userMessage?: string | null;
+	/** whether any tool call has executed in this run so far */
+	toolsExecutedThisRun?: boolean;
+}
+
+/**
  * Returns true if the response looks like it should have used tools but didn't.
  * Uses multiple heuristics weighted by confidence:
  * - Code blocks in output (model generated code but didn't execute it)
  * - Narrative intent phrases ("I will create...", "Let me...")
  * - Command suggestions directed at user ("run `npm install`")
  * - File path mentions with modification intent
+ *
+ * A text-only response to a QUESTION is a legitimate answer, not a failure:
+ * when no tool has run yet this cycle and the user's message is a question,
+ * we do not retry (the answer usually mentions paths/commands, which the
+ * heuristics below would otherwise misread as "narrating instead of acting").
  */
 export function shouldAutoRetry(
 	fullText: string,
 	toolCallCount: number,
 	chatMode: ChatMode,
 	retryAttempt: number,
+	context?: IAutoRetryContext,
 ): boolean {
 	if (retryAttempt >= MAX_RETRIES) return false;
 	if (toolCallCount > 0) return false;
 	if (!AGENTIC_MODES.has(chatMode)) return false;
 	if (fullText.length < 20) return false;
+	if (context && context.toolsExecutedThisRun === false && looksLikeQuestion(context.userMessage)) return false;
 
 	// High confidence: model output code in a fenced block
 	if (fullText.includes('```')) return true;
