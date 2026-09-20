@@ -1465,6 +1465,21 @@ export const Settings = () => {
 											</div>
 										</ErrorBoundary>
 
+										{/* Context Ledger Switch (task M5) */}
+										<ErrorBoundary>
+											<div className='my-2'>
+												<div className='flex items-center gap-x-2 my-2'>
+													<VoidSwitch
+														size='xs'
+														value={settingsState.globalSettings.contextLedgerEnabled}
+														onChange={(newVal) => voidSettingsService.setGlobalSetting('contextLedgerEnabled', newVal)}
+													/>
+													<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.contextLedgerEnabled ? 'Ledger context (brief + episodes + recall)' : 'Legacy compaction'}</span>
+												</div>
+												<div className='text-sm text-void-fg-3 mt-1'>Context Ledger keeps a permanent archive of the conversation and sends the model a stable working brief instead of growing history.</div>
+											</div>
+										</ErrorBoundary>
+
 
 
 

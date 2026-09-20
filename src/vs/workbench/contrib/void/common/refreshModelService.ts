@@ -48,6 +48,7 @@ const refreshBasedOn: { [k in RefreshableProviderName]: (keyof SettingsOfProvide
 	vLLM: ['_didFillInProviderSettings', 'endpoint'],
 	lmStudio: ['_didFillInProviderSettings', 'endpoint'],
 	niFreeModels: ['_didFillInProviderSettings', 'endpoint'],
+	omni: ['_didFillInProviderSettings', 'endpoint', 'apiKey'],
 	// openAICompatible: ['_didFillInProviderSettings', 'endpoint', 'apiKey'],
 }
 const REFRESH_INTERVAL = 5_000
@@ -146,6 +147,7 @@ export class RefreshModelService extends Disposable implements IRefreshModelServ
 		vLLM: { state: 'init', timeoutId: null },
 		lmStudio: { state: 'init', timeoutId: null },
 		niFreeModels: { state: 'init', timeoutId: null },
+		omni: { state: 'init', timeoutId: null },
 	}
 
 
@@ -177,8 +179,17 @@ export class RefreshModelService extends Disposable implements IRefreshModelServ
 						else if (providerName === 'vLLM') return (model as OpenaiCompatibleModelResponse).id;
 						else if (providerName === 'lmStudio') return (model as OpenaiCompatibleModelResponse).id;
 						else if (providerName === 'niFreeModels') return (model as OpenaiCompatibleModelResponse).id;
+						else if (providerName === 'omni') {
+							// OmniRoute /v1/models lists every upstream model of every
+							// connected account (13k+). Only router-advertised combos are
+							// user-facing; everything else stays server-side.
+							const m = model as OpenaiCompatibleModelResponse;
+							return m.owned_by === 'combo'
+								? m.id
+								: null;
+						}
 						else throw new Error('refreshMode fn: unknown provider: ' + providerName);
-					}),
+					}).filter((id): id is string => id !== null),
 					{ enableProviderOnSuccess: options.enableProviderOnSuccess, hideRefresh: options.doNotFire }
 				)
 

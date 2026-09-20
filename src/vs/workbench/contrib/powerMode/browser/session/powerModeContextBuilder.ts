@@ -19,6 +19,7 @@
 
 import { URI } from '../../../../../base/common/uri.js';
 import { IFileService } from '../../../../../platform/files/common/files.js';
+import { formatWorkspaceRuleFiles, IWorkspaceRuleFile, WORKSPACE_RULE_FILENAMES } from '../../../void/common/workspaceRuleFiles.js';
 
 const CACHE_TTL_MS = 60_000; // 1 minute
 
@@ -60,9 +61,9 @@ export class PowerModeContextBuilder {
 	// ─── Private ─────────────────────────────────────────────────────────────
 
 	private async _gather(directory: string): Promise<IWorkspaceContext> {
-		const [isGitRepo, agentsMd, packageJsonRaw, hasTsConfig, topLevel] = await Promise.all([
+		const [isGitRepo, workspaceRules, packageJsonRaw, hasTsConfig, topLevel] = await Promise.all([
 			this._exists(directory + '/.git'),
-			this._readFile(directory + '/AGENTS.md'),
+			this._readWorkspaceRuleFiles(directory),
 			this._readFile(directory + '/package.json'),
 			this._exists(directory + '/tsconfig.json'),
 			this._listTopLevel(directory),
@@ -74,7 +75,7 @@ export class PowerModeContextBuilder {
 		// ── package.json ──────────────────────────────────────────────────
 		if (packageJsonRaw) {
 			try {
-				const pkg = JSON.parse(packageJsonRaw) as Record<string, any>;
+				const pkg = JSON.parse(packageJsonRaw) as Record<string, unknown>;
 				if (pkg.name) { projectName = String(pkg.name); }
 
 				const lines: string[] = ['<project>'];
@@ -86,7 +87,7 @@ export class PowerModeContextBuilder {
 					const scriptNames = Object.keys(pkg.scripts).slice(0, 12).join(', ');
 					lines.push(`  scripts: ${scriptNames}`);
 				}
-				if (pkg.dependencies) {
+				if (pkg.dependencies && typeof pkg.dependencies === 'object') {
 					const deps = Object.keys(pkg.dependencies).slice(0, 15).join(', ');
 					lines.push(`  dependencies: ${deps}`);
 				}
@@ -100,12 +101,12 @@ export class PowerModeContextBuilder {
 			sections.push(`<workspace_structure>\n${topLevel.join('\n')}\n</workspace_structure>`);
 		}
 
-		// ── AGENTS.md ─────────────────────────────────────────────────────
-		if (agentsMd) {
+		// ── Workspace rule files (AGENTS.md / CLAUDE.md / .neuralinverserules — task E1) ──
+		if (workspaceRules) {
 			// Truncate to 8KB to avoid bloating the prompt
-			const truncated = agentsMd.length > 8192
-				? agentsMd.substring(0, 8192) + '\n[AGENTS.md truncated]'
-				: agentsMd;
+			const truncated = workspaceRules.length > 8192
+				? workspaceRules.substring(0, 8192) + '\n[workspace rules truncated]'
+				: workspaceRules;
 			sections.push(`<agents_md>\n${truncated}\n</agents_md>`);
 		}
 
@@ -123,6 +124,17 @@ export class PowerModeContextBuilder {
 		} catch {
 			return false;
 		}
+	}
+
+	private async _readWorkspaceRuleFiles(directory: string): Promise<string> {
+		const ruleFiles: IWorkspaceRuleFile[] = [];
+		for (const fileName of WORKSPACE_RULE_FILENAMES) {
+			const content = await this._readFile(`${directory}/${fileName}`);
+			if (content !== undefined) {
+				ruleFiles.push({ fileName, content });
+			}
+		}
+		return formatWorkspaceRuleFiles(ruleFiles);
 	}
 
 	private async _readFile(path: string): Promise<string | undefined> {

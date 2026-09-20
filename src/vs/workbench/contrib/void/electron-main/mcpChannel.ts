@@ -230,7 +230,13 @@ export class MCPChannel implements IServerChannel {
 	}
 
 	private _addUniquePrefix(base: string) {
-		return `${Math.random().toString(36).slice(2, 8)}_${base}`;
+		// Ensure the prefix starts with a letter or underscore so the resulting
+		// tool name is valid for OpenAI/Gemini function-calling (^[A-Za-z_]).
+		// A purely random base-36 slice can start with a digit, which causes
+		// providers like Antigravity to reject the entire request with HTTP 400.
+		const raw = Math.random().toString(36).slice(2, 8);
+		const safePrefix = /^[0-9]/.test(raw) ? `m${raw}` : raw;
+		return `${safePrefix}_${base}`;
 	}
 
 	private async _createClient(serverConfig: MCPConfigFileEntryJSON, serverName: string, isOn = true): Promise<ClientInfo> {
@@ -372,6 +378,13 @@ export class MCPChannel implements IServerChannel {
 				errorMessage = `${codeDescription}. Full response:\n${JSON.stringify(err, null, 2)}`
 			}
 			// Check if it's an MCP error with a code
+			else if (err instanceof Error) {
+				// Error's message/stack are NON-enumerable, so JSON.stringify(err)
+				// is always "{}" — this branch previously swallowed every real
+				// downstream tool error (e.g. "Cortex API error 404: …") behind
+				// an empty object, making server-side failures undebuggable.
+				errorMessage = err.message || String(err);
+			}
 			else if (typeof err === 'string') {
 				// String error
 				errorMessage = err;

@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------*/
 
 import assert from 'assert';
+import { Event } from '../../../../../../../base/common/event.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
 import { ToolRegistry } from '../../../../browser/tools/toolRegistry.js';
 import { createWorkflowContextTools } from '../../../../browser/context/tools/adapters/workflowAgentAdapter.js';
@@ -16,8 +17,10 @@ function makeDeps(): IContextToolDeps {
 	return {
 		symbolIndex: {
 			_serviceBrand: undefined as any,
-			onDidReindex: { event: () => {} } as any,
-			onDidFinishFullIndex: { event: () => {} } as any,
+			onDidReindex: { event: () => { } } as any,
+			onDidFinishFullIndex: { event: () => { } } as any,
+			onDidStartFullIndex: Event.None,
+			onDidRemoveFiles: Event.None,
 			isReady: () => true,
 			getSymbolsByName: () => [],
 			getSymbolsInFile: () => [],
@@ -27,7 +30,7 @@ function makeDeps(): IContextToolDeps {
 			getTransitiveDependents: () => [],
 			getFileIndex: () => undefined,
 			getStats: () => ({ totalFiles: 0, totalSymbols: 0, indexingInProgress: false }),
-			forceReindex: async () => {},
+			forceReindex: async () => { },
 		},
 		relevanceScorer: {
 			_serviceBrand: undefined as any,
@@ -45,14 +48,14 @@ function makeDeps(): IContextToolDeps {
 		},
 		changeTracker: {
 			_serviceBrand: undefined as any,
-			onDidRecordEdit: { event: () => {} } as any,
+			onDidRecordEdit: { event: () => { } } as any,
 			getRecentlyEdited: () => [],
 			getCoEditedFiles: () => [],
 			getEditHeat: () => 0,
 			getEditVelocity: () => 0,
 			getHotRegions: () => [],
 			isFileActive: () => false,
-			reset: () => {},
+			reset: () => { },
 		},
 	};
 }

@@ -138,15 +138,24 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		this.llmMessageHooks.onAbort[requestId] = onAbort // used internally only
 
 		const runAsync = async () => {
-			// params will be stripped of all its functions over the IPC channel
-			this.channel.call('sendLLMMessage', {
-				...proxyParams,
-				requestId,
-				settingsOfProvider,
-				modelSelection,
-				mcpTools,
-				remoteAuthority: this.environmentService.remoteAuthority,
-			} satisfies MainSendLLMMessageParams);
+			try {
+				// params will be stripped of all its functions over the IPC channel
+				await this.channel.call('sendLLMMessage', {
+					...proxyParams,
+					requestId,
+					settingsOfProvider,
+					modelSelection,
+					mcpTools,
+					remoteAuthority: this.environmentService.remoteAuthority,
+				} satisfies MainSendLLMMessageParams);
+			} catch (e) {
+				// If the IPC call itself rejects, the main process will never emit
+				// onFinalMessage/onError — surface the failure through the hooks so
+				// callers don't await a promise that never resolves (permanent hang).
+				console.error('LLMMessageService: sendLLMMessage IPC call failed:', e);
+				this.llmMessageHooks.onError[requestId]?.({ message: `Failed to send LLM message over IPC: ${e}`, fullError: null, requestId });
+				this._clearChannelHooks(requestId);
+			}
 		};
 		runAsync();
 
@@ -200,6 +209,7 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		delete this.llmMessageHooks.onText[requestId]
 		delete this.llmMessageHooks.onFinalMessage[requestId]
 		delete this.llmMessageHooks.onError[requestId]
+		delete this.llmMessageHooks.onAbort[requestId]
 
 		delete this.listHooks.ollama.success[requestId]
 		delete this.listHooks.ollama.error[requestId]

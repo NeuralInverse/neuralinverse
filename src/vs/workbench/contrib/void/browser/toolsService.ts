@@ -1,26 +1,32 @@
-import { CancellationToken } from '../../../../base/common/cancellation.js'
-import { Emitter, Event } from '../../../../base/common/event.js'
-import { Disposable } from '../../../../base/common/lifecycle.js'
-import { URI } from '../../../../base/common/uri.js'
-import { IFileService } from '../../../../platform/files/common/files.js'
-import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js'
-import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js'
-import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js'
-import { QueryBuilder } from '../../../services/search/common/queryBuilder.js'
-import { ISearchService, IFileQuery, ITextQuery, QueryType } from '../../../services/search/common/search.js'
-import { IEditCodeService } from './editCodeServiceInterface.js'
-import { ITerminalToolService } from './terminalToolService.js'
-import { LintErrorItem, BuiltinToolCallParams, BuiltinToolResultType, BuiltinToolName, TerminalResolveReason } from '../common/toolsServiceTypes.js'
-import { IVoidModelService } from '../common/voidModelService.js'
-import { EndOfLinePreference } from '../../../../editor/common/model.js'
-import { IVoidCommandBarService } from './voidCommandBarServiceInterface.js'
-import { computeDirectoryTree1Deep, IDirectoryStrService, stringifyDirectoryTree1Deep } from '../common/directoryStrService.js'
-import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js'
-import { timeout } from '../../../../base/common/async.js'
-import { RawToolParamsObj } from '../common/sendLLMMessageTypes.js'
-import { MAX_CHILDREN_URIs_PAGE, MAX_FILE_CHARS_PAGE, MAX_TERMINAL_BG_COMMAND_TIME, MAX_TERMINAL_INACTIVE_TIME } from '../common/prompt/prompts.js'
-import { IVoidSettingsService } from '../common/voidSettingsService.js'
-import { generateUuid } from '../../../../base/common/uuid.js'
+/*--------------------------------------------------------------------------------------
+ *  Copyright 2026 Neural Inverse Inc. All rights reserved.
+ *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
+ *--------------------------------------------------------------------------------------*/
+
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
+import { URI } from '../../../../base/common/uri.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { QueryBuilder } from '../../../services/search/common/queryBuilder.js';
+import { ISearchService, IFileQuery, ITextQuery, QueryType, isFileMatch, resultIsMatch } from '../../../services/search/common/search.js';
+import { IEditCodeService } from './editCodeServiceInterface.js';
+import { ITerminalToolService } from './terminalToolService.js';
+import { LintErrorItem, BuiltinToolCallParams, BuiltinToolResultType, BuiltinToolName, TerminalResolveReason } from '../common/toolsServiceTypes.js';
+import { IVoidModelService } from '../common/voidModelService.js';
+import { EndOfLinePreference } from '../../../../editor/common/model.js';
+import { IVoidCommandBarService } from './voidCommandBarServiceInterface.js';
+import { computeDirectoryTree1Deep, IDirectoryStrService, stringifyDirectoryTree1Deep } from '../common/directoryStrService.js';
+import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js';
+import { timeout } from '../../../../base/common/async.js';
+import { RawToolParamsObj } from '../common/sendLLMMessageTypes.js';
+import { MAX_CHILDREN_URIs_PAGE, MAX_FILE_CHARS_PAGE, MAX_TERMINAL_BG_COMMAND_TIME, MAX_TERMINAL_INACTIVE_TIME } from '../common/prompt/prompts.js';
+import { IVoidSettingsService } from '../common/voidSettingsService.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
 
 import { IPathService } from '../../../services/path/common/pathService.js';
 import { wrapNonInteractive } from '../common/commandSanitizer.js';
@@ -31,6 +37,7 @@ import { IEnvironmentService } from '../../../../platform/environment/common/env
 import { IExternalCommandExecutor } from './externalCommandExecutor.js';
 import { IPowerModeService } from '../../powerMode/browser/powerModeService.js';
 import { IWorkflowAgentService } from '../../neuralInverse/browser/workflowAgentService.js';
+import { ICheckpointService } from '../../neuralInverseFirmware/browser/engine/projectConfig/checkpointService.js';
 import type { INeuralInverseSubAgentService } from './neuralInverseSubAgentService.js';
 import { IUserInputRequestService } from './userInputRequestService.js';
 import {
@@ -39,111 +46,247 @@ import {
 	createTaskUpdateTool,
 	createTaskGetTool,
 } from '../../powerMode/browser/tools/advancedTools.js';
+import { IToolContext } from '../../powerMode/common/powerModeTypes.js';
+import { SubAgentRole } from '../common/subAgentTypes.js';
+import { IAgentMemoryService, MemoryEntryType } from './agentMemoryService.js';
+
+const messageOfThrown = (e: unknown): string => e instanceof Error ? e.message : String(e);
+
+// Valid `type` values for memory_write (agentMemoryService.MemoryEntryType);
+// anything else falls back to 'preference' so a bad model value never fails the write.
+const MEMORY_ENTRY_TYPES = new Set<string>(['pattern', 'preference', 'project-fact', 'error-fix', 'tool-usage', 'file-context']);
+
+// The tasks_* tools never read their context argument; this satisfies
+// IToolContext without inventing per-call state.
+const voidToolContext: IToolContext = {
+	sessionId: '',
+	messageId: '',
+	agentId: '',
+	abort: new AbortController().signal,
+	metadata: () => { },
+};
 
 
 // tool use for AI
-type ValidateBuiltinParams = { [T in BuiltinToolName]: (p: RawToolParamsObj) => BuiltinToolCallParams[T] }
-type CallBuiltinTool = { [T in BuiltinToolName]: (p: BuiltinToolCallParams[T]) => Promise<{ result: BuiltinToolResultType[T] | Promise<BuiltinToolResultType[T]>, interruptTool?: () => void }> }
-type BuiltinToolResultToString = { [T in BuiltinToolName]: (p: BuiltinToolCallParams[T], result: Awaited<BuiltinToolResultType[T]>) => string }
+type ValidateBuiltinParams = { [T in BuiltinToolName]: (p: RawToolParamsObj) => BuiltinToolCallParams[T] };
+type CallBuiltinTool = { [T in BuiltinToolName]: (p: BuiltinToolCallParams[T]) => Promise<{ result: BuiltinToolResultType[T] | Promise<BuiltinToolResultType[T]>; interruptTool?: () => void }> };
+type BuiltinToolResultToString = { [T in BuiltinToolName]: (p: BuiltinToolCallParams[T], result: Awaited<BuiltinToolResultType[T]>) => string };
+
+// Plan-mode containment (task A5, step 1): `plan_mode_enter`/`plan_mode_exit`
+// set a per-thread flag that nothing ever read — the user turned Plan on and
+// writes still went through. These are the tools that mutate the workspace,
+// execute commands, or delegate to agents that can write outside this
+// boundary; while a thread is in plan mode they are rejected at the callTool
+// boundary (see `withPlanModeGuard`). Keep this list in sync with new writing
+// tools — when in doubt, block: a plan mode that fails open is worse than no
+// plan mode at all. `read_terminal`, `todo_write`, `memory_write` and
+// `tasks_*` stay allowed: they only touch app/conversation state, not the
+// workspace.
+const planModeBlockedTools = new Set<BuiltinToolName>([
+	// file writes / edits / fs mutations
+	'write',
+	'edit',
+	'rewrite_file',
+	'edit_file',
+	'multi_replace_file_content',
+	'create_file_or_folder',
+	'delete_file_or_folder',
+	'generate_document',
+	// terminal / command execution
+	'bash',
+	'run_command',
+	'run_background_command',
+	'run_persistent_command',
+	'open_persistent_terminal',
+	'send_command_input',
+	'kill_persistent_terminal',
+	// agents with their own tool access (spawn_agent grants write/edit/bash)
+	'spawn_agent',
+	'query_ni_agent',
+]);
+
+const planModeBlockedToolMessage = (toolName: string): string =>
+	`Plan mode is active for this conversation, so "${toolName}" was blocked without running. Plan mode is read-only: explore with read/search tools and present your plan, then call plan_mode_exit to restore write access before editing files or running commands.`;
+
+// Minimal structural shape of one callTool entry — the guard only forwards
+// the call, and the generic preserves each tool's own param/result types.
+type PlanModeGuardedToolFn = (params: never) => Promise<{ result: unknown; interruptTool?: () => void }>;
+
+/**
+ * Wraps every entry of a callTool map with the plan-mode guard: when
+ * `isPlanMode()` is true and the tool is in `planModeBlockedTools`, the call
+ * rejects with a clear error for the model instead of executing. Both the
+ * chat sidebar and the native chat bridge invoke builtin tools through this
+ * map, which makes it the single enforcement boundary for plan mode.
+ */
+export const withPlanModeGuard = <T extends Record<string, PlanModeGuardedToolFn>>(
+	tools: T,
+	isPlanMode: () => boolean,
+): T => {
+	const guarded: Record<string, PlanModeGuardedToolFn> = {};
+	for (const toolName of Object.keys(tools)) {
+		const impl = tools[toolName];
+		guarded[toolName] = async (params: never) => {
+			if (planModeBlockedTools.has(toolName as BuiltinToolName) && isPlanMode()) {
+				throw new Error(planModeBlockedToolMessage(toolName));
+			}
+			return impl(params);
+		};
+	}
+	return guarded as T;
+};
+
+// File-checkpoint boundary (task A3): the workspace file each mutating builtin
+// tool is about to touch, or null when the call doesn't target a file. Folders
+// have no content to snapshot; terminal tools are excluded because their file
+// effects are indirect (that coupling belongs with the unified-permissions
+// work on run_command, task A4).
+const checkpointableToolFiles: { [T in BuiltinToolName]?: (p: BuiltinToolCallParams[T]) => string | null } = {
+	'rewrite_file': p => p.uri.fsPath,
+	'edit_file': p => p.uri.fsPath,
+	'multi_replace_file_content': p => p.uri.fsPath,
+	'create_file_or_folder': p => p.isFolder ? null : p.uri.fsPath,
+	'delete_file_or_folder': p => p.isFolder ? null : p.uri.fsPath,
+	// Power Mode style tools address files by string path
+	'write': p => p.filePath,
+	'edit': p => p.filePath,
+};
+
+/**
+ * Wraps every entry of a callTool map so the file-writing tools above get a
+ * content checkpoint (via the hook) right before they execute. Both the chat
+ * sidebar and the native chat bridge invoke builtin tools through this map,
+ * which makes it — like withPlanModeGuard — a single boundary covering every
+ * caller at once.
+ */
+export const withCheckpointing = <T extends Record<string, PlanModeGuardedToolFn>>(
+	tools: T,
+	beforeRun: (toolName: string, params: unknown) => Promise<void>,
+): T => {
+	const wrapped: Record<string, PlanModeGuardedToolFn> = {};
+	for (const toolName of Object.keys(tools)) {
+		const impl = tools[toolName];
+		wrapped[toolName] = async (params: never) => {
+			await beforeRun(toolName, params);
+			return impl(params);
+		};
+	}
+	return wrapped as T;
+};
 
 
 const isFalsy = (u: unknown) => {
-	return !u || u === 'null' || u === 'undefined'
-}
+	return !u || u === 'null' || u === 'undefined';
+};
 
 const validateStr = (argName: string, value: unknown) => {
-	if (value === null) throw new Error(`Invalid LLM output: ${argName} was null.`)
-	if (typeof value !== 'string') throw new Error(`Invalid LLM output format: ${argName} must be a string, but its type is "${typeof value}". Full value: ${JSON.stringify(value)}.`)
-	return value
-}
+	if (value === null) { throw new Error(`Invalid LLM output: ${argName} was null.`); }
+	if (typeof value !== 'string') { throw new Error(`Invalid LLM output format: ${argName} must be a string, but its type is "${typeof value}". Full value: ${JSON.stringify(value)}.`); }
+	return value;
+};
+
+// Normalize a model-provided path to a forward-slash path, resolving relatives against the workspace root.
+// Models receive fsPath-style absolute paths (e.g. c:\repo\src\a.ts) from glob/grep/list — a `/`-prefix
+// check misclassifies those on Windows and produced joined paths like `c:\repo/c:\repo\a.ts` (ENOENT).
+const normalizeToolPath = (filePath: string, workspaceDir: string): string => {
+	const p = filePath.replace(/\\/g, '/');
+	const root = workspaceDir.replace(/\\/g, '/');
+	// Absolute: Windows drive (c:/… or /c:/…), UNC (//server/…), or a POSIX path already inside the root.
+	// A plain single-slash path like /app/functions.php is a common model habit for a workspace-relative
+	// file — joining it matches the old behavior and avoids file:///app/… ENOENTs on Windows.
+	const isAbsolute = /^\/?[a-zA-Z]:\//.test(p) || p.startsWith('//')
+		|| (p.startsWith('/') && root.startsWith('/') && p.toLowerCase().startsWith(root.toLowerCase() + '/'));
+	if (isAbsolute) { return p; }
+	return `${root}/${p.replace(/^\//, '')}`;
+};
 
 
 // We are NOT checking to make sure in workspace
 // workspaceRootUri: when set, plain paths are resolved using the workspace root's scheme
 // (e.g. vscode-remote:// in Coder) instead of always using file://.
 const makeValidateURI = (workspaceRootUri: URI | undefined) => (uriStr: unknown): URI => {
-	if (uriStr === null) throw new Error(`Invalid LLM output: uri was null.`)
-	if (typeof uriStr !== 'string') throw new Error(`Invalid LLM output format: Provided uri must be a string, but it's a(n) ${typeof uriStr}. Full value: ${JSON.stringify(uriStr)}.`)
+	if (uriStr === null) { throw new Error(`Invalid LLM output: uri was null.`); }
+	if (typeof uriStr !== 'string') { throw new Error(`Invalid LLM output format: Provided uri must be a string, but it's a(n) ${typeof uriStr}. Full value: ${JSON.stringify(uriStr)}.`); }
 
 	// Already has a scheme — parse as-is
 	if (uriStr.includes('://')) {
-		try { return URI.parse(uriStr) } catch (e) { throw new Error(`Invalid URI format: ${uriStr}. Error: ${e}`) }
+		try { return URI.parse(uriStr); } catch (e) { throw new Error(`Invalid URI format: ${uriStr}. Error: ${e}`); }
 	}
 
 	// Plain path — use workspace root scheme if available (handles vscode-remote://, ssh-remote://, etc.)
 	if (workspaceRootUri && workspaceRootUri.scheme !== 'file') {
-		// Reconstruct URI with the same scheme/authority but the given path
-		return workspaceRootUri.with({ path: uriStr })
+		// Reconstruct URI with the same scheme/authority but the given path.
+		// URI paths always use '/', so normalize Windows-style separators first.
+		return workspaceRootUri.with({ path: uriStr.replace(/\\/g, '/') });
 	}
-	return URI.file(uriStr)
-}
+	return URI.file(uriStr);
+};
 
-const validateURI = makeValidateURI(undefined)
+const validateURI = makeValidateURI(undefined);
 
 const makeValidateOptionalURI = (workspaceRootUri: URI | undefined) => (uriStr: unknown): URI | null => {
-	if (isFalsy(uriStr)) return null
-	return makeValidateURI(workspaceRootUri)(uriStr)
-}
+	if (isFalsy(uriStr)) { return null; }
+	return makeValidateURI(workspaceRootUri)(uriStr);
+};
 
 const _validateOptionalURI = (uriStr: unknown) => {
-	if (isFalsy(uriStr)) return null
-	return validateURI(uriStr)
-}
+	if (isFalsy(uriStr)) { return null; }
+	return validateURI(uriStr);
+};
 void _validateOptionalURI;
 
 const validateOptionalStr = (argName: string, str: unknown) => {
-	if (isFalsy(str)) return null
-	return validateStr(argName, str)
-}
+	if (isFalsy(str)) { return null; }
+	return validateStr(argName, str);
+};
 
 
 const validatePageNum = (pageNumberUnknown: unknown) => {
-	if (!pageNumberUnknown) return 1
-	const parsedInt = Number.parseInt(pageNumberUnknown + '')
-	if (!Number.isInteger(parsedInt)) throw new Error(`Page number was not an integer: "${pageNumberUnknown}".`)
-	if (parsedInt < 1) throw new Error(`Invalid LLM output format: Specified page number must be 1 or greater: "${pageNumberUnknown}".`)
-	return parsedInt
-}
+	if (!pageNumberUnknown) { return 1; }
+	const parsedInt = Number.parseInt(pageNumberUnknown + '');
+	if (!Number.isInteger(parsedInt)) { throw new Error(`Page number was not an integer: "${pageNumberUnknown}".`); }
+	if (parsedInt < 1) { throw new Error(`Invalid LLM output format: Specified page number must be 1 or greater: "${pageNumberUnknown}".`); }
+	return parsedInt;
+};
 
 const validateNumber = (numStr: unknown, opts: { default: number | null }) => {
-	if (typeof numStr === 'number')
-		return numStr
-	if (isFalsy(numStr)) return opts.default
+	if (typeof numStr === 'number') { return numStr; }
+	if (isFalsy(numStr)) { return opts.default; }
 
 	if (typeof numStr === 'string') {
-		const parsedInt = Number.parseInt(numStr + '')
-		if (!Number.isInteger(parsedInt)) return opts.default
-		return parsedInt
+		const parsedInt = Number.parseInt(numStr + '');
+		if (!Number.isInteger(parsedInt)) { return opts.default; }
+		return parsedInt;
 	}
 
-	return opts.default
-}
+	return opts.default;
+};
 
 const validateProposedTerminalId = (terminalIdUnknown: unknown) => {
-	if (!terminalIdUnknown) throw new Error(`A value for terminalID must be specified, but the value was "${terminalIdUnknown}"`)
-	const terminalId = terminalIdUnknown + ''
-	return terminalId
-}
+	if (!terminalIdUnknown) { throw new Error(`A value for terminalID must be specified, but the value was "${terminalIdUnknown}"`); }
+	const terminalId = terminalIdUnknown + '';
+	return terminalId;
+};
 
 const validateBoolean = (b: unknown, opts: { default: boolean }) => {
 	if (typeof b === 'string') {
-		if (b === 'true') return true
-		if (b === 'false') return false
+		if (b === 'true') { return true; }
+		if (b === 'false') { return false; }
 	}
 	if (typeof b === 'boolean') {
-		return b
+		return b;
 	}
-	return opts.default
-}
+	return opts.default;
+};
 
 
 const checkIfIsFolder = (uriStr: string) => {
-	uriStr = uriStr.trim()
-	if (uriStr.endsWith('/') || uriStr.endsWith('\\')) return true
-	return false
-}
+	uriStr = uriStr.trim();
+	if (uriStr.endsWith('/') || uriStr.endsWith('\\')) { return true; }
+	return false;
+};
 
-export type TodoItem = { content: string; status: 'pending' | 'in_progress' | 'completed' }
+export type TodoItem = { content: string; status: 'pending' | 'in_progress' | 'completed' };
 
 export interface IToolsService {
 	readonly _serviceBrand: undefined;
@@ -151,7 +294,7 @@ export interface IToolsService {
 	callTool: CallBuiltinTool;
 	stringOfResult: BuiltinToolResultToString;
 	/** Fires when a background terminal finishes — chatThreadService uses this to report back */
-	readonly onBackgroundTerminalComplete: Event<{ threadId: string; command: string; output: string; exitCode: number }>
+	readonly onBackgroundTerminalComplete: Event<{ threadId: string; command: string; output: string; exitCode: number }>;
 	// Plan Mode + TodoWrite + Worktree state (per-thread, in-memory)
 	setCurrentContext(threadId: string): void;
 	getThreadPlanMode(threadId: string): boolean;
@@ -173,8 +316,8 @@ export class ToolsService extends Disposable implements IToolsService {
 	public callTool: CallBuiltinTool;
 	public stringOfResult: BuiltinToolResultToString;
 
-	private readonly _onBackgroundTerminalComplete = this._register(new Emitter<{ threadId: string; command: string; output: string; exitCode: number }>())
-	readonly onBackgroundTerminalComplete = this._onBackgroundTerminalComplete.event
+	private readonly _onBackgroundTerminalComplete = this._register(new Emitter<{ threadId: string; command: string; output: string; exitCode: number }>());
+	readonly onBackgroundTerminalComplete = this._onBackgroundTerminalComplete.event;
 
 	private _currentThreadId: string = '';
 	private _planModeByThread = new Map<string, boolean>();
@@ -186,6 +329,21 @@ export class ToolsService extends Disposable implements IToolsService {
 	getThreadPlanMode(threadId: string): boolean { return this._planModeByThread.get(threadId) ?? false; }
 	getThreadTodos(threadId: string): TodoItem[] { return this._todosByThread.get(threadId) ?? []; }
 	getThreadWorktree(threadId: string) { return this._worktreeByThread.get(threadId); }
+
+	// Task A3: snapshot the file a mutating tool is about to touch, so any agent
+	// turn can be undone from the checkpoint list. Best-effort by design — a
+	// snapshot failure must never block the edit itself.
+	private async _createCheckpointForTool(toolName: string, params: unknown): Promise<void> {
+		try {
+			const fileOf = checkpointableToolFiles[toolName as BuiltinToolName];
+			if (!fileOf) { return; }
+			const filePath = fileOf(params as never);
+			if (!filePath) { return; }
+			await this._checkpointService.createCheckpoint(`void:${toolName}`, [filePath]);
+		} catch (e) {
+			console.warn(`[ToolsService] checkpoint before "${toolName}" failed (tool still ran): ${(e as Error).message}`);
+		}
+	}
 
 	async runHook(hookName: string, env: Record<string, string>): Promise<{ output: string; blocked: boolean }> {
 		try {
@@ -219,8 +377,9 @@ export class ToolsService extends Disposable implements IToolsService {
 		@IExternalCommandExecutor private readonly commandExecutor: IExternalCommandExecutor,
 		@IPowerModeService private readonly powerMode: IPowerModeService,
 		@IUserInputRequestService private readonly userInputRequestService: IUserInputRequestService,
+		@ICheckpointService private readonly _checkpointService: ICheckpointService,
 	) {
-		super()
+		super();
 		const queryBuilder = instantiationService.createInstance(QueryBuilder);
 
 		const workspaceRootUri = workspaceContextService.getWorkspace().folders[0]?.uri;
@@ -239,7 +398,7 @@ export class ToolsService extends Disposable implements IToolsService {
 					? URI.joinPath(workspaceRootUri, '.neuralinverse/commands')
 					: URI.file(`${workspaceDir}/.neuralinverse/commands`);
 				const entries = await fileService.resolve(dir);
-				if (!entries.children) return [];
+				if (!entries.children) { return []; }
 				const results: { name: string; content: string }[] = [];
 				for (const entry of entries.children) {
 					if (entry.isFile && entry.name.endsWith('.md')) {
@@ -275,6 +434,17 @@ export class ToolsService extends Disposable implements IToolsService {
 			return _subAgentService;
 		};
 
+		// Memory engine (M7): the memory tools write to agentMemoryService — the
+		// hybrid engine behind automatic semantic recall — instead of loose files.
+		let _agentMemoryService: IAgentMemoryService | null | undefined;
+		const getAgentMemory = (): IAgentMemoryService | null => {
+			if (_agentMemoryService === undefined) {
+				try { _agentMemoryService = instantiationService.invokeFunction(a => a.get(IAgentMemoryService)); }
+				catch { _agentMemoryService = null; }
+			}
+			return _agentMemoryService;
+		};
+
 		// Context Engine service accessors (lazy-resolved)
 		const _getSymbolIndex = async () => {
 			const { IWorkspaceSymbolIndexService } = await import('../../neuralInverse/browser/context/index/workspaceSymbolIndex.js');
@@ -296,6 +466,21 @@ export class ToolsService extends Disposable implements IToolsService {
 			const { IHybridSearchService } = await import('../../neuralInverse/browser/context/search/hybridSearchService.js');
 			return instantiationService.invokeFunction(a => a.get(IHybridSearchService));
 		};
+		// Bounded fallback when the ripgrep-backed search service fails: query
+		// the local lexical (BM25) index instead. Only plain-literal patterns
+		// qualify — a regex has no faithful keyword equivalent — and the result
+		// is always labeled as a fallback. undefined = fallback not possible.
+		const grepFallbackViaLocalIndex = async (pattern: string): Promise<string | undefined> => {
+			// Regex metacharacters have no faithful keyword equivalent; any
+			// script (incl. Persian) is fine as long as it is a plain literal.
+			if (!pattern || /[\\^$.*+?()[\]{}|/]/.test(pattern)) { return undefined; }
+			try {
+				const hybridSearch = await _getHybridSearch();
+				const results = await hybridSearch.search(pattern, 10);
+				if (results.length === 0) { return undefined; }
+				return results.map(r => `${r.filePath}:${r.startLine}: ${r.content.split('\n')[0].trim()}`).join('\n');
+			} catch { return undefined; }
+		};
 		const _getWorkspaceUri = (): string => {
 			const folders = workspaceContextService.getWorkspace().folders;
 			return folders.length > 0 ? folders[0].uri.toString() : '';
@@ -304,179 +489,180 @@ export class ToolsService extends Disposable implements IToolsService {
 		this.validateParams = {
 			// --- Power Mode style tools ---
 			bash: (params: RawToolParamsObj) => {
-				const command = validateStr('command', params.command ?? params.cmd ?? params.run ?? params.shell ?? params.script)
-				const description = (typeof params.description === 'string') ? params.description : (typeof params.desc === 'string' ? params.desc : '')
-				const timeout = validateNumber(params.timeout, { default: null })
-				return { command, description, timeout }
+				const command = validateStr('command', params.command ?? params.cmd ?? params.run ?? params.shell ?? params.script);
+				const description = (typeof params.description === 'string') ? params.description : (typeof params.desc === 'string' ? params.desc : '');
+				const timeout = validateNumber(params.timeout, { default: null });
+				return { command, description, timeout };
 			},
 			read: (params: RawToolParamsObj) => {
-				const filePath = validateStr('file_path', params.file_path ?? params.filePath ?? params.path ?? params.file)
-				const offset = validateNumber(params.offset, { default: null })
-				const limit = validateNumber(params.limit, { default: null })
-				return { filePath, offset, limit }
+				const filePath = validateStr('file_path', params.file_path ?? params.filePath ?? params.path ?? params.file);
+				const offset = validateNumber(params.offset, { default: null });
+				const limit = validateNumber(params.limit, { default: null });
+				return { filePath, offset, limit };
 			},
 			write: (params: RawToolParamsObj) => {
-				const filePath = validateStr('file_path', params.file_path ?? params.filePath ?? params.path ?? params.file ?? params.filename)
-				const content = validateStr('content', params.content ?? params.text ?? params.code ?? params.body)
-				return { filePath, content }
+				const filePath = validateStr('file_path', params.file_path ?? params.filePath ?? params.path ?? params.file ?? params.filename);
+				const content = validateStr('content', params.content ?? params.text ?? params.code ?? params.body);
+				return { filePath, content };
 			},
 			edit: (params: RawToolParamsObj) => {
-				const filePath = validateStr('file_path', params.file_path ?? params.filePath ?? params.path ?? params.file)
-				const oldString = validateStr('old_string', params.old_string ?? params.oldString ?? params.old ?? params.search ?? params.find ?? params.original)
-				const newString = validateStr('new_string', params.new_string ?? params.newString ?? params.new ?? params.replace ?? params.replacement)
-				return { filePath, oldString, newString }
+				const filePath = validateStr('file_path', params.file_path ?? params.filePath ?? params.path ?? params.file);
+				const oldString = validateStr('old_string', params.old_string ?? params.oldString ?? params.old ?? params.search ?? params.find ?? params.original);
+				const newString = validateStr('new_string', params.new_string ?? params.newString ?? params.new ?? params.replace ?? params.replacement);
+				return { filePath, oldString, newString };
 			},
 			glob: (params: RawToolParamsObj) => {
-				const pattern = validateStr('pattern', params.pattern)
-				const path = validateOptionalStr('path', params.path)
-				return { pattern, path }
+				const pattern = validateStr('pattern', params.pattern);
+				const path = validateOptionalStr('path', params.path);
+				return { pattern, path };
 			},
 			grep: (params: RawToolParamsObj) => {
-				const pattern = validateStr('pattern', params.pattern)
-				const path = validateOptionalStr('path', params.path)
-				const include = validateOptionalStr('include', params.include)
-				return { pattern, path, include }
+				const pattern = validateStr('pattern', params.pattern);
+				const path = validateOptionalStr('path', params.path);
+				const include = validateOptionalStr('include', params.include);
+				return { pattern, path, include };
 			},
 			list: (params: RawToolParamsObj) => {
-				const dirPath = validateOptionalStr('dir_path', params.dir_path)
-				return { dirPath }
+				const dirPath = validateOptionalStr('dir_path', params.dir_path);
+				return { dirPath };
 			},
 			// (GRC compliance tools removed - Enterprise Edition only)
 			ask_powermode: (params: RawToolParamsObj) => {
-				const question = validateStr('question', params.question)
-				return { question }
+				const question = validateStr('question', params.question);
+				return { question };
 			},
 			query_ni_agent: (params: RawToolParamsObj) => {
-				const agentId = validateStr('agent_id', params.agent_id)
-				const input = isFalsy(params.input) ? '' : validateStr('input', params.input)
-				return { agentId, input }
+				const agentId = validateStr('agent_id', params.agent_id);
+				const input = isFalsy(params.input) ? '' : validateStr('input', params.input);
+				return { agentId, input };
 			},
 			// --- Workflow tools ---
 			ask_user: (params: RawToolParamsObj) => {
-				const question = validateStr('question', params.question)
-				return { question }
+				const question = validateStr('question', params.question);
+				return { question };
 			},
 			web_fetch: (params: RawToolParamsObj) => {
-				const url = validateStr('url', params.url)
-				const description = validateStr('description', params.description)
-				return { url, description }
+				const url = validateStr('url', params.url);
+				const description = validateStr('description', params.description);
+				return { url, description };
 			},
 			memory_write: (params: RawToolParamsObj) => {
-				const key = validateStr('key', params.key)
-				const content = validateStr('content', params.content)
-				return { key, content }
+				const key = validateStr('key', params.key);
+				const content = validateStr('content', params.content);
+				const type = validateOptionalStr('type', params.type);
+				return { key, content, type: type || undefined };
 			},
 			memory_read: (params: RawToolParamsObj) => {
-				const key = validateStr('key', params.key)
-				return { key }
+				const key = validateStr('key', params.key);
+				return { key };
 			},
 			tasks_create: (params: RawToolParamsObj) => {
-				const title = validateStr('title', params.title)
-				const description = validateOptionalStr('description', params.description)
-				return { title, description }
+				const title = validateStr('title', params.title);
+				const description = validateOptionalStr('description', params.description);
+				return { title, description };
 			},
 			tasks_list: (_params: RawToolParamsObj) => {
-				return {}
+				return {};
 			},
 			tasks_update: (params: RawToolParamsObj) => {
-				const taskId = validateStr('task_id', params.task_id)
-				const status = validateOptionalStr('status', params.status)
-				const title = validateOptionalStr('title', params.title)
-				const description = validateOptionalStr('description', params.description)
-				return { taskId, status, title, description }
+				const taskId = validateStr('task_id', params.task_id);
+				const status = validateOptionalStr('status', params.status);
+				const title = validateOptionalStr('title', params.title);
+				const description = validateOptionalStr('description', params.description);
+				return { taskId, status, title, description };
 			},
 			tasks_get: (params: RawToolParamsObj) => {
-				const taskId = validateStr('task_id', params.task_id)
-				return { taskId }
+				const taskId = validateStr('task_id', params.task_id);
+				return { taskId };
 			},
 			spawn_agent: (params: RawToolParamsObj) => {
-				const role = validateStr('role', params.role)
-				const goal = validateStr('goal', params.goal)
-				const scopedFiles = validateOptionalStr('scoped_files', params.scoped_files)
-				return { role, goal, scopedFiles }
+				const role = validateStr('role', params.role);
+				const goal = validateStr('goal', params.goal);
+				const scopedFiles = validateOptionalStr('scoped_files', params.scoped_files);
+				return { role, goal, scopedFiles };
 			},
 			get_agent_status: (params: RawToolParamsObj) => {
-				const agentId = validateStr('agent_id', params.agent_id)
-				return { agentId }
+				const agentId = validateStr('agent_id', params.agent_id);
+				return { agentId };
 			},
 			wait_for_agent: (params: RawToolParamsObj) => {
-				const agentId = validateStr('agent_id', params.agent_id)
-				return { agentId }
+				const agentId = validateStr('agent_id', params.agent_id);
+				return { agentId };
 			},
 			list_agents: (params: RawToolParamsObj) => {
-				return {}
+				return {};
 			},
 			// --- Context Engine ---
 			context_search_symbols: (params: RawToolParamsObj) => {
-				const query = validateStr('query', params.query)
-				const kind = validateOptionalStr('kind', params.kind)
-				const filePattern = validateOptionalStr('file_pattern', params.file_pattern)
-				return { query, kind, filePattern }
+				const query = validateStr('query', params.query);
+				const kind = validateOptionalStr('kind', params.kind);
+				const filePattern = validateOptionalStr('file_pattern', params.file_pattern);
+				return { query, kind, filePattern };
 			},
 			context_related_files: (params: RawToolParamsObj) => {
-				const file = validateOptionalStr('file', params.file)
-				const query = validateOptionalStr('query', params.query)
-				const maxResults = validateNumber(params.max_results, { default: null })
-				return { file, query, maxResults }
+				const file = validateOptionalStr('file', params.file);
+				const query = validateOptionalStr('query', params.query);
+				const maxResults = validateNumber(params.max_results, { default: null });
+				return { file, query, maxResults };
 			},
 			context_file_context: (params: RawToolParamsObj) => {
-				const file = validateStr('file', params.file)
-				const budget = validateNumber(params.budget, { default: null })
-				return { file, budget }
+				const file = validateStr('file', params.file);
+				const budget = validateNumber(params.budget, { default: null });
+				return { file, budget };
 			},
 			context_import_graph: (params: RawToolParamsObj) => {
-				const file = validateStr('file', params.file)
-				const depth = validateNumber(params.depth, { default: null })
-				return { file, depth }
+				const file = validateStr('file', params.file);
+				const depth = validateNumber(params.depth, { default: null });
+				return { file, depth };
 			},
 			context_recent_edits: (params: RawToolParamsObj) => {
-				const withinMinutes = validateNumber(params.within_minutes, { default: null })
-				return { withinMinutes }
+				const withinMinutes = validateNumber(params.within_minutes, { default: null });
+				return { withinMinutes };
 			},
 			context_semantic_search: (params: RawToolParamsObj) => {
-				const query = validateStr('query', params.query)
-				const maxResults = validateNumber(params.max_results, { default: null })
-				const filePattern = validateOptionalStr('file_pattern', params.file_pattern)
-				return { query, maxResults, filePattern }
+				const query = validateStr('query', params.query);
+				const maxResults = validateNumber(params.max_results, { default: null });
+				const filePattern = validateOptionalStr('file_pattern', params.file_pattern);
+				return { query, maxResults, filePattern };
 			},
 			// ---
 			read_file: (params: RawToolParamsObj) => {
-				const { uri: uriStr, start_line: startLineUnknown, end_line: endLineUnknown, page_number: pageNumberUnknown } = params
-				const uri = validateURIws(uriStr)
-				const pageNumber = validatePageNum(pageNumberUnknown)
+				const { uri: uriStr, start_line: startLineUnknown, end_line: endLineUnknown, page_number: pageNumberUnknown } = params;
+				const uri = validateURIws(uriStr);
+				const pageNumber = validatePageNum(pageNumberUnknown);
 
-				let startLine = validateNumber(startLineUnknown, { default: null })
-				let endLine = validateNumber(endLineUnknown, { default: null })
+				let startLine = validateNumber(startLineUnknown, { default: null });
+				let endLine = validateNumber(endLineUnknown, { default: null });
 
-				if (startLine !== null && startLine < 1) startLine = null
-				if (endLine !== null && endLine < 1) endLine = null
+				if (startLine !== null && startLine < 1) { startLine = null; }
+				if (endLine !== null && endLine < 1) { endLine = null; }
 
-				return { uri, startLine, endLine, pageNumber }
+				return { uri, startLine, endLine, pageNumber };
 			},
 			ls_dir: (params: RawToolParamsObj) => {
-				const { uri: uriStr, page_number: pageNumberUnknown } = params
+				const { uri: uriStr, page_number: pageNumberUnknown } = params;
 
-				const uri = validateURIws(uriStr)
-				const pageNumber = validatePageNum(pageNumberUnknown)
-				return { uri, pageNumber }
+				const uri = validateURIws(uriStr);
+				const pageNumber = validatePageNum(pageNumberUnknown);
+				return { uri, pageNumber };
 			},
 			get_dir_tree: (params: RawToolParamsObj) => {
-				const { uri: uriStr, } = params
-				const uri = validateURIws(uriStr)
-				return { uri }
+				const { uri: uriStr, } = params;
+				const uri = validateURIws(uriStr);
+				return { uri };
 			},
 			search_pathnames_only: (params: RawToolParamsObj) => {
 				const {
 					query: queryUnknown,
 					search_in_folder: includeUnknown,
 					page_number: pageNumberUnknown
-				} = params
+				} = params;
 
-				const queryStr = validateStr('query', queryUnknown)
-				const pageNumber = validatePageNum(pageNumberUnknown)
-				const includePattern = validateOptionalStr('include_pattern', includeUnknown)
+				const queryStr = validateStr('query', queryUnknown);
+				const pageNumber = validatePageNum(pageNumberUnknown);
+				const includePattern = validateOptionalStr('include_pattern', includeUnknown);
 
-				return { query: queryStr, includePattern, pageNumber }
+				return { query: queryStr, includePattern, pageNumber };
 
 			},
 			search_for_files: (params: RawToolParamsObj) => {
@@ -485,17 +671,17 @@ export class ToolsService extends Disposable implements IToolsService {
 					search_in_folder: searchInFolderUnknown,
 					is_regex: isRegexUnknown,
 					page_number: pageNumberUnknown
-				} = params
-				const queryStr = validateStr('query', queryUnknown)
-				const pageNumber = validatePageNum(pageNumberUnknown)
-				const searchInFolder = validateOptionalURIws(searchInFolderUnknown)
-				const isRegex = validateBoolean(isRegexUnknown, { default: false })
+				} = params;
+				const queryStr = validateStr('query', queryUnknown);
+				const pageNumber = validatePageNum(pageNumberUnknown);
+				const searchInFolder = validateOptionalURIws(searchInFolderUnknown);
+				const isRegex = validateBoolean(isRegexUnknown, { default: false });
 				return {
 					query: queryStr,
 					isRegex,
 					searchInFolder,
 					pageNumber
-				}
+				};
 			},
 			search_in_file: (params: RawToolParamsObj) => {
 				const { uri: uriStr, query: queryUnknown, is_regex: isRegexUnknown } = params;
@@ -508,70 +694,76 @@ export class ToolsService extends Disposable implements IToolsService {
 			read_lint_errors: (params: RawToolParamsObj) => {
 				const {
 					uri: uriUnknown,
-				} = params
-				const uri = validateURIws(uriUnknown)
-				return { uri }
+				} = params;
+				const uri = validateURIws(uriUnknown);
+				return { uri };
 			},
 
 			// ---
 
 			create_file_or_folder: (params: RawToolParamsObj) => {
-				const { uri: uriUnknown } = params
-				const uri = validateURIws(uriUnknown)
-				const uriStr = validateStr('uri', uriUnknown)
-				const isFolder = checkIfIsFolder(uriStr)
-				return { uri, isFolder }
+				const { uri: uriUnknown } = params;
+				const uri = validateURIws(uriUnknown);
+				const uriStr = validateStr('uri', uriUnknown);
+				const isFolder = checkIfIsFolder(uriStr);
+				return { uri, isFolder };
 			},
 
 			delete_file_or_folder: (params: RawToolParamsObj) => {
-				const { uri: uriUnknown, is_recursive: isRecursiveUnknown } = params
-				const uri = validateURIws(uriUnknown)
-				const isRecursive = validateBoolean(isRecursiveUnknown, { default: false })
-				const uriStr = validateStr('uri', uriUnknown)
-				const isFolder = checkIfIsFolder(uriStr)
-				return { uri, isRecursive, isFolder }
+				const { uri: uriUnknown, is_recursive: isRecursiveUnknown } = params;
+				const uri = validateURIws(uriUnknown);
+				const isRecursive = validateBoolean(isRecursiveUnknown, { default: false });
+				const uriStr = validateStr('uri', uriUnknown);
+				const isFolder = checkIfIsFolder(uriStr);
+				return { uri, isRecursive, isFolder };
 			},
 
 			rewrite_file: (params: RawToolParamsObj) => {
-				const { uri: uriStr, new_content: newContentUnknown } = params
-				const uri = validateURIws(uriStr)
-				const newContent = validateStr('newContent', newContentUnknown)
-				return { uri, newContent }
+				const { uri: uriStr, new_content: newContentUnknown } = params;
+				const uri = validateURIws(uriStr);
+				const newContent = validateStr('newContent', newContentUnknown);
+				return { uri, newContent };
 			},
 
 			edit_file: (params: RawToolParamsObj) => {
-				const { uri: uriStr, search_replace_blocks: searchReplaceBlocksUnknown } = params
-				const uri = validateURIws(uriStr)
-				const searchReplaceBlocks = validateStr('searchReplaceBlocks', searchReplaceBlocksUnknown)
-				return { uri, searchReplaceBlocks }
+				const { uri: uriStr, search_replace_blocks: searchReplaceBlocksUnknown } = params;
+				const uri = validateURIws(uriStr);
+				const searchReplaceBlocks = validateStr('searchReplaceBlocks', searchReplaceBlocksUnknown);
+				return { uri, searchReplaceBlocks };
 			},
 			multi_replace_file_content: (params: RawToolParamsObj) => {
-				const { uri: uriStr, replacement_chunks: replacementChunksUnknown } = params
-				const uri = validateURIws(uriStr)
-				const replacementChunks = validateStr('replacement_chunks', replacementChunksUnknown)
-				return { uri, replacementChunks }
+				const { uri: uriStr, replacement_chunks: replacementChunksUnknown } = params;
+				const uri = validateURIws(uriStr);
+				const replacementChunks = validateStr('replacement_chunks', replacementChunksUnknown);
+				return { uri, replacementChunks };
 			},
 
 			// ---
 
 			run_command: (params: RawToolParamsObj) => {
-				const { command: commandUnknown, cwd: cwdUnknown, timeout: timeoutUnknown, bg_after: bgAfterUnknown } = params
-				const command = validateStr('command', commandUnknown)
-				const cwd = validateOptionalStr('cwd', cwdUnknown)
-				const timeout = (typeof timeoutUnknown === 'number' && timeoutUnknown > 0) ? timeoutUnknown : null
-				const bgAfter = (typeof bgAfterUnknown === 'number' && bgAfterUnknown > 0) ? bgAfterUnknown : null
-				const terminalId = generateUuid()
-				return { command, cwd, terminalId, timeout, bgAfter }
+				const { command: commandUnknown, cwd: cwdUnknown, timeout: timeoutUnknown, bg_after: bgAfterUnknown } = params;
+				const command = validateStr('command', commandUnknown);
+				const cwd = validateOptionalStr('cwd', cwdUnknown);
+				const timeout = (typeof timeoutUnknown === 'number' && timeoutUnknown > 0) ? timeoutUnknown : null;
+				const bgAfter = (typeof bgAfterUnknown === 'number' && bgAfterUnknown > 0) ? bgAfterUnknown : null;
+				const terminalId = generateUuid();
+				return { command, cwd, terminalId, timeout, bgAfter };
+			},
+			run_background_command: (params: RawToolParamsObj) => {
+				const { command: commandUnknown, cwd: cwdUnknown } = params;
+				const command = validateStr('command', commandUnknown);
+				const cwd = validateOptionalStr('cwd', cwdUnknown);
+				return { command, cwd };
 			},
 			run_persistent_command: (params: RawToolParamsObj) => {
 				const { command: commandUnknown, persistent_terminal_id: persistentTerminalIdUnknown } = params;
 				const command = validateStr('command', commandUnknown);
-				const persistentTerminalId = validateProposedTerminalId(persistentTerminalIdUnknown)
+				const persistentTerminalId = validateProposedTerminalId(persistentTerminalIdUnknown);
 				return { command, persistentTerminalId };
 			},
 			open_persistent_terminal: (params: RawToolParamsObj) => {
 				const { cwd: cwdUnknown } = params;
-				const cwd = validateOptionalStr('cwd', cwdUnknown)
+				const cwd = validateOptionalStr('cwd', cwdUnknown);
 				// No parameters needed; will open a new background terminal
 				return { cwd };
 			},
@@ -627,149 +819,178 @@ export class ToolsService extends Disposable implements IToolsService {
 			plan_mode_exit: (_params: RawToolParamsObj) => ({}),
 			todo_write: (params: RawToolParamsObj) => ({ todos: typeof params['todos'] === 'string' ? params['todos'] : JSON.stringify(params['todos'] ?? '[]') }),
 
-		}
+		};
 
 
-		this.callTool = {
+		const builtinCallTool: CallBuiltinTool = {
 			// --- Power Mode style tools ---
 			bash: async ({ command, description, timeout }) => {
-				const jobId = `void_bash_${Date.now()}`
-				const fullCommand = `cd ${JSON.stringify(workspaceDir)} && ${wrapNonInteractive(command)}`
-				const { resultPromise, interrupt: interruptTool } = this.commandExecutor.executeWithInterrupt(jobId, fullCommand, timeout ?? 120_000, MAX_PM_OUTPUT)
+				const jobId = `void_bash_${Date.now()}`;
+				// On Windows the agent terminal is PowerShell, where `&&` chains and the
+				// `env VAR=…` prefix are parser errors — the whole wrapped command died
+				// before the user's command ever ran (the tool returned only the echo
+				// line). The temporary terminal is already created with the workspace
+				// cwd, so on Windows run the raw command with no wrapper at all.
+				const fullCommand = isWindows
+					? command
+					: `cd ${JSON.stringify(workspaceDir)} && ${wrapNonInteractive(command)}`;
+				const { resultPromise, interrupt: interruptTool } = this.commandExecutor.executeWithInterrupt(jobId, fullCommand, timeout ?? 3_600_000, MAX_PM_OUTPUT);
 				const result = resultPromise.then(output => {
-					const truncated = output.length > MAX_PM_OUTPUT ? output.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated at 50KB]' : output
-					return { result: truncated }
-				}).catch((err: any) => {
-					return { result: `Error: ${err.message}${err.stderr ? '\n' + err.stderr : ''}` }
-				})
-				return { result, interruptTool }
+					const truncated = output.length > MAX_PM_OUTPUT ? output.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated at 50KB]' : output;
+					return { result: truncated };
+				}).catch((err: unknown) => {
+					const stderr = (err as { stderr?: string } | null | undefined)?.stderr;
+					return { result: `Error: ${messageOfThrown(err)}${stderr ? '\n' + stderr : ''}` };
+				});
+				return { result, interruptTool };
 			},
 			read: async ({ filePath, offset, limit: readLimit }) => {
-				const normalizedPath = (filePath.startsWith('/') && filePath.startsWith(workspaceDir)) ? filePath : `${workspaceDir}/${filePath.replace(/^\//, '')}`
-				const uri = validateURIws(normalizedPath)
+				const normalizedPath = normalizeToolPath(filePath, workspaceDir);
+				const uri = validateURIws(normalizedPath);
 				try {
-					const stat = await fileService.stat(uri)
+					const stat = await fileService.stat(uri);
 					if (stat.isDirectory) {
-						const resolved = await fileService.resolve(uri)
-						const entries = (resolved.children ?? []).map(c => `${c.isDirectory ? 'd' : '-'} ${c.name}`).sort().join('\n')
-						return { result: { result: entries || '(empty directory)' } }
+						const resolved = await fileService.resolve(uri);
+						const entries = (resolved.children ?? []).map(c => `${c.isDirectory ? 'd' : '-'} ${c.name}`).sort().join('\n');
+						return { result: { result: entries || '(empty directory)' } };
 					}
-					const content = await fileService.readFile(uri)
-					const text = content.value.toString()
-					const allLines = text.split('\n')
-					const startIdx = Math.max(0, (offset ?? 1) - 1)
-					const maxLines = readLimit ?? 2000
-					const selectedLines = allLines.slice(startIdx, startIdx + maxLines)
+					const content = await fileService.readFile(uri);
+					const text = content.value.toString();
+					const allLines = text.split('\n');
+					const startIdx = Math.max(0, (offset ?? 1) - 1);
+					const maxLines = readLimit ?? 2000;
+					const selectedLines = allLines.slice(startIdx, startIdx + maxLines);
 					const numbered = selectedLines.map((line, i) => {
-						const num = String(startIdx + i + 1).padStart(6, ' ')
-						return `${num}\t${line.length > 2000 ? line.substring(0, 2000) + '...' : line}`
-					}).join('\n')
-					const out = numbered.length > MAX_PM_OUTPUT ? numbered.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated]' : numbered
-					return { result: { result: out } }
-				} catch (err: any) {
-					return { result: { result: `Error: ${err.message}` } }
+						const num = String(startIdx + i + 1).padStart(6, ' ');
+						return `${num}\t${line.length > 2000 ? line.substring(0, 2000) + '...' : line}`;
+					}).join('\n');
+					const out = numbered.length > MAX_PM_OUTPUT ? numbered.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated]' : numbered;
+					return { result: { result: out } };
+				} catch (err) {
+					return { result: { result: `Error: ${messageOfThrown(err)}` } };
 				}
 			},
 			write: async ({ filePath, content }) => {
-				const normalizedPath = (filePath.startsWith('/') && filePath.startsWith(workspaceDir)) ? filePath : `${workspaceDir}/${filePath.replace(/^\//, '')}`
-				const uri = validateURIws(normalizedPath)
+				const normalizedPath = normalizeToolPath(filePath, workspaceDir);
+				const uri = validateURIws(normalizedPath);
 				try {
 					// If path has no file extension, model is trying to create a directory
 					const basename = normalizedPath.split('/').pop() || '';
 					if (!basename.includes('.') && (!content || content.trim() === '')) {
 						await fileService.createFolder(uri);
-						return { result: { result: `Created directory: ${normalizedPath}` } }
+						return { result: { result: `Created directory: ${normalizedPath}` } };
 					}
 					// Auto-create parent directories (like mkdir -p)
-					const parentUri = URI.file(normalizedPath.substring(0, normalizedPath.lastIndexOf('/')))
+					const parentUri = URI.file(normalizedPath.substring(0, normalizedPath.lastIndexOf('/')));
 					try { await fileService.createFolder(parentUri); } catch { /* already exists */ }
-					await fileService.writeFile(uri, VSBuffer.fromString(content))
-					return { result: { result: `Successfully wrote ${content.split('\n').length} lines to ${normalizedPath}` } }
-				} catch (err: any) {
-					return { result: { result: `Error writing file: ${err.message}` } }
+					await fileService.writeFile(uri, VSBuffer.fromString(content));
+					return { result: { result: `Successfully wrote ${content.split('\n').length} lines to ${normalizedPath}` } };
+				} catch (err) {
+					return { result: { result: `Error writing file: ${messageOfThrown(err)}` } };
 				}
 			},
 			edit: async ({ filePath, oldString, newString }) => {
-				const normalizedPath = (filePath.startsWith('/') && filePath.startsWith(workspaceDir)) ? filePath : `${workspaceDir}/${filePath.replace(/^\//, '')}`
-				const uri = validateURIws(normalizedPath)
+				const normalizedPath = normalizeToolPath(filePath, workspaceDir);
+				const uri = validateURIws(normalizedPath);
 				try {
-					const content = await fileService.readFile(uri)
-					const text = content.value.toString()
-					const count = text.split(oldString).length - 1
+					const content = await fileService.readFile(uri);
+					const text = content.value.toString();
+					const count = text.split(oldString).length - 1;
 					if (count === 0) {
-						return { result: { result: `Error: old_string not found in ${normalizedPath}` } }
+						return { result: { result: `Error: old_string not found in ${normalizedPath}` } };
 					}
 					if (count > 1) {
-						return { result: { result: `Error: old_string found ${count} times in ${normalizedPath} — must be unique. Add more context.` } }
+						return { result: { result: `Error: old_string found ${count} times in ${normalizedPath} — must be unique. Add more context.` } };
 					}
-					const newText = text.replace(oldString, newString)
-					await fileService.writeFile(uri, VSBuffer.fromString(newText))
-					return { result: { result: `Successfully edited ${normalizedPath}` } }
-				} catch (err: any) {
-					return { result: { result: `Error: ${err.message}` } }
+					const newText = text.replace(oldString, newString);
+					await fileService.writeFile(uri, VSBuffer.fromString(newText));
+					return { result: { result: `Successfully edited ${normalizedPath}` } };
+				} catch (err) {
+					return { result: { result: `Error: ${messageOfThrown(err)}` } };
 				}
 			},
 			glob: async ({ pattern, path: searchPath }) => {
-				const folderUri = validateURIws(searchPath ?? workspaceDir)
+				const folderUri = validateURIws(normalizeToolPath(searchPath ?? workspaceDir, workspaceDir));
 				try {
 					const query: IFileQuery = {
 						type: QueryType.File,
 						folderQueries: [{ folder: folderUri }],
 						filePattern: pattern,
 						maxResults: 100,
-					}
-					const results = await searchService.fileSearch(query)
-					const files = results.results.map(r => r.resource.fsPath).join('\n')
-					return { result: { result: files || 'No matches found.' } }
-				} catch (err: any) {
-					return { result: { result: `Error: ${err.message}` } }
+					};
+					const results = await searchService.fileSearch(query);
+					const files = results.results.map(r => r.resource.fsPath).join('\n');
+					return { result: { result: files || 'No matches found.' } };
+				} catch (err) {
+					throw new Error(`File search failed: ${messageOfThrown(err)}`);
 				}
 			},
 			grep: async ({ pattern, path: searchPath, include }) => {
-				const folderUri = validateURIws(searchPath ?? workspaceDir)
+				const folderUri = validateURIws(normalizeToolPath(searchPath ?? workspaceDir, workspaceDir));
 				try {
+					// Per-file cap: without it, a handful of files with dozens of
+					// matches each ate the whole result budget and the model saw
+					// "a few files" instead of the full picture across the repo.
+					const MAX_GREP_RESULTS = 1000;
+					const MAX_MATCHES_PER_FILE = 15;
+					const matchesPerFile = new Map<string, number>();
 					const query: ITextQuery = {
 						type: QueryType.Text,
 						contentPattern: { pattern, isRegExp: true, isCaseSensitive: false },
 						folderQueries: [{ folder: folderUri }],
 						includePattern: include ? { [include]: true } : undefined,
 						excludePattern: { '**/node_modules': true, '**/.git': true },
-						maxResults: 200,
-					}
-					const matches: string[] = []
+						maxResults: MAX_GREP_RESULTS,
+					};
+					const matches: string[] = [];
 					await searchService.textSearch(query, undefined, (item) => {
-						if ('resource' in item) {
-							const fm = item as { resource: { fsPath: string }; results?: Array<{ rangeLocations?: Array<{ source: { startLineNumber: number } }>; previewText?: string }> }
-							const file = fm.resource.fsPath
-							for (const res of fm.results ?? []) {
-								const line = res.rangeLocations?.[0]?.source.startLineNumber ?? 0
-								matches.push(`${file}:${line}: ${(res.previewText ?? '').trim()}`)
+						if (isFileMatch(item)) {
+							const file = item.resource.fsPath;
+							for (const res of item.results ?? []) {
+								if (!resultIsMatch(res)) { continue; }
+								const soFar = matchesPerFile.get(file) ?? 0;
+								if (soFar >= MAX_MATCHES_PER_FILE) { continue; }
+								matchesPerFile.set(file, soFar + 1);
+								const line = res.rangeLocations[0]?.source.startLineNumber ?? 0;
+								matches.push(`${file}:${line}: ${(res.previewText ?? '').trim()}`);
 							}
 						}
-					})
-					const output = matches.join('\n') || 'No matches found.'
-					return { result: { result: output.length > MAX_PM_OUTPUT ? output.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated]' : output } }
-				} catch (err: any) {
-					return { result: { result: `Error: ${err.message}` } }
+					});
+					const output = matches.join('\n') || 'No matches found.';
+					if (matches.length >= MAX_GREP_RESULTS) {
+						return { result: { result: output + `\n[Result limit reached (${MAX_GREP_RESULTS} matches, max ${MAX_MATCHES_PER_FILE}/file). Narrow the pattern or search per subdirectory.]` } };
+					}
+					return { result: { result: output.length > MAX_PM_OUTPUT ? output.substring(0, MAX_PM_OUTPUT) + '\n[Output truncated]' : output } };
+				} catch (err) {
+					// The search backend (ripgrep) failed. A bounded, clearly
+					// labeled fallback: the local lexical index can still answer
+					// plain-literal patterns. Never report a failure as "no
+					// matches" — if the fallback can't help, the error surfaces.
+					const reason = messageOfThrown(err);
+					const fallback = await grepFallbackViaLocalIndex(pattern);
+					if (fallback !== undefined) {
+						return { result: { result: `[Fallback: workspace text search failed (${reason}). Results below are from the local lexical index and may be incomplete.]\n${fallback}` } };
+					}
+					throw new Error(`Code search failed: ${reason}`);
 				}
 			},
 			list: async ({ dirPath }) => {
-				const uri = validateURIws(dirPath ?? workspaceDir)
+				const uri = validateURIws(normalizeToolPath(dirPath ?? workspaceDir, workspaceDir));
 				try {
-					const resolved = await fileService.resolve(uri)
-					const entries = (resolved.children ?? []).map(c => `${c.isDirectory ? 'd' : '-'} ${c.name}`).sort().join('\n')
-					return { result: { result: entries || '(empty directory)' } }
-				} catch (err: any) {
-					return { result: { result: `Error: ${err.message}` } }
+					const resolved = await fileService.resolve(uri);
+					const entries = (resolved.children ?? []).map(c => `${c.isDirectory ? 'd' : '-'} ${c.name}`).sort().join('\n');
+					return { result: { result: entries || '(empty directory)' } };
+				} catch (err) {
+					return { result: { result: `Error: ${messageOfThrown(err)}` } };
 				}
 			},
 			// (GRC compliance tool implementations removed - Enterprise Edition only)
 			ask_powermode: async ({ question }) => {
 				try {
-					const answer = await this.powerMode.answerQuery(question)
-					return { result: { result: answer } }
-				} catch (e: any) {
-					return { result: { result: `[Power Mode connection error: ${e.message ?? 'unknown'}]` } }
+					const answer = await this.powerMode.answerQuery(question);
+					return { result: { result: answer } };
+				} catch (e) {
+					return { result: { result: `[Power Mode connection error: ${messageOfThrown(e)}]` } };
 				}
 			},
 			query_ni_agent: async ({ agentId, input }) => {
@@ -790,26 +1011,26 @@ export class ToolsService extends Disposable implements IToolsService {
 						return { result: { result: `[Agent "${agentId}" failed] ${run.error ?? output}` } };
 					}
 					return { result: { result: output } };
-				} catch (e: any) {
-					return { result: { result: `[query_ni_agent error: ${e.message ?? 'unknown'}]` } };
+				} catch (e) {
+					return { result: { result: `[query_ni_agent error: ${messageOfThrown(e)}]` } };
 				}
 			},
 			// --- Workflow tools ---
 			ask_user: async ({ question }) => {
-				let requestId: string | null = null
+				let requestId: string | null = null;
 				const resultPromise: Promise<{ result: string }> = new Promise((resolve, reject) => {
 					this.userInputRequestService.request(question).then(answer => {
-						resolve({ result: answer })
+						resolve({ result: answer });
 					}).catch(() => {
-						reject(new Error('ask_user cancelled'))
-					})
-					const pending = [...this.userInputRequestService.pendingRequests.values()]
-					if (pending.length > 0) requestId = pending[pending.length - 1].id
-				})
+						reject(new Error('ask_user cancelled'));
+					});
+					const pending = [...this.userInputRequestService.pendingRequests.values()];
+					if (pending.length > 0) { requestId = pending[pending.length - 1].id; }
+				});
 				const interruptTool = () => {
-					if (requestId) this.userInputRequestService.cancel(requestId)
-				}
-				return { result: resultPromise, interruptTool }
+					if (requestId) { this.userInputRequestService.cancel(requestId); }
+				};
+				return { result: resultPromise, interruptTool };
 			},
 			web_fetch: async ({ url, description }) => {
 				try {
@@ -846,64 +1067,63 @@ export class ToolsService extends Disposable implements IToolsService {
 					}
 
 					return { result: { result: content } };
-				} catch (err: any) {
-					return { result: { result: `Error fetching URL: ${err.message}` } };
+				} catch (err) {
+					return { result: { result: `Error fetching URL: ${messageOfThrown(err)}` } };
 				}
 			},
-			memory_write: async ({ key, content }) => {
-				const memoryDir = `${workspaceDir}/.void-memory`;
-				const memoryFile = `${memoryDir}/${key}.md`;
-
+			memory_write: async ({ key, content, type }) => {
+				const memory = getAgentMemory();
+				if (!memory) {
+					return { result: { result: 'Error saving memory: memory service unavailable.' } };
+				}
+				const entryType = MEMORY_ENTRY_TYPES.has(type ?? '') ? (type as MemoryEntryType) : 'preference';
 				try {
-					// Ensure directory exists
-					const dirUri = validateURIws(memoryDir);
-					await fileService.createFolder(dirUri).catch(() => { /* already exists */ });
-
-					// Write memory
-					const fileUri = validateURIws(memoryFile);
-					const buffer = VSBuffer.fromString(content);
-					await fileService.writeFile(fileUri, buffer);
-
+					memory.upsertByKey(key, content, entryType);
 					return { result: { result: `Memory saved: ${key}` } };
-				} catch (err: any) {
-					return { result: { result: `Error saving memory: ${err.message}` } };
+				} catch (err) {
+					return { result: { result: `Error saving memory: ${messageOfThrown(err)}` } };
 				}
 			},
 			memory_read: async ({ key }) => {
+				const memory = getAgentMemory();
+				const entry = memory?.findByTag(key);
+				if (entry) {
+					return { result: { result: entry.content } };
+				}
+				// Entries written by the pre-M7 file-based tools still live on disk.
 				const memoryFile = `${workspaceDir}/.void-memory/${key}.md`;
-
 				try {
 					const fileUri = validateURIws(memoryFile);
 					const content = await fileService.readFile(fileUri);
 					const text = content.value.toString();
 					return { result: { result: text } };
-				} catch (err: any) {
+				} catch (err) {
 					return { result: { result: `No memory found for key: ${key}` } };
 				}
 			},
 			tasks_create: async ({ title, description }) => {
 				// Use the shared task store from advancedTools
 				const tool = createTaskCreateTool();
-				const result = await tool.execute({ title, description: description || undefined }, {} as any);
+				const result = await tool.execute({ title, description: description || undefined }, voidToolContext);
 				return { result: { result: result.output } };
 			},
 			tasks_list: async (_params) => {
 				const tool = createTaskListTool();
-				const result = await tool.execute({}, {} as any);
+				const result = await tool.execute({}, voidToolContext);
 				return { result: { result: result.output } };
 			},
 			tasks_update: async ({ taskId, status, title, description }) => {
 				const tool = createTaskUpdateTool();
-				const args: Record<string, any> = { taskId };
-				if (status) args.status = status;
-				if (title) args.title = title;
-				if (description) args.description = description;
-				const result = await tool.execute(args, {} as any);
+				const args: Record<string, unknown> = { taskId };
+				if (status) { args.status = status; }
+				if (title) { args.title = title; }
+				if (description) { args.description = description; }
+				const result = await tool.execute(args, voidToolContext);
 				return { result: { result: result.output } };
 			},
 			tasks_get: async ({ taskId }) => {
 				const tool = createTaskGetTool();
-				const result = await tool.execute({ taskId }, {} as any);
+				const result = await tool.execute({ taskId }, voidToolContext);
 				return { result: { result: result.output } };
 			},
 			spawn_agent: async ({ role, goal, scopedFiles }) => {
@@ -920,7 +1140,7 @@ export class ToolsService extends Disposable implements IToolsService {
 				// Let sub-agent service determine parent context from active agent task
 				// This will show the agent activity inline in the UI with tool calls
 				const agent = subAgentService.spawn({
-					role: role as any, // SubAgentRole
+					role: role as SubAgentRole,
 					goal,
 					scopedFiles: scopedFilesArray,
 					// Don't pass parentContext - let it use the active agent task
@@ -1104,124 +1324,145 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 			// --- Context Engine ---
 			context_search_symbols: async ({ query, kind, filePattern }) => {
-				const { executeSearchSymbols } = await import('../../neuralInverse/browser/context/tools/searchSymbolsTool.js')
-				const symbolIndex = await _getSymbolIndex()
-				const results = executeSearchSymbols({ query, kind: kind ?? undefined, filePattern: filePattern ?? undefined }, symbolIndex)
+				const { executeSearchSymbols } = await import('../../neuralInverse/browser/context/tools/searchSymbolsTool.js');
+				const symbolIndex = await _getSymbolIndex();
+				const results = executeSearchSymbols({ query, kind: kind ?? undefined, filePattern: filePattern ?? undefined }, symbolIndex);
 				if (results.length === 0) {
-					return { result: { result: `No symbols found matching "${query}"` } }
+					return { result: { result: `No symbols found matching "${query}"` } };
 				}
-				const output = results.map(r => `${r.name} (kind:${r.kind}) ${r.file}:${r.line}${r.exported ? ` [export: ${r.exported}]` : ''}`).join('\n')
-				return { result: { result: `Found ${results.length} symbol(s):\n${output}` } }
+				const output = results.map(r => `${r.name} (kind:${r.kind}) ${r.file}:${r.line}${r.exported ? ` [export: ${r.exported}]` : ''}`).join('\n');
+				return { result: { result: `Found ${results.length} symbol(s):\n${output}` } };
 			},
 			context_related_files: async ({ file, query, maxResults }) => {
-				const { executeGetRelatedFiles } = await import('../../neuralInverse/browser/context/tools/getRelatedFilesTool.js')
-				const relevanceScorer = await _getRelevanceScorer()
-				const wsUri = _getWorkspaceUri()
+				const { executeGetRelatedFiles } = await import('../../neuralInverse/browser/context/tools/getRelatedFilesTool.js');
+				const relevanceScorer = await _getRelevanceScorer();
+				const wsUri = _getWorkspaceUri();
 				const results = executeGetRelatedFiles(
 					{ file: file ?? undefined, query: query ?? undefined, maxResults: maxResults ?? undefined },
 					relevanceScorer, wsUri,
-				)
+				);
 				if (results.length === 0) {
-					return { result: { result: 'No related files found.' } }
+					return { result: { result: 'No related files found.' } };
 				}
 				const output = results.map(r => {
-					const path = r.uri.replace(wsUri + '/', '')
-					return `${(r.score * 100).toFixed(0)}% ${path} [${r.reasons.join(', ')}]`
-				}).join('\n')
-				return { result: { result: `Related files:\n${output}` } }
+					const path = r.uri.replace(wsUri + '/', '');
+					return `${(r.score * 100).toFixed(0)}% ${path} [${r.reasons.join(', ')}]`;
+				}).join('\n');
+				return { result: { result: `Related files:\n${output}` } };
 			},
 			context_file_context: async ({ file, budget }) => {
-				const { executeGetFileContext } = await import('../../neuralInverse/browser/context/tools/getFileContextTool.js')
-				const contextPacker = await _getContextPacker()
-				const wsUri = _getWorkspaceUri()
-				const packed = await executeGetFileContext({ file, budget: budget ?? undefined }, contextPacker, wsUri)
-				return { result: { result: packed || `No context available for "${file}"` } }
+				const { executeGetFileContext } = await import('../../neuralInverse/browser/context/tools/getFileContextTool.js');
+				const contextPacker = await _getContextPacker();
+				const wsUri = _getWorkspaceUri();
+				const packed = await executeGetFileContext({ file, budget: budget ?? undefined }, contextPacker, wsUri);
+				return { result: { result: packed || `No context available for "${file}"` } };
 			},
 			context_import_graph: async ({ file, depth }) => {
-				const { executeGetImportGraph } = await import('../../neuralInverse/browser/context/tools/getImportGraphTool.js')
-				const symbolIndex = await _getSymbolIndex()
-				const wsUri = _getWorkspaceUri()
-				const result = executeGetImportGraph({ file, depth: depth ?? undefined }, symbolIndex, wsUri)
-				const wsPrefix = wsUri + '/'
-				const shorten = (uri: string) => uri.startsWith(wsPrefix) ? uri.slice(wsPrefix.length) : uri
-				const parts: string[] = []
-				parts.push(`Imports (${result.imports.length}):`)
-				for (const imp of result.imports.slice(0, 50)) { parts.push(`  -> ${shorten(imp)}`) }
-				if (result.imports.length > 50) parts.push(`  ... and ${result.imports.length - 50} more`)
-				parts.push(`\nImported by (${result.importers.length}):`)
-				for (const imp of result.importers.slice(0, 50)) { parts.push(`  <- ${shorten(imp)}`) }
-				if (result.importers.length > 50) parts.push(`  ... and ${result.importers.length - 50} more`)
-				return { result: { result: parts.join('\n') } }
+				const { executeGetImportGraph } = await import('../../neuralInverse/browser/context/tools/getImportGraphTool.js');
+				const symbolIndex = await _getSymbolIndex();
+				const wsUri = _getWorkspaceUri();
+				const result = executeGetImportGraph({ file, depth: depth ?? undefined }, symbolIndex, wsUri);
+				const wsPrefix = wsUri + '/';
+				const shorten = (uri: string) => uri.startsWith(wsPrefix) ? uri.slice(wsPrefix.length) : uri;
+				const parts: string[] = [];
+				parts.push(`Imports (${result.imports.length}):`);
+				for (const imp of result.imports.slice(0, 50)) { parts.push(`  -> ${shorten(imp)}`); }
+				if (result.imports.length > 50) { parts.push(`  ... and ${result.imports.length - 50} more`); }
+				parts.push(`\nImported by (${result.importers.length}):`);
+				for (const imp of result.importers.slice(0, 50)) { parts.push(`  <- ${shorten(imp)}`); }
+				if (result.importers.length > 50) { parts.push(`  ... and ${result.importers.length - 50} more`); }
+				return { result: { result: parts.join('\n') } };
 			},
 			context_recent_edits: async ({ withinMinutes }) => {
-				const { executeGetRecentEdits } = await import('../../neuralInverse/browser/context/tools/getRecentEditsTool.js')
-				const changeTracker = await _getChangeTracker()
-				const results = executeGetRecentEdits({ withinMinutes: withinMinutes ?? undefined }, changeTracker)
+				const { executeGetRecentEdits } = await import('../../neuralInverse/browser/context/tools/getRecentEditsTool.js');
+				const changeTracker = await _getChangeTracker();
+				const results = executeGetRecentEdits({ withinMinutes: withinMinutes ?? undefined }, changeTracker);
 				if (results.length === 0) {
-					return { result: { result: 'No recent edits detected.' } }
+					return { result: { result: 'No recent edits detected.' } };
 				}
 				const output = results.map(r => {
-					const path = r.uri.split('/').slice(-3).join('/')
-					const ago = Math.round((Date.now() - r.lastEditAt) / 1000)
-					return `${path} | heat: ${(r.heat * 100).toFixed(0)}% | ${r.velocity.toFixed(1)} edits/min | ${ago}s ago`
-				}).join('\n')
-				return { result: { result: `Recently edited (${results.length}):\n${output}` } }
+					const path = r.uri.split('/').slice(-3).join('/');
+					const ago = Math.round((Date.now() - r.lastEditAt) / 1000);
+					return `${path} | heat: ${(r.heat * 100).toFixed(0)}% | ${r.velocity.toFixed(1)} edits/min | ${ago}s ago`;
+				}).join('\n');
+				return { result: { result: `Recently edited (${results.length}):\n${output}` } };
 			},
 			context_semantic_search: async ({ query, maxResults, filePattern }) => {
-				const hybridSearch = await _getHybridSearch()
-				const limit = maxResults ?? 15
-				const results = await hybridSearch.search(query, limit)
+				const hybridSearch = await _getHybridSearch();
+				const limit = maxResults ?? 15;
+				const results = await hybridSearch.search(query, limit);
 				if (results.length === 0) {
-					const status = hybridSearch.getStatus()
-					return { result: { result: `No results for "${query}". Index has ${status.bm25Files} files indexed.` } }
+					const status = hybridSearch.getStatus();
+					if (status.bm25Files === 0 && status.trigramEntries === 0) {
+						return { result: { result: `The codebase index is not ready yet — no files have been indexed. Semantic search will return results once the workspace is indexed (this happens automatically ~20 seconds after opening). Try again shortly, or use read_file to read a specific file directly.` } };
+					}
+					return { result: { result: `No results for "${query}". Index has ${status.bm25Files} files indexed.` } };
 				}
 				const filtered = filePattern
 					? results.filter(r => r.filePath.includes(filePattern))
-					: results
+					: results;
 				const output = filtered.map(r => {
-					const shortPath = r.filePath.split('/').slice(-3).join('/')
-					const scoreStr = (r.score * 100).toFixed(0)
-					const sources = r.sources.join('+')
-					const symbol = r.symbolName ? ` [${r.symbolName}]` : ''
-					const snippet = r.content.split('\n').slice(0, 5).join('\n').trim()
-					return `## ${shortPath}${symbol} (score: ${scoreStr}%, via: ${sources})\nLines ${r.startLine}-${r.endLine}:\n\`\`\`\n${snippet}\n\`\`\``
-				}).join('\n\n')
-				return { result: { result: `Found ${filtered.length} results for "${query}":\n\n${output}` } }
+					const shortPath = r.filePath.split('/').slice(-3).join('/');
+					const scoreStr = (r.score * 100).toFixed(0);
+					const sources = r.sources.join('+');
+					const symbol = r.symbolName ? ` [${r.symbolName}]` : '';
+					const snippet = r.content.split('\n').slice(0, 5).join('\n').trim();
+					return `## ${shortPath}${symbol} (score: ${scoreStr}%, via: ${sources})\nLines ${r.startLine}-${r.endLine}:\n\`\`\`\n${snippet}\n\`\`\``;
+				}).join('\n\n');
+				return { result: { result: `Found ${filtered.length} results for "${query}":\n\n${output}` } };
 			},
 			// ---
 			read_file: async ({ uri, startLine, endLine, pageNumber }) => {
-				await voidModelService.initializeModel(uri)
-				const { model } = await voidModelService.getModelSafe(uri)
-				if (model === null) { throw new Error(`No contents; File does not exist.`) }
-
-				let contents: string
-				if (startLine === null && endLine === null) {
-					contents = model.getValue(EndOfLinePreference.LF)
+				let contents: string;
+				let totalNumLines: number;
+				// The text-model service only tracks files inside the opened
+				// workspace. Absolute paths OUTSIDE it (git worktrees are the
+				// common case — task protocols run agents in worktrees) used to
+				// fail with "No contents; File does not exist." even though the
+				// file was on disk. Fall back to a raw read for those.
+				try { await voidModelService.initializeModel(uri); } catch { /* out-of-workspace — raw fallback below */ }
+				const { model } = await voidModelService.getModelSafe(uri);
+				if (model === null) {
+					if (uri.scheme !== 'file') { throw new Error(`No contents; File does not exist.`); }
+					let raw: string;
+					try {
+						raw = (await fileService.readFile(uri)).value.toString();
+					} catch (e) {
+						throw new Error(`No contents; File does not exist. (${messageOfThrown(e)})`);
+					}
+					const lines = raw.split('\n');
+					const startLineNumber = startLine === null ? 1 : startLine;
+					const endLineNumber = endLine === null ? lines.length : endLine;
+					contents = lines.slice(startLineNumber - 1, endLineNumber).join('\n');
+					totalNumLines = lines.length;
+				}
+				else if (startLine === null && endLine === null) {
+					contents = model.getValue(EndOfLinePreference.LF);
+					totalNumLines = model.getLineCount();
 				}
 				else {
-					const startLineNumber = startLine === null ? 1 : startLine
-					const endLineNumber = endLine === null ? model.getLineCount() : endLine
-					contents = model.getValueInRange({ startLineNumber, startColumn: 1, endLineNumber, endColumn: Number.MAX_SAFE_INTEGER }, EndOfLinePreference.LF)
+					const startLineNumber = startLine === null ? 1 : startLine;
+					const endLineNumber = endLine === null ? model.getLineCount() : endLine;
+					contents = model.getValueInRange({ startLineNumber, startColumn: 1, endLineNumber, endColumn: Number.MAX_SAFE_INTEGER }, EndOfLinePreference.LF);
+					totalNumLines = model.getLineCount();
 				}
 
-				const totalNumLines = model.getLineCount()
-
-				const fromIdx = MAX_FILE_CHARS_PAGE * (pageNumber - 1)
-				const toIdx = MAX_FILE_CHARS_PAGE * pageNumber - 1
-				const fileContents = contents.slice(fromIdx, toIdx + 1) // paginate
-				const hasNextPage = (contents.length - 1) - toIdx >= 1
-				const totalFileLen = contents.length
-				return { result: { fileContents, totalFileLen, hasNextPage, totalNumLines } }
+				const fromIdx = MAX_FILE_CHARS_PAGE * (pageNumber - 1);
+				const toIdx = MAX_FILE_CHARS_PAGE * pageNumber - 1;
+				const fileContents = contents.slice(fromIdx, toIdx + 1); // paginate
+				const hasNextPage = (contents.length - 1) - toIdx >= 1;
+				const totalFileLen = contents.length;
+				return { result: { fileContents, totalFileLen, hasNextPage, totalNumLines } };
 			},
 
 			ls_dir: async ({ uri, pageNumber }) => {
-				const dirResult = await computeDirectoryTree1Deep(fileService, uri, pageNumber)
-				return { result: dirResult }
+				const dirResult = await computeDirectoryTree1Deep(fileService, uri, pageNumber);
+				return { result: dirResult };
 			},
 
 			get_dir_tree: async ({ uri }) => {
-				const str = await this.directoryStrService.getDirectoryStrTool(uri)
-				return { result: { str } }
+				const str = await this.directoryStrService.getDirectoryStrTool(uri);
+				return { result: { str } };
 			},
 
 			search_pathnames_only: async ({ query: queryStr, includePattern, pageNumber }) => {
@@ -1230,39 +1471,39 @@ export class ToolsService extends Disposable implements IToolsService {
 					filePattern: queryStr,
 					includePattern: includePattern ?? undefined,
 					sortByScore: true, // makes results 10x better
-				})
-				const data = await searchService.fileSearch(query, CancellationToken.None)
+				});
+				const data = await searchService.fileSearch(query, CancellationToken.None);
 
-				const fromIdx = MAX_CHILDREN_URIs_PAGE * (pageNumber - 1)
-				const toIdx = MAX_CHILDREN_URIs_PAGE * pageNumber - 1
+				const fromIdx = MAX_CHILDREN_URIs_PAGE * (pageNumber - 1);
+				const toIdx = MAX_CHILDREN_URIs_PAGE * pageNumber - 1;
 				const uris = data.results
 					.slice(fromIdx, toIdx + 1) // paginate
-					.map(({ resource, results }) => resource)
+					.map(({ resource, results }) => resource);
 
-				const hasNextPage = (data.results.length - 1) - toIdx >= 1
-				return { result: { uris, hasNextPage } }
+				const hasNextPage = (data.results.length - 1) - toIdx >= 1;
+				return { result: { uris, hasNextPage } };
 			},
 
 			search_for_files: async ({ query: queryStr, isRegex, searchInFolder, pageNumber }) => {
 				const searchFolders = searchInFolder === null ?
 					workspaceContextService.getWorkspace().folders.map(f => f.uri)
-					: [searchInFolder]
+					: [searchInFolder];
 
 				const query = queryBuilder.text({
 					pattern: queryStr,
 					isRegExp: isRegex,
-				}, searchFolders)
+				}, searchFolders);
 
-				const data = await searchService.textSearch(query, CancellationToken.None)
+				const data = await searchService.textSearch(query, CancellationToken.None);
 
-				const fromIdx = MAX_CHILDREN_URIs_PAGE * (pageNumber - 1)
-				const toIdx = MAX_CHILDREN_URIs_PAGE * pageNumber - 1
+				const fromIdx = MAX_CHILDREN_URIs_PAGE * (pageNumber - 1);
+				const toIdx = MAX_CHILDREN_URIs_PAGE * pageNumber - 1;
 				const uris = data.results
 					.slice(fromIdx, toIdx + 1) // paginate
-					.map(({ resource, results }) => resource)
+					.map(({ resource, results }) => resource);
 
-				const hasNextPage = (data.results.length - 1) - toIdx >= 1
-				return { result: { queryStr, uris, hasNextPage } }
+				const hasNextPage = (data.results.length - 1) - toIdx >= 1;
+				return { result: { queryStr, uris, hasNextPage } };
 			},
 			search_in_file: async ({ uri, query, isRegex }) => {
 				await voidModelService.initializeModel(uri);
@@ -1272,7 +1513,7 @@ export class ToolsService extends Disposable implements IToolsService {
 				const contentOfLine = contents.split('\n');
 				const totalLines = contentOfLine.length;
 				const regex = isRegex ? new RegExp(query) : null;
-				const lines: number[] = []
+				const lines: number[] = [];
 				for (let i = 0; i < totalLines; i++) {
 					const line = contentOfLine[i];
 					if ((isRegex && regex!.test(line)) || (!isRegex && line.includes(query))) {
@@ -1284,216 +1525,269 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 
 			read_lint_errors: async ({ uri }) => {
-				await timeout(1000)
-				const { lintErrors } = this._getLintErrors(uri)
-				return { result: { lintErrors } }
+				await timeout(1000);
+				const { lintErrors } = this._getLintErrors(uri);
+				return { result: { lintErrors } };
 			},
 
 			// ---
 
 			create_file_or_folder: async ({ uri, isFolder }) => {
-				if (isFolder)
-					await fileService.createFolder(uri)
+				if (isFolder) { await fileService.createFolder(uri); }
 				else {
-					await fileService.createFile(uri)
+					await fileService.createFile(uri);
 				}
-				return { result: {} }
+				return { result: {} };
 			},
 
 			delete_file_or_folder: async ({ uri, isRecursive }) => {
-				await fileService.del(uri, { recursive: isRecursive })
-				return { result: {} }
+				await fileService.del(uri, { recursive: isRecursive });
+				return { result: {} };
 			},
 
 			rewrite_file: async ({ uri, newContent }) => {
-				await voidModelService.initializeModel(uri)
+				await voidModelService.initializeModel(uri);
 				if (this.commandBarService.getStreamState(uri) === 'streaming') {
-					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`)
+					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`);
 				}
-				await editCodeService.callBeforeApplyOrEdit(uri)
-				editCodeService.instantlyRewriteFile({ uri, newContent })
+				await editCodeService.callBeforeApplyOrEdit(uri);
+				editCodeService.instantlyRewriteFile({ uri, newContent });
 				// at end, get lint errors
 				const lintErrorsPromise = Promise.resolve().then(async () => {
-					await timeout(2000)
-					const { lintErrors } = this._getLintErrors(uri)
-					return { lintErrors }
-				})
-				return { result: lintErrorsPromise }
+					await timeout(2000);
+					const { lintErrors } = this._getLintErrors(uri);
+					return { lintErrors };
+				});
+				return { result: lintErrorsPromise };
 			},
 
 			edit_file: async ({ uri, searchReplaceBlocks }) => {
-				await voidModelService.initializeModel(uri)
+				await voidModelService.initializeModel(uri);
 				if (this.commandBarService.getStreamState(uri) === 'streaming') {
-					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`)
+					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`);
 				}
-				await editCodeService.callBeforeApplyOrEdit(uri)
-				editCodeService.instantlyApplySearchReplaceBlocks({ uri, searchReplaceBlocks })
+				await editCodeService.callBeforeApplyOrEdit(uri);
+				editCodeService.instantlyApplySearchReplaceBlocks({ uri, searchReplaceBlocks });
 
 				// at end, get lint errors
 				const lintErrorsPromise = Promise.resolve().then(async () => {
-					await timeout(2000)
-					const { lintErrors } = this._getLintErrors(uri)
-					return { lintErrors }
-				})
+					await timeout(2000);
+					const { lintErrors } = this._getLintErrors(uri);
+					return { lintErrors };
+				});
 
-				return { result: lintErrorsPromise }
+				return { result: lintErrorsPromise };
 			},
 
 			multi_replace_file_content: async ({ uri, replacementChunks }) => {
-				await voidModelService.initializeModel(uri)
+				await voidModelService.initializeModel(uri);
 				if (this.commandBarService.getStreamState(uri) === 'streaming') {
-					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`)
+					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`);
 				}
-				await editCodeService.callBeforeApplyOrEdit(uri)
+				await editCodeService.callBeforeApplyOrEdit(uri);
 
-				let chunks: { StartLine: number, EndLine: number, TargetContent: string, ReplacementContent: string }[] = []
-				try { chunks = JSON.parse(replacementChunks) } catch (e) { throw new Error(`Invalid JSON for replacement_chunks.`) }
+				let chunks: { StartLine: number; EndLine: number; TargetContent: string; ReplacementContent: string }[] = [];
+				try { chunks = JSON.parse(replacementChunks); } catch (e) { throw new Error(`Invalid JSON for replacement_chunks.`); }
+				if (!Array.isArray(chunks) || chunks.length === 0) {
+					throw new Error(`replacement_chunks must be a non-empty JSON array. Each chunk needs {StartLine, EndLine, TargetContent, ReplacementContent}. Received: ${String(replacementChunks).slice(0, 200)}`);
+				}
+				// An empty TargetContent matches at position 0 of the search region (edits the wrong line),
+				// and a missing ReplacementContent splices the literal "undefined" into the file.
+				for (let ci = 0; ci < chunks.length; ci++) {
+					const c = chunks[ci];
+					if (typeof c?.TargetContent !== 'string' || typeof c?.ReplacementContent !== 'string') {
+						throw new Error(`replacement_chunks[${ci}] must have string fields TargetContent and ReplacementContent (use "" to delete text). Received: ${JSON.stringify(chunks[ci])?.slice(0, 200)}`);
+					}
+					if (c.TargetContent === '') {
+						throw new Error(`replacement_chunks[${ci}].TargetContent is empty — an empty search string is ambiguous. Provide the exact text to replace.`);
+					}
+				}
 
-				editCodeService.instantlyApplyReplacementChunks({ uri, replacementChunks: chunks })
+				editCodeService.instantlyApplyReplacementChunks({ uri, replacementChunks: chunks });
 
 				// at end, get lint errors
 				const lintErrorsPromise = Promise.resolve().then(async () => {
-					await timeout(2000)
-					const { lintErrors } = this._getLintErrors(uri)
-					return { lintErrors }
-				})
+					await timeout(2000);
+					const { lintErrors } = this._getLintErrors(uri);
+					return { lintErrors };
+				});
 
-				return { result: lintErrorsPromise }
+				return { result: lintErrorsPromise };
 			},
 			// ---
-			run_command: async ({ command: rawCommand, cwd, terminalId, bgAfter }) => {
+			run_command: async ({ command: rawCommand, cwd, terminalId, timeout, bgAfter }) => {
 				const command = this._injectCoAuthorIfGitCommit(rawCommand);
 				const commitGateMsg = this._checkCommitGate(command);
 				if (commitGateMsg) {
-					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) }
+					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) };
 				}
-				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'temporary', cwd, terminalId })
+				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'temporary', cwd, terminalId, inactivityTimeoutSec: timeout ?? undefined });
 
 				// Build a shared result promise that can be resolved early by bg_after timer OR user "Move to BG" click
-				const result = new Promise<{ result: string, resolveReason: TerminalResolveReason }>(async (resolve) => {
-					// User-triggered "Move to BG" button
-					const threadIdAtPromotion = this._currentThreadId
-					const fireWhenDone = (bgTerminalId: string) => {
-						resPromise.then(r => {
-							this._onBackgroundTerminalComplete.fire({
-								threadId: threadIdAtPromotion,
-								command,
-								output: r.result,
-								exitCode: (r.resolveReason as any).exitCode ?? 0,
-							})
-						}).catch(() => {
-							this._onBackgroundTerminalComplete.fire({
-								threadId: threadIdAtPromotion,
-								command,
-								output: `Terminal ${bgTerminalId} was closed before completing.`,
-								exitCode: 1,
-							})
-						})
-					}
+				const result = new Promise<{ result: string; resolveReason: TerminalResolveReason }>((resolve, reject) => {
+					// The executor must stay synchronous (no-async-promise-executor); the
+					// async body keeps the old semantics - an uncaught throw neither
+					// resolves nor rejects the outer promise.
+					void (async () => {
+						// User-triggered "Move to BG" button
+						const threadIdAtPromotion = this._currentThreadId;
+						const fireWhenDone = (bgTerminalId: string) => {
+							resPromise.then(r => {
+								this._onBackgroundTerminalComplete.fire({
+									threadId: threadIdAtPromotion,
+									command,
+									output: r.result,
+									exitCode: r.resolveReason.type === 'done' ? r.resolveReason.exitCode : 0,
+								});
+							}).catch(() => {
+								this._onBackgroundTerminalComplete.fire({
+									threadId: threadIdAtPromotion,
+									command,
+									output: `Terminal ${bgTerminalId} was closed before completing.`,
+									exitCode: 1,
+								});
+							});
+						};
 
-					const promoteListener = this.terminalToolService.onPromoteToBackground(async ({ terminalId: firedId }) => {
-						if (firedId !== terminalId) return
-						promoteListener.dispose()
+						const promoteListener = this.terminalToolService.onPromoteToBackground(async ({ terminalId: firedId }) => {
+							if (firedId !== terminalId) { return; }
+							promoteListener.dispose();
+							try {
+								const bgTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd });
+								fireWhenDone(bgTerminalId);
+								resolve({
+									resolveReason: { type: 'done' as const, exitCode: 0 },
+									result: `Command moved to background. The result will be reported back to you automatically when it finishes.`,
+								});
+							} catch {
+								resolve({
+									resolveReason: { type: 'done' as const, exitCode: 0 },
+									result: `Command moved to background. The result will be reported back to you automatically when it finishes.`,
+								});
+							}
+						});
+
+						if (!bgAfter) {
+							try {
+								const r = await resPromise;
+								resolve(r);
+							} catch (err) {
+								// A throw inside an async Promise executor does NOT reject the
+								// outer promise — without this, a failed command left the tool
+								// call pending forever and hung the whole agent loop.
+								reject(err);
+							} finally {
+								promoteListener.dispose();
+							}
+							return;
+						}
+
+						// bg_after: watch for N seconds, then promote to background if still running
+						const bgAfterMs = bgAfter * 1000;
 						try {
-							const bgTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd })
-							fireWhenDone(bgTerminalId)
+							const winner = await Promise.race([
+								resPromise.then(r => ({ kind: 'done' as const, r })),
+								new Promise<{ kind: 'timeout' }>(res => setTimeout(() => res({ kind: 'timeout' }), bgAfterMs)),
+							]);
+							promoteListener.dispose();
+
+							if (winner.kind === 'done') {
+								resolve(winner.r);
+								return;
+							}
+						} catch (err) {
+							promoteListener.dispose();
+							reject(err);
+							return;
+						}
+
+						// Still running after bgAfter seconds — promote to background persistent terminal
+						try {
+							const bgTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd });
+							fireWhenDone(bgTerminalId);
 							resolve({
 								resolveReason: { type: 'done' as const, exitCode: 0 },
-								result: `Command moved to background. The result will be reported back to you automatically when it finishes.`,
-							})
+								result: `Command still running after ${bgAfter}s, moved to background. The result will be reported back to you automatically when it finishes.`,
+							});
 						} catch {
 							resolve({
 								resolveReason: { type: 'done' as const, exitCode: 0 },
-								result: `Command moved to background. The result will be reported back to you automatically when it finishes.`,
-							})
+								result: `Command still running after ${bgAfter}s, moved to background. The result will be reported back to you automatically when it finishes.`,
+							});
 						}
-					})
+					})();
+				});
 
-					if (!bgAfter) {
-						const r = await resPromise
-						promoteListener.dispose()
-						resolve(r)
-						return
+				return { result, interruptTool: interrupt };
+			},
+			run_background_command: async ({ command: rawCommand, cwd }) => {
+				const command = this._injectCoAuthorIfGitCommit(rawCommand);
+				const commitGateMsg = this._checkCommitGate(command);
+				if (commitGateMsg) {
+					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) };
+				}
+				const persistentTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd });
+				const { resPromise } = await this.terminalToolService.runCommand(command, { type: 'persistent', persistentTerminalId });
+				const threadId = this._currentThreadId;
+				resPromise.then(r => {
+					// Only a REAL completion is reported as finished — a quiet-timeout
+					// resolve just means the command is running silently; the agent can
+					// poll it with read_terminal.
+					if (r.resolveReason.type === 'done') {
+						this._onBackgroundTerminalComplete.fire({ threadId, command, output: r.result, exitCode: r.resolveReason.exitCode ?? 0 });
 					}
-
-					// bg_after: watch for N seconds, then promote to background if still running
-					const bgAfterMs = bgAfter * 1000
-					const winner = await Promise.race([
-						resPromise.then(r => ({ kind: 'done' as const, r })),
-						new Promise<{ kind: 'timeout' }>(res => setTimeout(() => res({ kind: 'timeout' }), bgAfterMs)),
-					])
-					promoteListener.dispose()
-
-					if (winner.kind === 'done') {
-						resolve(winner.r)
-						return
-					}
-
-					// Still running after bgAfter seconds — promote to background persistent terminal
-					try {
-						const bgTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd })
-						fireWhenDone(bgTerminalId)
-						resolve({
-							resolveReason: { type: 'done' as const, exitCode: 0 },
-							result: `Command still running after ${bgAfter}s, moved to background. The result will be reported back to you automatically when it finishes.`,
-						})
-					} catch {
-						resolve({
-							resolveReason: { type: 'done' as const, exitCode: 0 },
-							result: `Command still running after ${bgAfter}s, moved to background. The result will be reported back to you automatically when it finishes.`,
-						})
-					}
-				})
-
-				return { result, interruptTool: interrupt }
+				}).catch(() => {
+					this._onBackgroundTerminalComplete.fire({ threadId, command, output: `Terminal was closed before completing.`, exitCode: 1 });
+				});
+				return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 0 }, result: `Command started in background terminal ${persistentTerminalId}. It can never time out. When it finishes you will receive a [SYSTEM: Background terminal finished] message with its output — do NOT re-run it. Use read_terminal with terminal_id=${persistentTerminalId} to check progress in the meantime.` }) };
 			},
 			run_persistent_command: async ({ command: rawCommand, persistentTerminalId }) => {
 				const command = this._injectCoAuthorIfGitCommit(rawCommand);
 				const commitGateMsg = this._checkCommitGate(command);
 				if (commitGateMsg) {
-					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) }
+					return { result: Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 1 }, result: commitGateMsg }) };
 				}
-				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'persistent', persistentTerminalId })
-				const threadId = this._currentThreadId
+				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'persistent', persistentTerminalId });
+				const threadId = this._currentThreadId;
 				resPromise.then(r => {
 					this._onBackgroundTerminalComplete.fire({
 						threadId,
 						command,
 						output: r.result,
-						exitCode: (r.resolveReason as any).exitCode ?? 0,
-					})
+						exitCode: r.resolveReason.type === 'done' ? r.resolveReason.exitCode : 0,
+					});
 				}).catch(() => {
-					this._onBackgroundTerminalComplete.fire({ threadId, command, output: 'Terminal was closed before completing.', exitCode: 1 })
-				})
+					this._onBackgroundTerminalComplete.fire({ threadId, command, output: 'Terminal was closed before completing.', exitCode: 1 });
+				});
 				// Return immediately so the agent loop continues
-				const immediateResult = Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 0 }, result: `Command started in background. The result will be reported back automatically when it finishes.` })
-				return { result: immediateResult, interruptTool: interrupt }
+				const immediateResult = Promise.resolve({ resolveReason: { type: 'done' as const, exitCode: 0 }, result: `Command started in background. The result will be reported back automatically when it finishes.` });
+				return { result: immediateResult, interruptTool: interrupt };
 			},
 			open_persistent_terminal: async ({ cwd }) => {
-				const persistentTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd })
-				return { result: { persistentTerminalId } }
+				const persistentTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd });
+				return { result: { persistentTerminalId } };
 			},
 
 			read_terminal: async ({ persistentTerminalId }) => {
-				const output = await this.terminalToolService.readPersistentTerminalTypeout(persistentTerminalId)
-				return { result: { result: output } }
+				const output = await this.terminalToolService.readPersistentTerminalTypeout(persistentTerminalId);
+				return { result: { result: output } };
 			},
 
 			send_command_input: async ({ persistentTerminalId, input }) => {
-				await this.terminalToolService.sendInputToPersistentTerminal(persistentTerminalId, input)
+				await this.terminalToolService.sendInputToPersistentTerminal(persistentTerminalId, input);
 				// wait a short moment to capture immediate output? The LLM can just read_terminal if it wants.
-				return { result: { result: `Input successfully evaluated. Recommend running read_terminal to see the effect.` } }
+				return { result: { result: `Input successfully evaluated. Recommend running read_terminal to see the effect.` } };
 			},
 
 			kill_persistent_terminal: async ({ persistentTerminalId }) => {
 				// Close the background terminal by sending exit
-				await this.terminalToolService.killPersistentTerminal(persistentTerminalId)
-				return { result: {} }
+				await this.terminalToolService.killPersistentTerminal(persistentTerminalId);
+				return { result: {} };
 			},
 			update_agent_status: async ({ taskName, taskSummary, taskStatus }) => {
 				// update_task simply serves as a marker in the tool history
 				// to be rendered by the UI component loop.
-				return { result: { result: "Task updated." } }
+				return { result: { result: 'Task updated.' } };
 			},
 
 			generate_document: async ({ title, content }) => {
@@ -1557,17 +1851,31 @@ export class ToolsService extends Disposable implements IToolsService {
 					return { result: { result: 'Failed to parse todos JSON.' } };
 				}
 			},
-		}
+		};
+
+		// Plan-mode containment (task A5, step 1) and file checkpoints (task A3)
+		// share this single boundary: the chat sidebar's `_runToolCall` and the
+		// native chat bridge both invoke `toolsService.callTool[toolName](...)`.
+		// The plan guard is outermost so a blocked call takes no checkpoint; the
+		// checkpoint wrapper snapshots the target file's current content right
+		// before the tool executes, on every path that runs it.
+		this.callTool = withPlanModeGuard(
+			withCheckpointing(
+				builtinCallTool,
+				(toolName, params) => this._createCheckpointForTool(toolName, params),
+			),
+			() => this._planModeByThread.get(this._currentThreadId) ?? false,
+		);
 
 
-		const nextPageStr = (hasNextPage: boolean) => hasNextPage ? '\n\n(more on next page...)' : ''
+		const nextPageStr = (hasNextPage: boolean) => hasNextPage ? '\n\n(more on next page...)' : '';
 
 		const stringifyLintErrors = (lintErrors: LintErrorItem[]) => {
 			return lintErrors
 				.map((e, i) => `Error ${i + 1}:\nLines Affected: ${e.startLineNumber}-${e.endLineNumber}\nError message:${e.message}`)
 				.join('\n\n')
-				.substring(0, MAX_FILE_CHARS_PAGE)
-		}
+				.substring(0, MAX_FILE_CHARS_PAGE);
+		};
 
 		// given to the LLM after the call for successful tool calls
 		this.stringOfResult = {
@@ -1605,99 +1913,109 @@ export class ToolsService extends Disposable implements IToolsService {
 			context_semantic_search: (_params, result) => result.result,
 			// ---
 			read_file: (params, result) => {
-				return `${params.uri.fsPath}\n\`\`\`\n${result.fileContents}\n\`\`\`${nextPageStr(result.hasNextPage)}${result.hasNextPage ? `\nMore info because truncated: this file has ${result.totalNumLines} lines, or ${result.totalFileLen} characters.` : ''}`
+				// An empty page means the model paged past the end of the file
+				// (read_file serves whole pages; the OSS wrapper used to cut
+				// them mid-file, which made models page forward into nothing).
+				// Say it explicitly instead of an empty code fence.
+				if (result.fileContents === '' && (params.pageNumber ?? 1) > 1) {
+					return `${params.uri.fsPath}\n(no more content — page ${params.pageNumber} is beyond the end of this ${result.totalNumLines}-line file)`;
+				}
+				return `${params.uri.fsPath}\n\`\`\`\n${result.fileContents}\n\`\`\`${nextPageStr(result.hasNextPage)}${result.hasNextPage ? `\nMore info because truncated: this file has ${result.totalNumLines} lines, or ${result.totalFileLen} characters.` : ''}`;
 			},
 			ls_dir: (params, result) => {
-				const dirTreeStr = stringifyDirectoryTree1Deep(params, result)
-				return dirTreeStr // + nextPageStr(result.hasNextPage) // already handles num results remaining
+				const dirTreeStr = stringifyDirectoryTree1Deep(params, result);
+				return dirTreeStr; // + nextPageStr(result.hasNextPage) // already handles num results remaining
 			},
 			get_dir_tree: (params, result) => {
-				return result.str
+				return result.str;
 			},
 			search_pathnames_only: (params, result) => {
-				return result.uris.map(uri => uri.fsPath).join('\n') + nextPageStr(result.hasNextPage)
+				return result.uris.map(uri => uri.fsPath).join('\n') + nextPageStr(result.hasNextPage);
 			},
 			search_for_files: (params, result) => {
-				return result.uris.map(uri => uri.fsPath).join('\n') + nextPageStr(result.hasNextPage)
+				return result.uris.map(uri => uri.fsPath).join('\n') + nextPageStr(result.hasNextPage);
 			},
 			search_in_file: (params, result) => {
-				const { model } = voidModelService.getModel(params.uri)
-				if (!model) return '<Error getting string of result>'
+				const { model } = voidModelService.getModel(params.uri);
+				if (!model) { return '<Error getting string of result>'; }
 				const lines = result.lines.map(n => {
-					const lineContent = model.getValueInRange({ startLineNumber: n, startColumn: 1, endLineNumber: n, endColumn: Number.MAX_SAFE_INTEGER }, EndOfLinePreference.LF)
-					return `Line ${n}:\n\`\`\`\n${lineContent}\n\`\`\``
+					const lineContent = model.getValueInRange({ startLineNumber: n, startColumn: 1, endLineNumber: n, endColumn: Number.MAX_SAFE_INTEGER }, EndOfLinePreference.LF);
+					return `Line ${n}:\n\`\`\`\n${lineContent}\n\`\`\``;
 				}).join('\n\n');
 				return lines;
 			},
 			read_lint_errors: (params, result) => {
 				return result.lintErrors ?
 					stringifyLintErrors(result.lintErrors)
-					: 'No lint errors found.'
+					: 'No lint errors found.';
 			},
 			// ---
 			create_file_or_folder: (params, result) => {
-				return `URI ${params.uri.fsPath} successfully created.`
+				return `URI ${params.uri.fsPath} successfully created.`;
 			},
 			delete_file_or_folder: (params, result) => {
-				return `URI ${params.uri.fsPath} successfully deleted.`
+				return `URI ${params.uri.fsPath} successfully deleted.`;
 			},
 			edit_file: (params, result) => {
 				const lintErrsString = (
 					this.voidSettingsService.state.globalSettings.includeToolLintErrors ?
 						(result.lintErrors ? ` Lint errors found after change:\n${stringifyLintErrors(result.lintErrors)}.\nIf this is related to a change made while calling this tool, you might want to fix the error.`
 							: ` No lint errors found.`)
-						: '')
+						: '');
 				const grcString = this._getFileGRCViolations(params.uri);
 
-				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}${grcString}`
+				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}${grcString}`;
 			},
 			multi_replace_file_content: (params, result) => {
 				const lintErrsString = (
 					this.voidSettingsService.state.globalSettings.includeToolLintErrors ?
 						(result.lintErrors ? ` Lint errors found after change:\n${stringifyLintErrors(result.lintErrors)}.\nIf this is related to a change made while calling this tool, you might want to fix the error.`
 							: ` No lint errors found.`)
-						: '')
+						: '');
 				const grcString = this._getFileGRCViolations(params.uri);
 
-				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}${grcString}`
+				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}${grcString}`;
 			},
 			rewrite_file: (params, result) => {
 				const lintErrsString = (
 					this.voidSettingsService.state.globalSettings.includeToolLintErrors ?
 						(result.lintErrors ? ` Lint errors found after change:\n${stringifyLintErrors(result.lintErrors)}.\nIf this is related to a change made while calling this tool, you might want to fix the error.`
 							: ` No lint errors found.`)
-						: '')
+						: '');
 				const grcString = this._getFileGRCViolations(params.uri);
 
-				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}${grcString}`
+				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}${grcString}`;
 			},
 			run_command: (params, result) => {
-				const { resolveReason, result: result_, } = result
+				const { resolveReason, result: result_, } = result;
 				// success
 				if (resolveReason.type === 'done') {
-					return `${result_}\n(exit code ${resolveReason.exitCode})`
+					return `${result_}\n(exit code ${resolveReason.exitCode})`;
 				}
 				// normal command
 				if (resolveReason.type === 'timeout') {
-					return `${result_}\nTerminal command ran, but was automatically killed by Void after ${MAX_TERMINAL_INACTIVE_TIME}s of inactivity and did not finish successfully. To try with more time, open a persistent terminal and run the command there.`
+					return `${result_}\nTerminal command ran, but was automatically killed by Void after ${MAX_TERMINAL_INACTIVE_TIME}s of inactivity and did not finish successfully. To try with more time, open a persistent terminal and run the command there.`;
 				}
-				throw new Error(`Unexpected internal error: Terminal command did not resolve with a valid reason.`)
+				throw new Error(`Unexpected internal error: Terminal command did not resolve with a valid reason.`);
 			},
 
 			run_persistent_command: (params, result) => {
-				const { resolveReason, result: result_, } = result
-				const { persistentTerminalId } = params
+				const { resolveReason, result: result_, } = result;
+				const { persistentTerminalId } = params;
 				// success
 				if (resolveReason.type === 'done') {
-					return `${result_}\n(exit code ${resolveReason.exitCode})`
+					return `${result_}\n(exit code ${resolveReason.exitCode})`;
 				}
 				// bg command
 				if (resolveReason.type === 'timeout') {
-					return `${result_}\nTerminal command is running in terminal ${persistentTerminalId}. The given outputs are the results after ${MAX_TERMINAL_BG_COMMAND_TIME} seconds.`
+					return `${result_}\nTerminal command is running in terminal ${persistentTerminalId}. The given outputs are the results after ${MAX_TERMINAL_BG_COMMAND_TIME} seconds.`;
 				}
-				throw new Error(`Unexpected internal error: Terminal command did not resolve with a valid reason.`)
+				throw new Error(`Unexpected internal error: Terminal command did not resolve with a valid reason.`);
 			},
 
+			run_background_command: (_params, result) => {
+				return result.result;
+			},
 			open_persistent_terminal: (_params, result) => {
 				const { persistentTerminalId } = result;
 				return `Successfully created persistent terminal. persistentTerminalId="${persistentTerminalId}"`;
@@ -1720,7 +2038,7 @@ export class ToolsService extends Disposable implements IToolsService {
 			plan_mode_enter: (_params, result) => result.result,
 			plan_mode_exit: (_params, result) => result.result,
 			todo_write: (_params, result) => result.result,
-		}
+		};
 
 
 
@@ -1777,10 +2095,10 @@ export class ToolsService extends Disposable implements IToolsService {
 				message: (l.severity === MarkerSeverity.Error ? '(error) ' : '(warning) ') + l.message,
 				startLineNumber: l.startLineNumber,
 				endLineNumber: l.endLineNumber,
-			} satisfies LintErrorItem))
+			} satisfies LintErrorItem));
 
-		if (!lintErrors.length) return { lintErrors: null }
-		return { lintErrors, }
+		if (!lintErrors.length) { return { lintErrors: null }; }
+		return { lintErrors, };
 	}
 
 

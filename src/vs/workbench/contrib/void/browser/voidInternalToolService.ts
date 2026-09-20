@@ -27,6 +27,26 @@ import { InternalToolInfo } from '../common/prompt/prompts.js';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
+/**
+ * Immutable request identity threaded from every production entry point into
+ * internal-tool execution (task F02/F11). The caller OWNS the identity: the
+ * sidebar passes its thread id, the native chat bridge passes
+ * `chatSessionResourceToId(sessionResource)`, workflow surfaces pass their
+ * conversation/run ids. Tools must never guess an identity from ambient
+ * singletons — a native request whose identity were resolved from the active
+ * sidebar thread would read another conversation's archive.
+ */
+export interface ILedgerRequestContext {
+	/** Immutable conversation/archive identity for the calling surface. */
+	readonly conversationId: string;
+	/** Distinct per run of an agent/workflow; undefined on the chat surfaces. */
+	readonly runId?: string;
+	/** Workflow step id when the request originates from a workflow step. */
+	readonly stepId?: string;
+	/** Which surface produced the request — decides archive scoping rules. */
+	readonly source: 'sidebar-chat' | 'native-chat' | 'workflow';
+}
+
 /** A tool that can be registered with this service. */
 export interface IVoidInternalTool {
 	/** Unique tool name — must match what is advertised in the system prompt. */
@@ -35,8 +55,13 @@ export interface IVoidInternalTool {
 	readonly description: string;
 	/** Parameter schema passed to the LLM. */
 	readonly params: Record<string, { description: string }>;
-	/** Execute the tool with the given arguments. Returns a plain-text result string. */
-	execute(args: Record<string, any>): Promise<string>;
+	/**
+	 * Execute the tool with the given arguments. Returns a plain-text result
+	 * string. `ctx` carries the caller-owned request identity — tools that
+	 * touch per-conversation state require it and must reject when it is
+	 * missing instead of falling back to an ambient singleton.
+	 */
+	execute(args: Record<string, unknown>, ctx?: ILedgerRequestContext): Promise<string>;
 }
 
 
@@ -71,7 +96,7 @@ export interface IVoidInternalToolService {
 	has(name: string): boolean;
 
 	/** Execute a registered tool. Throws if the tool is not found. */
-	execute(name: string, args: Record<string, any>): Promise<string>;
+	execute(name: string, args: Record<string, unknown>, ctx?: ILedgerRequestContext): Promise<string>;
 }
 
 
@@ -122,10 +147,10 @@ class VoidInternalToolService extends Disposable implements IVoidInternalToolSer
 		return this._tools.has(name);
 	}
 
-	async execute(name: string, args: Record<string, any>): Promise<string> {
+	async execute(name: string, args: Record<string, unknown>, ctx?: ILedgerRequestContext): Promise<string> {
 		const tool = this._tools.get(name);
 		if (!tool) { throw new Error(`Internal tool "${name}" not found`); }
-		return tool.execute(args);
+		return tool.execute(args, ctx);
 	}
 }
 

@@ -6,6 +6,43 @@
 import { IAgentTool } from '../../common/workflowTypes.js';
 
 /**
+ * Aliases for tool names that appear in agent definitions but don't match a
+ * registered tool. Most come from the Void chat tool vocabulary or plain
+ * hand-editing; mapping them keeps those agents working instead of silently
+ * stripping the capability.
+ */
+const TOOL_NAME_ALIASES: Readonly<Record<string, string>> = {
+	// http
+	webFetch: 'httpRequest',
+	web_fetch: 'httpRequest',
+	fetchUrl: 'httpRequest',
+	// files — there is no diff-based edit tool in this registry; writeFile covers it
+	editFile: 'writeFile',
+	edit_file: 'writeFile',
+	rewriteFile: 'writeFile',
+	rewrite_file: 'writeFile',
+	write_file: 'writeFile',
+	read_file: 'readFile',
+	delete_file: 'deleteFile',
+	// terminal
+	bash: 'runCommand',
+	run: 'runCommand',
+	exec: 'runCommand',
+	shell: 'runCommand',
+	terminal: 'runCommand',
+	run_script: 'runScript',
+	// git
+	git_status: 'gitStatus',
+	git_diff: 'gitDiff',
+	git_log: 'gitLog',
+	// search
+	grep: 'searchCode',
+	search: 'searchCode',
+	glob: 'listDirectory',
+	list_dir: 'listDirectory',
+};
+
+/**
  * # Tool Registry
  *
  * Central registry for all IAgentTool implementations available to workflow agents.
@@ -61,18 +98,23 @@ export class ToolRegistry {
 
 	/**
 	 * Returns a scoped view that only exposes the listed tool names.
-	 * Unknown names are silently ignored.
+	 * Unknown names are ignored with a warning.
 	 *
 	 * Used to enforce IWorkflowStep.allowedTools at runtime.
 	 */
 	scope(allowedToolNames: string[]): ScopedToolRegistry {
 		const allowed = new Map<string, IAgentTool>();
-		for (const name of allowedToolNames) {
+		for (const rawName of allowedToolNames) {
+			// Agent definitions written against the Void chat tool vocabulary
+			// (or by hand) reference names that don't exist here — without
+			// aliasing, those agents silently lose the whole capability
+			// (e.g. web-researcher with only "webFetch" ended up tool-less).
+			const name = TOOL_NAME_ALIASES[rawName] ?? rawName;
 			const tool = this._tools.get(name);
 			if (tool) {
-				allowed.set(name, tool);
+				if (!allowed.has(name)) allowed.set(name, tool);
 			} else {
-				console.warn(`[ToolRegistry] Scoped tool "${name}" not found in registry`);
+				console.warn(`[ToolRegistry] Scoped tool "${rawName}" not found in registry`);
 			}
 		}
 		return new ScopedToolRegistry(allowed);

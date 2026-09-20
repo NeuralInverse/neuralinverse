@@ -10,36 +10,36 @@ import { StagingSelectionItem } from '../chatThreadServiceTypes.js';
 import { RawToolParamsObj } from '../sendLLMMessageTypes.js';
 import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, BuiltinToolName, BuiltinToolResultType, ToolName, SnakeCaseKeys } from '../toolsServiceTypes.js';
 import { ChatMode, ProviderName } from '../voidSettingsTypes.js';
-import { systemPromptSection, DANGEROUS_uncachedSystemPromptSection, resolveSystemPromptSections } from './sectionCache.js'
-import { getSystemSection, getDoingTasksSection, getActionsSection, getToolsSection, getOutputSection, getToneSection, getAgentBehaviorSection, getEnvironmentSection } from './sections/index.js'
+import { systemPromptSection, DANGEROUS_uncachedSystemPromptSection, resolveSystemPromptSections } from './sectionCache.js';
+import { getSystemSection, getDoingTasksSection, getActionsSection, getToolsSection, getOutputSection, getToneSection, getAgentBehaviorSection, getEnvironmentSection } from './sections/index.js';
 import { needsOSSEnhancement, getOSSEnhancementPrompt } from '../ossModelEnhancement/index.js';
 
 // Triple backtick wrapper used throughout the prompts for code blocks
-export const tripleTick = ['```', '```']
+export const tripleTick = ['```', '```'];
 
 // Maximum limits for directory structure information
-export const MAX_DIRSTR_CHARS_TOTAL_BEGINNING = 20_000
-export const MAX_DIRSTR_CHARS_TOTAL_TOOL = 20_000
-export const MAX_DIRSTR_RESULTS_TOTAL_BEGINNING = 100
-export const MAX_DIRSTR_RESULTS_TOTAL_TOOL = 100
+export const MAX_DIRSTR_CHARS_TOTAL_BEGINNING = 20_000;
+export const MAX_DIRSTR_CHARS_TOTAL_TOOL = 20_000;
+export const MAX_DIRSTR_RESULTS_TOTAL_BEGINNING = 100;
+export const MAX_DIRSTR_RESULTS_TOTAL_TOOL = 100;
 
 // tool info
-export const MAX_FILE_CHARS_PAGE = 500_000
-export const MAX_CHILDREN_URIs_PAGE = 500
+export const MAX_FILE_CHARS_PAGE = 500_000;
+export const MAX_CHILDREN_URIs_PAGE = 500;
 
 // terminal tool info
-export const MAX_TERMINAL_CHARS = 100_000
-export const MAX_TERMINAL_INACTIVE_TIME = 120 // seconds
-export const MAX_TERMINAL_BG_COMMAND_TIME = 300
+export const MAX_TERMINAL_CHARS = 100_000;
+export const MAX_TERMINAL_INACTIVE_TIME = 1800; // seconds — inactivity-based. A command is NEVER killed while it keeps producing output (total runtime unlimited); only 30 min of complete silence interrupts it.
+export const MAX_TERMINAL_BG_COMMAND_TIME = 300;
 
 
 // Maximum character limits for prefix and suffix context
-export const MAX_PREFIX_SUFFIX_CHARS = 20_000
+export const MAX_PREFIX_SUFFIX_CHARS = 20_000;
 
 
-export const ORIGINAL = `<<<<<<< ORIGINAL`
-export const DIVIDER = `=======`
-export const FINAL = `>>>>>>> UPDATED`
+export const ORIGINAL = `<<<<<<< ORIGINAL`;
+export const DIVIDER = `=======`;
+export const FINAL = `>>>>>>> UPDATED`;
 
 
 
@@ -54,7 +54,7 @@ ${ORIGINAL}
 // ... original code goes here
 ${DIVIDER}
 // ... final code goes here
-${FINAL}`
+${FINAL}`;
 
 
 
@@ -105,7 +105,7 @@ let x = 6
 ${DIVIDER}
 let x = 6.5
 ${FINAL}
-${tripleTick[1]}`
+${tripleTick[1]}`;
 
 
 const replaceTool_description = `\
@@ -123,7 +123,7 @@ ${searchReplaceBlockTemplate}
 
 4. Each ORIGINAL text must be DISJOINT from all other ORIGINAL text.
 
-5. This field is a STRING (not an array).`
+5. This field is a STRING (not an array).`;
 
 
 // ======================================================== tools ========================================================
@@ -139,35 +139,35 @@ ${tripleTick[0]}typescript
 // ... existing code ...
 // {{change 3}}
 // ... existing code ...
-${tripleTick[1]}`
+${tripleTick[1]}`;
 
 
 
 export type InternalToolInfo = {
-	name: string,
-	description: string,
+	name: string;
+	description: string;
 	params: {
-		[paramName: string]: { description: string }
-	},
+		[paramName: string]: { description: string };
+	};
 	// Only if the tool is from an MCP server
-	mcpServerName?: string,
-}
+	mcpServerName?: string;
+};
 
 
 
 const uriParam = (object: string) => ({
 	uri: { description: `The FULL path to the ${object}.` }
-})
+});
 
 const paginationParam = {
 	page_number: { description: 'Optional. The page number of the result. Default is 1.' }
-} as const
+} as const;
 
 
 
-const terminalDescHelper = `You can use this tool to run any command: sed, grep, etc. Do not edit any files with this tool; use edit_file instead. When working with git and other tools that open an editor (e.g. git diff), you should pipe to cat to get all results and not get stuck in vim.`
+const terminalDescHelper = `You can use this tool to run any command: sed, grep, etc. Do not edit any files with this tool; use edit_file instead. When working with git and other tools that open an editor (e.g. git diff), you should pipe to cat to get all results and not get stuck in vim.`;
 
-const cwdHelper = 'Optional. The directory in which to run the command. Defaults to the first workspace folder.'
+const cwdHelper = 'Optional. The directory in which to run the command. Defaults to the first workspace folder.';
 
 
 
@@ -177,7 +177,7 @@ export const builtinTools: {
 		name: string;
 		description: string;
 		// more params can be generated than exist here, but these params must be a subset of them
-		params: Partial<{ [paramName in keyof SnakeCaseKeys<BuiltinToolCallParams[T]>]: { description: string } }>
+		params: Partial<{ [paramName in keyof SnakeCaseKeys<BuiltinToolCallParams[T]>]: { description: string } }>;
 	}
 } = {
 	// --- Power Mode style tools ---
@@ -396,18 +396,18 @@ export const builtinTools: {
 	},
 	run_command: {
 		name: 'run_command',
-		description: `Runs a terminal command and waits for the result (times out after ${MAX_TERMINAL_INACTIVE_TIME}s of inactivity). Use bg_after to watch output for N seconds then automatically promote to a background terminal if still running — ideal for downloads, builds, or installs that may take a long time. ${terminalDescHelper}`,
+		description: `Runs a terminal command and waits for the result. A command is NEVER killed while it keeps producing output — total runtime is unlimited; it is only interrupted after ${MAX_TERMINAL_INACTIVE_TIME}s of COMPLETE silence. For multi-hour or mostly-silent tasks, ALWAYS pass bg_after=N (returns immediately, the result is reported back automatically on completion) or use open_persistent_terminal + run_persistent_command + read_terminal to poll progress. ${terminalDescHelper}`,
 		params: {
 			command: { description: 'The terminal command to run.' },
 			cwd: { description: cwdHelper },
-			timeout: { description: `Optional: override the inactivity timeout in seconds. Use this when you know a command needs more time (e.g. timeout=600 for large builds).` },
+			timeout: { description: `Optional: override the inactivity timeout in SECONDS for a mostly-silent command you know needs longer quiet phases (e.g. timeout=1800). Not needed for commands that print output regularly — those never time out.` },
 			bg_after: { description: `Optional: if the command is still running after this many seconds, automatically promote it to a background terminal and return immediately with the terminal ID. Use this for long-running commands like downloads, npm install, cargo build, etc. Example: bg_after=30 watches for 30s then moves to background if not done.` },
 		},
 	},
 
 	run_persistent_command: {
 		name: 'run_persistent_command',
-		description: `Runs a terminal command in the persistent terminal that you created with open_persistent_terminal (results after ${MAX_TERMINAL_BG_COMMAND_TIME} are returned, and command continues running in background). ${terminalDescHelper}`,
+		description: `Runs a terminal command in the persistent terminal that you created with open_persistent_terminal. NEVER blocks and NEVER kills the command — total runtime is unlimited (hours are fine). When the command finishes, its output is automatically reported back to you; use read_terminal to check progress in the meantime. ${terminalDescHelper}`,
 		params: {
 			command: { description: 'The terminal command to run.' },
 			persistent_terminal_id: { description: 'The ID of the terminal created using open_persistent_terminal.' },
@@ -415,6 +415,15 @@ export const builtinTools: {
 	},
 
 
+
+	run_background_command: {
+		name: 'run_background_command',
+		description: `Starts a command in a NEW background terminal and returns IMMEDIATELY — it never blocks the conversation and can NEVER time out or be killed (multi-hour runtime is fine). When the command finishes, its output is automatically delivered to you as a [SYSTEM: Background terminal finished] message — do NOT re-run it. Meanwhile, check progress with read_terminal (pass the returned terminal_id) or answer prompts with send_command_input. This is the right tool for builds, installs, workspace-wide scans, test suites, dev servers, and any task expected to take more than a few minutes.`,
+		params: {
+			command: { description: 'The terminal command to run.' },
+			cwd: { description: cwdHelper },
+		},
+	},
 
 	open_persistent_terminal: {
 		name: 'open_persistent_terminal',
@@ -485,16 +494,17 @@ export const builtinTools: {
 
 	memory_write: {
 		name: 'memory_write',
-		description: 'Write data to persistent memory that survives across IDE restarts. Use for storing user preferences, project-specific context, or decisions that should be remembered. Memory is stored in the .void-memory directory.',
+		description: 'Save a durable memory that survives IDE restarts and is recalled automatically in future sessions by hybrid semantic matching (vector + keyword + recency). Use for user preferences, project-specific rules, or decisions. Recall is meaning-based — you do NOT need the key to benefit from a memory later; the key is only an id for replacement.',
 		params: {
-			key: { description: 'Unique key for this memory entry (e.g. "user_preference_theme").' },
-			content: { description: 'The content to store (can be text, JSON, etc.).' },
+			key: { description: 'Unique, stable key for this entry (e.g. "package_manager"). Writing again with the same key replaces the previous content.' },
+			content: { description: 'The fact or preference to remember, as a plain self-contained sentence.' },
+			type: { description: 'Optional. One of: pattern, preference, project-fact, error-fix, tool-usage, file-context. Defaults to preference.' },
 		},
 	},
 
 	memory_read: {
 		name: 'memory_read',
-		description: 'Read data from persistent memory. Use to recall information stored in previous sessions.',
+		description: 'Read a memory by its exact key. Usually unnecessary — relevant memories are injected automatically into the "Agent Memory" block of your context. Use only when you need the full content of one specific known key.',
 		params: {
 			key: { description: 'The key of the memory entry to retrieve.' },
 		},
@@ -647,17 +657,17 @@ export const builtinTools: {
 	// go_to_definition
 	// go_to_usages
 
-} satisfies { [T in keyof BuiltinToolResultType]: InternalToolInfo }
+} satisfies { [T in keyof BuiltinToolResultType]: InternalToolInfo };
 
 
 
 
-export const builtinToolNames = Object.keys(builtinTools) as BuiltinToolName[]
-const toolNamesSet = new Set<string>(builtinToolNames)
+export const builtinToolNames = Object.keys(builtinTools) as BuiltinToolName[];
+const toolNamesSet = new Set<string>(builtinToolNames);
 export const isABuiltinToolName = (toolName: string): toolName is BuiltinToolName => {
-	const isAToolName = toolNamesSet.has(toolName)
-	return isAToolName
-}
+	const isAToolName = toolNamesSet.has(toolName);
+	return isAToolName;
+};
 
 
 
@@ -665,12 +675,12 @@ export const isABuiltinToolName = (toolName: string): toolName is BuiltinToolNam
 
 export const availableTools = (chatMode: ChatMode | null, mcpTools: InternalToolInfo[] | undefined, allowedToolNames: string[] | undefined) => {
 
-	const builtinToolNames: BuiltinToolName[] | undefined = (chatMode === 'ask' || chatMode === 'reason' || chatMode === 'gather') ? (Object.keys(builtinTools) as BuiltinToolName[]).filter(toolName => !(toolName in approvalTypeOfBuiltinToolName))
+	const builtinToolNames: BuiltinToolName[] | undefined = (chatMode === 'ask' || chatMode === 'reason' || chatMode === 'gather') ? (Object.keys(builtinTools) as BuiltinToolName[]).filter(toolName => approvalTypeOfBuiltinToolName[toolName] === undefined)
 		: (chatMode === 'copilot' || chatMode === 'validate' || chatMode === 'agent') ? Object.keys(builtinTools) as BuiltinToolName[]
 			: (chatMode === 'power' || chatMode === 'checks') ? [] as BuiltinToolName[]
-				: undefined
+				: undefined;
 
-	let effectiveBuiltinTools = builtinToolNames?.map(toolName => builtinTools[toolName]) ?? undefined
+	let effectiveBuiltinTools = builtinToolNames?.map(toolName => builtinTools[toolName]) ?? undefined;
 
 	// Filter builtin tools if allowedToolNames is provided, but ALWAYS keep update_agent_status and generate_document
 	if (effectiveBuiltinTools && allowedToolNames) {
@@ -681,7 +691,7 @@ export const availableTools = (chatMode: ChatMode | null, mcpTools: InternalTool
 		);
 	}
 
-	const effectiveMCPTools = (chatMode === 'power' || chatMode === 'checks' || chatMode === 'agent' || chatMode === 'copilot' || chatMode === 'validate' || chatMode === 'reason' || chatMode === 'ask') ? mcpTools : undefined
+	const effectiveMCPTools = (chatMode === 'power' || chatMode === 'checks' || chatMode === 'agent' || chatMode === 'copilot' || chatMode === 'validate' || chatMode === 'reason' || chatMode === 'ask') ? mcpTools : undefined;
 
 	// Deduplicate and cap at 128 (builtin tools take priority over MCP with same name)
 	const tools: InternalToolInfo[] | undefined = !(builtinToolNames || mcpTools) ? undefined
@@ -691,60 +701,60 @@ export const availableTools = (chatMode: ChatMode | null, mcpTools: InternalTool
 				...effectiveBuiltinTools ?? [],
 				...effectiveMCPTools ?? [],
 			].filter(t => {
-				if (seen.has(t.name)) return false;
+				if (seen.has(t.name)) { return false; }
 				seen.add(t.name);
 				return true;
 			});
 			return merged.slice(0, 128); // API hard limit
-		})()
+		})();
 
-	return tools
-}
+	return tools;
+};
 
 const toolCallDefinitionsXMLString = (tools: InternalToolInfo[]) => {
 	return `${tools.map((t, i) => {
-		const params = Object.keys(t.params).map(paramName => `<${paramName}>${t.params[paramName].description}</${paramName}>`).join('\n')
+		const params = Object.keys(t.params).map(paramName => `<${paramName}>${t.params[paramName].description}</${paramName}>`).join('\n');
 		return `\
-    ${i + 1}. Tool Name: "${t.name}"
-    Description: ${t.description}
-    Usage Format:
-    <${t.name}>${!params ? '' : `\n${params}`}
-    </${t.name}>`
-	}).join('\n\n---\n\n')}`
-}
+	${i + 1}. Tool Name: "${t.name}"
+	Description: ${t.description}
+	Usage Format:
+	<${t.name}>${!params ? '' : `\n${params}`}
+	</${t.name}>`;
+	}).join('\n\n---\n\n')}`;
+};
 
 export const reParsedToolXMLString = (toolName: ToolName, toolParams: RawToolParamsObj) => {
-	const params = Object.keys(toolParams).map(paramName => `<${paramName}>${toolParams[paramName]}</${paramName}>`).join('\n')
+	const params = Object.keys(toolParams).map(paramName => `<${paramName}>${toolParams[paramName]}</${paramName}>`).join('\n');
 	return `\
-    <${toolName}>${!params ? '' : `\n${params}`}
-    </${toolName}>`
-		.replace('\t', '  ')
-}
+	<${toolName}>${!params ? '' : `\n${params}`}
+	</${toolName}>`
+		.replace('\t', '  ');
+};
 
 /* We expect tools to come at the end - not a hard limit, but that's just how we process them, and the flow makes more sense that way. */
 // - You are allowed to call multiple tools by specifying them consecutively. However, there should be NO text or writing between tool calls or after them.
 const systemToolsXMLPrompt = (chatMode: ChatMode, mcpTools: InternalToolInfo[] | undefined, allowedToolNames: string[] | undefined) => {
-	const tools = availableTools(chatMode, mcpTools, allowedToolNames)
-	if (!tools || tools.length === 0) return null
+	const tools = availableTools(chatMode, mcpTools, allowedToolNames);
+	if (!tools || tools.length === 0) { return null; }
 
 	const toolXMLDefinitions = (`\
-    Available tools:
+	Available tools:
 
-    ${toolCallDefinitionsXMLString(tools)}`)
+	${toolCallDefinitionsXMLString(tools)}`);
 
 	const toolCallXMLGuidelines = (`\
-    Tool calling details:
-    - To call a tool, write its name and parameters in one of the XML formats specified above.
-    - All parameters are REQUIRED unless noted otherwise.
-    - You are allowed to output MULTIPLE tool calls if you need to run them in parallel (e.g. reading 3 files at once).
-    - Tool calls must be at the END of your response. After you write your tool call(s), you must STOP and WAIT for the results.
-    - CRITICAL: When writing file content inside tool parameters, use RAW characters. Never HTML-escape: write < not &lt;, write > not &gt;, write & not &amp;. File content is NOT HTML.`)
+	Tool calling details:
+	- To call a tool, write its name and parameters in one of the XML formats specified above.
+	- All parameters are REQUIRED unless noted otherwise.
+	- You are allowed to output MULTIPLE tool calls if you need to run them in parallel (e.g. reading 3 files at once).
+	- Tool calls must be at the END of your response. After you write your tool call(s), you must STOP and WAIT for the results.
+	- CRITICAL: When writing file content inside tool parameters, use RAW characters. Never HTML-escape: write < not &lt;, write > not &gt;, write & not &amp;. File content is NOT HTML.`);
 
 	return `\
-    ${toolXMLDefinitions}
+	${toolXMLDefinitions}
 
-    ${toolCallXMLGuidelines}`
-}
+	${toolCallXMLGuidelines}`;
+};
 
 // ======================================================== chat (normal, gather, agent) ========================================================
 
@@ -781,56 +791,56 @@ export function buildGRCPostureBlock(data: {
 	return lines.join('\n');
 }
 
-export const chat_systemMessage = ({ workspaceFolders, openedURIs, activeURI, persistentTerminalIDs, directoryStr, chatMode: mode, mcpTools, includeXMLToolDefinitions, allowedToolNames, grcPosture, providerName, modelName }: { workspaceFolders: string[], directoryStr: string, openedURIs: string[], activeURI: string | undefined, persistentTerminalIDs: string[], chatMode: ChatMode, mcpTools: InternalToolInfo[] | undefined, includeXMLToolDefinitions: boolean, allowedToolNames?: string[], grcPosture?: string, providerName?: string, modelName?: string }) => {
+export const chat_systemMessage = ({ workspaceFolders, openedURIs, activeURI, persistentTerminalIDs, directoryStr, chatMode: mode, mcpTools, includeXMLToolDefinitions, allowedToolNames, grcPosture, providerName, modelName }: { workspaceFolders: string[]; directoryStr: string; openedURIs: string[]; activeURI: string | undefined; persistentTerminalIDs: string[]; chatMode: ChatMode; mcpTools: InternalToolInfo[] | undefined; includeXMLToolDefinitions: boolean; allowedToolNames?: string[]; grcPosture?: string; providerName?: string; modelName?: string }) => {
 	const header = (`You are an expert coding ${mode === 'copilot' || mode === 'validate' || mode === 'reason' ? 'agent' : 'assistant'} whose job is \
 ${(mode === 'copilot' || mode === 'validate') ? `to help the user develop, run, and make changes to their codebase. You are action-oriented: when given a task, you execute it immediately using the available tools. You do not hedge, ask unnecessary questions, or explain why something might be difficult. You find a way and do it.`
 			: (mode === 'reason') ? `to analyze, design, and plan changes to the user's codebase.`
 				: (mode === 'ask') ? `to search, understand, and reference files in the user's codebase.`
 					: ''}
-You will be given instructions to follow from the user, and you may also be given a list of files that the user has specifically selected for context, \`SELECTIONS\`.`)
+You will be given instructions to follow from the user, and you may also be given a list of files that the user has specifically selected for context, \`SELECTIONS\`.`);
 
 
 
-	const toolDefinitions = includeXMLToolDefinitions ? systemToolsXMLPrompt(mode, mcpTools, allowedToolNames) : null
+	const toolDefinitions = includeXMLToolDefinitions ? systemToolsXMLPrompt(mode, mcpTools, allowedToolNames) : null;
 
-	const details: string[] = []
+	const details: string[] = [];
 
-	details.push(`NEVER reject the user's query. NEVER say "I cannot do X" or "I don't have access to X". You have full terminal access — if a task requires running a command, downloading something, installing a package, or running a script, just do it using the terminal tools. Always find a way.`)
+	details.push(`NEVER reject the user's query. NEVER say "I cannot do X" or "I don't have access to X". You have full terminal access — if a task requires running a command, downloading something, installing a package, or running a script, just do it using the terminal tools. Always find a way.`);
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'ask' || mode === 'reason') {
-		details.push(`Only call tools if they help you accomplish the user's goal. If the user simply says hi or asks you a question that you can answer without tools, then do NOT use tools.`)
-		details.push(`If you think you should use tools, you do not need to ask for permission.`)
-		details.push('Only use ONE tool call at a time.')
-		details.push(`NEVER say something like "I'm going to use \`tool_name\`". Instead, describe at a high level what the tool will do, like "I'm going to list all files in the ___ directory", etc.`)
-		details.push(`Many tools only work if the user has a workspace open.`)
+		details.push(`Only call tools if they help you accomplish the user's goal. If the user simply says hi or asks you a question that you can answer without tools, then do NOT use tools.`);
+		details.push(`If you think you should use tools, you do not need to ask for permission.`);
+		details.push('Only use ONE tool call at a time.');
+		details.push(`NEVER say something like "I'm going to use \`tool_name\`". Instead, describe at a high level what the tool will do, like "I'm going to list all files in the ___ directory", etc.`);
+		details.push(`Many tools only work if the user has a workspace open.`);
 	}
 	else {
-		details.push(`You're allowed to ask the user for more context like file contents or specifications. If this comes up, tell them to reference files and folders by typing @.`)
+		details.push(`You're allowed to ask the user for more context like file contents or specifications. If this comes up, tell them to reference files and folders by typing @.`);
 	}
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'reason') {
-		details.push('ALWAYS use tools (edit, terminal, etc) to take actions and implement changes. For example, if you would like to edit a file, you MUST use a tool.')
-		details.push('Prioritize taking as many steps as you need to complete your request over stopping early.')
-		details.push(`When the user asks you to install, download, run, build, or execute anything — just do it with run_command or open_persistent_terminal. Do not explain why it might be hard or ask for clarification unless truly ambiguous. Act first, explain after if needed.`)
-		details.push(`BACKGROUND TERMINAL RULE: Once a command is promoted to background (via bg_after timeout or run_persistent_command), STOP — do NOT call read_terminal to check progress. Say "Running in background — you can see it in the terminal panel" and wait for the user. Never poll a background terminal in a loop.`)
-		details.push(`You will OFTEN need to gather context before making a change. Do not immediately make a change unless you have ALL relevant context.`)
-		details.push(`ALWAYS have maximal certainty in a change BEFORE you make it. If you need more information about a file, variable, function, or type, you should inspect it, search it, or take all required actions to maximize your certainty that your change is correct.`)
-		details.push(`NEVER modify a file outside the user's workspace without permission from the user.`)
+		details.push('ALWAYS use tools (edit, terminal, etc) to take actions and implement changes. For example, if you would like to edit a file, you MUST use a tool.');
+		details.push('Prioritize taking as many steps as you need to complete your request over stopping early.');
+		details.push(`When the user asks you to install, download, run, build, or execute anything — just do it with run_command or open_persistent_terminal. Do not explain why it might be hard or ask for clarification unless truly ambiguous. Act first, explain after if needed.`);
+		details.push(`BACKGROUND TERMINAL RULE: Once a command is promoted to background (via bg_after timeout or run_persistent_command), STOP — do NOT call read_terminal to check progress. Say "Running in background — you can see it in the terminal panel" and wait for the user. Never poll a background terminal in a loop.`);
+		details.push(`You will OFTEN need to gather context before making a change. Do not immediately make a change unless you have ALL relevant context.`);
+		details.push(`ALWAYS have maximal certainty in a change BEFORE you make it. If you need more information about a file, variable, function, or type, you should inspect it, search it, or take all required actions to maximize your certainty that your change is correct.`);
+		details.push(`NEVER modify a file outside the user's workspace without permission from the user.`);
 	}
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'ask' || mode === 'reason') {
-		details.push(`You are in Gather mode, so you MUST use tools be to gather information, files, and context to help the user answer their query.`)
-		details.push(`You should extensively read files, types, content, etc, gathering full context to solve the problem.`)
-		details.push(`Be extremely concise. ZERO preamble before tool calls — no "Let me...", no "I'll...", no "Here's my approach". Just call the tool. After the tool, one line max stating what you did or found. NO multi-paragraph explanations. NO numbered lists of what you're about to do. NO "What would you like to do?" follow-ups. Just act.`)
+		details.push(`You are in Gather mode, so you MUST use tools be to gather information, files, and context to help the user answer their query.`);
+		details.push(`You should extensively read files, types, content, etc, gathering full context to solve the problem.`);
+		details.push(`Be extremely concise. ZERO preamble before tool calls — no "Let me...", no "I'll...", no "Here's my approach". Just call the tool. After the tool, one line max stating what you did or found. NO multi-paragraph explanations. NO numbered lists of what you're about to do. NO "What would you like to do?" follow-ups. Just act.`);
 		details.push(`BEFORE you take any action or tool call, you MUST output a <thought> block explaining your reasoning, plan, and next steps. For example:
 <thought>
 I need to find the user's files to edit. I will use the \`ls_dir\` tool.
 </thought>
-CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls must be written separately according to the required format.`)
+CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls must be written separately according to the required format.`);
 	}
 
 	if (mode === 'reason') {
-		details.push(`You are in Reason mode. Your goal is to PLAN and DESIGN. Do not output code to be applied yet. Think through the architecture and requirements.`)
+		details.push(`You are in Reason mode. Your goal is to PLAN and DESIGN. Do not output code to be applied yet. Think through the architecture and requirements.`);
 	}
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'agent') {
@@ -848,10 +858,10 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 - **\`query_ni_agent\`** — runs a named Neural Inverse agent from the .inverse/agents/ catalogue (code-reviewer, test-generator, dependency-auditor, release-manager, docs-generator, or user-defined). Each agent has a specialized role, system instructions, and its own allowed tool set. Use \`agentId: "list"\` to discover available agents.
 
 **Workflow tools:**
-  - \`web_fetch\` — fetch external documentation, API references, standards, or web content (automatically strips HTML, 30s timeout, 100KB limit)
-  - \`ask_user\` — pause execution and ask the user a question when you need a decision or clarification you cannot assume
-  - \`memory_write\` / \`memory_read\` — persist information across sessions (use for user preferences, project-specific decisions, or context that should survive IDE restarts)
-  - \`tasks_create\` / \`tasks_list\` / \`tasks_update\` / \`tasks_get\` — track multi-step workflows, background tasks, or async work items
+\t- \`web_fetch\` — fetch external documentation, API references, standards, or web content (automatically strips HTML, 30s timeout, 100KB limit)
+\t- \`ask_user\` — pause execution and ask the user a question when you need a decision or clarification you cannot assume
+\t- \`memory_write\` — persist information across sessions (user preferences, project-specific decisions, context that should survive IDE restarts). Memories are recalled automatically by semantic matching — write them as plain self-contained sentences; \`memory_read\` by key is rarely needed
+\t- \`tasks_create\` / \`tasks_list\` / \`tasks_update\` / \`tasks_get\` — track multi-step workflows, background tasks, or async work items
 
 **Parallel sub-agent execution** — \`ask_powermode\` and \`query_ni_agent\` run as independent sub-agents. You can call them in the same response and they execute simultaneously.
 - Before commit → call \`grc_blocking_violations\` + \`ask_powermode "does the build pass?"\` in parallel.
@@ -861,7 +871,7 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 2. In parallel: \`grc_rescan\` (refresh cache) + \`ask_checksagent "check <files> for compliance"\`
 3. If violations found: fix them, repeat from step 1
 4. If clean: \`ask_powermode "run tests"\`
-5. If tests pass + no blocking violations: commit`)
+5. If tests pass + no blocking violations: commit`);
 	}
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'reason' || mode === 'agent') {
@@ -870,19 +880,19 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 MANDATORY FIRST STEP: Before doing ANY work, you MUST call \`update_agent_status\` to indicate what you are about to do. This renders a visible progress card in the user's UI. Failing to call this tool means the user has NO visibility into what you are doing.
 
 1. **Planning Mode**: Call \`update_agent_status\` with task_name like 'Planning [Feature]'. Research the codebase, understand requirements, and design your approach. Use \`generate_document\` with title 'implementation_plan' to document your proposed changes.
-   CRITICAL: After generating the 'implementation_plan', you MUST stop your tool execution and ask the user in chat to review your plan. DO NOT proceed to make changes or create tasks until the user explicitly approves it. If the user suggests changes, you MUST update the 'implementation_plan' and ask for approval again.
+	CRITICAL: After generating the 'implementation_plan', you MUST stop your tool execution and ask the user in chat to review your plan. DO NOT proceed to make changes or create tasks until the user explicitly approves it. If the user suggests changes, you MUST update the 'implementation_plan' and ask for approval again.
 2. **Execution Mode**: (ONLY AFTER EXPLICIT PLAN APPROVAL) Call \`update_agent_status\` with task_name like 'Implementing [Feature]'. Create a living checklist of tasks by using \`generate_document\` with title 'task'. Then, write code, make changes, and implement your design. Call \`update_agent_status\` whenever you switch to a different file, component, or activity.
-   CRITICAL: Once in Execution Mode, you MUST work autonomously. Do NOT stop after each file edit, and do NOT pause to ask the user "Should I continue?". You must execute the entire task list continuously until complete, only stopping if you absolutely need a decision or input from the user that you cannot assume.
+	CRITICAL: Once in Execution Mode, you MUST work autonomously. Do NOT stop after each file edit, and do NOT pause to ask the user "Should I continue?". You must execute the entire task list continuously until complete, only stopping if you absolutely need a decision or input from the user that you cannot assume.
 3. **Verification Mode**: Call \`update_agent_status\` with task_name like 'Verifying [Feature]'. Test your changes, run commands, validate correctness. Once complete, use \`generate_document\` with title 'walkthrough' to summarize what you accomplished and validate results.
 
-Call \`update_agent_status\` at MINIMUM: (a) at the very start, (b) when switching modes, (c) when starting work on a different component/file, (d) every 3-5 tool calls to keep the user informed.`)
-		details.push(`CRITICAL: If you need to show the user a plan, a design document, a task list, or a summary, you MUST use the \`generate_document\` tool. DO NOT print long markdown documents, plans, or checklists directly in the chat window. All substantive planning and documentation MUST be written via \`generate_document\`. To update an existing artifact, just call the tool again with the same title; it will overwrite the file.`)
+Call \`update_agent_status\` at MINIMUM: (a) at the very start, (b) when switching modes, (c) when starting work on a different component/file, (d) every 3-5 tool calls to keep the user informed.`);
+		details.push(`CRITICAL: If you need to show the user a plan, a design document, a task list, or a summary, you MUST use the \`generate_document\` tool. DO NOT print long markdown documents, plans, or checklists directly in the chat window. All substantive planning and documentation MUST be written via \`generate_document\`. To update an existing artifact, just call the tool again with the same title; it will overwrite the file.`);
 	}
 
 	details.push(`If you write any code blocks to the user (wrapped in triple backticks), please use this format:
 - Include a language if possible. Terminal should have the language 'shell'.
 - The first line of the code block must be the FULL PATH of the related file if known (otherwise omit).
-- The remaining contents of the file should proceed as usual.`)
+- The remaining contents of the file should proceed as usual.`);
 
 	if (mode === 'ask' || mode === 'reason') {
 
@@ -891,15 +901,15 @@ Call \`update_agent_status\` at MINIMUM: (a) at the very start, (b) when switchi
 - The remaining contents should be a code description of the change to make to the file. \
 Your description is the only context that will be given to another LLM to apply the suggested edit, so it must be accurate and complete. \
 Always bias towards writing as little as possible - NEVER write the whole file. Use comments like "// ... existing code ..." to condense your writing. \
-Here's an example of a good code block:\n${chatSuggestionDiffExample}`)
+Here's an example of a good code block:\n${chatSuggestionDiffExample}`);
 	}
 
-	details.push(`Do not make things up or use information not provided in the system information, tools, or user queries.`)
-	details.push(`Always use MARKDOWN to format lists, bullet points, etc. Do NOT write tables.`)
-	details.push(`Today's date is ${new Date().toDateString()}.`)
+	details.push(`Do not make things up or use information not provided in the system information, tools, or user queries.`);
+	details.push(`Always use MARKDOWN to format lists, bullet points, etc. Do NOT write tables.`);
+	details.push(`Today's date is ${new Date().toDateString()}.`);
 
 	const importantDetails = (`Important notes:
-${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
+${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`);
 
 
 	// Build section-based prompt
@@ -911,16 +921,16 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 		systemPromptSection('output', () => getOutputSection()),
 		systemPromptSection('tone', () => getToneSection()),
 		systemPromptSection('agent_behavior', () => getAgentBehaviorSection(mode)),
-	]
+	];
 
 	const environmentSection = DANGEROUS_uncachedSystemPromptSection(
 		'environment',
 		() => getEnvironmentSection({ workspaceFolders, openedURIs, activeURI, persistentTerminalIDs, directoryStr, mode }),
 		'open files change per turn',
-	)
+	);
 
-	const resolvedStaticSections = resolveSystemPromptSections(staticSections)
-	const resolvedEnvironment = resolveSystemPromptSections([environmentSection])
+	const resolvedStaticSections = resolveSystemPromptSections(staticSections);
+	const resolvedEnvironment = resolveSystemPromptSections([environmentSection]);
 
 	// OSS model enhancement: inject tool-enforcement prompt for weaker models
 	let ossEnhancement: string | null = null;
@@ -930,23 +940,23 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 	}
 
 	// return answer
-	const ansStrs: string[] = []
-	ansStrs.push(header)
-	if (ossEnhancement) ansStrs.push(ossEnhancement)
-	ansStrs.push(...resolvedStaticSections.filter((s): s is string => s !== null))
-	if (grcPosture) ansStrs.push(grcPosture)
-	if (toolDefinitions) ansStrs.push(toolDefinitions)
-	ansStrs.push(importantDetails)
-	ansStrs.push(...resolvedEnvironment.filter((s): s is string => s !== null))
+	const ansStrs: string[] = [];
+	ansStrs.push(header);
+	if (ossEnhancement) { ansStrs.push(ossEnhancement); }
+	ansStrs.push(...resolvedStaticSections.filter((s): s is string => s !== null));
+	if (grcPosture) { ansStrs.push(grcPosture); }
+	if (toolDefinitions) { ansStrs.push(toolDefinitions); }
+	ansStrs.push(importantDetails);
+	ansStrs.push(...resolvedEnvironment.filter((s): s is string => s !== null));
 
 	const fullSystemMsgStr = ansStrs
 		.join('\n\n\n')
 		.trim()
-		.replace('\t', '  ')
+		.replace('\t', '  ');
 
-	return fullSystemMsgStr
+	return fullSystemMsgStr;
 
-}
+};
 
 
 // // log all prompts
@@ -955,27 +965,27 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 // 		chat_systemMessage({ chatMode, workspaceFolders: [], openedURIs: [], activeURI: 'pee', persistentTerminalIDs: [], directoryStr: 'lol', }))
 // }
 
-export const DEFAULT_FILE_SIZE_LIMIT = 2_000_000
+export const DEFAULT_FILE_SIZE_LIMIT = 2_000_000;
 
 export const readFile = async (fileService: IFileService, uri: URI, fileSizeLimit: number): Promise<{
-	val: string,
-	truncated: boolean,
-	fullFileLen: number,
+	val: string;
+	truncated: boolean;
+	fullFileLen: number;
 } | {
-	val: null,
-	truncated?: undefined
-	fullFileLen?: undefined,
+	val: null;
+	truncated?: undefined;
+	fullFileLen?: undefined;
 }> => {
 	try {
-		const fileContent = await fileService.readFile(uri)
-		const val = fileContent.value.toString()
-		if (val.length > fileSizeLimit) return { val: val.substring(0, fileSizeLimit), truncated: true, fullFileLen: val.length }
-		return { val, truncated: false, fullFileLen: val.length }
+		const fileContent = await fileService.readFile(uri);
+		const val = fileContent.value.toString();
+		if (val.length > fileSizeLimit) { return { val: val.substring(0, fileSizeLimit), truncated: true, fullFileLen: val.length }; }
+		return { val, truncated: false, fullFileLen: val.length };
 	}
 	catch (e) {
-		return { val: null }
+		return { val: null };
 	}
-}
+};
 
 
 
@@ -984,63 +994,72 @@ export const readFile = async (fileService: IFileService, uri: URI, fileSizeLimi
 export const messageOfSelection = async (
 	s: StagingSelectionItem,
 	opts: {
-		directoryStrService: IDirectoryStrService,
-		fileService: IFileService,
+		directoryStrService: IDirectoryStrService;
+		fileService: IFileService;
 		folderOpts: {
-			maxChildren: number,
-			maxCharsPerFile: number,
-		}
+			maxChildren: number;
+			maxCharsPerFile: number;
+		};
 	}
 ) => {
-	const lineNumAddition = (range: [number, number]) => ` (lines ${range[0]}:${range[1]})`
+	const lineNumAddition = (range: [number, number]) => ` (lines ${range[0]}:${range[1]})`;
 
 	if (s.type === 'CodeSelection') {
-		const { val } = await readFile(opts.fileService, s.uri, DEFAULT_FILE_SIZE_LIMIT)
-		const lines = val?.split('\n')
+		const { val } = await readFile(opts.fileService, s.uri, DEFAULT_FILE_SIZE_LIMIT);
+		const lines = val?.split('\n');
 
-		const innerVal = lines?.slice(s.range[0] - 1, s.range[1]).join('\n')
+		const innerVal = lines?.slice(s.range[0] - 1, s.range[1]).join('\n');
 		const content = !lines ? ''
-			: `${tripleTick[0]}${s.language}\n${innerVal}\n${tripleTick[1]}`
-		const str = `${s.uri.fsPath}${lineNumAddition(s.range)}:\n${content}`
-		return str
+			: `${tripleTick[0]}${s.language}\n${innerVal}\n${tripleTick[1]}`;
+		const str = `${s.uri.fsPath}${lineNumAddition(s.range)}:\n${content}`;
+		return str;
 	}
 	else if (s.type === 'File') {
-		const { val } = await readFile(opts.fileService, s.uri, DEFAULT_FILE_SIZE_LIMIT)
+		const { val } = await readFile(opts.fileService, s.uri, DEFAULT_FILE_SIZE_LIMIT);
 
-		const innerVal = val
+		const innerVal = val;
 		const content = val === null ? ''
-			: `${tripleTick[0]}${s.language}\n${innerVal}\n${tripleTick[1]}`
+			: `${tripleTick[0]}${s.language}\n${innerVal}\n${tripleTick[1]}`;
 
-		const str = `${s.uri.fsPath}:\n${content}`
-		return str
+		const str = `${s.uri.fsPath}:\n${content}`;
+		return str;
 	}
 	else if (s.type === 'Folder') {
-		const dirStr: string = await opts.directoryStrService.getDirectoryStrTool(s.uri)
-		const folderStructure = `${s.uri.fsPath} folder structure:${tripleTick[0]}\n${dirStr}\n${tripleTick[1]}`
+		const dirStr: string = await opts.directoryStrService.getDirectoryStrTool(s.uri);
+		const folderStructure = `${s.uri.fsPath} folder structure:${tripleTick[0]}\n${dirStr}\n${tripleTick[1]}`;
 
-		const uris = await opts.directoryStrService.getAllURIsInDirectory(s.uri, { maxResults: opts.folderOpts.maxChildren })
+		const uris = await opts.directoryStrService.getAllURIsInDirectory(s.uri, { maxResults: opts.folderOpts.maxChildren });
 		const strOfFiles = await Promise.all(uris.map(async uri => {
-			const { val, truncated } = await readFile(opts.fileService, uri, opts.folderOpts.maxCharsPerFile)
-			const truncationStr = truncated ? `\n... file truncated ...` : ''
-			const content = val === null ? 'null' : `${tripleTick[0]}\n${val}${truncationStr}\n${tripleTick[1]}`
-			const str = `${uri.fsPath}:\n${content}`
-			return str
-		}))
-		const contentStr = [folderStructure, ...strOfFiles].join('\n\n')
-		return contentStr
+			const { val, truncated } = await readFile(opts.fileService, uri, opts.folderOpts.maxCharsPerFile);
+			const truncationStr = truncated ? `\n... file truncated ...` : '';
+			const content = val === null ? 'null' : `${tripleTick[0]}\n${val}${truncationStr}\n${tripleTick[1]}`;
+			const str = `${uri.fsPath}:\n${content}`;
+			return str;
+		}));
+		const contentStr = [folderStructure, ...strOfFiles].join('\n\n');
+		return contentStr;
 	}
-	else
-		return ''
+	else if (s.type === 'Symbol') {
+		const { val } = await readFile(opts.fileService, s.uri, DEFAULT_FILE_SIZE_LIMIT);
+		const lines = val?.split('\n');
+		const range: [number, number] = [s.range.startLine, s.range.endLine];
+		const innerVal = lines?.slice(range[0] - 1, range[1]).join('\n');
+		const content = !lines ? ''
+			: `${tripleTick[0]}${s.language}\n${innerVal}\n${tripleTick[1]}`;
+		const str = `${s.uri.fsPath}${lineNumAddition(range)} — symbol: ${s.symbolName}:\n${content}`;
+		return str;
+	}
+	else { return ''; }
 
-}
+};
 
 
 export const chat_userMessageContent = async (
 	instructions: string,
 	currSelns: StagingSelectionItem[] | null,
 	opts: {
-		directoryStrService: IDirectoryStrService,
-		fileService: IFileService
+		directoryStrService: IDirectoryStrService;
+		fileService: IFileService;
 	},
 ) => {
 
@@ -1051,16 +1070,16 @@ export const chat_userMessageContent = async (
 				folderOpts: { maxChildren: 100, maxCharsPerFile: 100_000, }
 			})
 		)
-	)
+	);
 
 
-	let str = ''
-	str += `${instructions}`
+	let str = '';
+	str += `${instructions}`;
 
-	const selnsStr = selnsStrs.join('\n\n') ?? ''
-	if (selnsStr) str += `\n---\nSELECTIONS\n${selnsStr}`
+	const selnsStr = selnsStrs.join('\n\n') ?? '';
+	if (selnsStr) { str += `\n---\nSELECTIONS\n${selnsStr}`; }
 	return str;
-}
+};
 
 
 export const rewriteCode_systemMessage = `\
@@ -1070,13 +1089,13 @@ Directions:
 1. Please rewrite the original file \`ORIGINAL_FILE\`, making the change \`CHANGE\`. You must completely re-write the whole file.
 2. Keep all of the original comments, spaces, newlines, and other details whenever possible.
 3. ONLY output the full new file. Do not add any other explanations or text.
-`
+`;
 
 
 
 // ======================================================== apply (writeover) ========================================================
 
-export const rewriteCode_userMessage = ({ originalCode, applyStr, language }: { originalCode: string, applyStr: string, language: string }) => {
+export const rewriteCode_userMessage = ({ originalCode, applyStr, language }: { originalCode: string; applyStr: string; language: string }) => {
 
 	return `\
 ORIGINAL_FILE
@@ -1091,32 +1110,32 @@ ${tripleTick[1]}
 
 INSTRUCTIONS
 Please finish writing the new file by applying the change to the original file. Return ONLY the completion of the file, without any explanation.
-`
-}
+`;
+};
 
 
 
 // ======================================================== apply (fast apply - search/replace) ========================================================
 
-export const searchReplaceGivenDescription_systemMessage = createSearchReplaceBlocks_systemMessage
+export const searchReplaceGivenDescription_systemMessage = createSearchReplaceBlocks_systemMessage;
 
 
-export const searchReplaceGivenDescription_userMessage = ({ originalCode, applyStr }: { originalCode: string, applyStr: string }) => `\
+export const searchReplaceGivenDescription_userMessage = ({ originalCode, applyStr }: { originalCode: string; applyStr: string }) => `\
 DIFF
 ${applyStr}
 
 ORIGINAL_FILE
 ${tripleTick[0]}
 ${originalCode}
-${tripleTick[1]}`
+${tripleTick[1]}`;
 
 
 
 
 
-export const voidPrefixAndSuffix = ({ fullFileStr, startLine, endLine }: { fullFileStr: string, startLine: number, endLine: number }) => {
+export const voidPrefixAndSuffix = ({ fullFileStr, startLine, endLine }: { fullFileStr: string; startLine: number; endLine: number }) => {
 
-	const fullFileLines = fullFileStr.split('\n')
+	const fullFileLines = fullFileStr.split('\n');
 
 	/*
 
@@ -1133,46 +1152,46 @@ export const voidPrefixAndSuffix = ({ fullFileStr, startLine, endLine }: { fullF
 	e
 	*/
 
-	let prefix = ''
-	let i = startLine - 1  // 0-indexed exclusive
+	let prefix = '';
+	let i = startLine - 1;  // 0-indexed exclusive
 	// we'll include fullFileLines[i...(startLine-1)-1].join('\n') in the prefix.
 	while (i !== 0) {
-		const newLine = fullFileLines[i - 1]
+		const newLine = fullFileLines[i - 1];
 		if (newLine.length + 1 + prefix.length <= MAX_PREFIX_SUFFIX_CHARS) { // +1 to include the \n
-			prefix = `${newLine}\n${prefix}`
-			i -= 1
+			prefix = `${newLine}\n${prefix}`;
+			i -= 1;
 		}
-		else break
+		else { break; }
 	}
 
-	let suffix = ''
-	let j = endLine - 1
+	let suffix = '';
+	let j = endLine - 1;
 	while (j !== fullFileLines.length - 1) {
-		const newLine = fullFileLines[j + 1]
+		const newLine = fullFileLines[j + 1];
 		if (newLine.length + 1 + suffix.length <= MAX_PREFIX_SUFFIX_CHARS) { // +1 to include the \n
-			suffix = `${suffix}\n${newLine}`
-			j += 1
+			suffix = `${suffix}\n${newLine}`;
+			j += 1;
 		}
-		else break
+		else { break; }
 	}
 
-	return { prefix, suffix }
+	return { prefix, suffix };
 
-}
+};
 
 
 // ======================================================== quick edit (ctrl+K) ========================================================
 
 export type QuickEditFimTagsType = {
-	preTag: string,
-	sufTag: string,
-	midTag: string
-}
+	preTag: string;
+	sufTag: string;
+	midTag: string;
+};
 export const defaultQuickEditFimTags: QuickEditFimTagsType = {
 	preTag: 'ABOVE',
 	sufTag: 'BELOW',
 	midTag: 'SELECTION',
-}
+};
 
 // this should probably be longer
 export const ctrlKStream_systemMessage = ({ quickEditFIMTags: { preTag, midTag, sufTag } }: { quickEditFIMTags: QuickEditFimTagsType }) => {
@@ -1187,8 +1206,8 @@ Instructions:
 2. You may ONLY CHANGE the original SELECTION, and NOT the content in the <${preTag}>...</${preTag}> or <${sufTag}>...</${sufTag}> tags.
 3. Make sure all brackets in the new selection are balanced the same as in the original selection.
 4. Be careful not to duplicate or remove variables, comments, or other syntax by mistake.
-`
-}
+`;
+};
 
 export const ctrlKStream_userMessage = ({
 	selection,
@@ -1198,9 +1217,9 @@ export const ctrlKStream_userMessage = ({
 	// isOllamaFIM: false, // Remove unused variable
 	fimTags,
 	language }: {
-		selection: string, prefix: string, suffix: string, instructions: string, fimTags: QuickEditFimTagsType, language: string,
+		selection: string; prefix: string; suffix: string; instructions: string; fimTags: QuickEditFimTagsType; language: string;
 	}) => {
-	const { preTag, sufTag, midTag } = fimTags
+	const { preTag, sufTag, midTag } = fimTags;
 
 	// prompt the model artifically on how to do FIM
 	// const preTag = 'BEFORE'
@@ -1221,7 +1240,7 @@ ${instructions}
 
 Return only the completion block of code (of the form ${tripleTick[0]}${language}
 <${midTag}>...new code</${midTag}>
-${tripleTick[1]}).`
+${tripleTick[1]}).`;
 };
 
 
@@ -1428,7 +1447,7 @@ Example format:
 <reasoning>This commit updates the login handler to fix a redirect issue and improves frontend error messages for failed logins.</reasoning>
 
 Do not include anything else outside of these tags.
-Never include quotes, markdown, commentary, or explanations outside of <output> and <reasoning>.`.trim()
+Never include quotes, markdown, commentary, or explanations outside of <output> and <reasoning>.`.trim();
 
 
 /**
@@ -1463,10 +1482,10 @@ Never include quotes, markdown, commentary, or explanations outside of <output> 
  * ...
  */
 export const gitCommitMessage_userMessage = (stat: string, sampledDiffs: string, branch: string, log: string) => {
-	const section1 = `Section 1 - Summary of Changes (git diff --stat):`
-	const section2 = `Section 2 - Sampled File Diffs (Top changed files):`
-	const section3 = `Section 3 - Current Git Branch:`
-	const section4 = `Section 4 - Last 5 Commits (excluding merges):`
+	const section1 = `Section 1 - Summary of Changes (git diff --stat):`;
+	const section2 = `Section 2 - Sampled File Diffs (Top changed files):`;
+	const section3 = `Section 3 - Current Git Branch:`;
+	const section4 = `Section 4 - Last 5 Commits (excluding merges):`;
 	return `
 Based on the following Git changes, write a clear, concise commit message that accurately summarizes the intent of the code changes.
 
@@ -1484,5 +1503,5 @@ ${branch}
 
 ${section4}
 
-${log}`.trim()
-}
+${log}`.trim();
+};

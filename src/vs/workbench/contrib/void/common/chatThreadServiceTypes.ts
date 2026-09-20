@@ -16,22 +16,22 @@ export type ToolMessage<T extends ToolName> = {
 	mcpServerName: string | undefined; // the server name at the time of the call
 } & (
 		// in order of events:
-		| { type: 'invalid_params', result: null, name: T, }
+		| { type: 'invalid_params'; result: null; name: T }
 
-		| { type: 'tool_request', result: null, name: T, params: ToolCallParams<T>, }  // params were validated, awaiting user
+		| { type: 'tool_request'; result: null; name: T; params: ToolCallParams<T> }  // params were validated, awaiting user
 
-		| { type: 'running_now', result: null, name: T, params: ToolCallParams<T>, }
+		| { type: 'running_now'; result: null; name: T; params: ToolCallParams<T> }
 
-		| { type: 'tool_error', result: string, name: T, params: ToolCallParams<T>, } // error when tool was running
-		| { type: 'success', result: Awaited<ToolResult<T>>, name: T, params: ToolCallParams<T>, }
-		| { type: 'rejected', result: null, name: T, params: ToolCallParams<T> }
-	) // user rejected
+		| { type: 'tool_error'; result: string; name: T; params: ToolCallParams<T> } // error when tool was running
+		| { type: 'success'; result: Awaited<ToolResult<T>>; name: T; params: ToolCallParams<T> }
+		| { type: 'rejected'; result: null; name: T; params: ToolCallParams<T> }
+	); // user rejected
 
 export type DecorativeCanceledTool = {
 	role: 'interrupted_streaming_tool';
 	name: ToolName;
 	mcpServerName: string | undefined; // the server name at the time of the call
-}
+};
 
 
 // checkpoints
@@ -43,7 +43,7 @@ export type CheckpointEntry = {
 	userModifications: {
 		voidFileSnapshotOfURI: { [fsPath: string]: VoidFileSnapshot | undefined };
 	};
-}
+};
 
 
 // Image attachment data
@@ -53,7 +53,7 @@ export type ImageAttachment = {
 	fileName?: string; // optional original filename
 	width?: number; // optional dimensions
 	height?: number;
-}
+};
 
 // WARNING: changing this format is a big deal!!!!!! need to migrate old format to new format on users' computers so people don't get errors.
 export type ChatMessage =
@@ -66,17 +66,21 @@ export type ChatMessage =
 		state: {
 			stagingSelections: StagingSelectionItem[];
 			isBeingEdited: boolean;
-		}
+		};
 	} | {
 		role: 'assistant';
 		displayContent: string; // content received from LLM  - allowed to be '', will be replaced with (empty)
 		reasoning: string; // reasoning from the LLM, used for step-by-step thinking
 
 		anthropicReasoning: AnthropicReasoning[] | null; // anthropic reasoning
+
+		// wall-clock duration of the agent run that produced this message (set on
+		// committed messages; optional so stored threads stay compatible)
+		durationMs?: number;
 	}
 	| ToolMessage<ToolName>
 	| DecorativeCanceledTool
-	| CheckpointEntry
+	| CheckpointEntry;
 
 
 // one of the square items that indicates a selection in a chat bubble
@@ -84,29 +88,37 @@ export type StagingSelectionItem = {
 	type: 'File';
 	uri: URI;
 	language: string;
-	state: { wasAddedAsCurrentFile: boolean; };
+	state: { wasAddedAsCurrentFile: boolean };
 } | {
 	type: 'CodeSelection';
 	range: [number, number];
 	uri: URI;
 	language: string;
-	state: { wasAddedAsCurrentFile: boolean; };
+	state: { wasAddedAsCurrentFile: boolean };
 } | {
 	type: 'Folder';
 	uri: URI;
 	language?: undefined;
 	state?: undefined;
-}
+} | {
+	type: 'Symbol';
+	uri: URI;
+	symbolName: string;
+	kind: number;
+	range: { startLine: number; startCol: number; endLine: number; endCol: number };
+	language: string;
+	state: { wasAddedAsCurrentFile: boolean };
+};
 
 
 // a link to a symbol (an underlined link to a piece of code)
 export type CodespanLocationLink = {
-	uri: URI, // we handle serialization for this
-	displayText: string,
+	uri: URI; // we handle serialization for this
+	displayText: string;
 	selection?: { // store as JSON so dont have to worry about serialization
-		startLineNumber: number
-		startColumn: number,
-		endLineNumber: number
-		endColumn: number,
-	} | undefined
-} | null
+		startLineNumber: number;
+		startColumn: number;
+		endLineNumber: number;
+		endColumn: number;
+	} | undefined;
+} | null;

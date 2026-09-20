@@ -10,13 +10,13 @@ import { ChatMessage, CodespanLocationLink, StagingSelectionItem } from '../comm
 import { RawToolCallObj, RawToolParamsObj } from '../common/sendLLMMessageTypes.js';
 import { ToolCallParams, ToolName } from '../common/toolsServiceTypes.js';
 
-export type UserMessageType = ChatMessage & { role: 'user' }
-export type UserMessageState = UserMessageType['state']
+export type UserMessageType = ChatMessage & { role: 'user' };
+export type UserMessageState = UserMessageType['state'];
 
 export type WhenMounted = {
 	textAreaRef: { current: HTMLTextAreaElement | null }; // the textarea that this thread has, gets set in SidebarChat
 	scrollToBottom: () => void;
-}
+};
 
 export type ThreadType = {
 	id: string; // store the id here too
@@ -36,40 +36,40 @@ export type ThreadType = {
 
 		linksOfMessageIdx: { // eg. link = linksOfMessageIdx[4]['RangeFunction']
 			[messageIdx: number]: {
-				[codespanName: string]: CodespanLocationLink
-			}
-		}
+				[codespanName: string]: CodespanLocationLink;
+			};
+		};
 
 
 		mountedInfo?: {
-			whenMounted: Promise<WhenMounted>
-			_whenMountedResolver: (res: WhenMounted) => void
+			whenMounted: Promise<WhenMounted>;
+			_whenMountedResolver: (res: WhenMounted) => void;
 			mountedIsResolvedRef: { current: boolean };
-		}
+		};
 	};
-}
+};
 
 export type ChatThreads = {
 	[id: string]: undefined | ThreadType;
-}
+};
 
 
 export type ThreadsState = {
 	allThreads: ChatThreads;
 	currentThreadId: string; // intended for internal use only
-}
+};
 
 export type IsRunningType =
 	| 'LLM' // the LLM is currently streaming
 	| 'tool' // whether a tool is currently running
 	| 'awaiting_user' // awaiting user call
 	| 'idle' // nothing is running now, but the chat should still appear like it's going (used in-between calls)
-	| undefined
+	| undefined;
 
 export type ThreadStreamState = {
 	[threadId: string]: undefined | {
 		isRunning: undefined;
-		error?: { message: string, fullError: Error | null, };
+		error?: { message: string; fullError: Error | null };
 		llmInfo?: undefined;
 		toolInfo?: undefined;
 		interrupt?: undefined;
@@ -108,8 +108,8 @@ export type ThreadStreamState = {
 		llmInfo?: undefined;
 		toolInfo?: undefined;
 		interrupt: 'not_needed' | Promise<() => void>; // calling this should have no effect on state - would be too confusing. it just cancels the tool
-	}
-}
+	};
+};
 
 export interface IChatThreadService {
 	readonly _serviceBrand: undefined;
@@ -118,7 +118,14 @@ export interface IChatThreadService {
 	readonly streamState: ThreadStreamState; // not persistent
 
 	onDidChangeCurrentThread: Event<void>;
-	onDidChangeStreamState: Event<{ threadId: string }>
+	onDidChangeStreamState: Event<{ threadId: string }>;
+
+	/**
+	 * Fires when a compaction (auto or manual) folds the conversation prefix
+	 * into a summary, freeing context budget. Carries token estimates before
+	 * and after so the UI can toast "Xk tokens freed".
+	 */
+	onDidCompact: Event<{ threadId: string; tokensBefore: number; tokensAfter: number; summary: string }>;
 
 	getCurrentThread(): ThreadType;
 	openNewThread(): void;
@@ -132,10 +139,10 @@ export interface IChatThreadService {
 
 	// exposed getters/setters
 	// these all apply to current thread
-	getCurrentMessageState: (messageIdx: number) => UserMessageState
-	setCurrentMessageState: (messageIdx: number, newState: Partial<UserMessageState>) => void
-	getCurrentThreadState: () => ThreadType['state']
-	setCurrentThreadState: (newState: Partial<ThreadType['state']>) => void
+	getCurrentMessageState: (messageIdx: number) => UserMessageState;
+	setCurrentMessageState: (messageIdx: number, newState: Partial<UserMessageState>) => void;
+	getCurrentThreadState: () => ThreadType['state'];
+	setCurrentThreadState: (newState: Partial<ThreadType['state']>) => void;
 
 	// you can edit multiple messages - the one you're currently editing is "focused", and we add items to that one when you press cmd+L.
 	getCurrentFocusedMessageIdx(): number | undefined;
@@ -153,30 +160,30 @@ export interface IChatThreadService {
 	// closeCurrentStagingSelectionsInThread(): void;
 
 	// codespan links (link to symbols in the markdown)
-	getCodespanLink(opts: { codespanStr: string, messageIdx: number, threadId: string }): CodespanLocationLink | undefined;
-	addCodespanLink(opts: { newLinkText: string, newLinkLocation: CodespanLocationLink, messageIdx: number, threadId: string }): void;
-	generateCodespanLink(opts: { codespanStr: string, threadId: string }): Promise<CodespanLocationLink>;
-	getRelativeStr(uri: URI): string | undefined
+	getCodespanLink(opts: { codespanStr: string; messageIdx: number; threadId: string }): CodespanLocationLink | undefined;
+	addCodespanLink(opts: { newLinkText: string; newLinkLocation: CodespanLocationLink; messageIdx: number; threadId: string }): void;
+	generateCodespanLink(opts: { codespanStr: string; threadId: string }): Promise<CodespanLocationLink>;
+	getRelativeStr(uri: URI): string | undefined;
 
 	// entry pts
 	abortRunning(threadId: string): Promise<void>;
 	dismissStreamError(threadId: string): void;
 
 	// call to edit a message
-	editUserMessageAndStreamResponse({ userMessage, messageIdx, threadId }: { userMessage: string, messageIdx: number, threadId: string }): Promise<void>;
+	editUserMessageAndStreamResponse({ userMessage, messageIdx, threadId }: { userMessage: string; messageIdx: number; threadId: string }): Promise<void>;
 
 	// call to add a message
-	addUserMessageAndStreamResponse({ userMessage, threadId }: { userMessage: string, threadId: string }): Promise<void>;
+	addUserMessageAndStreamResponse({ userMessage, threadId }: { userMessage: string; threadId: string }): Promise<void>;
 
 	// approve/reject
 	approveLatestToolRequest(threadId: string): void;
 	rejectLatestToolRequest(threadId: string): void;
 
 	// jump to history
-	jumpToCheckpointBeforeMessageIdx(opts: { threadId: string, messageIdx: number, jumpToUserModified: boolean }): void;
+	jumpToCheckpointBeforeMessageIdx(opts: { threadId: string; messageIdx: number; jumpToUserModified: boolean }): void;
 
-	focusCurrentChat: () => Promise<void>
-	blurCurrentChat: () => Promise<void>
+	focusCurrentChat: () => Promise<void>;
+	blurCurrentChat: () => Promise<void>;
 
 	getSessionCost(threadId: string): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string };
 	estimateTokens(text: string): number;

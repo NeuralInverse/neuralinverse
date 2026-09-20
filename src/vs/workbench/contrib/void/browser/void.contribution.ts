@@ -5,133 +5,159 @@
 
 
 // shadow validation (diagnostics after AI edits)
-import './shadowValidationService.js'
+import './shadowValidationService.js';
 
 // register inline diffs
-import './editCodeService.js'
+import './editCodeService.js';
 
 // register Sidebar pane, state, actions (keybinds, menus) (Ctrl+L)
-import './sidebarActions.js'
-import './sidebarPane.js'
+import './sidebarActions.js';
+import './sidebarPane.js';
 
 // register quick edit (Ctrl+K)
-import './quickEditActions.js'
+import './quickEditActions.js';
 
 
 // register Autocomplete
-import './autocompleteService.js'
+import './autocompleteService.js';
 
 // register Context services
 // import './contextGatheringService.js'
 // import './contextUserChangesService.js'
 
 // settings pane
-import './voidSettingsPane.js'
+import './voidSettingsPane.js';
 
 // custom artifact pane
-import './neuralInverseArtifactPane.js'
+import './neuralInverseArtifactPane.js';
 
 // register css
 // import './react/src/styles.css'
 
 // update (frontend part, also see platform/)
-import './voidUpdateActions.js'
+import './voidUpdateActions.js';
 
-import './convertToLLMMessageWorkbenchContrib.js'
+import './convertToLLMMessageWorkbenchContrib.js';
 
 // neural inverse
 // import './neuralInverseService.js'
 
 // register Extension Transfer Service
-import './extensionTransferService.js'
+import './extensionTransferService.js';
 
 // register MCP Service
-import '../common/mcpService.js'
+import '../common/mcpService.js';
 
 // internal tool registry (must load before chatThreadService and contributions that register tools)
-import './voidInternalToolService.js'
+import './voidInternalToolService.js';
+
+// Context Ledger (task M5) — append-only journal + episode/brief storage
+// (must load before chatThreadService, which injects it)
+import './contextLedgerService.js';
+
+// Context Ledger recall tools (recall_history / expand_history)
+import './ledgerRecallContrib.js';
+import './ledgerRecallBackfillContrib.js';
+
+// agent memory hybrid retrieval wiring (task M2)
+import './agentMemoryEmbeddingContrib.js';
+// B1 (2026-09-15): episode→memory consolidation + the memory manager command
+import './agentMemoryConsolidationContrib.js';
+import './agentMemoryCommands.contribution.js';
+
+// one-time import of legacy .void-memory files into the memory engine (task M7)
+import './agentMemoryLegacyImportContrib.js';
 
 // bridge void tools into VS Code's ILanguageModelToolsService (Copilot agent mode)
-import './voidToolsBridge.js'
+import './voidToolsBridge.js';
 
 // bridge void models into ILanguageModelsService (Copilot model picker)
-import './voidModelProvider.js'
+import './voidModelProvider.js';
 
 // tools
-import './externalCommandExecutor.js'
-import './userInputRequestService.js'
-import './toolsService.js'
-import './terminalToolService.js'
+import './externalCommandExecutor.js';
+import './userInputRequestService.js';
+import './toolsService.js';
+import './terminalToolService.js';
 
 // register Thread History
-import './chatThreadService.js'
+import './chatThreadService.js';
 
 // terminal enhancements (command classification, process management, streaming)
-import './terminalCommandClassifier.js'
-import './terminalProcessManager.js'
-import './terminalStreamingService.js'
+import './terminalCommandClassifier.js';
+import './terminalProcessManager.js';
+import './terminalStreamingService.js';
 
 // neural inverse agent (agentic execution engine — depends on chatThreadService)
-import './neuralInverseAgentConfigService.js'
-import './neuralInverseAgentService.js'
-import './neuralInverseSubAgentService.js'
+import './neuralInverseAgentConfigService.js';
+import './neuralInverseAgentService.js';
+import './neuralInverseSubAgentService.js';
 
-// agent autonomy services (scratchpad, rollback, task decomposition, memory)
-import './agentScratchpadService.js'
-import './agentRollbackService.js'
-import './agentTaskDecomposer.js'
-import './agentMemoryService.js'
+// agent autonomy services (scratchpad, task decomposition, memory) — the old
+// agentRollbackService was retired in task A3: its checkpoint map had no
+// consumers (onDidRollback had zero listeners); workspace content checkpoints
+// now come from the firmware ICheckpointService at the toolsService boundary
+import './agentScratchpadService.js';
+import './checkpointRestoreActions.js';
+import './agentTaskDecomposer.js';
+import './agentMemoryService.js';
 
 // agent dashboard panel
-import './neuralInverseAgentPane.js'
+import './neuralInverseAgentPane.js';
 
 // ping
-import './metricsPollService.js'
+import './metricsPollService.js';
 
 // helper services
-import './helperServices/consistentItemService.js'
+import './helperServices/consistentItemService.js';
 
 // register selection helper
-import './voidSelectionHelperWidget.js'
+import './voidSelectionHelperWidget.js';
 
 // register tooltip service
-import './tooltipService.js'
+import './tooltipService.js';
 
 // register onboarding service
-import './voidOnboardingService.js'
+import './voidOnboardingService.js';
 
 // register misc service
-import './miscWokrbenchContrib.js'
+import './miscWokrbenchContrib.js';
 
 // register file service (for explorer context menu)
-import './fileService.js'
+import './fileService.js';
 
-import './voidCommandBarService.js' // Register Command Bar Service
+import './voidCommandBarService.js'; // Register Command Bar Service
 
 // register Auto-Connect (env var credential detection)
-import './autoConnect/autoConnectService.js'
+import './autoConnect/autoConnectService.js';
 
 // register source control management
-import './voidSCMService.js'
+import './voidSCMService.js';
 
 // ---------- common (unclear if these actually need to be imported, because they're already imported wherever they're used) ----------
 
 // llmMessage
-import '../common/sendLLMMessageService.js'
+import '../common/sendLLMMessageService.js';
 
 // voidSettings
-import '../common/voidSettingsService.js'
+import '../common/voidSettingsService.js';
 
 // refreshModel
-import '../common/refreshModelService.js'
+import '../common/refreshModelService.js';
 
 // metrics
-import '../common/metricsService.js'
+import '../common/metricsService.js';
 
 // updates
-import '../common/voidUpdateService.js'
+import '../common/voidUpdateService.js';
 
 // model service
-import '../common/voidModelService.js'
+import '../common/voidModelService.js';
+
+// codebase index — status bar + reindex command
+// Wired through void.contribution.ts (live) because neuralInverse.contribution.ts
+// is intentionally gated behind task Q13 (owner decision 2026-09-08).
+// Import chain: workbench.common.main.ts:15 -> void.contribution.ts -> codebaseIndexCommands.ts
+import '../../neuralInverse/browser/context/codebaseIndexCommands.js';
 
 

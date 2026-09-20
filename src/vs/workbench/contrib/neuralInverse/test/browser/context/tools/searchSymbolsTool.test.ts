@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------*/
 
 import assert from 'assert';
+import { Event } from '../../../../../../../base/common/event.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../base/test/common/utils.js';
 import { executeSearchSymbols } from '../../../../browser/context/tools/searchSymbolsTool.js';
 import { IWorkspaceSymbolIndexService } from '../../../../browser/context/index/workspaceSymbolIndex.js';
@@ -28,8 +29,10 @@ function makeIndex(
 ): IWorkspaceSymbolIndexService {
 	return {
 		_serviceBrand: undefined as any,
-		onDidReindex: { event: () => {} } as any,
-		onDidFinishFullIndex: { event: () => {} } as any,
+		onDidReindex: { event: () => { } } as any,
+		onDidFinishFullIndex: { event: () => { } } as any,
+		onDidStartFullIndex: Event.None,
+		onDidRemoveFiles: Event.None,
 		isReady: () => ready,
 		getSymbolsByName: (name: string) => symbols.filter(s => s.name.toLowerCase().includes(name.toLowerCase())),
 		getSymbolsInFile: () => [],
@@ -39,7 +42,7 @@ function makeIndex(
 		getTransitiveImports: () => [],
 		getFileIndex: () => undefined,
 		getStats: () => ({ totalFiles: 0, totalSymbols: 0, indexingInProgress: false }),
-		forceReindex: async () => {},
+		forceReindex: async () => { },
 	};
 }
 

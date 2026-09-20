@@ -7,6 +7,7 @@ import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { IPersistentContextStore, IStoredChunk } from './persistentStore.js';
+import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 
 // BM25 parameters
 const K1 = 1.2;
@@ -20,6 +21,8 @@ export interface IBM25Result {
 	startLine: number;
 	endLine: number;
 	symbolName?: string;
+	/** B3 docs citation: the section this chunk belongs to */
+	sectionTitle?: string;
 }
 
 export interface IWorkspaceBM25Service {
@@ -43,7 +46,7 @@ interface PostingEntry {
 	tf: number; // term frequency in this chunk
 }
 
-class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
+export class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 	readonly _serviceBrand: undefined;
 
 	private _invertedIndex = new Map<string, PostingEntry[]>(); // term -> postings
@@ -53,15 +56,57 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 	private _indexedFiles = new Set<string>();
 	private _ready = false;
 
+	/**
+	 * Lazy init for the persistent store — one attempt per workspace,
+	 * keyed by the sanitized workspace URI (same pattern as
+	 * ledgerRecallService._ensureStore).  A failed init degrades to
+	 * in-memory-only operation — never an error for the caller.
+	 */
+	private _storeInit: Promise<boolean> | undefined;
+
+	/**
+	 * Guards the one-shot hydration from the persistent store so that
+	 * rebuild() runs exactly once per service lifetime, right after the
+	 * store initializes successfully.  Without this, the in-memory
+	 * inverted index stays empty on every restart after the first
+	 * because indexFile() early-returns for unchanged files (line 94).
+	 */
+	private _hydrated = false;
+
 	get isReady(): boolean { return this._ready; }
 
 	constructor(
 		@IPersistentContextStore private readonly _contextStore: IPersistentContextStore,
+		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
 	) {
 		super();
 	}
 
+	private _ensureStore(): Promise<boolean> {
+		if (!this._storeInit) {
+			this._storeInit = (async () => {
+				const ws = this._workspaceContextService.getWorkspace().folders[0]?.uri;
+				if (!ws) { return false; }
+				const id = ws.toString().replace(/[^a-zA-Z0-9]/g, '_').slice(-120) || 'default';
+				await this._contextStore.initialize(id);
+				// Hydrate the in-memory index from persisted chunks exactly once.
+				// Without this, every restart after the first leaves _invertedIndex
+				// empty because indexFile() early-returns for unchanged files.
+				if (!this._hydrated) {
+					this._hydrated = true;
+					await this._rebuildFromStore().catch(() => { /* best-effort — degrade to in-memory */ });
+				}
+				return true;
+			})().catch(() => false);
+		}
+		return this._storeInit;
+	}
+
 	async indexFile(filePath: string, content: string, contentHash: string): Promise<void> {
+		// Ensure the persistent store is initialized before any access
+		const ok = await this._ensureStore();
+		if (!ok) { return; }
+
 		// Check if already indexed with same hash
 		const existingHash = await this._contextStore.getFileContentHash(filePath);
 		if (existingHash === contentHash) { return; }
@@ -107,6 +152,9 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 	}
 
 	async removeFile(filePath: string): Promise<void> {
+		const ok = await this._ensureStore();
+		if (!ok) { return; }
+
 		const existingChunks = await this._contextStore.getChunksByFile(filePath);
 		for (const chunk of existingChunks) {
 			this._docLengths.delete(chunk.id);
@@ -128,6 +176,9 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 	}
 
 	async search(query: string, maxResults: number = 20): Promise<IBM25Result[]> {
+		const ok = await this._ensureStore();
+		if (!ok) { return []; }
+
 		const queryTerms = this._tokenize(query);
 		const scores = new Map<string, { score: number; filePath: string }>();
 
@@ -172,6 +223,7 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 					startLine: chunk.startLine,
 					endLine: chunk.endLine,
 					symbolName: chunk.symbolName,
+					sectionTitle: chunk.sectionTitle,
 				});
 			}
 		}
@@ -184,6 +236,21 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 	}
 
 	async rebuild(): Promise<void> {
+		const ok = await this._ensureStore();
+		if (!ok) { return; }
+		await this._rebuildFromStore();
+	}
+
+	/**
+	 * The body of rebuild() with the store-readiness check removed.
+	 *
+	 * _ensureStore() hydrates by calling this, and it must NOT call
+	 * _ensureStore() back: the init promise is already assigned but still
+	 * pending at that point, so awaiting it would wait on a promise that is
+	 * itself waiting on this call — a deadlock that leaves the index empty
+	 * and every indexFile() caller hung forever.
+	 */
+	private async _rebuildFromStore(): Promise<void> {
 		this._invertedIndex.clear();
 		this._docLengths.clear();
 		this._totalDocs = 0;
@@ -220,15 +287,55 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 		this._ready = true;
 	}
 
+	// B3 docs citation: the section heading carried by one line — markdown
+	// `#…` headings and html <h1..6> tags. Document types only; plain
+	// text/code lines carry none.
+	private static _headingOf(filePath: string, line: string): string | undefined {
+		if (!/\.(md|mdx|html?|htm)$/i.test(filePath)) { return undefined; }
+		const md = /^#{1,6}\s+(.{1,120})/.exec(line);
+		if (md) { return md[1].trim(); }
+		const html = /<h[1-6][^>]*>\s*([^<]{1,120}?)\s*<\/h[1-6]>/i.exec(line);
+		if (html) { return html[1].trim(); }
+		return undefined;
+	}
+
 	private _chunkContent(filePath: string, content: string, contentHash: string): IStoredChunk[] {
 		const lines = content.split('\n');
 		const chunks: IStoredChunk[] = [];
 		const CHUNK_SIZE = 50; // lines per chunk
 
-		for (let i = 0; i < lines.length; i += CHUNK_SIZE) {
-			const chunkLines = lines.slice(i, i + CHUNK_SIZE);
+		// B3: documents chunk at HEADING boundaries so a citation names the
+		// exact section (a heading line starts a new chunk); long sections
+		// still split at CHUNK_SIZE. Other files keep the fixed-size window.
+		const isDocFile = /\.(md|mdx|html?|htm)$/i.test(filePath);
+		let chunkStart = 0;
+		while (chunkStart < lines.length) {
+			let end: number;
+			if (isDocFile) {
+				end = chunkStart + 1;
+				while (end < lines.length
+					&& end - chunkStart < CHUNK_SIZE
+					&& WorkspaceBM25Service._headingOf(filePath, lines[end]) === undefined) {
+					end++;
+				}
+			} else {
+				end = Math.min(chunkStart + CHUNK_SIZE, lines.length);
+			}
+
+			const i = chunkStart;
+			const chunkLines = lines.slice(i, end);
 			const chunkContent = chunkLines.join('\n');
-			const terms = this._tokenize(chunkContent);
+			// the section title in effect at the chunk's FIRST line
+			let sectionTitle: string | undefined;
+			for (let h = i; h >= 0; h--) {
+				sectionTitle = WorkspaceBM25Service._headingOf(filePath, lines[h]);
+				if (sectionTitle !== undefined) { break; }
+			}
+			// the section title participates in matching: a query about the
+			// section topic must hit even when the body wording differs
+			const terms = sectionTitle !== undefined
+				? [...this._tokenize(sectionTitle), ...this._tokenize(chunkContent)]
+				: this._tokenize(chunkContent);
 
 			chunks.push({
 				id: `${filePath}:${i}`,
@@ -236,10 +343,12 @@ class WorkspaceBM25Service extends Disposable implements IWorkspaceBM25Service {
 				contentHash,
 				content: chunkContent,
 				startLine: i + 1,
-				endLine: Math.min(i + CHUNK_SIZE, lines.length),
+				endLine: end,
+				sectionTitle,
 				terms,
 				updatedAt: Date.now(),
 			});
+			chunkStart = end;
 		}
 
 		return chunks;

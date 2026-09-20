@@ -11,13 +11,15 @@ import * as extpath from '../../../../base/common/extpath.js';
 import { isMacintosh as isMac } from '../../../../base/common/platform.js';
 import * as strings from '../../../../base/common/strings.js';
 import { IFileQuery, IFolderQuery } from '../common/search.js';
-import { anchorGlob } from './ripgrepSearchUtils.js';
+import { anchorGlob, ripgrepSpawnPreflightProblem } from './ripgrepSearchUtils.js';
 import { rgDiskPath } from '../../../../base/node/ripgrep.js';
 
 export async function spawnRipgrepCmd(config: IFileQuery, folderQuery: IFolderQuery, includePattern?: glob.IExpression, excludePattern?: glob.IExpression, numThreads?: number) {
 	const rgArgs = getRgArgs(config, folderQuery, includePattern, excludePattern, numThreads);
 	const cwd = folderQuery.folder.fsPath;
 	const resolvedRgDiskPath = await rgDiskPath();
+	const statProblem = ripgrepSpawnPreflightProblem(resolvedRgDiskPath, cwd, { appendLine() { /* the caller logs the composed command line */ } });
+	if (statProblem) { throw new Error(statProblem); }
 	return {
 		cmd: cp.spawn(resolvedRgDiskPath, rgArgs.args, { cwd }),
 		rgDiskPath: resolvedRgDiskPath,

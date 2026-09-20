@@ -41,6 +41,13 @@ export interface IAgentDefinition {
 	readonly model: { providerName: string; modelName: string };
 	/** Full system instructions */
 	readonly systemInstructions: string;
+	/**
+	 * Opening questions the Agents tab asks LOCALLY in the UI (no LLM
+	 * round-trip). The answers are packaged into the first message, so the
+	 * model never burns a turn asking them — the agent starts working
+	 * immediately with everything it needs.
+	 */
+	readonly intakeQuestions?: IIntakeQuestion[];
 	/** Tool names from the registry this agent is allowed to call */
 	readonly allowedTools: string[];
 	/** Max LLM+tool loop iterations before force-stop. Default: 20 */
@@ -51,6 +58,15 @@ export interface IAgentDefinition {
 	readonly isBuiltin?: boolean;
 	readonly createdAt?: number;
 	readonly updatedAt?: number;
+}
+
+export interface IIntakeQuestion {
+	id: string;
+	question: string;
+	placeholder?: string;
+	/** When set, the UI offers selectable chips instead of free text */
+	options?: string[];
+	required?: boolean;
 }
 
 // ─── Tool Interfaces ──────────────────────────────────────────────────────────
@@ -81,6 +97,11 @@ export interface IToolExecutionContext {
 	log: (msg: string) => void;
 	/** Active LLM model info — used for auto co-author trailers */
 	modelInfo?: { provider: string; model: string };
+	/** Workflow identity (phase 3 / F11): stamped into every journal entry the
+	 *  executor writes, so concurrent runs of the same agent stay separable in
+	 *  the shared 'exec:' archive. Ad-hoc agent runs leave both undefined. */
+	runId?: string;
+	stepId?: string;
 }
 
 export interface IAgentTool {

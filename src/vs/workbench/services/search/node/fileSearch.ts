@@ -21,6 +21,7 @@ import { URI } from '../../../../base/common/uri.js';
 import { Promises } from '../../../../base/node/pfs.js';
 import { IFileQuery, IFolderQuery, IProgressMessage, ISearchEngineStats, IRawFileMatch, ISearchEngine, ISearchEngineSuccess, isFilePatternMatch, hasSiblingFn } from '../common/search.js';
 import { spawnRipgrepCmd } from './ripgrepFileSearch.js';
+import { diagnoseRipgrepSpawnError } from './ripgrepSearchUtils.js';
 import { prepareQuery } from '../../../../base/common/fuzzyScorer.js';
 
 interface IDirectoryEntry extends IRawFileMatch {
@@ -228,7 +229,9 @@ export class FileWalker {
 		this.cmdResultCount = 0;
 		this.collectStdout(cmd, 'utf8', onMessage, (err: Error | null, stdout?: string, last?: boolean) => {
 			if (err) {
-				done(err);
+				// spawn failures (ENOENT & friends) name only the command —
+				// re-check the executable/cwd so the error says what is missing.
+				done(new Error(diagnoseRipgrepSpawnError(ripgrep.rgDiskPath, ripgrep.cwd, err)));
 				return;
 			}
 			if (this.isLimitHit) {
