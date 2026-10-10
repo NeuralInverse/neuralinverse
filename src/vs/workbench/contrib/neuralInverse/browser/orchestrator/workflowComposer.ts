@@ -29,6 +29,7 @@ import { IWorkflowStep, IAgentRun, IStepRun, IAgentDefinition, IToolExecutionCon
 import { ICancellationToken } from '../executor/agentExecutor.js';
 import { ToolResultCache } from '../executor/toolCache.js';
 import { BudgetTracker } from '../executor/budgetTracker.js';
+import { evaluateExpression } from './conditionalEvaluator.js';
 
 const MAX_NESTING_DEPTH = 5;
 
@@ -40,7 +41,7 @@ export class WorkflowComposer {
 	constructor(
 		// Circular type reference avoided via late binding — orchestrator passed at construction
 		private readonly orchestrator: {
-			run(workflow: import('../../common/workflowTypes.js').IWorkflowDefinition, run: IAgentRun, agents: Map<string, IAgentDefinition>, baseCtx: Omit<IToolExecutionContext, 'log'>, input: string, cancellation: ICancellationToken, onUpdate: (run: IAgentRun) => void): Promise<IAgentRun>;
+			run(workflow: import('../../common/workflowTypes.js').IWorkflowDefinition, run: IAgentRun, agents: Map<string, IAgentDefinition>, baseCtx: Omit<IToolExecutionContext, 'log'>, input: string, cancellation: ICancellationToken, onUpdate: (run: IAgentRun) => void, inheritedToolCache?: ToolResultCache, inheritedBudgetTracker?: BudgetTracker): Promise<IAgentRun>;
 			readonly approvalGate: import('./approvalGate.js').ApprovalGateManager;
 			workflowResolver?: (id: string) => import('../../common/workflowTypes.js').IWorkflowDefinition | undefined;
 		},
@@ -91,12 +92,22 @@ export class WorkflowComposer {
 		// ── Build input ───────────────────────────────────────────────────────
 		let subInput = input;
 		if (subConfig.inputMapping) {
-			// Use the prior step output as the base for input mapping
+			// Evaluate the mapping expression against upstream step outputs
 			const upstreamOutput = (step.dependsOn ?? [])
 				.map(id => stepOutputs.get(id))
 				.filter(Boolean)
 				.join('\n\n');
-			if (upstreamOutput) subInput = upstreamOutput;
+			if (upstreamOutput) {
+				try {
+					const mapped = evaluateExpression(upstreamOutput, subConfig.inputMapping);
+					subInput = typeof mapped === 'string' ? mapped : JSON.stringify(mapped);
+				} catch (e: any) {
+					stepRun.status = 'failed';
+					stepRun.error = `inputMapping expression error: ${e.message}`;
+					stepRun.endedAt = Date.now();
+					return;
+				}
+			}
 		}
 
 		// ── Run sub-workflow ──────────────────────────────────────────────────
@@ -125,6 +136,7 @@ export class WorkflowComposer {
 			await this.orchestrator.run(
 				subWorkflow, subRun, agents, baseCtx, subInput, cancellation,
 				(r) => onUpdate(parentRun), // fire parent run events to keep UI updated
+				toolCache, budgetTracker,
 			);
 
 			if (subRun.status === 'done') {

@@ -26,6 +26,31 @@
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
+ * Evaluate a mapping expression against a step's output string.
+ * Returns the raw evaluated value (string, number, boolean, object, etc.).
+ * Throws on syntax errors.
+ */
+export function evaluateExpression(output: string, expression: string): unknown {
+	let data: Record<string, unknown>;
+	try {
+		const parsed = JSON.parse(output);
+		data = (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed))
+			? parsed as Record<string, unknown>
+			: { output: parsed };
+	} catch {
+		data = { output };
+	}
+
+	const tokens = _tokenize(expression);
+	const parser = new _Parser(tokens, data);
+	const result = parser.parseExpr();
+	if (parser.pos < tokens.length) {
+		throw new Error(`Unexpected token "${tokens[parser.pos].value}" at position ${parser.pos}`);
+	}
+	return result;
+}
+
+/**
  * Evaluate a condition expression against a step's output string.
  * Returns true/false. Throws on syntax errors.
  */

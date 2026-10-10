@@ -255,7 +255,8 @@ export class SearchCodeTool implements IAgentTool {
 			try {
 				const content = (await ctx.fileService.readFile(uri)).value.toString();
 				const lines = content.split('\n');
-				const relativePath = uri.path;
+				const wsPath = ctx.workspaceUri.path.endsWith('/') ? ctx.workspaceUri.path : ctx.workspaceUri.path + '/';
+				const relativePath = uri.path.startsWith(wsPath) ? uri.path.slice(wsPath.length) : uri.path;
 				for (let i = 0; i < lines.length && matches.length < maxResults; i++) {
 					if (regex.test(lines[i])) {
 						matches.push(`${relativePath}:${i + 1}: ${lines[i].trim()}`);

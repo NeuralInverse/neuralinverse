@@ -225,6 +225,9 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			},
 		));
 
+		// Seed triggers with whatever workflows are already loaded
+		this._triggerManager.refresh(this._configLoader.getWorkflows());
+
 		// Wire sub-workflow resolver so WorkflowComposer can look up workflows by ID
 		this._orchestrator.workflowResolver = (id: string) => this._configLoader.getWorkflow(id);
 
@@ -280,8 +283,9 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			a.name.toLowerCase().replace(/\s+/g, '-'),
 			a,
 		]));
-		// Also index by raw name
+		// Also index by id and raw name
 		for (const a of this.agentStore.getAgents()) {
+			agentMap.set(a.id, a);
 			agentMap.set(a.name, a);
 		}
 
@@ -343,42 +347,46 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 				allowedTools: [...ALL_FS_TOOLS, ...ALL_TERMINAL_TOOLS, ...ALL_GIT_TOOLS, ...ALL_HTTP_TOOLS].map(t => t.name),
 			}],
 		};
-		return this.runWorkflow(syntheticWorkflow.id, input, 'manual').catch(async () => {
-			// Workflow not in registry — use the synthetic one directly
-			const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
-			const cancellation: ICancellationToken = { cancelled: false };
-			const agentMap = new Map(this.agentStore.getAgents().map(a => [a.name, a]));
-			const folder = this.workspaceContextService.getWorkspace().folders[0];
+		const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
+		const cancellation: ICancellationToken = { cancelled: false };
+		const agentMap = new Map(this.agentStore.getAgents().map(a => [
+			a.name.toLowerCase().replace(/\s+/g, '-'),
+			a,
+		]));
+		for (const a of this.agentStore.getAgents()) {
+			agentMap.set(a.id, a);
+			agentMap.set(a.name, a);
+		}
+		const folder = this.workspaceContextService.getWorkspace().folders[0];
 
-			this._activeRuns.set(run.id, run);
-			this._activeCancellations.set(run.id, cancellation);
-			this._onDidChangeRun.fire(run);
+		this._activeRuns.set(run.id, run);
+		this._activeCancellations.set(run.id, cancellation);
+		this._onDidChangeRun.fire(run);
 
-			if (!folder) {
-				run.status = 'failed';
-				run.error = 'No workspace folder open';
-				run.endedAt = Date.now();
-				this._finalizeRun(run);
-				return run;
-			}
-
-			const agentModelSel = this.settingsService.state.modelSelectionOfFeature['Chat'];
-			const baseCtx = { workspaceUri: folder.uri, fileService: this.fileService, modelInfo: agentModelSel ? { provider: agentModelSel.providerName, model: agentModelSel.modelName } : undefined };
-
-			try {
-				await this._orchestrator.run(
-					syntheticWorkflow, run, agentMap, baseCtx, input, cancellation,
-					(r) => this._onDidChangeRun.fire(r),
-				);
-			} catch (e: any) {
-				run.status = 'failed';
-				run.error = e.message;
-				run.endedAt = Date.now();
-			}
-
+		if (!folder) {
+			run.status = 'failed';
+			run.error = 'No workspace folder open';
+			run.endedAt = Date.now();
 			this._finalizeRun(run);
 			return run;
-		});
+		}
+
+		const agentModelSel = this.settingsService.state.modelSelectionOfFeature['Chat'];
+		const baseCtx = { workspaceUri: folder.uri, fileService: this.fileService, modelInfo: agentModelSel ? { provider: agentModelSel.providerName, model: agentModelSel.modelName } : undefined };
+
+		try {
+			await this._orchestrator.run(
+				syntheticWorkflow, run, agentMap, baseCtx, input, cancellation,
+				(r) => this._onDidChangeRun.fire(r),
+			);
+		} catch (e: any) {
+			run.status = 'failed';
+			run.error = e.message;
+			run.endedAt = Date.now();
+		}
+
+		this._finalizeRun(run);
+		return run;
 	}
 
 	cancelRun(runId: string): void {

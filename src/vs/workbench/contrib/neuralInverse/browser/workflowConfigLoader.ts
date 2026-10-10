@@ -80,12 +80,13 @@ export class WorkflowConfigLoader extends Disposable {
 		return t;
 	}
 
-	private async _waitForFile(file: URI, timeoutMs = 5000): Promise<void> {
+	private async _waitForFile(file: URI, timeoutMs = 5000): Promise<boolean> {
 		const start = Date.now();
 		while (Date.now() - start < timeoutMs) {
-			try { if (await this.fileService.exists(file)) return; } catch { }
+			try { if (await this.fileService.exists(file)) return true; } catch { }
 			await new Promise<void>(r => setTimeout(r, 200));
 		}
+		return false;
 	}
 
 	private async _withWriteAccess(fn: () => Promise<void>): Promise<void> {
@@ -115,7 +116,9 @@ export class WorkflowConfigLoader extends Disposable {
 				? `attrib +r "${inversePath}\\*" /s && echo DONE > "${statusFile.fsPath}"`
 				: `chmod -R a-w "${inversePath}" && echo "DONE" > "${statusFile.fsPath}"`;
 			terminal.sendText(lockCmd, true);
-			await this._waitForFile(statusFile);
+			if (!await this._waitForFile(statusFile)) {
+				throw new Error('[WorkflowConfigLoader] Timed out re-acquiring .inverse/ write lock');
+			}
 			try { await this.fileService.del(statusFile); } catch { }
 		}
 	}
@@ -247,8 +250,8 @@ export class WorkflowConfigLoader extends Disposable {
 		const fileUri = URI.joinPath(inverseDirUri, WORKFLOWS_DIR, `${def.id}.json`);
 
 		// Archive prior version inside the write-access window, then save with bumped version
+		let defToSave = def;
 		await this._withWriteAccess(async () => {
-			let defToSave = def;
 			if (this._versioning) {
 				defToSave = await this._versioning.archive(def);
 			}
@@ -256,7 +259,7 @@ export class WorkflowConfigLoader extends Disposable {
 			await this.fileService.writeFile(fileUri, VSBuffer.fromString(json));
 		});
 
-		console.log(`[WorkflowConfigLoader] Saved workflow: ${def.id} (v${(def.version ?? 0) + 1})`);
+		console.log(`[WorkflowConfigLoader] Saved workflow: ${defToSave.id} (v${defToSave.version ?? 1})`);
 	}
 
 	/** List all archived versions for a workflow */
