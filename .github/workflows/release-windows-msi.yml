@@ -120,7 +120,7 @@ jobs:
           Write-Host "Uploaded MSI to S3"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-msi-x64
           path: .build/release/
@@ -221,7 +221,7 @@ jobs:
           Write-Host "Uploaded MSI to S3"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-msi-arm64
           path: .build/release/

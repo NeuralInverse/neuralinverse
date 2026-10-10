@@ -241,7 +241,7 @@ jobs:
         run: ls -lh .build/release/
 
       - name: Upload x64 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-x64
           path: .build/release/
@@ -366,7 +366,7 @@ jobs:
         run: ls -lh .build/release/
 
       - name: Upload arm64 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-arm64
           path: .build/release/
@@ -491,7 +491,7 @@ jobs:
         run: ls -lh .build/release/
 
       - name: Upload armhf artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-armhf
           path: .build/release/

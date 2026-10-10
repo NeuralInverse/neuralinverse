@@ -138,7 +138,7 @@ jobs:
         run: ls -lh .build/release/
 
       - name: Upload arm64 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-arm64
           path: .build/release/
@@ -243,7 +243,7 @@ jobs:
         run: ls -lh .build/release/
 
       - name: Upload x64 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-x64
           path: .build/release/
