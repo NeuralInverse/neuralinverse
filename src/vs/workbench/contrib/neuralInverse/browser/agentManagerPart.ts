@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { getWindow } from '../../../../base/browser/dom.js';
+import { getWindow, clearNode } from '../../../../base/browser/dom.js';
 import { DisposableStore } from '../../../../base/common/lifecycle.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
@@ -3179,7 +3179,7 @@ export class AgentManagerPart extends Part {
             // Always show task count in header for debug
             title.textContent = `Background Agents (${tasks.length})`;
 
-            listArea.innerHTML = '';
+            clearNode(listArea);
             const statusOrder: BackgroundTaskStatus[] = ['running', 'branching', 'committing', 'queued', 'completed', 'failed', 'cancelled'];
             tasks.sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
@@ -3200,11 +3200,25 @@ export class AgentManagerPart extends Part {
                 empty.style.height = '100%';
                 empty.style.opacity = '0.5';
                 empty.style.textAlign = 'center';
-                empty.innerHTML = `
-                    <div style="font-size:32px;margin-bottom:12px">⊘</div>
-                    <div style="font-size:12px;color:var(--vscode-descriptionForeground)">No background agents running</div>
-                    <div style="font-size:11px;color:var(--vscode-descriptionForeground);margin-top:4px;opacity:0.7">Spawn one to work on a branch while you continue coding</div>
-                `;
+                const emptyIcon = document.createElement('div');
+                emptyIcon.style.fontSize = '32px';
+                emptyIcon.style.marginBottom = '12px';
+                emptyIcon.textContent = '⊘';
+                empty.appendChild(emptyIcon);
+
+                const emptyLine1 = document.createElement('div');
+                emptyLine1.style.fontSize = '12px';
+                emptyLine1.style.color = 'var(--vscode-descriptionForeground)';
+                emptyLine1.textContent = 'No background agents running';
+                empty.appendChild(emptyLine1);
+
+                const emptyLine2 = document.createElement('div');
+                emptyLine2.style.fontSize = '11px';
+                emptyLine2.style.color = 'var(--vscode-descriptionForeground)';
+                emptyLine2.style.marginTop = '4px';
+                emptyLine2.style.opacity = '0.7';
+                emptyLine2.textContent = 'Spawn one to work on a branch while you continue coding';
+                empty.appendChild(emptyLine2);
                 listArea.appendChild(empty);
                 return;
             }
@@ -3277,7 +3291,18 @@ export class AgentManagerPart extends Part {
                 meta.style.color = 'var(--vscode-descriptionForeground)';
                 meta.style.opacity = '0.6';
                 meta.style.background = 'rgba(0,0,0,0.1)';
-                meta.innerHTML = `<span style="font-family:monospace">${task.branchName}</span><span>${task.commits.length} commit(s)</span><span>${task.progress.length} steps</span>`;
+                const metaBranch = document.createElement('span');
+                metaBranch.style.fontFamily = 'monospace';
+                metaBranch.textContent = task.branchName;
+                meta.appendChild(metaBranch);
+
+                const metaCommits = document.createElement('span');
+                metaCommits.textContent = `${task.commits.length} commit(s)`;
+                meta.appendChild(metaCommits);
+
+                const metaSteps = document.createElement('span');
+                metaSteps.textContent = `${task.progress.length} steps`;
+                meta.appendChild(metaSteps);
                 consoleArea.appendChild(meta);
 
                 // Progress log
@@ -3291,12 +3316,34 @@ export class AgentManagerPart extends Part {
                 log.style.opacity = '0.8';
 
                 if (task.progress.length === 0) {
-                    log.innerHTML = '<div style="opacity:0.4;font-style:italic">Waiting...</div>';
+                    const waiting = document.createElement('div');
+                    waiting.style.opacity = '0.4';
+                    waiting.style.fontStyle = 'italic';
+                    waiting.textContent = 'Waiting...';
+                    log.appendChild(waiting);
                 } else {
-                    log.innerHTML = task.progress.map(l => `<div style="padding:1px 0"><span style="opacity:0.3;margin-right:6px">&gt;</span>${this._escapeHtml(l)}</div>`).join('');
+                    for (const line of task.progress) {
+                        const row = document.createElement('div');
+                        row.style.padding = '1px 0';
+                        const arrow = document.createElement('span');
+                        arrow.style.opacity = '0.3';
+                        arrow.style.marginRight = '6px';
+                        arrow.textContent = '>';
+                        row.appendChild(arrow);
+                        const text = document.createElement('span');
+                        text.textContent = line;
+                        row.appendChild(text);
+                        log.appendChild(row);
+                    }
                 }
                 if (task.error) {
-                    log.innerHTML += `<div style="color:var(--vscode-errorForeground);margin-top:4px;padding-left:12px;border-left:2px solid var(--vscode-errorForeground)">${this._escapeHtml(task.error)}</div>`;
+                    const errDiv = document.createElement('div');
+                    errDiv.style.color = 'var(--vscode-errorForeground)';
+                    errDiv.style.marginTop = '4px';
+                    errDiv.style.paddingLeft = '12px';
+                    errDiv.style.borderLeft = '2px solid var(--vscode-errorForeground)';
+                    errDiv.textContent = task.error;
+                    log.appendChild(errDiv);
                 }
                 consoleArea.appendChild(log);
 
@@ -3361,10 +3408,6 @@ export class AgentManagerPart extends Part {
 
         render();
         this.disposables.add(this.backgroundAgentService.onDidChangeTask(() => render()));
-    }
-
-    private _escapeHtml(str: string): string {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     // === DEPLOYMENTS TAB ===

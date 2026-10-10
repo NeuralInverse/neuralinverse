@@ -21,6 +21,7 @@ import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js'
 // Services
 import './agentStoreService.js';
 import './workflowAgentService.js';
+import './agenticModeService.js';
 import './backgroundAgentService.js';
 import './backgroundAgentCommands.js';
 import './backgroundAgentPanel.js';

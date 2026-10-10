@@ -9,12 +9,16 @@ import { createDecorator } from '../../../../platform/instantiation/common/insta
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
+import { URI } from '../../../../base/common/uri.js';
 import {
 	IBackgroundTask,
 	IBackgroundTaskRequest,
 	BackgroundTaskStatus,
 	MAX_CONCURRENT_BACKGROUND_AGENTS,
 } from '../common/backgroundAgentTypes.js';
+import { IWorkflowAgentService } from './workflowAgentService.js';
+import { IExternalCommandExecutor } from '../../../contrib/void/browser/externalCommandExecutor.js';
+import { INativeEnvironmentService } from '../../../../platform/environment/common/environment.js';
 
 // ─── Service Interface ────────────────────────────────────────────────────────
 
@@ -51,6 +55,9 @@ class BackgroundAgentService extends Disposable implements IBackgroundAgentServi
 
 	constructor(
 		@IWorkspaceContextService private readonly _workspaceContext: IWorkspaceContextService,
+		@IWorkflowAgentService private readonly _workflowAgentService: IWorkflowAgentService,
+		@IExternalCommandExecutor private readonly _executor: IExternalCommandExecutor,
+		@INativeEnvironmentService private readonly _environmentService: INativeEnvironmentService,
 	) {
 		super();
 	}
@@ -59,7 +66,7 @@ class BackgroundAgentService extends Disposable implements IBackgroundAgentServi
 		const id = generateUuid().slice(0, 8);
 		const branchName = request.branchName || `ni/bg/${id}`;
 		const baseBranch = request.baseBranch || 'HEAD';
-		const worktreePath = `/tmp/ni-bg-${id}`;
+		const worktreePath = URI.joinPath(this._environmentService.tmpDir, `ni-bg-${id}`).fsPath;
 
 		const task: IBackgroundTask = {
 			id,
@@ -168,9 +175,6 @@ class BackgroundAgentService extends Disposable implements IBackgroundAgentServi
 			task.progress.push('Agent started — executing task...');
 			this._onDidChangeTask.fire(task);
 
-			// TODO: Wire WorkflowOrchestrator.run() here once tool CWD override is supported.
-			// For now, background agents execute via a simpler loop that's being built.
-			// The service infrastructure (worktree, queue, cancel, UI) is fully functional.
 			await this._runAgentLoop(task, cancellation);
 
 			if (cancellation.cancelled) { this._setStatus(task, 'cancelled'); return; }
@@ -191,18 +195,16 @@ class BackgroundAgentService extends Disposable implements IBackgroundAgentServi
 			task.commits = logResult.stdout.trim().split('\n').filter(Boolean);
 			task.progress.push(`Completed with ${task.commits.length} commit(s)`);
 
-			// 5. Optional PR (safe — uses execFile with array args, no shell injection)
+			// 5. Optional PR
 			if (task.request.createPR) {
 				const pushResult = await this._gitExec(['push', '-u', 'origin', task.branchName], folder);
 				if (pushResult.exitCode !== 0) {
 					task.progress.push(`Push failed: ${pushResult.stderr}`);
 				} else {
-					const prResult = await this._ghExec([
-						'pr', 'create',
-						'--title', task.request.title,
-						'--body', `Background agent task: ${task.request.description}`,
-						'--head', task.branchName,
-					], folder);
+					const prResult = await this._shellExec(
+						`gh pr create --title ${JSON.stringify(task.request.title)} --body ${JSON.stringify(`Background agent task: ${task.request.description}`)} --head ${task.branchName}`,
+						folder
+					);
 					task.progress.push(prResult.exitCode === 0 ? `PR created: ${prResult.stdout.trim()}` : `PR failed: ${prResult.stderr}`);
 				}
 			}
@@ -219,13 +221,21 @@ class BackgroundAgentService extends Disposable implements IBackgroundAgentServi
 		}
 	}
 
-	private async _runAgentLoop(_task: IBackgroundTask, _cancellation: { cancelled: boolean }): Promise<void> {
-		// Placeholder: The actual LLM agent loop will be wired here.
-		// It will use ILLMMessageService + tool registry with CWD set to worktreePath.
-		// For now the service handles the full lifecycle (branch, worktree, commit, cleanup)
-		// and the agent execution is pending proper CWD-scoped tool support.
-		_task.progress.push('Agent execution pending — orchestrator CWD support required');
-		this._onDidChangeTask.fire(_task);
+	private async _runAgentLoop(task: IBackgroundTask, cancellation: { cancelled: boolean }): Promise<void> {
+		await this._workflowAgentService.runQuickAgent(
+			task.request.description,
+			task.worktreePath,
+			(line: string) => {
+				task.progress.push(line);
+				this._onDidChangeTask.fire(task);
+				if (cancellation.cancelled) {
+					const err = new Error('cancelled');
+					(err as any).cancelled = true;
+					throw err;
+				}
+			},
+			cancellation,
+		);
 	}
 
 	private async _cleanup(task: IBackgroundTask): Promise<void> {
@@ -253,33 +263,42 @@ class BackgroundAgentService extends Disposable implements IBackgroundAgentServi
 		return result.stdout.trim() || 'main';
 	}
 
+	// ─── Shell execution via IExternalCommandExecutor ─────────────────────────
+	// Uses the terminal-backed executor — the correct pattern for browser/ code
+	// in this sandboxed Electron environment (no globalThis.require available).
+
 	private async _gitExec(args: string[], cwd: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-		return this._execFileAsync('git', args, cwd);
+		const command = `git ${args.map(a => /\s/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a).join(' ')}`;
+		return this._shellExec(command, cwd);
 	}
 
-	private async _ghExec(args: string[], cwd: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-		return this._execFileAsync('gh', args, cwd);
-	}
-
-	private async _execFileAsync(cmd: string, args: string[], cwd: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-		const nodeRequire = (globalThis as any).require as NodeRequire | undefined;
-		if (!nodeRequire) {
-			throw new Error('Background agents require Node.js integration (not available in web).');
-		}
-
-		const { execFile } = nodeRequire('child_process') as typeof import('child_process');
-		const { promisify } = nodeRequire('util') as typeof import('util');
-		const execFileAsync = promisify(execFile);
+	private async _shellExec(command: string, cwd: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+		// Use cmd /c on Windows so exit code is captured as a decimal integer.
+		// PowerShell's $? is a boolean (True/False) so we cannot use it reliably.
+		const sentinel = `__NI_EXIT__`;
+		const cdCmd = `cd /d "${cwd.replace(/"/g, '\\"')}"`;
+		const wrapped = `cmd /c "${cdCmd} && (${command}) & echo ${sentinel}:%ERRORLEVEL%"`;
 
 		try {
-			const { stdout, stderr } = await execFileAsync(cmd, args, {
-				cwd,
-				timeout: 60_000,
-				maxBuffer: 4 * 1024 * 1024,
-			});
-			return { stdout: stdout ?? '', stderr: stderr ?? '', exitCode: 0 };
+			const jobId = `ni-bg-${generateUuid().slice(0, 6)}`;
+			const raw = await this._executor.execute(jobId, wrapped, 60_000, 4 * 1024 * 1024);
+
+			const sentinelIdx = raw.lastIndexOf(`${sentinel}:`);
+			if (sentinelIdx === -1) {
+				// No sentinel — return full output as stderr so the caller sees the real error
+				return { stdout: '', stderr: raw.trim(), exitCode: 1 };
+			}
+
+			// Everything before the sentinel is the command's combined stdout+stderr
+			const output = raw.slice(0, sentinelIdx).trimEnd();
+			const exitCodeStr = raw.slice(sentinelIdx + sentinel.length + 1).trim();
+			const exitCode = parseInt(exitCodeStr, 10);
+			// Route output to stderr when the command failed so error messages reach task.error
+			return exitCode === 0
+				? { stdout: output, stderr: '', exitCode: 0 }
+				: { stdout: '', stderr: output, exitCode: isNaN(exitCode) ? 1 : exitCode };
 		} catch (e: any) {
-			return { stdout: e.stdout ?? '', stderr: e.stderr ?? '', exitCode: e.code ?? 1 };
+			return { stdout: '', stderr: e.message ?? String(e), exitCode: 1 };
 		}
 	}
 }
