@@ -1,5 +1,12 @@
 # Neural Inverse - Open Source ("Neural Inverse OSS")
 
+> [!IMPORTANT]
+> **Development of Neural Inverse OSS has stopped.** This repository is no longer maintained, and issues and pull requests are not reviewed.
+>
+> Neural Inverse OSS was a separate open-source editor. It is a different product from Neural Inverse Build and Neural Inverse Govern, which are commercial and not built from this code. Released versions (up to v1.1.3) remain available here under the Apache License 2.0.
+>
+> For Neural Inverse today, see [neuralinverse.com](https://neuralinverse.com).
+
 [![Feature Requests](https://img.shields.io/github/issues/NeuralInverse/neuralinverse/enhancement?label=Feature%20Requests&color=38b2ac)](https://github.com/NeuralInverse/neuralinverse/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 [![Bugs](https://img.shields.io/github/issues/NeuralInverse/neuralinverse/bug?label=Bugs&color=e53e3e)](https://github.com/NeuralInverse/neuralinverse/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 [![Sponsor](https://img.shields.io/badge/Sponsor-NeuralInverse-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/NeuralInverse)
