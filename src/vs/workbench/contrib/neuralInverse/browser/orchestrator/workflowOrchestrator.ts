@@ -82,6 +82,8 @@ export class WorkflowOrchestrator {
 		input: string,
 		cancellation: ICancellationToken,
 		onUpdate: RunUpdateCallback,
+		inheritedToolCache?: ToolResultCache,
+		inheritedBudgetTracker?: BudgetTracker,
 	): Promise<IAgentRun> {
 
 		run.status = 'planning';
@@ -108,11 +110,11 @@ export class WorkflowOrchestrator {
 		// Step IDs deactivated by conditional branches at runtime
 		const branchInactiveIds = new Set<string>();
 
-		// Per-run tool result cache (shared across all steps)
-		const toolCache = new ToolResultCache();
+		// Per-run tool result cache (shared across all steps; inherited by sub-workflows)
+		const toolCache = inheritedToolCache ?? new ToolResultCache();
 
-		// Per-run budget tracker (undefined if no budget configured)
-		const budgetTracker = workflow.budget ? new BudgetTracker(workflow.budget) : undefined;
+		// Per-run budget tracker (undefined if no budget configured; inherited by sub-workflows)
+		const budgetTracker = inheritedBudgetTracker ?? (workflow.budget ? new BudgetTracker(workflow.budget) : undefined);
 
 		// Sub-workflow composer (for cross-workflow composition)
 		const composer = new WorkflowComposer(this);
@@ -279,7 +281,7 @@ export class WorkflowOrchestrator {
 			},
 		};
 
-		const stepInput = this._buildStepInput(step, input, priorOutputs, priorOutputs.length === 0 ? 0 : 1);
+		const stepInput = this._buildStepInput(step, input, priorOutputs, priorOutputs.length > 0);
 
 		// ── Retry loop ────────────────────────────────────────────────────────
 		const retryConfig = step.retry;
@@ -477,9 +479,9 @@ export class WorkflowOrchestrator {
 		step: IWorkflowStep,
 		originalInput: string,
 		priorOutputs: IPriorStepOutput[],
-		stepIndex: number,
+		hasPriorOutputs: boolean,
 	): string {
-		if (stepIndex === 0 || priorOutputs.length === 0) {
+		if (!hasPriorOutputs || priorOutputs.length === 0) {
 			return originalInput;
 		}
 		// For downstream steps, inject the original goal so context is maintained

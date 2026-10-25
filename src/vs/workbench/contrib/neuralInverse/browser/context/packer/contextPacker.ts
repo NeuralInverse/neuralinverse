@@ -315,7 +315,8 @@ class ContextPackerService extends Disposable implements IContextPackerService {
 		}
 
 		const result = parts.join('\n');
-		return { content: result, mode: 'imports-only' };
+		const hasSignatures = typeSymbols.length > 0 || funcSymbols.length > 0;
+		return { content: result, mode: hasSignatures ? 'signatures' : 'imports-only' };
 	}
 
 	private _extractChatContext(
