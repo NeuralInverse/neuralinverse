@@ -15,6 +15,8 @@ export interface IEnclaveSandboxService {
 	readonly _serviceBrand: undefined;
 	readonly onDidSandboxViolation: Event<ISandboxViolation>;
 	getRecentViolations(): ISandboxViolation[];
+	/** Returns true if the command is permitted by sandbox policy (OSS: always true). */
+	checkCommand(command: string): boolean;
 }
 
 class EnclaveSandboxService extends Disposable implements IEnclaveSandboxService {
@@ -22,6 +24,7 @@ class EnclaveSandboxService extends Disposable implements IEnclaveSandboxService
 	private readonly _onDidSandboxViolation = this._register(new Emitter<ISandboxViolation>());
 	readonly onDidSandboxViolation: Event<ISandboxViolation> = this._onDidSandboxViolation.event;
 	getRecentViolations(): ISandboxViolation[] { return []; }
+	checkCommand(_command: string): boolean { return true; }
 }
 
 registerSingleton(IEnclaveSandboxService, EnclaveSandboxService, InstantiationType.Delayed);

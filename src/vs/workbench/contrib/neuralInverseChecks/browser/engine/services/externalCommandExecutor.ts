@@ -52,7 +52,7 @@ import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { URI } from '../../../../../../base/common/uri.js';
 import { isWindows } from '../../../../../../base/common/platform.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
-import { IEnclaveSandboxService } from '../../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
+import { IEnclaveSandboxService } from '../../../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
 
 
 // ─── Service Interface ────────────────────────────────────────────────────────
@@ -273,8 +273,8 @@ function _tempPaths(jobId: string): ITempPaths {
 		};
 	}
 	return {
-		out:  `file:///tmp/ni_ext_${safe}.out`,
-		err:  `file:///tmp/ni_ext_${safe}.err`,
+		out: `file:///tmp/ni_ext_${safe}.out`,
+		err: `file:///tmp/ni_ext_${safe}.err`,
 		exit: `file:///tmp/ni_ext_${safe}.exit`,
 	};
 }
@@ -286,8 +286,8 @@ function _tempPaths(jobId: string): ITempPaths {
  * Windows: `cmd /C "set VAR=val && command > out 2> err & echo %ERRORLEVEL% > exit"`
  */
 function _buildWrappedCommand(command: string, paths: ITempPaths, env?: Record<string, string>): string {
-	const outPath  = _uriToShellPath(paths.out);
-	const errPath  = _uriToShellPath(paths.err);
+	const outPath = _uriToShellPath(paths.out);
+	const errPath = _uriToShellPath(paths.err);
 	const exitPath = _uriToShellPath(paths.exit);
 
 	if (isWindows) {
