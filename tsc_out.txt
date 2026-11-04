@@ -1,0 +1,20 @@
+
+<--- Last few GCs --->
+
+[18932:0000018286A47000]   266626 ms: Mark-Compact 4084.5 (4101.9) -> 4081.1 (4102.7) MB, pooled: 0 MB, 4354.00 / 0.00 ms  (average mu = 0.149, current mu = 0.043) allocation failure; scavenge might not succeed
+[18932:0000018286A47000]   269960 ms: Mark-Compact (reduce) 4085.2 (4102.9) -> 4082.0 (4096.4) MB, pooled: 0 MB, 2709.04 / 0.00 ms  (+ 76.0 ms in 15 steps since start of marking, biggest step 5.4 ms, walltime since start of marking 2849 ms) (average mu = 
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF6496B1E1F node::OnFatalError+1343
+ 2: 00007FF6482C3617 v8::Function::NewInstance+423
+ 3: 00007FF6480C3E57 X509_STORE_get_lookup_certs+54423
+ 4: 00007FF6480C7B64 X509_STORE_get_lookup_certs+70052
+ 5: 00007FF6480D6ACC v8::internal::StrongRootAllocatorBase::deallocate_impl+16604
+ 6: 00007FF6480D630B v8::internal::StrongRootAllocatorBase::deallocate_impl+14619
+ 7: 00007FF6499D492D node::AsyncResource::CallbackScope::CallbackScope+2124541
+ 8: 00007FF6480C1920 X509_STORE_get_lookup_certs+44896
+ 9: 00007FF6480DC17A X509_STORE_set_cleanup+5098
+10: 00007FF6480E8616 uv_timer_set_repeat+20694
+11: 00007FF647CB9277 v8::CodeEvent::GetFunctionName+131959
+12: 00000182BF0B75FA 

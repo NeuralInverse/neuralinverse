@@ -52,6 +52,7 @@ import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { URI } from '../../../../../../base/common/uri.js';
 import { isWindows } from '../../../../../../base/common/platform.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
+import { IEnclaveSandboxService } from '../../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
 
 
 // ─── Service Interface ────────────────────────────────────────────────────────
@@ -104,6 +105,7 @@ export class ExternalCommandExecutorImpl extends Disposable implements IExternal
 	constructor(
 		@ITerminalService private readonly _terminalService: ITerminalService,
 		@IFileService private readonly _fileService: IFileService,
+		@IEnclaveSandboxService private readonly _sandboxService: IEnclaveSandboxService,
 	) {
 		super();
 	}
@@ -115,6 +117,14 @@ export class ExternalCommandExecutorImpl extends Disposable implements IExternal
 		maxBytes: number = DEFAULT_MAX_BYTES,
 		env?: Record<string, string>
 	): Promise<string> {
+		// Sandbox check — fail safely if the decision cannot be established
+		if (!this._sandboxService.checkCommand(command)) {
+			throw new ExternalCommandError(
+				`[Enclave Sandbox] Command blocked by security policy: ${command.substring(0, 80)}`,
+				-2,
+				'',
+			);
+		}
 		const paths = _tempPaths(jobId);
 
 		// Build the wrapped command with redirection

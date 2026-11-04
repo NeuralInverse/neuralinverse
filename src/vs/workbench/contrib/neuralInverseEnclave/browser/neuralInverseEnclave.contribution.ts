@@ -118,6 +118,30 @@ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).regi
 // Environment service (OSS — mode persistence only)
 import '../../neuralInverseEnclave/common/services/environment/enclaveEnvironmentService.js';
 
+// Stage 1 — no inter-service dependencies
+import '../common/services/session/enclaveSessionService.js';
+import '../common/services/firewall/enclaveFirewallService.js';
+import '../common/services/sandbox/enclaveSandboxService.js';
+
+// Stage 2 — depends on session
+import '../common/services/audit/enclaveAuditTrailService.js';
+import '../common/services/integrity/enclaveFileIntegrityService.js';
+import '../common/services/commit/enclaveCommitService.js';
+
+// Stage 3 — depends on session + audit
+import '../common/services/vault/enclaveVaultService.js';
+import '../common/services/toolchain/enclaveToolchainService.js';
+import '../common/services/sbom/enclaveSBOMService.js';
+import '../common/services/build/enclaveBuildService.js';
+
+// Stage 4 — depends on session + audit
+import '../common/services/analysis/enclaveAnalysisProofService.js';
+import '../common/services/test/enclaveTestProofService.js';
+import '../common/services/review/enclaveReviewService.js';
+
+// Stage 5 — OSS stub
+import '../common/services/attestation/enclaveAttestationService.js';
+
 // Action Log — tracks every IDE action
 import '../common/services/actionLog/enclaveActionLogStorageService.js';
 import './services/actionLog/enclaveActionLogService.js';
