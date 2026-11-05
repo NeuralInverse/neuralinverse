@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { session } from 'electron';
+import * as fs from 'original-fs';
 import { Disposable, IDisposable, toDisposable } from '../../../base/common/lifecycle.js';
 import { Schemas } from '../../../base/common/network.js';
 import { basename, normalize } from '../../../base/common/path.js';
@@ -48,15 +49,15 @@ export class ProtocolMainService extends Disposable implements IProtocolMainServ
 	private handleProtocols(): void {
 		const { defaultSession } = session;
 
-		// Register vscode-file:// handler using file protocol (standard VS Code approach).
-		// callback({ path }) lets Electron serve the file directly from the filesystem.
-		defaultSession.protocol.registerFileProtocol(Schemas.vscodeFileResource, (request, callback) => {
+		// Register vscode-file:// handler using buffer protocol (reliable for ES module imports).
+		// callback({ statusCode, headers, mimeType, data }) lets us serve file contents directly.
+		defaultSession.protocol.registerBufferProtocol(Schemas.vscodeFileResource, (request, callback) => {
 			let path: string;
 			try {
 				path = this.requestToNormalizedFilePath(request);
 			} catch (err) {
 				this.logService.error(`${Schemas.vscodeFileResource}: Failed to parse request url ${request.url}`, err);
-				return callback({ error: -3 /* ABORTED */ });
+				return callback({ statusCode: 400, headers: {}, mimeType: 'text/plain', data: Buffer.from('') });
 			}
 
 			// Build headers for workbench.html / workbench-dev.html
@@ -87,14 +88,22 @@ export class ProtocolMainService extends Disposable implements IProtocolMainServ
 				const roots = this.getAllValidRoots();
 				const matchesRoot = roots.some(root => lowerPath.startsWith(root.toLowerCase()));
 				if (matchesRoot) {
-					return callback({ path, headers });
+					const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
+					const mimeType = ext === '.js' ? 'text/javascript' : ext === '.css' ? 'text/css' : ext === '.html' ? 'text/html' : ext === '.json' ? 'application/json' : 'application/octet-stream';
+					try {
+						const data = fs.readFileSync(path);
+						return callback({ statusCode: 200, headers, mimeType, data });
+					} catch (err) {
+						this.logService.error(`${Schemas.vscodeFileResource}: Failed to read file ${path}`, err);
+						return callback({ statusCode: 404, headers: {}, mimeType: 'text/plain', data: Buffer.from('') });
+					}
 				}
 			} catch {
 				// fall through to abort
 			}
 
 			this.logService.error(`${Schemas.vscodeFileResource}: Refused to load resource ${path} from ${Schemas.vscodeFileResource}: protocol (original URL: ${request.url})`);
-			return callback({ error: -3 /* ABORTED */ });
+			return callback({ statusCode: 403, headers: {}, mimeType: 'text/plain', data: Buffer.from('') });
 		});
 
 		// Block any file:// access

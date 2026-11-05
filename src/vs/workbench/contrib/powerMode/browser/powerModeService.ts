@@ -105,7 +105,7 @@ import { createWebQALoopTool } from './tools/webQALoopTool.js';
 import { createMultiFileEditTool } from './tools/multiFileEditTool.js';
 import { createSelfHealTool } from './tools/selfHealTool.js';
 import { createVisualDiffTool } from './tools/visualDiffTool.js';
-import { IDebugService } from '../../../workbench/contrib/debug/common/debug.js';
+import { IDebugService } from '../../debug/common/debug.js';
 import { createParallelSubAgentTool } from './tools/parallelSubAgentTool.js';
 import { createCodeArchaeologyTool } from './tools/codeArchaeologyTool.js';
 import { createDebuggerTool } from './tools/debuggerTool.js';

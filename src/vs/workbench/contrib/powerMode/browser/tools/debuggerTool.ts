@@ -31,7 +31,7 @@
 
 import { definePowerTool } from './powerToolRegistry.js';
 import { IToolContext, IToolResult } from '../../common/powerModeTypes.js';
-import { IDebugService, IDebugSession, IBreakpointData } from '../../../workbench/contrib/debug/common/debug.js';
+import { IDebugService, IDebugSession, IBreakpointData } from '../../../debug/common/debug.js';
 import { URI } from '../../../../../base/common/uri.js';
 
 interface DebugSessionInfo {

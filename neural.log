@@ -1,0 +1,89 @@
+
+
+DevTools listening on ws://127.0.0.1:9222/devtools/browser/7cff24cf-f93f-44cb-a493-2e0249cdd111
+(node:22776) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `NeuralInverse --trace-deprecation ...` to show where the warning was created)
+[main 2026-11-05T02:26:58.747Z] StorageMainService: creating application shared storage
+[main 2026-11-05T02:27:00.084Z] [CSS_DEV] DONE, 390 css modules (1222ms)
+[main 2026-11-05T02:27:00.547Z] update#setState disabled
+[main 2026-11-05T02:27:00.586Z] [shared storage] Creating shared storage database at 'c:\Users\user\.neural-inverse-shared\sharedStorage\state.vscdb' (wasCreated: false)
+[main 2026-11-05T02:27:00.589Z] [shared storage] Initializing fallback application storage (path: c:\Users\user\AppData\Roaming\code-oss-dev\User\globalStorage\state.vscdb)
+[main 2026-11-05T02:27:00.634Z] [shared storage] Fallback application storage initialized with 62 items
+User is opted out of basic NeuralInverse metrics? false
+NeuralInverse posthog metrics info: {
+  "distinctId": "88b89828-9634-4b8c-85cf-cc5a41737e5c",
+  "properties": {
+    "vscodeVersion": "1.127.0",
+    "niVersion": "1.0.0",
+    "os": "windows",
+    "quality": "stable",
+    "distinctId": "88b89828-9634-4b8c-85cf-cc5a41737e5c",
+    "distinctIdUser": "1a1b0e16-0917-425b-995e-326e6c74c0e6",
+    "oldId": "NULL",
+    "isDevMode": true,
+    "platform": "win32",
+    "arch": "x64"
+  }
+}
+[22776:1105/022700.665:INFO:CONSOLE:0] "Document-Policy HTTP header: Unrecognized document policy feature name js-memory-limits.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench-dev.html (0)
+[22776:1105/022728.756:INFO:CONSOLE:99] "%c INFO color: #33f [SymbolIndex] Indexing 0 files across 0 folders", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022728.758:INFO:CONSOLE:99] "%c INFO color: #33f [SymbolIndex] Done. 0 files, 0 symbols", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022728.763:INFO:CONSOLE:34] "[PowerBus] Agent registered: power-mode receive:all,send:query,broadcast", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/powerMode/browser/powerBusService.js (34)
+[22776:1105/022728.772:INFO:CONSOLE:99] "%c WARN color: #993 Creation of workbench contribution 'workbench.contrib.voidModelProvider' took 23ms.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022729.821:INFO:CONSOLE:99] "%c  ERR color: #f33 Error scanning installed extensions:", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022729.854:INFO:CONSOLE:99] "%c  ERR color: #f33 TypeError: productService.builtInExtensionsEnabledWithAutoUpdates is not iterable", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022729.947:INFO:CONSOLE:99] "%c INFO color: #33f [DefaultAccount] Authentication provider is not available. [object Object]", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022730.033:INFO:CONSOLE:297] "%c[Extension Host] %cdebugger listening on port 5870 color: blue color:", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.js (297)
+[22776:1105/022730.131:INFO:CONSOLE:99] "%c INFO color: #33f Started local extension host with pid 20512.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022730.627:INFO:CONSOLE:99] "%c WARN color: #993 Creation of workbench contribution 'workbench.contrib.startupVoidSidebar' took 159ms.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022730.715:INFO:CONSOLE:226] "%c[Extension Host] %cdebugger inspector at devtools://devtools/bundled/js_app.html?v8only=true&ws=127.0.0.1:5870/5704a364-b349-4fff-8edf-f65d86cfb080 color: blue color:", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.js (226)
+[22776:1105/022731.735:INFO:CONSOLE:288] "[createInstance] checksSocketService depends on neuralInverseExternalToolService which is NOT registered.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js (288)
+[22776:1105/022731.737:INFO:CONSOLE:99] "%c  ERR color: #f33 Unable to create workbench contribution 'ChecksSocketContribution'. Error: [createInstance] checksSocketService depends on neuralInverseExternalToolService which is NOT registered.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022731.737:INFO:CONSOLE:99] "%c  ERR color: #f33 Unable to create workbench contribution 'GRCDiagnosticsContribution'. Error: [createInstance] GRCDiagnosticsContribution depends on UNKNOWN service neuralInverseGRCEngineService.", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022731.739:INFO:CONSOLE:99] "%c INFO color: #33f [AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022736.706:INFO:CONSOLE:99] "%c INFO color: #33f [AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[main 2026-11-05T02:27:37.819Z] TypeError: productService.builtInExtensionsEnabledWithAutoUpdates is not iterable
+[22776:1105/022740.039:INFO:CONSOLE:99] "%c  ERR color: #f33 [LocalProcessExtensionHost]: Extension host did not start in 10 seconds (debugBrk: false)", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/platform/log/common/log.js (99)
+[22776:1105/022743.142:INFO:CONSOLE:133] "[autoConnect] _resolveGhToken: success: false token length: 0", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/autoConnectService.js (133)
+[22776:1105/022743.311:INFO:CONSOLE:165] "[autoConnect] _resolveAzEndpoint: failed (no subscription, no resources, or parse error): SyntaxError: Unexpected token '$', "$ powershe"... is not valid JSON", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/autoConnectService.js (165)
+[Event.buffer][onProcessData] potential LEAK detected: 100 events buffered without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:958:41)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[22776:1105/022743.522:INFO:CONSOLE:145] "[autoConnect] _resolveAzToken: success: true length: 146", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/autoConnectService.js (145)
+[22776:1105/022743.522:INFO:CONSOLE:348] "[autoConnect] detectAllCredentials: ghCliToken present: false length: 0 azCliToken present: true azCliEndpoint: (none)", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/envVarDetector.js (348)
+[22776:1105/022743.540:INFO:CONSOLE:351] "[autoConnect] detectAllCredentials: envVar results: (none)", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/envVarDetector.js (351)
+[22776:1105/022743.618:INFO:CONSOLE:326] "[autoConnect] detectGitHubCliCredentials: no hosts.yml found at C:\Users\user/.config/gh/hosts.yml, C:\Users\user\AppData\Roaming\GitHub CLI\hosts.yml", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/envVarDetector.js (326)
+[22776:1105/022746.692:INFO:CONSOLE:234] "[autoConnect] runWindowsCredentialManagerFill: token found: false length: 0", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/envVarDetector.js (234)
+[22776:1105/022746.692:INFO:CONSOLE:362] "[autoConnect] detectAllCredentials: aws: false azure: true gcp: false ghCli: false gcm: false", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/envVarDetector.js (362)
+[22776:1105/022746.692:INFO:CONSOLE:372] "[autoConnect] detectAllCredentials: final results: microsoftAzure/cli-auth", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/envVarDetector.js (372)
+[22776:1105/022746.692:INFO:CONSOLE:74] "[autoConnect] _runDetection: raw credential count: 1 microsoftAzure/cli-auth", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/autoConnectService.js (74)
+[22776:1105/022746.692:INFO:CONSOLE:78] "[autoConnect] _runDetection: after applied/dismissed filter: 0 applied: (none) dismissed: microsoftAzure", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/contrib/void/browser/autoConnect/autoConnectService.js (78)
+[Event.buffer][onProcessReady] potential LEAK detected: 4 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:958:41)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidChangeProperty] potential LEAK detected: 16 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:958:41)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onProcessExit] potential LEAK detected: 4 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:958:41)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)

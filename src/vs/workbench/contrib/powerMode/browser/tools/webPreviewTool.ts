@@ -11,7 +11,7 @@ import { URI } from '../../../../../base/common/uri.js';
 import { IFileService } from '../../../../../platform/files/common/files.js';
 import { VSBuffer } from '../../../../../base/common/buffer.js';
 import { IExternalCommandExecutor } from '../../../void/browser/externalCommandExecutor.js';
-import * as path from 'path';
+import { join } from '../../../../../base/common/path.js';
 
 const DEFAULT_PORT = 3000;
 const SCREENSHOT_DIR = '/tmp/neuralinverse-previews';
@@ -92,7 +92,7 @@ Example:
 				let targetUrl = url;
 
 				if (!targetUrl) {
-					const pkgUri = URI.file(path.join(workingDirectory, 'package.json'));
+					const pkgUri = URI.file(join(workingDirectory, 'package.json'));
 					let pkgContent: string;
 					try {
 						const content = await fileService.readFile(pkgUri);
