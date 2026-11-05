@@ -475,8 +475,8 @@ export const ButtonSubmit = ({ className, disabled, ...props }: ButtonProps & Re
 
 	return <button
 		type='button'
-		className={`rounded-full flex-shrink-0 flex-grow-0 flex items-center justify-center
-			${disabled ? 'bg-vscode-disabled-fg cursor-default' : 'bg-white cursor-pointer'}
+		className={`void-btn void-btn-primary flex-shrink-0 flex-grow-0 flex items-center justify-center
+			${disabled ? 'opacity-50 cursor-default' : ''}
 			${className}
 		`}
 		// data-tooltip-id='void-tooltip'
@@ -490,8 +490,7 @@ export const ButtonSubmit = ({ className, disabled, ...props }: ButtonProps & Re
 
 export const ButtonStop = ({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) => {
 	return <button
-		className={`rounded-full flex-shrink-0 flex-grow-0 cursor-pointer flex items-center justify-center
-			bg-white
+		className={`void-btn void-btn-secondary flex-shrink-0 flex-grow-0 cursor-pointer flex items-center justify-center
 			${className}
 		`}
 		type='button'
@@ -1243,7 +1242,7 @@ const UserMessageComponent = ({ chatMessage, messageIdx, isCheckpointGhost, curr
 		className={`
         relative ml-auto
         ${mode === 'edit' ? 'w-full max-w-full'
-				: mode === 'display' ? `self-end w-fit max-w-full whitespace-pre-wrap` : '' // user words should be pre
+				: mode === 'display' ? `self-end w-fit max-w-full whitespace-pre-wrap void-chat-bubble-user` : '' // user words should be pre
 			}
 
         ${isCheckpointGhost && !isMsgAfterCheckpoint ? 'opacity-50 pointer-events-none' : ''}
@@ -1254,9 +1253,9 @@ const UserMessageComponent = ({ chatMessage, messageIdx, isCheckpointGhost, curr
 		<div
 			// style chatbubble according to role
 			className={`
-            text-left rounded-lg max-w-full
+            text-left rounded-xl max-w-full
             ${mode === 'edit' ? ''
-					: mode === 'display' ? 'p-2 flex flex-col bg-void-bg-1 text-void-fg-1 overflow-x-auto cursor-pointer' : ''
+					: mode === 'display' ? 'p-2 flex flex-col void-chat-bubble overflow-x-auto cursor-pointer' : ''
 				}
         `}
 			onClick={() => { if (mode === 'display') { onOpenEdit() } }}

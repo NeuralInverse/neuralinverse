@@ -94,7 +94,7 @@ const Codespan = ({ text, className, onClick, tooltip }: { text: string, classNa
 	// TODO compute this once for efficiency. we should use `labels.ts/shorten` to display duplicates properly
 
 	return <code
-		className={`font-mono font-medium rounded-sm bg-void-bg-1 px-1 ${className}`}
+		className={`font-mono font-medium rounded-sm bg-void-bg-1 px-1 ${className ?? ''}`}
 		onClick={onClick}
 		{...tooltip ? {
 			'data-tooltip-id': 'void-tooltip',
@@ -339,8 +339,9 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 	if (t.type === 'heading') {
 
 		const HeadingTag = `h${t.depth}` as keyof JSX.IntrinsicElements
+		const headingClass = `chat-h${t.depth}`
 
-		return <HeadingTag>
+		return <HeadingTag className={headingClass}>
 			<ChatMarkdownRender chatMessageLocation={chatMessageLocation} string={t.text} inPTag={true} codeURI={codeURI} {...options} />
 		</HeadingTag>
 	}
@@ -410,15 +411,15 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 	}
 
 	if (t.type === 'hr') {
-		return <hr />
+		return <hr className='chat-hr' />
 	}
 
 	if (t.type === 'blockquote') {
-		return <blockquote>{t.text}</blockquote>
+		return <blockquote className='chat-blockquote'>{t.text}</blockquote>
 	}
 
 	if (t.type === 'list_item') {
-		return <li>
+		return <li className='chat-list-item'>
 			<input type='checkbox' checked={t.checked} readOnly />
 			<span>
 				<ChatMarkdownRender chatMessageLocation={chatMessageLocation} string={t.text} inPTag={true} codeURI={codeURI} {...options} />
@@ -487,7 +488,7 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 				onClick={() => { window.open(t.href) }}
 				href={t.href}
 				title={t.title ?? undefined}
-				className='underline cursor-pointer hover:brightness-90 transition-all duration-200 text-void-fg-2'
+				className='chat-link cursor-pointer hover:brightness-90 transition-all duration-200'
 			>
 				{t.text}
 			</a>
@@ -504,11 +505,11 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 	}
 
 	if (t.type === 'strong') {
-		return <strong>{t.text}</strong>
+		return <strong className='chat-strong'>{t.text}</strong>
 	}
 
 	if (t.type === 'em') {
-		return <em>{t.text}</em>
+		return <em className='chat-em'>{t.text}</em>
 	}
 
 	// inline code
@@ -523,7 +524,7 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 
 		}
 
-		return <Codespan text={t.text} />
+		return <Codespan text={t.text} className='chat-codespan' />
 	}
 
 	if (t.type === 'br') {

@@ -76,8 +76,17 @@ class OutputFileNameOracle {
 					file = file.slice(0, -5) + '.ts';
 					cmdLine.fileNames.push(file);
 				}
+				// Ensure the file is present in fileNames so getOutputFileNames can resolve it.
+				// Gulp streams all files (including tsconfig-excluded ones), but cmdLine.fileNames
+				// only contains tsconfig include matches.
+				const wasNotInFileNames = !cmdLine.fileNames.includes(file);
+				if (wasNotInFileNames) {
+					cmdLine.fileNames.push(file);
+				}
 				const outfile = (ts as InternalTsApi).getOutputFileNames(cmdLine, file, true)[0];
 				if (isDts) {
+					cmdLine.fileNames.pop();
+				} else if (wasNotInFileNames) {
 					cmdLine.fileNames.pop();
 				}
 				return outfile;

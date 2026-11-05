@@ -21,6 +21,88 @@ import { IPowerModeChangeTracker } from '../powerModeChangeTracker.js';
 import { IShadowValidationService } from '../../../void/browser/shadowValidationService.js';
 import { checkBashSecurity, isDestructiveCommand, validatePaths } from './bashSecurity.js';
 
+// ─── Browser-safe path helpers (no Node.js 'path' module) ───────────────────
+
+const _WIN_DRIVE_RE = /^[a-zA-Z]:[\\/]/;
+
+function _isAbsolute(p: string): boolean {
+	return p.startsWith('/') || _WIN_DRIVE_RE.test(p);
+}
+
+function _resolve(workingDirectory: string, filePath: string): string {
+	if (_isAbsolute(filePath)) {
+		return filePath;
+	}
+	const base = workingDirectory.replace(/\\/g, '/');
+	const rel = filePath.replace(/\\/g, '/');
+	return base + (base.endsWith('/') ? '' : '/') + rel;
+}
+
+function _basename(p: string): string {
+	const normalized = p.replace(/\\/g, '/');
+	const parts = normalized.split('/');
+	return parts[parts.length - 1] || normalized;
+}
+
+function _dirname(p: string): string {
+	const normalized = p.replace(/\\/g, '/');
+	const lastSlash = normalized.lastIndexOf('/');
+	if (lastSlash === -1) { return '.'; }
+	return normalized.substring(0, lastSlash) || '/';
+}
+
+function _relative(from: string, to: string): string {
+	const fromNorm = _resolve('/', from).replace(/\\/g, '/');
+	const toNorm = _resolve('/', to).replace(/\\/g, '/');
+	if (toNorm.startsWith(fromNorm + '/')) {
+		return toNorm.substring(fromNorm.length + 1);
+	}
+	return toNorm;
+}
+
+// ─── Windows command translation ────────────────────────────────────────────
+
+const _IS_WINDOWS = typeof process !== 'undefined' && process.platform === 'win32';
+
+function _shellQuoteWin(p: string): string {
+	// cmd.exe uses double quotes for quoting
+	return `"${p.replace(/"/g, '\\"')}"`;
+}
+
+function _translateCommandForWindows(command: string): string {
+	if (!_IS_WINDOWS) { return command; }
+
+	let cmd = command;
+
+	// Translate mkdir -p <paths> to recursive Windows mkdir
+	// Windows `mkdir` doesn't support -p, so we translate to a PowerShell one-liner
+	cmd = cmd.replace(/\bmkdir\s+-p\s+(.+)/gi, (match, paths) => {
+		const pathList = paths.trim().split(/\s+/).filter(Boolean);
+		const psCommands = pathList.map(p => `New-Item -ItemType Directory -Force -Path '${p}'`).join('; ');
+		return `powershell -Command "${psCommands}"`;
+	});
+
+	// Translate rm -rf to Windows equivalent
+	cmd = cmd.replace(/\brm\s+-rf\s+/gi, 'rmdir /s /q ');
+
+	// Translate cp -r to xcopy or robocopy
+	cmd = cmd.replace(/\bcp\s+-r\s+/gi, 'xcopy /E /I ');
+
+	// Translate cat to type
+	cmd = cmd.replace(/\bcat\s+/gi, 'type ');
+
+	// Translate ls to dir
+	cmd = cmd.replace(/\bls\b/gi, 'dir');
+
+	// Translate touch to New-Item
+	cmd = cmd.replace(/\btouch\s+/gi, 'powershell -Command "New-Item -ItemType File -Force -Path ');
+
+	// Translate find to where/dir
+	cmd = cmd.replace(/\bfind\s+/gi, 'where ');
+
+	return cmd;
+}
+
 const MAX_OUTPUT = 50 * 1024; // 50KB
 const MAX_LINES = 2000;
 const MAX_LINE_LENGTH = 2000;
@@ -85,9 +167,20 @@ Rules:
 			// Auto-inject co-author trailers when bash is used for git commit
 			command = _injectCoAuthorIfGitCommit(command, getModelInfo?.());
 
+			// Translate Unix commands to Windows equivalents if needed
+			command = _translateCommandForWindows(command);
+
 			ctx.metadata({ title: description });
 
-			const fullCommand = `cd ${_shellQuote(workingDirectory)} && ${command}`;
+			// Build the shell command with proper quoting for the platform
+			let fullCommand: string;
+			if (_IS_WINDOWS) {
+				// cmd.exe: use double quotes for paths, /c for single command
+				const quotedDir = _shellQuoteWin(workingDirectory);
+				fullCommand = `cd /d ${quotedDir} && ${command}`;
+			} else {
+				fullCommand = `cd ${_shellQuote(workingDirectory)} && ${command}`;
+			}
 			const jobId = `pm_${ctx.sessionId}_${Date.now()}`;
 
 			try {
@@ -134,11 +227,11 @@ Rules:
 			const offset = (args.offset as number) ?? 1;
 			const limit = (args.limit as number) ?? MAX_LINES;
 
-			if (!filePath.startsWith('/')) {
-				filePath = workingDirectory + '/' + filePath;
+			if (!_isAbsolute(filePath)) {
+				filePath = _resolve(workingDirectory, filePath);
 			}
 
-			ctx.metadata({ title: filePath.split('/').pop() ?? filePath });
+			ctx.metadata({ title: _basename(filePath) });
 
 			const uri = URI.file(filePath);
 
@@ -189,7 +282,7 @@ Rules:
 				return {
 					title: filePath.split('/').pop() ?? filePath,
 					output,
-					metadata: { lines: allLines.length },
+					metadata: { lines: allLines.length, uri: uri.toString() },
 				};
 			} catch (err: any) {
 				return {
@@ -226,11 +319,11 @@ Rules:
 			let filePath = args.filePath as string;
 			const content = args.content as string;
 
-			if (!filePath.startsWith('/')) {
-				filePath = workingDirectory + '/' + filePath;
+			if (!_isAbsolute(filePath)) {
+				filePath = _resolve(workingDirectory, filePath);
 			}
 
-			const fileName = filePath.split('/').pop() ?? filePath;
+			const fileName = _basename(filePath);
 			ctx.metadata({ title: `Write ${fileName}` });
 
 			// Track change before writing
@@ -268,7 +361,7 @@ Rules:
 				return {
 					title: `Wrote ${fileName}`,
 					output,
-					metadata: { lines: lineCount },
+					metadata: { lines: lineCount, uri: uri.toString() },
 				};
 			} catch (err: any) {
 				return {
@@ -307,11 +400,11 @@ Rules:
 			const oldString = args.old_string as string;
 			const newString = args.new_string as string;
 
-			if (!filePath.startsWith('/')) {
-				filePath = workingDirectory + '/' + filePath;
+			if (!_isAbsolute(filePath)) {
+				filePath = _resolve(workingDirectory, filePath);
 			}
 
-			const fileName = filePath.split('/').pop() ?? filePath;
+			const fileName = _basename(filePath);
 			ctx.metadata({ title: `Edit ${fileName}` });
 
 			const uri = URI.file(filePath);
@@ -367,7 +460,7 @@ Rules:
 				return {
 					title: `Edited ${fileName}`,
 					output,
-					metadata: {},
+					metadata: { uri: uri.toString() },
 				};
 			} catch (err: any) {
 				return {
@@ -398,11 +491,11 @@ Rules:
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			let dirPath = (args.dirPath as string) ?? workingDirectory;
-			if (!dirPath.startsWith('/')) {
-				dirPath = workingDirectory + '/' + dirPath;
+			if (!_isAbsolute(dirPath)) {
+				dirPath = _resolve(workingDirectory, dirPath);
 			}
 
-			ctx.metadata({ title: dirPath.split('/').pop() ?? dirPath });
+			ctx.metadata({ title: _basename(dirPath) });
 
 			const uri = URI.file(dirPath);
 
@@ -448,7 +541,10 @@ Rules:
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			const pattern = args.pattern as string;
-			const searchPath = (args.path as string) ?? workingDirectory;
+			let searchPath = (args.path as string) ?? workingDirectory;
+			if (!_isAbsolute(searchPath)) {
+				searchPath = _resolve(workingDirectory, searchPath);
+			}
 
 			ctx.metadata({ title: pattern });
 
@@ -502,7 +598,10 @@ Rules:
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			const pattern = args.pattern as string;
-			const searchPath = (args.path as string) ?? workingDirectory;
+			let searchPath = (args.path as string) ?? workingDirectory;
+			if (!_isAbsolute(searchPath)) {
+				searchPath = _resolve(workingDirectory, searchPath);
+			}
 			const include = args.include as string | undefined;
 
 			ctx.metadata({ title: pattern });

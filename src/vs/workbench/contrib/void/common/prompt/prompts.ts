@@ -147,7 +147,7 @@ export type InternalToolInfo = {
 	name: string,
 	description: string,
 	params: {
-		[paramName: string]: { description: string }
+		[paramName: string]: { description: string; type?: string; required?: boolean }
 	},
 	// Only if the tool is from an MCP server
 	mcpServerName?: string,

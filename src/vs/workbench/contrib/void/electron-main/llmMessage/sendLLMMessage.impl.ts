@@ -221,6 +221,10 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 		const thisConfig = settingsOfProvider[providerName]
 		return new OpenAI({ baseURL: 'https://api.moonshot.cn/v1', apiKey: thisConfig.apiKey, ...commonPayloadOpts })
 	}
+	else if (providerName === 'nvidia') {
+		const thisConfig = settingsOfProvider[providerName]
+		return new OpenAI({ baseURL: 'https://integrate.api.nvidia.com/v1', apiKey: thisConfig.apiKey, ...commonPayloadOpts })
+	}
 
 	else throw new Error(`Neural Inverse providerName was invalid: ${providerName}.\n\nHelp: https://neuralinverse.com/docs/troubleshooting/provider-not-available`)
 }
@@ -1144,6 +1148,12 @@ export const sendLLMMessageToProviderImplementation = {
 		list: null,
 	},
 	moonshot: {
+		sendChat: (params) => _sendOpenAICompatibleChat(params),
+		sendFIM: null,
+		list: null,
+	},
+
+	nvidia: {
 		sendChat: (params) => _sendOpenAICompatibleChat(params),
 		sendFIM: null,
 		list: null,

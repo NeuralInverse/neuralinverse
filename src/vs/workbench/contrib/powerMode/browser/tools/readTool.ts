@@ -30,7 +30,15 @@ Rules:
 			{ name: 'limit', type: 'number', description: 'Maximum number of lines to read (default: 2000)', required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			let filePath = args.filePath as string;
+			const rawFilePath = args.filePath;
+			if (typeof rawFilePath !== 'string' || rawFilePath.trim().length === 0) {
+				return {
+					title: 'Invalid file path',
+					output: 'Error: filePath must be a non-empty string.',
+					metadata: { error: true },
+				};
+			}
+			let filePath = rawFilePath;
 			const offset = (args.offset as number) ?? 1;
 			const limit = (args.limit as number) ?? DEFAULT_LIMIT;
 

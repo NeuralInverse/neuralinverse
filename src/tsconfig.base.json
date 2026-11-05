@@ -17,11 +17,11 @@
                 "useDefineForClassFields": false,
                 "lib": [
                         "ES2024",
-                        "ESNext.Disposable",
+                        "esnext.disposable",
                         "DOM",
-                        "DOM.Iterable",
-                        "WebGPU",
-                        "WebWorker.ImportScripts"
+                        "dom.iterable",
+                        
+                        "webworker.importscripts"
                 ]
         }
 }

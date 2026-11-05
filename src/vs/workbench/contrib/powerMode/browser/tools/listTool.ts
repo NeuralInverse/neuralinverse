@@ -16,7 +16,10 @@ export function createListTool(workingDirectory: string) {
 			{ name: 'path', type: 'string', description: `Directory to list (default: ${workingDirectory})`, required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			const dirPath = (args.path as string) ?? workingDirectory;
+			let dirPath = (args.path as string) ?? workingDirectory;
+			if (typeof dirPath !== 'string' || dirPath.trim().length === 0) {
+				dirPath = workingDirectory;
+			}
 			const title = path.relative(workingDirectory, dirPath) || '.';
 
 			const dirents = await fsPromises.readdir(dirPath, { withFileTypes: true });

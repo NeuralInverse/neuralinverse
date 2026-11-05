@@ -443,6 +443,9 @@ export class ToolsService extends Disposable implements IToolsService {
 			read_file: (params: RawToolParamsObj) => {
 				const { uri: uriStr, start_line: startLineUnknown, end_line: endLineUnknown, page_number: pageNumberUnknown } = params
 				const uri = validateURIws(uriStr)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: read_file requires a valid uri path, but it was not provided.`)
+				}
 				const pageNumber = validatePageNum(pageNumberUnknown)
 
 				let startLine = validateNumber(startLineUnknown, { default: null })
@@ -457,12 +460,18 @@ export class ToolsService extends Disposable implements IToolsService {
 				const { uri: uriStr, page_number: pageNumberUnknown } = params
 
 				const uri = validateURIws(uriStr)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: ls_dir requires a valid uri path, but it was not provided.`)
+				}
 				const pageNumber = validatePageNum(pageNumberUnknown)
 				return { uri, pageNumber }
 			},
 			get_dir_tree: (params: RawToolParamsObj) => {
 				const { uri: uriStr, } = params
 				const uri = validateURIws(uriStr)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: get_dir_tree requires a valid uri path, but it was not provided.`)
+				}
 				return { uri }
 			},
 			search_pathnames_only: (params: RawToolParamsObj) => {
@@ -500,6 +509,9 @@ export class ToolsService extends Disposable implements IToolsService {
 			search_in_file: (params: RawToolParamsObj) => {
 				const { uri: uriStr, query: queryUnknown, is_regex: isRegexUnknown } = params;
 				const uri = validateURIws(uriStr);
+				if (!uri) {
+					throw new Error(`Invalid LLM output: search_in_file requires a valid uri path, but it was not provided.`)
+				}
 				const query = validateStr('query', queryUnknown);
 				const isRegex = validateBoolean(isRegexUnknown, { default: false });
 				return { uri, query, isRegex };
@@ -510,6 +522,9 @@ export class ToolsService extends Disposable implements IToolsService {
 					uri: uriUnknown,
 				} = params
 				const uri = validateURIws(uriUnknown)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: read_lint_errors requires a valid uri path, but it was not provided.`)
+				}
 				return { uri }
 			},
 
@@ -518,6 +533,9 @@ export class ToolsService extends Disposable implements IToolsService {
 			create_file_or_folder: (params: RawToolParamsObj) => {
 				const { uri: uriUnknown } = params
 				const uri = validateURIws(uriUnknown)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: create_file_or_folder requires a valid uri path, but it was not provided.`)
+				}
 				const uriStr = validateStr('uri', uriUnknown)
 				const isFolder = checkIfIsFolder(uriStr)
 				return { uri, isFolder }
@@ -526,6 +544,9 @@ export class ToolsService extends Disposable implements IToolsService {
 			delete_file_or_folder: (params: RawToolParamsObj) => {
 				const { uri: uriUnknown, is_recursive: isRecursiveUnknown } = params
 				const uri = validateURIws(uriUnknown)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: delete_file_or_folder requires a valid uri path, but it was not provided.`)
+				}
 				const isRecursive = validateBoolean(isRecursiveUnknown, { default: false })
 				const uriStr = validateStr('uri', uriUnknown)
 				const isFolder = checkIfIsFolder(uriStr)
@@ -535,6 +556,9 @@ export class ToolsService extends Disposable implements IToolsService {
 			rewrite_file: (params: RawToolParamsObj) => {
 				const { uri: uriStr, new_content: newContentUnknown } = params
 				const uri = validateURIws(uriStr)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: rewrite_file requires a valid uri path, but it was not provided.`)
+				}
 				const newContent = validateStr('newContent', newContentUnknown)
 				return { uri, newContent }
 			},
@@ -542,12 +566,18 @@ export class ToolsService extends Disposable implements IToolsService {
 			edit_file: (params: RawToolParamsObj) => {
 				const { uri: uriStr, search_replace_blocks: searchReplaceBlocksUnknown } = params
 				const uri = validateURIws(uriStr)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: edit_file requires a valid uri path, but it was not provided.`)
+				}
 				const searchReplaceBlocks = validateStr('searchReplaceBlocks', searchReplaceBlocksUnknown)
 				return { uri, searchReplaceBlocks }
 			},
 			multi_replace_file_content: (params: RawToolParamsObj) => {
 				const { uri: uriStr, replacement_chunks: replacementChunksUnknown } = params
 				const uri = validateURIws(uriStr)
+				if (!uri) {
+					throw new Error(`Invalid LLM output: multi_replace_file_content requires a valid uri path, but it was not provided.`)
+				}
 				const replacementChunks = validateStr('replacement_chunks', replacementChunksUnknown)
 				return { uri, replacementChunks }
 			},
@@ -711,6 +741,11 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 			glob: async ({ pattern, path: searchPath }) => {
 				const folderUri = validateURIws(searchPath ?? workspaceDir)
+				if (!folderUri) {
+					return {
+						result: { result: `Error: Invalid path: ${searchPath ?? workspaceDir}` },
+					}
+				}
 				try {
 					const query: IFileQuery = {
 						type: QueryType.File,
@@ -727,6 +762,11 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 			grep: async ({ pattern, path: searchPath, include }) => {
 				const folderUri = validateURIws(searchPath ?? workspaceDir)
+				if (!folderUri) {
+					return {
+						result: { result: `Error: Invalid path: ${searchPath ?? workspaceDir}` },
+					}
+				}
 				try {
 					const query: ITextQuery = {
 						type: QueryType.Text,
@@ -755,6 +795,11 @@ export class ToolsService extends Disposable implements IToolsService {
 			},
 			list: async ({ dirPath }) => {
 				const uri = validateURIws(dirPath ?? workspaceDir)
+				if (!uri) {
+					return {
+						result: { result: `Error: Invalid path: ${dirPath ?? workspaceDir}` },
+					}
+				}
 				try {
 					const resolved = await fileService.resolve(uri)
 					const entries = (resolved.children ?? []).map(c => `${c.isDirectory ? 'd' : '-'} ${c.name}`).sort().join('\n')

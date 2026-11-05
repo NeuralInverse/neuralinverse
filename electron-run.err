@@ -1,0 +1,65 @@
+(node:6020) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `NeuralInverse --trace-deprecation ...` to show where the warning was created)
+[6020:1104/231522.213:WARNING:net\disk_cache\blockfile\backend_impl.cc:1859] Destroying invalid entry.
+[6020:1104/231546.718:INFO:CONSOLE:325] "[uncaught exception]: TypeError: Failed to fetch dynamically imported module: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/workbench.desktop.main.js", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench.js (325)
+[6020:1104/231546.719:INFO:CONSOLE:327] "TypeError: Failed to fetch dynamically imported module: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/workbench.desktop.main.js", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench.js (327)
+[6020:1104/231546.722:INFO:CONSOLE:405] "Uncaught (in promise) TypeError: Failed to fetch dynamically imported module: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/workbench.desktop.main.js", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench.js (405)
+[6020:1104/231550.235:INFO:CONSOLE:325] "[uncaught exception]: TypeError: Failed to fetch dynamically imported module: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/workbench.desktop.main.js", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench.js (325)
+[6020:1104/231550.236:INFO:CONSOLE:327] "TypeError: Failed to fetch dynamically imported module: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/workbench.desktop.main.js", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench.js (327)
+[6020:1104/231550.237:INFO:CONSOLE:405] "Uncaught (in promise) TypeError: Failed to fetch dynamically imported module: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/workbench/workbench.desktop.main.js", source: vscode-file://vscode-app/c:/AI-Editors/neuralinverse/out/vs/code/electron-browser/workbench/workbench.js (405)
+[Event.buffer][onDidOpenMainWindow] potential LEAK detected: 2 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:940:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidBlurMainWindow] potential LEAK detected: 5 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:940:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidFocusMainWindow] potential LEAK detected: 7 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:940:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidBlurMainOrAuxiliaryWindow] potential LEAK detected: 5 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:940:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidFocusMainOrAuxiliaryWindow] potential LEAK detected: 7 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:940:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidChangeSpeedLimit] potential LEAK detected: 9 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:940:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)
+[Event.buffer][onDidChangeRecentlyOpened] potential LEAK detected: 2 events buffered for 60s without being consumed. Buffered here:
+    at Object.buffer (file:///C:/AI-Editors/neuralinverse/out/vs/base/common/event.js:261:27)
+    at Object.fromService (file:///C:/AI-Editors/neuralinverse/out/vs/base/parts/ipc/common/ipc.js:805:44)
+    at CodeApplication.initChannels (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:945:44)
+    at file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:63
+    at InstantiationService.invokeFunction (file:///C:/AI-Editors/neuralinverse/out/vs/platform/instantiation/common/instantiationService.js:78:14)
+    at CodeApplication.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/app.js:488:29)
+    at async CodeMain.startup (file:///C:/AI-Editors/neuralinverse/out/vs/code/electron-main/main.js:89:7)

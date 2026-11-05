@@ -33,6 +33,7 @@ export const ENV_VAR_MAP: { providerName: ProviderName; envVars: string[] }[] = 
 	{ providerName: 'githubModels', envVars: ['GITHUB_TOKEN', 'GH_TOKEN'] },
 	{ providerName: 'fireworksAI', envVars: ['FIREWORKS_API_KEY'] },
 	{ providerName: 'cerebras', envVars: ['CEREBRAS_API_KEY'] },
+	{ providerName: 'nvidia', envVars: ['NVIDIA_API_KEY'] },
 ];
 
 export const AWS_ENV_VARS = {
