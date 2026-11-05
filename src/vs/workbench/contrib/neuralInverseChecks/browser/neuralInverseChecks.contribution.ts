@@ -37,6 +37,8 @@ import './context/autocomplete/policy/policyService.js';
 import './engine/services/inverseAccessService.js';
 import './engine/services/externalCommandExecutor.js';
 import './engine/services/externalResultCache.js';
+import './engine/services/externalToolService.js';
+import './engine/services/grcEngineService.js';
 import './projectConfigSyncService.js';
 import './extensionTracker/extensionTrackerService.js';
 import './dependencyTracker/dependencyTrackerService.js';

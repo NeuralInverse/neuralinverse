@@ -92,6 +92,7 @@
 			}
 		}
 	],
+	"builtInExtensionsEnabledWithAutoUpdates": [],
 	"linkProtectionTrustedDomains": [
 		"https://neuralinverse.com",
 		"https://updates.neuralinverse.com",

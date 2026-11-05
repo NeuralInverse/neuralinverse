@@ -14,7 +14,9 @@
 
 import { Event } from '../../../../../../base/common/event.js';
 import { URI } from '../../../../../../base/common/uri.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { ICheckResult, IGRCRule } from '../types/grcTypes.js';
 import { IExternalJob } from '../types/externalJobTypes.js';
 
@@ -28,3 +30,29 @@ export interface IExternalToolService {
 	runFileScans(rules: IGRCRule[], fileUri: URI, content: string): void;
 	registerResultSink(fn: (fileUri: URI, ruleId: string, results: ICheckResult[]) => void): void;
 }
+
+// ─── Stub Implementation ────────────────────────────────────────────────────────
+// Minimal no-op implementation so the DI container can resolve the service.
+// Real implementation is provided by the commercial backend.
+class ExternalToolServiceImpl extends Disposable implements IExternalToolService {
+	readonly _serviceBrand: undefined;
+	readonly onDidJobUpdate: Event<IExternalJob> = Event.None;
+
+	getJobs(): IExternalJob[] {
+		return [];
+	}
+
+	runWorkspaceScans(rules: IGRCRule[]): Promise<void> {
+		return Promise.resolve();
+	}
+
+	runFileScans(rules: IGRCRule[], fileUri: URI, content: string): void {
+		// no-op
+	}
+
+	registerResultSink(fn: (fileUri: URI, ruleId: string, results: ICheckResult[]) => void): void {
+		// no-op
+	}
+}
+
+registerSingleton(IExternalToolService, ExternalToolServiceImpl, InstantiationType.Delayed);
