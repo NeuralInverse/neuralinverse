@@ -27,7 +27,14 @@ Rules:
 			{ name: 'include', type: 'string', description: 'File glob to include (e.g. "*.ts")', required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			const pattern = args.pattern as string;
+			const pattern = args.pattern;
+			if (typeof pattern !== 'string' || pattern.trim().length === 0) {
+				return {
+					title: 'Invalid pattern',
+					output: 'Error: pattern must be a non-empty string.',
+					metadata: { error: true },
+				};
+			}
 			const searchPath = (args.path as string) ?? workingDirectory;
 			const include = args.include as string | undefined;
 

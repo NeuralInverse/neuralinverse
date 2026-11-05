@@ -1,0 +1,9 @@
+[rebuild-native] Starting at 2026-11-04T08:58:09.055Z
+[rebuild-native] Root: c:\AI-Editors\neuralinverse
+[rebuild-native] Command: node c:\AI-Editors\neuralinverse\node_modules\@electron\rebuild\lib\cli.js --version 42.2.0 --arch x64 --only @vscode/sqlite3,@vscode/spdlog,@vscode/windows-mutex --force
+
+Searching dependency tree
+Building modules: @vscode/spdlog, @vscode/sqlite3, @vscode/windows-mutex
+✔ Rebuild Complete
+
+[rebuild-native] Exited with code 0 at 2026-11-04T09:06:40.956Z

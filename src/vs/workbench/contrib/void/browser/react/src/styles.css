@@ -1,37 +1,57 @@
 /*--------------------------------------------------------------------------------------
- *  Copyright 2026 Glass Devtools, Inc. All rights reserved.
+ *  Copyright 2026 Neural Inverse Corporation. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
+ *
+ *  Cursor-inspired dark theme for Neural Inverse.
  *--------------------------------------------------------------------------------------*/
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Import Inter font (UI) and JetBrains Mono (code) — Cursor's font stack */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 & {
-	--void-bg-1: var(--vscode-input-background);
-	--void-bg-1-alt: var(--vscode-badge-background);
-	--void-bg-2: var(--vscode-sideBar-background);
-	--void-bg-2-alt: color-mix(in srgb, var(--vscode-editor-background) 30%, var(--vscode-sideBar-background) 70%);
-	--void-bg-2-hover: color-mix(in srgb, var(--vscode-editor-foreground) 2%, var(--vscode-sideBar-background) 98%);
-	--void-bg-3: var(--vscode-editor-background);
+	/* ── Cursor-inspired dark palette ── */
+	--void-bg-1: #161b22;           /* panel/input bg */
+	--void-bg-1-alt: #21262d;       /* slightly elevated */
+	--void-bg-2: #0d1117;           /* sidebar bg */
+	--void-bg-2-alt: #161b22;       /* editor sidebar */
+	--void-bg-2-hover: #21262d;     /* hover state */
+	--void-bg-3: #0d1117;           /* editor bg */
 
-	--void-fg-0: color-mix(in srgb, var(--vscode-tab-activeForeground) 90%, black 10%);
-	--void-fg-1: var(--vscode-editor-foreground);
-	--void-fg-2: var(--vscode-input-foreground);
-	--void-fg-3: var(--vscode-input-placeholderForeground);
-	/* --void-fg-4: var(--vscode-tab-inactiveForeground); */
-	--void-fg-4: var(--vscode-list-deemphasizedForeground);
+	--void-fg-0: #c9d1d9;           /* primary text */
+	--void-fg-1: #c9d1d9;           /* editor foreground */
+	--void-fg-2: #8b949e;           /* secondary text */
+	--void-fg-3: #6e7681;           /* muted text */
+	--void-fg-4: #484f58;           /* very muted text */
 
-	--void-warning: var(--vscode-charts-yellow);
+	--void-warning: #ffd33d;        /* warning yellow */
 
-	--void-border-1: var(--vscode-commandCenter-activeBorder);
-	--void-border-2: var(--vscode-commandCenter-border);
-	--void-border-3: var(--vscode-commandCenter-inactiveBorder);
-	--void-border-4: var(--vscode-editorGroup-border);
+	--void-border-1: #30363d;       /* primary border */
+	--void-border-2: #21262d;       /* secondary border */
+	--void-border-3: #1f2328;       /* tertiary border */
+	--void-border-4: #30363d;       /* editor group border */
 
+	--void-ring-color: #58a6ff;     /* focus ring blue */
+	--void-link-color: #58a6ff;     /* link blue */
 
-	--void-ring-color: #007FD4;
-	--void-link-color: #007FD4;
+	/* ── Typography ── */
+	--void-font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--void-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+
+	/* Apply UI font to everything */
+	font-family: var(--void-font-ui);
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--void-fg-0);
+	background-color: var(--void-bg-2);
+}
+
+/* Code/monospace contexts use JetBrains Mono */
+code, pre, .monaco-editor, .input-area, .editor-font-family {
+	font-family: var(--void-font-mono) !important;
 }
 
 .select-child-restyle select {
@@ -49,7 +69,6 @@
 }
 
 
-
 .inherit-bg-all-restyle > * {
 	background-color: inherit !important;
 }
@@ -59,44 +78,142 @@
 	--vscode-sideBar-background: var(--vscode-editor-background);
 }
 
+/* ── Cursor-inspired component styling ── */
 
-
-/* html {
-	font-size: var(--vscode-font-size);
+/* Rounded buttons with hover states */
+.void-btn {
+	@apply inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150;
+	border: 1px solid transparent;
+	cursor: pointer;
+}
+.void-btn-primary {
+	@apply bg-void-link-color text-white;
+}
+.void-btn-primary:hover:not(:disabled) {
+	@apply bg-blue-600;
+}
+.void-btn-secondary {
+	@apply bg-void-bg-2-hover text-void-fg-0 border-void-border-1;
+}
+.void-btn-secondary:hover:not(:disabled) {
+	@apply bg-void-border-1;
+}
+.void-btn:disabled {
+	@apply opacity-50 cursor-not-allowed;
 }
 
-.btn {
-	@apply cursor-pointer transition-colors;
-
-	&.btn-primary {
-		@apply bg-vscode-button-bg text-vscode-button-fg;
-
-		&:not(:disabled) {
-			@apply hover:bg-vscode-button-hoverBg;
-		}
-	}
-
-	&.btn-sm {
-		@apply px-3 py-1 text-sm;
-	}
-
-	&.btn-secondary {
-		@apply bg-vscode-button-secondary-bg text-vscode-button-secondary-fg;
-
-		&:not(:disabled) {
-			@apply hover:bg-vscode-button-secondary-hoverBg;
-		}
-	}
-
-	&:disabled {
-		@apply opacity-75 cursor-not-allowed;
-	}
+/* Inputs with rounded borders */
+.void-input {
+	@apply rounded-md border border-void-border-1 bg-void-bg-1 text-void-fg-0 px-2.5 py-1.5 text-sm transition-colors duration-150;
+	@apply focus:border-void-ring-color focus:ring-1 focus:ring-void-ring-color focus:outline-none;
+}
+.void-input::placeholder {
+	color: var(--void-fg-3);
 }
 
-.input {
-	@apply bg-vscode-input-bg text-vscode-input-fg border-vscode-input-border focus:outline-vscode-focus-border;
+/* Dropdowns */
+.void-dropdown {
+	@apply rounded-md border border-void-border-1 bg-void-bg-1 text-void-fg-0 px-2.5 py-1.5 text-sm transition-colors duration-150;
+	@apply focus:border-void-ring-color focus:ring-1 focus:ring-void-ring-color focus:outline-none;
+	cursor: pointer;
 }
 
-.dropdown {
-	@apply bg-vscode-dropdown-bg text-vscode-dropdown-foreground border-vscode-dropdown-border focus:outline-vscode-focus-border;
-} */
+/* Chat bubbles - rounded, subtle */
+.void-chat-bubble {
+	@apply rounded-xl p-3 text-void-fg-0 bg-void-bg-1 border border-void-border-2;
+}
+.void-chat-bubble-user {
+	@apply bg-void-bg-2 border-void-border-1 text-right;
+}
+
+/* Sidebar panel - subtle elevation */
+.void-panel {
+	@apply bg-void-bg-2 border-l border-void-border-3;
+}
+
+/* Badge */
+.void-badge {
+	@apply inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium;
+	@apply bg-void-bg-2-alt text-void-fg-2 border border-void-border-3;
+}
+
+/* Divider */
+.void-divider {
+	@apply border-t border-void-border-3 my-2;
+}
+
+/* Scrollbar thin */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--void-border-2);
+	border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--void-border-1);
+}
+
+/* ── Chat Markdown Color Styling ── */
+
+/* Headings with color hierarchy */
+.chat-h1 { color: #58a6ff; font-weight: 600; font-size: 1.25rem; margin: 1rem 0 0.5rem 0; }
+.chat-h2 { color: #79c0ff; font-weight: 600; font-size: 1.1rem; margin: 0.8rem 0 0.4rem 0; }
+.chat-h3 { color: #a5d6ff; font-weight: 600; font-size: 1rem; margin: 0.6rem 0 0.3rem 0; }
+.chat-h4 { color: #c9d1d9; font-weight: 500; font-size: 0.95rem; margin: 0.5rem 0 0.2rem 0; }
+.chat-h5 { color: #8b949e; font-weight: 500; font-size: 0.9rem; margin: 0.4rem 0 0.2rem 0; }
+.chat-h6 { color: #6e7681; font-weight: 500; font-size: 0.85rem; margin: 0.3rem 0 0.1rem 0; }
+
+/* Links */
+.chat-link { color: #58a6ff; text-decoration: underline; cursor: pointer; }
+.chat-link:hover { color: #79c0ff; }
+
+/* Bold and italic */
+.chat-strong { color: #f0f6fc; font-weight: 600; }
+.chat-em { color: #c9d1d9; font-style: italic; }
+
+/* Inline code */
+.chat-codespan { color: #d2a8ff; background: rgba(210, 168, 255, 0.15); padding: 0.15em 0.3em; border-radius: 4px; font-family: var(--void-font-mono); font-size: 0.9em; }
+
+/* Blockquote */
+.chat-blockquote { border-left: 3px solid #58a6ff; padding-left: 1rem; margin: 0.5rem 0; color: #8b949e; font-style: italic; }
+
+/* Lists */
+.chat-list-item { margin: 0.25rem 0; }
+.chat-list-item::marker { color: #58a6ff; font-weight: 600; }
+
+/* Horizontal rule */
+.chat-hr { border: none; border-top: 1px solid var(--void-border-3); margin: 1rem 0; }
+
+/* Reasoning / thinking text */
+.chat-reasoning { color: #8b949e; font-style: italic; font-size: 0.9em; }
+.chat-reasoning-header { color: #58a6ff; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+
+/* Tool result headers */
+.chat-tool-title { color: #58a6ff; font-weight: 600; font-size: 0.9rem; margin: 0.5rem 0 0.2rem 0; }
+.chat-tool-desc { color: #8b949e; font-size: 0.85rem; margin-bottom: 0.3rem; }
+
+/* Success/error messages */
+.chat-success { color: #3fb950; font-weight: 500; }
+.chat-error { color: #f85149; font-weight: 500; }
+.chat-warning { color: #d29922; font-weight: 500; }
+
+/* Code block styling overrides for chat */
+.chat-pre { background: #0d1117 !important; border: 1px solid var(--void-border-1); border-radius: 6px; }
+.chat-code { font-family: var(--void-font-mono) !important; }
+
+/* Syntax highlighting colors (Monokai-inspired for dark theme) */
+.syn-keyword { color: #ff7b72; }       /* if, else, function, etc */
+.syn-function { color: #d2a8ff; }     /* function names */
+.syn-string { color: #a5d6ff; }       /* strings */
+.syn-comment { color: #6e7681; font-style: italic; }  /* comments */
+.syn-variable { color: #ffa657; }     /* variables */
+.syn-number { color: #79c0ff; }       /* numbers */
+.syn-operator { color: #ff7b72; }     /* operators */
+.syn-tag { color: #ff7b72; }          /* HTML tags */
+.syn-attr { color: #d2a8ff; }         /* attributes */
+.syn-value { color: #a5d6ff; }        /* values */

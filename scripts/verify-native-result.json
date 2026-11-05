@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-11-04T11:43:38.478Z",
+  "results": [
+    {
+      "name": "@vscode/sqlite3",
+      "status": "PASS",
+      "detail": "in-memory DB create/insert/select succeeded"
+    },
+    {
+      "name": "@vscode/spdlog",
+      "status": "PASS",
+      "detail": "createRotatingLogger (async) + info + flush + drop succeeded"
+    },
+    {
+      "name": "@vscode/windows-mutex",
+      "status": "PASS",
+      "detail": "module loaded successfully"
+    }
+  ],
+  "allPass": true
+}

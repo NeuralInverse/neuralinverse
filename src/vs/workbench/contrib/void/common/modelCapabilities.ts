@@ -84,6 +84,9 @@ export const defaultProviderSettings = {
 	moonshot: {
 		apiKey: '',
 	},
+	nvidia: { // https://build.nvidia.com/nim / https://integrate.api.nvidia.com/v1
+		apiKey: '',
+	},
 
 } as const
 
@@ -203,6 +206,16 @@ export const defaultModelsOfProvider = {
 		'moonshot-v1-32k',
 		'moonshot-v1-128k',
 		'kimi-k2',
+	],
+	nvidia: [ // https://build.nvidia.com/nim
+		'nvidia/nemotron-3.5-super-vl-120b-a12b',
+		'meta/llama-3.1-405b-instruct',
+		'meta/llama-3.1-70b-instruct',
+		'meta/llama-3.1-8b-instruct',
+		'mistralai/mistral-nemo-instruct-2407',
+		'deepseek-ai/deepseek-coder-v2-instruct',
+		'google/gemma-2-9b-it',
+		'qwen/qwen2.5-72b-instruct',
 	],
 	openAICompatible: [], // fallback
 	googleVertex: [],
@@ -2099,6 +2112,104 @@ const moonshotSettings: VoidStaticProviderInfo = {
 	},
 }
 
+// ---------------- NVIDIA ----------------
+const nvidiaModelOptions = {
+	'nvidia/nemotron-3.5-super-vl-120b-a12b': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 16_000,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'meta/llama-3.1-405b-instruct': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'meta/llama-3.1-70b-instruct': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'meta/llama-3.1-8b-instruct': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 4_096,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'mistralai/mistral-nemo-instruct-2407': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 4_096,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'deepseek-ai/deepseek-coder-v2-instruct': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 16_000,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'google/gemma-2-9b-it': {
+		contextWindow: 8_192,
+		reservedOutputTokenSpace: 4_096,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+	'qwen/qwen2.5-72b-instruct': {
+		contextWindow: 128_000,
+		reservedOutputTokenSpace: 8_192,
+		cost: { input: 0.0, output: 0.0 },
+		downloadable: false,
+		supportsFIM: false,
+		specialToolFormat: 'openai-style',
+		supportsSystemMessage: 'system-role',
+		reasoningCapabilities: false,
+	},
+} as const satisfies { [s: string]: VoidStaticModelInfo }
+
+const nvidiaSettings: VoidStaticProviderInfo = {
+	modelOptions: nvidiaModelOptions,
+	modelOptionsFallback: (modelName) => {
+		const res = extensiveModelOptionsFallback(modelName)
+		if (res?.specialToolFormat === 'anthropic-style' || res?.specialToolFormat === 'gemini-style') {
+			res.specialToolFormat = 'openai-style'
+		}
+		return res
+	},
+	providerReasoningIOSettings: {
+		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
+		output: { needsManualParse: true },
+	},
+}
 
 // ---------------- model settings of everything above ----------------
 
@@ -2131,6 +2242,7 @@ const modelSettingsOfProvider: { [providerName in ProviderName]: VoidStaticProvi
 	cerebras: cerebrasSettings,
 	qwen: qwenSettings,
 	moonshot: moonshotSettings,
+	nvidia: nvidiaSettings,
 } as const
 
 

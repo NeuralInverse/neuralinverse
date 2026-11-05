@@ -559,7 +559,7 @@ export class EnclaveManagerPart extends Part {
 				this._auditSearchQuery = (e.message.value || '').toLowerCase();
 				this.updateWebviewContent();
 				break;
-			case 'test:record':
+		case 'test:record':
 				this.testProofService.recordTestRun?.({ name: 'UI Trigger', version: '1.0' }, 'unit', []);
 				break;
 			case 'vault:erase':
@@ -762,7 +762,7 @@ export class EnclaveManagerPart extends Part {
 					<div class="info-label">Mode</div>
 					<div class="info-value" style="color:${modeColor}">${mode.replace('_', ' ').toUpperCase()} \u2014 <span style="opacity:.7;font-family:var(--vscode-font-family)">${modeLabels[mode] ?? ''}</span></div>
 					<div class="info-label">Audit Chain</div>
-					<div class="info-value">${auditCount} entr${auditCount !== 1 ? 'ies' : 'y'} \u2014 <span style="color:var(--vscode-testing-iconPassed)">hash-chained &amp; signed</span></div>
+					<div class="info-value">${auditCount} entr${auditCount !== 1 ? 'ies' : 'y'} \u2014 <span style="color:var(--vscode-testing-iconPassed)">SHA-256 hash-chained</span></div>
 				</div>
 				<div style="margin-top:8px">
 					<button onclick="ex('provenance:export')">Export Provenance Bundle</button>
@@ -864,8 +864,11 @@ export class EnclaveManagerPart extends Part {
 			</div>
 
 			<div class="glass-panel">
-				<h2 style="justify-content:space-between;"><span style="display:flex;align-items:center;"><span class="status-dot ${lastBuild ? (lastBuild.status === 'succeeded' ? 'status-secure' : 'status-danger') : 'status-warning'}"></span> Deterministic Build Record <span style="font-weight:400;margin-left:8px;opacity:.5">SLSA L4</span></span><button onclick="ex('build:trigger')">Trigger Local CI Pipeline</button></h2>
+				<h2 style="justify-content:space-between;"><span style="display:flex;align-items:center;"><span class="status-dot ${lastBuild ? (lastBuild.status === 'succeeded' ? 'status-secure' : 'status-danger') : 'status-warning'}"></span> Deterministic Build Record <span style="font-weight:400;margin-left:8px;opacity:.5;color:var(--vscode-charts-orange)">Evidence Only</span></span><button onclick="ex('build:trigger')">Trigger Local CI Pipeline</button></h2>
 				<p style="color:var(--vscode-descriptionForeground);font-size:11px;margin-bottom:12px;">Captures a hash of the source tree + compiler toolchain to prove the build is reproducible and untampered.</p>
+				<div style="background:rgba(255,165,0,0.06);border:1px solid rgba(255,165,0,0.25);border-radius:4px;padding:8px 12px;font-size:11px;color:var(--vscode-charts-orange);margin-bottom:12px">
+					<strong>Build evidence recorded.</strong> Source hashes are placeholder values generated in the renderer process — binary hashing requires a main-process IPC hook not yet implemented. SLSA L4 compliance requires reproducible builds with cryptographically verified source hashes. This record does not satisfy that requirement.
+				</div>
 				${buildInfo}
 			</div>
 		</body>

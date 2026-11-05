@@ -28,8 +28,22 @@ Rules:
 			{ name: 'workdir', type: 'string', description: `Working directory (default: ${workingDirectory})`, required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			let command = args.command as string;
-			const description = args.description as string;
+			const command = args.command;
+			const description = args.description;
+			if (typeof command !== 'string' || command.trim().length === 0) {
+				return {
+					title: 'Invalid command',
+					output: 'Error: command must be a non-empty string.',
+					metadata: { error: true },
+				};
+			}
+			if (typeof description !== 'string' || description.trim().length === 0) {
+				return {
+					title: 'Invalid description',
+					output: 'Error: description must be a non-empty string.',
+					metadata: { error: true },
+				};
+			}
 			const timeout = (args.timeout as number) ?? DEFAULT_TIMEOUT;
 			const cwd = (args.workdir as string) ?? workingDirectory;
 

@@ -45,10 +45,15 @@ export class PowerModeLLMBridge {
 	private _buildToolInfos(tools: Record<string, { description: string; parameters: Record<string, any> }>): InternalToolInfo[] {
 		const infos: InternalToolInfo[] = [];
 		for (const [name, schema] of Object.entries(tools)) {
-			const params: Record<string, { description: string }> = {};
+			const params: Record<string, { description: string; type: string; required?: boolean }> = {};
 			const props = schema.parameters?.properties ?? {};
+			const required = schema.parameters?.required ?? [];
 			for (const [paramName, paramSchema] of Object.entries(props) as [string, any][]) {
-				params[paramName] = { description: paramSchema.description ?? '' };
+				params[paramName] = {
+					description: paramSchema.description ?? '',
+					type: paramSchema.type ?? 'string',
+					required: required.includes(paramName),
+				};
 			}
 			infos.push({ name, description: schema.description, params });
 		}

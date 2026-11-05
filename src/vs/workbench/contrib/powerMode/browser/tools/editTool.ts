@@ -24,9 +24,31 @@ Rules:
 			{ name: 'new_string', type: 'string', description: 'The replacement string', required: true },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			let filePath = args.filePath as string;
-			const oldString = args.old_string as string;
-			const newString = args.new_string as string;
+			const rawFilePath = args.filePath;
+			const oldString = args.old_string;
+			const newString = args.new_string;
+			if (typeof rawFilePath !== 'string' || rawFilePath.trim().length === 0) {
+				return {
+					title: 'Invalid file path',
+					output: 'Error: filePath must be a non-empty string.',
+					metadata: { error: true },
+				};
+			}
+			if (typeof oldString !== 'string') {
+				return {
+					title: 'Invalid old_string',
+					output: 'Error: old_string must be a string.',
+					metadata: { error: true },
+				};
+			}
+			if (typeof newString !== 'string') {
+				return {
+					title: 'Invalid new_string',
+					output: 'Error: new_string must be a string.',
+					metadata: { error: true },
+				};
+			}
+			let filePath = rawFilePath;
 
 			if (!path.isAbsolute(filePath)) {
 				filePath = path.resolve(workingDirectory, filePath);

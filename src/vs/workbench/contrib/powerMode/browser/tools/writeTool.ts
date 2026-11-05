@@ -23,8 +23,23 @@ Rules:
 			{ name: 'content', type: 'string', description: 'The full content to write to the file', required: true },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			let filePath = args.filePath as string;
-			const content = args.content as string;
+			const rawFilePath = args.filePath;
+			const content = args.content;
+			if (typeof rawFilePath !== 'string' || rawFilePath.trim().length === 0) {
+				return {
+					title: 'Invalid file path',
+					output: 'Error: filePath must be a non-empty string.',
+					metadata: { error: true },
+				};
+			}
+			if (typeof content !== 'string') {
+				return {
+					title: 'Invalid content',
+					output: 'Error: content must be a string.',
+					metadata: { error: true },
+				};
+			}
+			let filePath = rawFilePath;
 
 			if (!path.isAbsolute(filePath)) {
 				filePath = path.resolve(workingDirectory, filePath);

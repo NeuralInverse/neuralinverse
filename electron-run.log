@@ -1,0 +1,23 @@
+
+[main 2026-11-04T23:15:21.827Z] StorageMainService: creating application shared storage
+[main 2026-11-04T23:15:22.021Z] [CSS_DEV] DONE, 390 css modules (158ms)
+[main 2026-11-04T23:15:22.193Z] update#setState disabled
+[main 2026-11-04T23:15:22.220Z] [shared storage] Creating shared storage database at 'c:\Users\user\.neural-inverse-shared\sharedStorage\state.vscdb' (wasCreated: false)
+[main 2026-11-04T23:15:22.224Z] [shared storage] Initializing fallback application storage (path: c:\Users\user\AppData\Roaming\code-oss-dev\User\globalStorage\state.vscdb)
+[main 2026-11-04T23:15:22.295Z] [shared storage] Fallback application storage initialized with 62 items
+User is opted out of basic NeuralInverse metrics? false
+NeuralInverse posthog metrics info: {
+  "distinctId": "88b89828-9634-4b8c-85cf-cc5a41737e5c",
+  "properties": {
+    "vscodeVersion": "1.127.0",
+    "niVersion": "1.0.0",
+    "os": "windows",
+    "quality": "stable",
+    "distinctId": "88b89828-9634-4b8c-85cf-cc5a41737e5c",
+    "distinctIdUser": "1a1b0e16-0917-425b-995e-326e6c74c0e6",
+    "oldId": "NULL",
+    "isDevMode": true,
+    "platform": "win32",
+    "arch": "x64"
+  }
+}

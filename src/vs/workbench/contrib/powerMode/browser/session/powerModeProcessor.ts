@@ -35,7 +35,7 @@ import { ICompactionService } from './compaction/compactionService.js';
 import { ISummarizationLLM } from './compaction/conversationSummarizer.js';
 
 /** Tools that require user approval before execution */
-const TOOLS_REQUIRING_APPROVAL = new Set(['bash', 'write', 'edit']);
+const TOOLS_REQUIRING_APPROVAL = new Set(['bash', 'write', 'edit', 'web_preview', 'web_qa_loop', 'multi_file_edit', 'self_heal_code', 'visual_diff', 'parallel_sub_agent', 'code_archaeology', 'debugger']);
 
 const MAX_STEPS_DEFAULT = 200;
 const DOOM_LOOP_THRESHOLD = 3;

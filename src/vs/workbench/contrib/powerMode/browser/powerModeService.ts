@@ -94,6 +94,21 @@ import {
 } from './tools/planModeTools.js';
 import { createNotebookEditTool } from './tools/notebookEditTool.js';
 import { createLSPTool } from './tools/lspTool.js';
+import {
+	createCreateDirectoryTool,
+	createDeleteFileTool,
+	createMoveFileTool,
+	createDiffViewTool,
+} from './tools/filesystemTools.js';
+import { createWebPreviewTool } from './tools/webPreviewTool.js';
+import { createWebQALoopTool } from './tools/webQALoopTool.js';
+import { createMultiFileEditTool } from './tools/multiFileEditTool.js';
+import { createSelfHealTool } from './tools/selfHealTool.js';
+import { createVisualDiffTool } from './tools/visualDiffTool.js';
+import { IDebugService } from '../../debug/common/debug.js';
+import { createParallelSubAgentTool } from './tools/parallelSubAgentTool.js';
+import { createCodeArchaeologyTool } from './tools/codeArchaeologyTool.js';
+import { createDebuggerTool } from './tools/debuggerTool.js';
 import { AgentRegistry } from './agentRegistry.js';
 import type { SubAgentSpawnRequest } from '../../void/common/subAgentTypes.js';
 import { createForkAgentTool, createSendMessageTool } from './tools/subAgentTools.js';
@@ -337,6 +352,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@IShadowValidationService private readonly shadowValidationService: IShadowValidationService,
 		@IModelService private readonly modelService: IModelService,
 		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService,
+		@IDebugService private readonly debugService: IDebugService,
 	) {
 		super();
 		this._llmBridge = new PowerModeLLMBridge(llmMessageService, voidSettingsService);
@@ -569,6 +585,27 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				createNotebookEditTool(directory, this.fileService),
 				// LSP: go to definition, find references, hover, document symbols
 				createLSPTool(this.modelService, this.languageFeaturesService, this.fileService),
+				// Filesystem management: create_directory, delete_file, move_file, diff_view
+				createCreateDirectoryTool(directory, this.fileService),
+				createDeleteFileTool(directory, this.fileService),
+				createMoveFileTool(directory, this.fileService),
+				createDiffViewTool(directory, this.commandExecutor),
+				// Web preview: browser automation + screenshot feedback loop
+				createWebPreviewTool(directory),
+				// Web QA Loop: automatic screenshot-to-fix feedback loop
+				createWebQALoopTool(directory, this.fileService, this.commandExecutor),
+				// Multi-file edit: Cursor Composer-style batch editing
+				createMultiFileEditTool(directory, this.fileService),
+				// Self-healing code loop: autonomous error detection and auto-fix
+				createSelfHealTool(directory, this.fileService, this.commandExecutor),
+				// Visual diff: screenshot comparison for visual regression
+				createVisualDiffTool(directory, this.fileService),
+				// Parallel sub-agent swarm: orchestrate multiple specialists simultaneously
+				createParallelSubAgentTool(this._getSubAgentService()),
+				// Code archaeology: legacy code understanding
+				createCodeArchaeologyTool(directory, this.fileService),
+				// Debugger integration: agent-controlled debugging
+				createDebuggerTool(this.debugService),
 			]);
 
 			// Sub-agent orchestration (lazy-resolved to avoid circular dependency)

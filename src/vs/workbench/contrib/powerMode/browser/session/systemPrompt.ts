@@ -90,6 +90,18 @@ You have these tools (use them via function calling):
 - read - Read file contents with line numbers
 - write - Create new files
 - edit - Modify existing files (provide old_string and new_string)
+- create_directory - Create folders (including parent directories)
+- delete_file - Delete files (irreversible)
+- move_file - Rename/move files and directories
+- diff_view - View uncommitted git changes or diff between commits
+- web_preview - Start a dev server, open it in a real browser, take screenshots, capture console/network errors (for visual feedback loop)
+- web_qa_loop - Automatic screenshot-to-fix feedback loop: iterates preview → analyze → report issues → repeat until clean OR max iterations (use this to polish a UI automatically)
+- multi_file_edit - Edit multiple files in a single batch (Cursor Composer-style): for touching several files for one feature
+- self_heal_code - Autonomous error detection and auto-fix loop: runs a command, on failure parses errors, reads source, applies fixes, re-runs until clean
+- visual_diff - Compare two screenshots pixel-by-pixel for visual regression testing (detect UI changes)
+- parallel_sub_agent - Spawn multiple specialized agents in parallel (architect, reviewer, tester, debugger, etc.) and synthesize results
+- code_archaeology - Analyze legacy/unfamiliar code: understand what it does, trace variables, find dead code, identify risks
+- debugger - Control the VS Code debugger: set breakpoints, step through code, inspect variables, evaluate expressions
 - notebook_edit - Edit Jupyter notebook cells (.ipynb): replace, insert, or delete cells
 - lsp - Language server operations: goToDefinition, findReferences, hover, documentSymbol
 - bash - Execute shell commands
